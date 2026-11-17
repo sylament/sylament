@@ -45,6 +45,7 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 | [tables-bundle.md](tables-bundle.md) | in progress | 3 in progress · 2 blocked · 2 todo | `TablesServiceProvider.php`, `View/TablesIconAlias.php`, `resources/js/index.js` | The tables bundle class, its renderTable() Twig extension, the TablesIconAlias slots, the package manifest and the asset registration. |
 | [ternary-filter.md](ternary-filter.md) | in progress | 2 in progress | `Filters/TernaryFilter.php` | The yes / no / either filter: a `SelectFilter` with a two-option boolean field and a three-arm query dispatcher. |
 | [testable.md](testable.md) | done | — | — | Tables' tester, which adds tables' testing helpers to actions' tester, and the test-case trait that creates it. |
+| [tests-bulk-actions.md](tests-bulk-actions.md) | in progress | 1 todo · unaudited | `Testing/TestsBulkActions.php` | The testing helper that selects a live table host's records for a bulk action, on the tester a test drives. |
 | [tests-records.md](tests-records.md) | in progress | 1 in progress · 1 todo | `Testing/TestsRecords.php` | The testing helpers that assert which records a live table host renders, on the tester a test drives. |
 | [text-column.md](text-column.md) | in progress | 1 blocked · 2 todo | `Columns/TextColumn.php`, `Columns/Concerns/CanFormatState.php`, `Columns/Concerns/HasColor.php`, `Columns/Concerns/HasIcon.php`, `Columns/Concerns/HasIconColor.php`, `Columns/Concerns/HasDescription.php`, `View/Components/Columns/TextColumnComponent/ItemComponent.php`, `View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`, `resources/css/columns/text.css`, `vendor/filament/support/src/Concerns/CanConfigureCommonMark.php`, `vendor/filament/support/src/Concerns/HasLineClamp.php` | The text column and its state pipeline, from date, number, money and HTML formatting to badges, icons, colours, descriptions and lists. |
 | [text-input-column.md](text-input-column.md) | in progress | 1 blocked · 2 todo | `Columns/TextInputColumn.php`, `resources/css/columns/text-input.css` | The editable `TextInputColumn`, whose text-input cell writes the typed value back onto the record on `change`. |
@@ -80,7 +81,6 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 | [`TableComponent.php`](../../../vendor/filament/tables/src/TableComponent.php) | todo | — | — |
 | [`Commands/`](../../../vendor/filament/tables/src/Commands) | todo | — | — |
 | [`Testing/TestsActions.php`](../../../vendor/filament/tables/src/Testing/TestsActions.php) | todo | — | — |
-| [`Testing/TestsBulkActions.php`](../../../vendor/filament/tables/src/Testing/TestsBulkActions.php) | todo | — | — |
 | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | todo | — | — |
 | [`Testing/TestsSummaries.php`](../../../vendor/filament/tables/src/Testing/TestsSummaries.php) | todo | — | — |

@@ -7,7 +7,7 @@ owns:
 ---
 # Testable (tables)
 
-[`Sylament\Tables\Testing\Testable`](../../../packages/tables/src/Testing/Testable.php) has **no Filament source**: it extends actions' [`Testable`](../actions/testable.md) and is where tables' testing helpers ([`TestsRecords`](tests-records.md)) compose, since tables builds on actions, schemas and forms while they cannot see tables.
+[`Sylament\Tables\Testing\Testable`](../../../packages/tables/src/Testing/Testable.php) has **no Filament source**: it extends actions' [`Testable`](../actions/testable.md) and is where tables' testing helpers ([`TestsRecords`](tests-records.md), [`TestsBulkActions`](tests-bulk-actions.md)) compose, since tables builds on actions, schemas and forms while they cannot see tables.
 An install with `sylament/tables` uses tables' [`InteractsWithLiveComponents`](../../../packages/tables/src/Testing/InteractsWithLiveComponents.php), which uses actions' and narrows `createLiveComponent()` to return this tester; one without tables uses actions'.
 
 ## Surface

@@ -18,13 +18,14 @@ owns:
 | [`schemaComponent()` and `toArray(?string $defaultSchema = null)`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | — |
 | [`make()` with an action class-string, and `table()` with a record object](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | [diverges](#an-object-record-keeps-its-place-until-the-host-mints-its-key) |
 | [`arguments()` with an array or a closure, and `checkArguments()`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | [tests-actions.md](tests-actions.md#the-mounted-assertions-compare-the-hosts-raw-frames-from-the-stacks-end) |
-| [`table()` with a key, an array record or no record, and `bulk()`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | in progress | — | [detail](#the-other-table-arms-and-bulk-wait-for-a-test-that-needs-them) |
+| [`table()` with no record, and `bulk()`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | [tests-bulk-actions.md](../tables/tests-bulk-actions.md) |
+| [`table()` with a key or an array record](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | in progress | — | [detail](#table-with-a-key-or-an-array-record-waits-for-a-test-that-needs-it) |
 
 ## Details
 
-### The other `table()` arms and `bulk()` wait for a test that needs them
+### `table()` with a key or an array record waits for a test that needs it
 
-`table()` with a key, an array record or no record (a table's header action) and `bulk()` are ported and land in `toArray()`'s descriptor, and no test drives any of them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
+`table()` with a key or an array record is ported and lands in `toArray()`'s descriptor, and no test drives either yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Divergences
 

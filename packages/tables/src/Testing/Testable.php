@@ -8,5 +8,6 @@ use Sylament\Actions\Testing\Testable as BaseTestable;
 
 class Testable extends BaseTestable
 {
+    use TestsBulkActions;
     use TestsRecords;
 }

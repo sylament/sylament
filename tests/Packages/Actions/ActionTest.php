@@ -53,6 +53,11 @@ describe('trigger rendering', function (): void {
             ->toContainElement(Selectors::TRIGGER . SupportSelectors::DROPDOWN_ITEM, 'Drop');
     });
 
+    it('draws its icon after its label on a link when positioned after', function (): void {
+        expect($this->renderViewComponent(Action::make('save')->link()->icon('support:star')->iconPosition(IconPosition::After)))
+            ->toContainElement(SupportSelectors::LINK, 'SaveStar');
+    });
+
     it('renders an uncoloured action in primary', function (Closure $action, string $look): void {
         expect($this->renderViewComponent($action()))->toContainButtons($look . SupportSelectors::COLORED . SupportSelectors::color('primary'), ['Save']);
     })->with([

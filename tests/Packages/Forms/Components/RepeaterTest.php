@@ -1587,5 +1587,28 @@ describe('relationship()', function (): void {
 
             expect($handed)->toBe([$larder->jars->first(), null]);
         });
+
+        it("probes a unique() field in an item against its child's class, ignoring the child a loaded item maps", function (): void {
+            $pantry = new Larder('Pantry');
+            $pantry->addJar(new LarderJar('Plums'));
+
+            $cellar = new Larder('Cellar');
+            $cellar->addJar(new LarderJar('Figs', position: 0));
+            $cellar->addJar(new LarderJar('Pears', position: 1));
+            $this->seed($pantry, $cellar);
+            $cellar = $this->reload($cellar);
+            $figs = $cellar->jars->first();
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('jars')->relationship()->components([TextInput::make('label')->unique()]))->record($cellar)->fill($cellar);
+            $host->data['jars']["record-{$figs->id}"]['label'] = 'Plums';
+            $host->data['jars']['added'] = ['label' => 'Plums'];
+
+            expect(fn (): object => $schema->getData())->toThrow(function (ValidationException $exception) use ($figs): void {
+                expect($exception->getErrors())->toBe([
+                    "data.jars.record-{$figs->id}.label" => ['This value is already taken.'],
+                    'data.jars.added.label' => ['This value is already taken.'],
+                ]);
+            });
+        });
     });
 });

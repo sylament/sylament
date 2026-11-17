@@ -58,7 +58,7 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
 
     public function replicateAction(): ReplicateAction
     {
-        return $this->articleAction('replicate')->schema([TextInput::make('title')]);
+        return $this->articleAction()->schema([TextInput::make('title')]);
     }
 
     public function replicateUnboundAction(): ReplicateAction
@@ -292,7 +292,7 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
             ->schema([TextInput::make('code'), TextInput::make('label')]);
     }
 
-    private function articleAction(string $name): ReplicateAction
+    private function articleAction(?string $name = null): ReplicateAction
     {
         return ReplicateAction::make($name)
             ->record(fn (): ?Article => $this->original(Article::class))

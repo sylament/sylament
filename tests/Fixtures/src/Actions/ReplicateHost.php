@@ -14,7 +14,6 @@ use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\AtelierStock;
-use Sylament\Tests\Fixtures\Entity\BlankCodedReel;
 use Sylament\Tests\Fixtures\Entity\CallbackCodedReel;
 use Sylament\Tests\Fixtures\Entity\ConstructorCodedBadge;
 use Sylament\Tests\Fixtures\Entity\GreenhouseVent;
@@ -24,6 +23,7 @@ use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
 use Sylament\Tests\Fixtures\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\VolumeSpine;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -259,9 +259,9 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
             ->schema([TextInput::make('tubes')->integer()]);
     }
 
-    public function replicateBlankReelBareAction(): ReplicateAction
+    public function replicateBlankSpineBareAction(): ReplicateAction
     {
-        return ReplicateAction::make('replicateBlankReelBare')->record(fn (): ?BlankCodedReel => $this->original(BlankCodedReel::class));
+        return ReplicateAction::make('replicateBlankSpineBare')->record(fn (): ?VolumeSpine => $this->original(VolumeSpine::class));
     }
 
     public function replicateCallbackReelBareAction(): ReplicateAction

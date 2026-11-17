@@ -11,7 +11,6 @@ use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\Atelier;
 use Sylament\Tests\Fixtures\Entity\AtelierPigment;
 use Sylament\Tests\Fixtures\Entity\AtelierStock;
-use Sylament\Tests\Fixtures\Entity\BlankCodedReel;
 use Sylament\Tests\Fixtures\Entity\CallbackCodedReel;
 use Sylament\Tests\Fixtures\Entity\ConstructorCodedBadge;
 use Sylament\Tests\Fixtures\Entity\Greenhouse;
@@ -380,15 +379,15 @@ describe('the key', function (): void {
     });
 
     it("refuses by name a single string key left blank, before persist() when no hook could fill it, and after it, still scheduled, when a callback leaves it blank", function (): void {
-        $blank = new BlankCodedReel();
+        $blank = new VolumeSpine();
         $blank->code = 'R-1';
 
         $hooked = new CallbackCodedReel();
         $hooked->code = 'R-1';
         $this->seed($blank, $hooked);
 
-        expect(fn () => $this->createLiveComponent(ReplicateHost::class)->callAction('replicateBlankReelBare'))
-            ->toThrow(LogicException::class, 'The [replicateBlankReelBare] action built a replica of [' . BlankCodedReel::class . '] whose identifier is incomplete');
+        expect(fn () => $this->createLiveComponent(ReplicateHost::class)->callAction('replicateBlankSpineBare'))
+            ->toThrow(LogicException::class, 'The [replicateBlankSpineBare] action built a replica of [' . VolumeSpine::class . '] whose identifier is incomplete');
 
         expect($this->entityManager()->getUnitOfWork()->getScheduledEntityInsertions())->toBe([]);
 
@@ -396,7 +395,7 @@ describe('the key', function (): void {
             ->toThrow(LogicException::class, 'The [replicateCallbackReelBare] action built a replica of [' . CallbackCodedReel::class . '] whose identifier is incomplete');
 
         expect(array_map(static fn (object $entity): string => $entity::class, array_values($this->entityManager()->getUnitOfWork()->getScheduledEntityInsertions())))->toBe([CallbackCodedReel::class])
-            ->and($this->entityManager()->getConnection()->fetchAllAssociative('SELECT code FROM BlankCodedReel UNION ALL SELECT code FROM CallbackCodedReel'))->toBe([['code' => 'R-1'], ['code' => 'R-1']]);
+            ->and($this->entityManager()->getConnection()->fetchAllAssociative('SELECT code FROM VolumeSpine UNION ALL SELECT code FROM CallbackCodedReel'))->toBe([['code' => 'R-1'], ['code' => 'R-1']]);
     });
 
     it('refuses by name a modal mapping a key only the constructor sets, and writes nothing', function (): void {

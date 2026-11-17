@@ -16,11 +16,13 @@ namespace Sylament\Tests\Fixtures\Support;
  * by the custom property or class the stylesheet lays its grid out by; a section's Stimulus
  * controller and the values it reads, and the sortable controller with its handles, items and
  * animation duration, by the `data-` hooks it reads; a section's collapse button by its place
- * and its state, whose name changes; the modal's dialog and the window inside it by the `sy-` classes the stylesheet paints them by; the modal's close, the badge's delete and the pagination's
- * chevron buttons by their names, and a dropdown's teleport by its Stimulus value. The input
- * wrapper, its invalid state and each side of it are named by their `sy-` classes, because which
- * side an affix sits on is the stylesheet's contract; what sits there is asserted by its text,
- * its role or its element.
+ * and its state, whose name changes; the modal's dialog and the window inside it, the outlined
+ * look, and a dropdown, its panel and its items by the `sy-` classes the stylesheet paints them
+ * by; the modal's close, the badge's delete and the pagination's chevron buttons by their names;
+ * a dropdown's placement, offset, flip and teleport by the Stimulus values its controller reads.
+ * The input wrapper, its invalid state and each side of it are named by their `sy-` classes,
+ * because which side an affix sits on is the stylesheet's contract; what sits there is asserted
+ * by its text, its role or its element.
  */
 final class Selectors
 {
@@ -152,6 +154,14 @@ final class Selectors
 
     public const string LAST_PAGE_BUTTON = 'button[aria-label="Go to the last page"]';
 
+    public const string OUTLINED = '.sy-outlined';
+
+    public const string DROPDOWN = '.sy-dropdown';
+
+    public const string DROPDOWN_PANEL = '.sy-dropdown-panel';
+
+    public const string DROPDOWN_ITEM = '.sy-dropdown-item';
+
     public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
 
     public const string KEPT_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="false"]';
@@ -250,6 +260,14 @@ final class Selectors
     public static function sectionValue(string $name, ?string $value = null): string
     {
         return $value === null ? "[data-sylament--support--section-{$name}-value]" : "[data-sylament--support--section-{$name}-value=\"{$value}\"]";
+    }
+
+    /**
+     * A value the dropdown controller reads: its placement, offset or flip.
+     */
+    public static function dropdownValue(string $name, string $value): string
+    {
+        return "[data-sylament--support--dropdown-{$name}-value=\"{$value}\"]";
     }
 
     public static function sortableAnimationDuration(string $milliseconds): string

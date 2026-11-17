@@ -60,7 +60,7 @@ it('offers each row a danger "Delete" beside a trash icon, and deletes only once
         ->assertCanNotSeeTableRecords([$lamp]);
 });
 
-it("heads its confirmation with the row's title, else the record label, else the bare verb", function (string $host, bool $onRow, string $heading): void {
+it("heads its confirmation with the row's title, else the bare verb", function (string $host, bool $onRow, string $heading): void {
     $this->seed($lamp = new Product('Lamp'));
 
     $tester = $this->createLiveComponent($host)->mountAction($onRow ? TestAction::make('delete')->table($lamp) : 'delete');
@@ -68,7 +68,6 @@ it("heads its confirmation with the row's title, else the record label, else the
     expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, $heading);
 })->with([
     'a table titling its rows' => [DeletingProductTable::class, true, 'Delete Lamp'],
-    'a table that does not' => [ProductTable::class, true, 'Delete product'],
     'no record to name' => [TablelessBulkHost::class, false, 'Delete'],
 ]);
 

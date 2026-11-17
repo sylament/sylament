@@ -38,6 +38,6 @@ describe('getItemsCount()', function (): void {
         $full = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
 
         expect($full->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
-            ->and($full->filter('.sy-fo-repeater-add'))->toHaveCount(0);
+            ->and($full->filter(FormsSelectors::REPEATER_ADD))->toHaveCount(0);
     });
 });

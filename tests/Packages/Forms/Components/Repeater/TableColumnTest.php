@@ -6,6 +6,7 @@ use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Repeater\TableColumn;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Support\Enums\Alignment;
+use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -18,7 +19,7 @@ it("renders each column's header label, for screen readers only when hidden, wit
             ->components([TextInput::make('name'), TextInput::make('code')]),
         ['lines' => ['a' => ['name' => 'Ada', 'code' => 'A1']]],
     );
-    $headers = $crawler->filter('.sy-fo-table-repeater thead th');
+    $headers = $crawler->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL);
 
     expect($headers->each(static fn (Crawler $header): string => $header->text()))->toBe(['Name*', 'Code'])
         ->and($headers->eq(0)->filter('sup')->text())->toBe('*')
@@ -36,7 +37,7 @@ it("puts a column's alignment, width and header wrapping on its header cell", fu
             ->components([TextInput::make('name'), TextInput::make('code')]),
         ['lines' => ['a' => ['name' => 'Ada', 'code' => 'A1']]],
     );
-    $headers = $crawler->filter('.sy-fo-table-repeater thead th');
+    $headers = $crawler->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL);
 
     expect($headers->eq(0)->matches(SupportSelectors::align('end') . '.sy-wrapped[style="width: 10rem"]'))->toBeTrue()
         ->and($headers->eq(1)->matches(SupportSelectors::NO_ALIGN . ':not(.sy-wrapped):not([style])'))->toBeTrue();

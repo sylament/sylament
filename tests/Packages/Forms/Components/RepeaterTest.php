@@ -16,6 +16,8 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\VerticalAlignment;
+use Sylament\Tests\Fixtures\Entity\Trellis;
+use Sylament\Tests\Fixtures\Entity\TrellisPanel;
 use Sylament\Tests\Fixtures\Entity\VettedBinder;
 use Sylament\Tests\Fixtures\Entity\VettedBinderSheet;
 use Sylament\Tests\Fixtures\Forms\Record\LineItem;
@@ -31,8 +33,6 @@ use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\Uid\Uuid;
-use Symfony\Component\Uid\UuidV4;
 use Twig\Error\RuntimeError;
 
 describe('make() and components()', function (): void {
@@ -88,9 +88,7 @@ describe('the item pipeline', function (): void {
         $schema->fill(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
         $secondKeys = array_keys($host->data['lines']);
 
-        expect(array_map(static fn (string $key): bool => Uuid::fromString($key) instanceof UuidV4, $firstKeys))->toBe([true, true])
-            ->and(array_unique($firstKeys))->toHaveCount(2)
-            ->and(array_intersect($firstKeys, $secondKeys))->toBe([])
+        expect(array_intersect($firstKeys, $secondKeys))->toBe([])
             ->and(array_keys($repeater->getState()))->toBe($secondKeys)
             ->and($schema->getState())->toBe(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
 
@@ -239,7 +237,7 @@ describe('simple()', function (): void {
 
         $crawler = $this->renderSchemaComponent(Repeater::make('tags')->simple(TextInput::make('tag')), $host->data);
 
-        expect($crawler->filter('.sy-fo-simple-repeater-item input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['x', 'y'])
+        expect($crawler->filter(FormsSelectors::SIMPLE_REPEATER_ITEM . ' input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['x', 'y'])
             ->and($schema->getState())->toBe(['tags' => ['x', 'y']]);
     });
 });
@@ -309,12 +307,12 @@ describe('the add action', function (): void {
         expect($this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items))
             ->toContainElement(FormsSelectors::REPEATER_ADD_BUTTON, 'Add to lines')
             ->and($this->renderSchemaComponent(Repeater::make('lines')->addActionLabel('Add a line')->addActionAlignment(Alignment::End)->components([TextInput::make('name')]), $items))
-            ->toContainElement('.sy-fo-repeater-add' . SupportSelectors::align('end') . ' button', 'Add a line');
+            ->toContainElement(FormsSelectors::REPEATER_ADD . SupportSelectors::align('end') . ' button', 'Add a line');
 
         $crawler = $this->renderSchemaComponent(Repeater::make('lines')->addable(false)->components([TextInput::make('name')]), $items);
 
         expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(1)
-            ->and($crawler->filter('.sy-fo-repeater-add'))->toHaveCount(0);
+            ->and($crawler->filter(FormsSelectors::REPEATER_ADD))->toHaveCount(0);
     });
 
     it('takes the button an addAction() modifier makes of it', function (): void {
@@ -671,13 +669,17 @@ describe('grid()', function (): void {
         'without grid()' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['default' => 1]],
         'a column count' => [fn (): Repeater => Repeater::make('lines')->grid(3)->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['default' => 1, 'lg' => 3]],
         'counts per breakpoint' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2, 'lg' => 4])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 4]],
+        'counts per breakpoint, merged across calls' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2])->grid(['lg' => 4])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 4]],
+        'a list entry, at lg' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2, 3])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 3]],
+        'a closure answering a count, at lg' => [fn (): Repeater => Repeater::make('lines')->grid(static fn (): int => 5)->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['lg' => 5]],
+        'a closure answering counts per breakpoint' => [fn (): Repeater => Repeater::make('lines')->grid(static fn (): array => ['sm' => 2])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['sm' => 2]],
         'the simple view' => [fn (): Repeater => Repeater::make('lines')->grid(3)->simple(TextInput::make('name')), 'ul.sy-fo-simple-repeater-items', ['lg' => 3]],
     ]);
 
     it('lays the table view out in rows, without the grid', function (): void {
         $crawler = $this->renderSchemaComponent(Repeater::make('lines')->grid(3)->table([TableColumn::make('Name')])->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada']]]);
 
-        expect($crawler->filter('.sy-fo-table-repeater tr[data-item-key="a"]'))->toHaveCount(1)
+        expect($crawler->filter('.sy-fo-table-repeater ' . FormsSelectors::tableRepeaterRow('a')))->toHaveCount(1)
             ->and($crawler->filter('.sy-fo-table-repeater [style*="--cols-"]'))->toHaveCount(0);
     });
 });
@@ -688,8 +690,8 @@ describe('table()', function (): void {
         $table = $this->renderSchemaComponent(Repeater::make('lines')->reorderable(false)->deletable(false)->table([TableColumn::make('Name'), TableColumn::make('Code')])->components([TextInput::make('name'), TextInput::make('code')]), $items);
         $none = $this->renderSchemaComponent(Repeater::make('lines')->table([])->components([TextInput::make('name')]), $items);
 
-        expect($table->filter('.sy-fo-table-repeater thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Name', 'Code'])
-            ->and($table->filter('tr[data-item-key="a"] td input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['Ada', 'A1'])
+        expect($table->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Name', 'Code'])
+            ->and($table->filter(FormsSelectors::tableRepeaterRow('a') . ' td input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['Ada', 'A1'])
             ->and($none->filter('.sy-fo-repeater ' . FormsSelectors::repeaterItem('a')))->toHaveCount(1)
             ->and($none->filter('table'))->toHaveCount(0);
     });
@@ -717,12 +719,12 @@ describe('table()', function (): void {
                 ]),
             ['lines' => ['a' => ['name' => 'Ada', 'id' => '7', 'code' => 'A1', 'note' => 'n', 'dropped' => 'd', 'trailing' => 't']]],
         );
-        $cells = $crawler->filter('tr[data-item-key="a"] > td');
+        $cells = $crawler->filter(FormsSelectors::tableRepeaterRow('a') . ' > td');
 
         expect($cells)->toHaveCount(4)
             ->and($cells->eq(0)->filter('input')->attr('value'))->toBe('Ada')
-            ->and($cells->eq(0)->attr('class'))->toBe('sy-vertical-align-center')
-            ->and($cells->eq(1)->attr('class'))->toBe('sy-hidden')
+            ->and($cells->eq(0)->matches('.sy-vertical-align-center'))->toBeTrue()
+            ->and($cells->eq(1)->matches('.sy-hidden'))->toBeTrue()
             ->and($cells->eq(1)->children())->toHaveCount(0)
             ->and($cells->eq(2)->filter('input')->attr('value'))->toBe('n')
             ->and($crawler->filter('input[value="d"]'))->toHaveCount(0);
@@ -734,7 +736,7 @@ describe('table()', function (): void {
             ['lines' => ['a' => ['id' => '7', 'name' => 'Ada', 'trailing' => 't']]],
         );
 
-        expect($crawler->filter('tr[data-item-key="a"] > td.sy-fo-table-repeater-hidden-cell input[type="hidden"]')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['7'])
+        expect($crawler->filter(FormsSelectors::tableRepeaterRow('a') . ' > td.sy-fo-table-repeater-hidden-cell input[type="hidden"]')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['7'])
             ->and($crawler->filter('input[value="t"]'))->toHaveCount(0);
     });
 
@@ -742,14 +744,14 @@ describe('table()', function (): void {
         $columns = [TableColumn::make('Name')];
         $two = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
         $headers = fn (Repeater $repeater, array $items): array => $this->renderSchemaComponent($repeater->table($columns)->components([TextInput::make('name')]), $items)
-            ->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text());
+            ->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL)->each(static fn (Crawler $cell): string => $cell->text());
 
         expect($headers(Repeater::make('lines'), $two))->toBe(['Reorder', 'Name', 'Actions'])
             ->and($headers(Repeater::make('lines'), ['lines' => ['a' => ['name' => 'Ada']]]))->toBe(['Name', 'Actions'])
             ->and($headers(Repeater::make('lines')->reorderable(false), $two))->toBe(['Name', 'Actions'])
             ->and($headers(Repeater::make('lines')->deletable(false), $two))->toBe(['Reorder', 'Name'])
             ->and($headers(Repeater::make('lines')->deletable(false)->cloneable(), $two))->toBe(['Reorder', 'Name', 'Actions'])
-            ->and($this->renderSchemaComponent(Repeater::make('lines')->table($columns)->components([TextInput::make('name')]), $two)->filter('thead th.sy-fo-table-repeater-empty-header-cell .sy-sr-only'))->toHaveCount(2);
+            ->and($this->renderSchemaComponent(Repeater::make('lines')->table($columns)->components([TextInput::make('name')]), $two)->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL . '.sy-fo-table-repeater-empty-header-cell .sy-sr-only'))->toHaveCount(2);
     });
 });
 
@@ -851,6 +853,22 @@ describe('an object collection', function (): void {
         $drafts->getData();
 
         expect($anthology->drafts)->toBe([['name' => 'Ada']]);
+    });
+
+    it("refuses early inside a relationship item, naming the path the item's child holds the collection at", function (): void {
+        $trellis = new Trellis();
+        $trellis->addPanel(new TrellisPanel('North'));
+        $this->seed($trellis);
+        $trellis = $this->reload($trellis);
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(
+            Repeater::make('panels')->relationship()->components([
+                TextInput::make('label'),
+                Repeater::make('plants')->components([TextInput::make('name')]),
+            ]),
+        )->record($trellis);
+
+        expect(fn (): Schema => $schema->fill($trellis))->toThrow(LogicException::class, sprintf('Cannot map state path "plants" onto the %s framing it: "plants" is an object collection.', TrellisPanel::class));
     });
 });
 

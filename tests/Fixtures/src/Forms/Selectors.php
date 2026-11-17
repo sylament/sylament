@@ -17,6 +17,7 @@ namespace Sylament\Tests\Fixtures\Forms;
  * class the stylesheet lays out or paints each by.
  *
  * A repeater's item in its default and simple views, one by its key, and its add button.
+ * A simple view's item, a table view's row (one by its key) and header cell, and the add row.
  */
 final class Selectors
 {
@@ -57,6 +58,14 @@ final class Selectors
 
     public const string REPEATER_ADD_BUTTON = '.sy-fo-repeater-add button';
 
+    public const string SIMPLE_REPEATER_ITEM = 'li.sy-fo-simple-repeater-item';
+
+    public const string TABLE_REPEATER_ROW = 'tr[data-item-key]';
+
+    public const string TABLE_REPEATER_HEADER_CELL = '.sy-fo-table-repeater thead th';
+
+    public const string REPEATER_ADD = '.sy-fo-repeater-add';
+
     public static function textInputAction(string $method): string
     {
         return "[data-action=\"sylament--forms--text-input#{$method}\"]:not([data-live-action-param])";
@@ -70,5 +79,10 @@ final class Selectors
     public static function repeaterItem(string $key): string
     {
         return "li[data-item-key=\"{$key}\"]";
+    }
+
+    public static function tableRepeaterRow(string $key): string
+    {
+        return "tr[data-item-key=\"{$key}\"]";
     }
 }

@@ -8,6 +8,7 @@ use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Repeater\TableColumn;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Tests\Fixtures\Forms\RepeaterHost;
+use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
@@ -29,8 +30,8 @@ it('renders each extra action in every row of the simple and table views', funct
 
     expect($crawler)->toContainButtons("{$row} " . SupportSelectors::SMALL_ICON_BUTTON . '[aria-label="Inspect"]', ['Inspect', 'Inspect']);
 })->with([
-    'simple' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name')), 'li.sy-fo-simple-repeater-item'],
-    'table' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name')]), 'tr[data-item-key]'],
+    'simple' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name')), FormsSelectors::SIMPLE_REPEATER_ITEM],
+    'table' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name')]), FormsSelectors::TABLE_REPEATER_ROW],
 ]);
 
 describe('an item-bound action', function (): void {

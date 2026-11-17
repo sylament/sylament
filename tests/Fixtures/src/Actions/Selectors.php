@@ -21,6 +21,9 @@ namespace Sylament\Tests\Fixtures\Actions;
  * An action's trigger, by the action name its Stimulus parameters mount, and the parts of
  * the open action modal a test reads: its heading, its description, its icon, its footer
  * actions and the submit among them.
+ *
+ * Selectors for the markup actions render: the open action modal's heading and its
+ * footer's actions, read by the record actions' tests.
  */
 final class Selectors
 {

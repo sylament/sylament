@@ -1,0 +1,7 @@
+<div {{ attributes }}>
+    {% for name in ['linkedCreate', 'linkedForced', 'linkedArticle', 'linkedEdit'] %}
+        {{ renderComponent(this.getAction(name)) }}
+    {% endfor %}
+
+    <twig:SylamentActions:Modals />
+</div>

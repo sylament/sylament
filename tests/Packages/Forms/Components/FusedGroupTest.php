@@ -87,7 +87,8 @@ describe('slots', function (): void {
             ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Above content')
             ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Below content')
             ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')', 'Before content')
-            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN . ' ' . Selectors::FIELD_WRAPPER . ' label.sy-sr-only[for="schema.code"]', 'Code')
+            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN, 'Code')
+            ->toContainElement(Selectors::FIELD_WRAPPER . ' label.sy-sr-only[for="schema.code"]', 'Code')
             ->toContainElement(Selectors::FIELD_WRAPPER . ' input[name="code"]')
             ->and($render->filter(Selectors::LABEL_COLUMN))->toHaveCount(0);
     });

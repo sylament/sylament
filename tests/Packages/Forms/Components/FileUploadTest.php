@@ -267,7 +267,7 @@ describe('image editor', function (): void {
         $editor = $crawler->filter(Selectors::FILE_UPLOAD_EDITOR);
 
         expect($editor->filter('input[type="text"]')->each(static fn ($input): ?string => $input->attr('aria-label')))->toBe(['X', 'Y', 'Width', 'Height', 'Rotation'])
-            ->and($editor)->toContainButtons('.sy-btn-group button', [
+            ->and($editor)->toContainButtons(SupportSelectors::BUTTON_GROUP . ' button', [
                 'Drag mode "move"', 'Drag mode "crop"', 'Zoom in', 'Zoom out', 'Zoom image to 100%',
                 'Move image to left', 'Move image to right', 'Move image up', 'Move image down',
                 'Rotate image to left', 'Rotate image to right', 'Flip image horizontally', 'Flip image vertically',

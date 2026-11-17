@@ -10,7 +10,7 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
  * The markup forms' templates give a test to find: the field wrapper's root by the `data-` hook
  * a validation error scrolls to, and its label and content columns, label row, hidden label,
  * the label it renders as a heading for a control that is no labelable element, required mark
- * and error messages; a fused group's root; a toggle's control root and track; a toggle-buttons
+ * and error messages; the control a text field renders; a fused group's root; a toggle's control root and track; a toggle-buttons
  * option's button label, which must follow its input; a repeater's item in its default and simple
  * views, a table view's row and header cell, and the add row and its button; a select's
  * `<select>`, the same element carrying the JS control's Stimulus controller, the one with no
@@ -40,6 +40,8 @@ final class Selectors
     public const string HIDDEN_LABEL = 'label' . SupportSelectors::SCREEN_READER_ONLY;
 
     public const string ERROR_MESSAGE = '[data-validation-error] .sy-fo-field-error-message';
+
+    public const string INPUT = '.sy-fo-input';
 
     public const string FUSED_GROUP = '.sy-fo-fused-group';
 

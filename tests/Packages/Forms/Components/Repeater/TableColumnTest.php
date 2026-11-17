@@ -39,6 +39,6 @@ it("puts a column's alignment, width and header wrapping on its header cell", fu
     );
     $headers = $crawler->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL);
 
-    expect($headers->eq(0)->matches(SupportSelectors::align('end') . '.sy-wrapped[style="width: 10rem"]'))->toBeTrue()
-        ->and($headers->eq(1)->matches(SupportSelectors::NO_ALIGN . ':not(.sy-wrapped):not([style])'))->toBeTrue();
+    expect($headers->eq(0)->matches(SupportSelectors::align('end') . SupportSelectors::WRAPPED . '[style="width: 10rem"]'))->toBeTrue()
+        ->and($headers->eq(1)->matches(SupportSelectors::NO_ALIGN . ':not(' . SupportSelectors::WRAPPED . '):not([style])'))->toBeTrue();
 });

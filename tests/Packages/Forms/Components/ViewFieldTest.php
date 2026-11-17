@@ -16,7 +16,7 @@ it('renders the template it is given, with the data it is given', function (): v
 
 it('gives the template the field as component', function (): void {
     expect($this->createLiveComponent(ViewFieldForm::class, ['data' => ['bio' => 'Hello']])->render()->crawler())
-        ->toContainElement('input.sy-fo-input[id="form.bio"][value="Hello"]' . SchemasSelectors::boundTo('data.bio'));
+        ->toContainElement('input' . Selectors::INPUT . '[id="form.bio"][value="Hello"]' . SchemasSelectors::boundTo('data.bio'));
 });
 
 it('renders only what its template renders', function (): void {
@@ -27,7 +27,7 @@ it('renders only what its template renders', function (): void {
         ->toContainElement(Selectors::FIELD_WRAPPER . ' label[for="schema.bio"]', 'Bio')
         ->toContainElement(Selectors::FIELD_WRAPPER . ' ' . SchemasSelectors::TEXT, 'A line or two.')
         ->and($unwrapped)
-        ->toContainElement('input.sy-fo-input[id="schema.bio"]:not([data-model])')
+        ->toContainElement('input' . Selectors::INPUT . '[id="schema.bio"]:not([data-model])')
         ->and($unwrapped->filter(Selectors::FIELD_WRAPPER . ', label, ' . SchemasSelectors::TEXT))->toHaveCount(0);
 });
 

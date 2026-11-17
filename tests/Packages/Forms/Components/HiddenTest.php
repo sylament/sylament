@@ -6,6 +6,7 @@ use Sylament\Forms\Components\Hidden;
 use Sylament\Tests\Fixtures\Forms\HiddenStateForm;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('renders a single hidden input bound to its state, carrying its id and no name', function (): void {
     $render = $this->renderSchemaComponent(Hidden::make('token'));
@@ -16,7 +17,7 @@ it('renders a single hidden input bound to its state, carrying its id and no nam
 
 it('collapses the schema slot it sits in', function (): void {
     expect($this->renderSchemaComponent(Hidden::make('token')))
-        ->toContainElement('.sy-grid-col.sy-hidden input[type="hidden"]');
+        ->toContainElement('.sy-grid-col' . SupportSelectors::HIDDEN . ' input[type="hidden"]');
 });
 
 it('renders no field wrapper, whatever label, helper text or hint it is given', function (): void {

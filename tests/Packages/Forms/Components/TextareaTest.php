@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 use Sylament\Forms\Components\Textarea;
 use Sylament\Schemas\Components\Section;
+use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Forms\TextareaForm;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 describe('rendering', function (): void {
     it('renders its state as the text of its control', function (): void {
         expect($this->createLiveComponent(TextareaForm::class, ['data' => ['plain' => 'Hello']])->render()->crawler())
-            ->toContainElement('.sy-fo-textarea textarea.sy-fo-input[name="plain"]', 'Hello');
+            ->toContainElement('.sy-fo-textarea textarea' . Selectors::INPUT . '[name="plain"]', 'Hello');
     });
 
     it('renders its placeholder, disabled and autofocus marks on its control, its wrapper greyed out while disabled', function (): void {
         expect($this->renderSchemaComponent(Textarea::make('notes')->placeholder('Your notes')->disabled()->autofocus()))
-            ->toContainElement('.sy-fo-textarea' . SupportSelectors::DISABLED . ' textarea.sy-fo-input[name="notes"][placeholder="Your notes"][disabled][autofocus]');
+            ->toContainElement('.sy-fo-textarea' . SupportSelectors::DISABLED . ' textarea' . Selectors::INPUT . '[name="notes"][placeholder="Your notes"][disabled][autofocus]');
     });
 
     it('renders its length bounds on its control', function (): void {
@@ -36,7 +37,7 @@ describe('sizing', function (): void {
 describe('autosize', function (): void {
     it('wraps its control in a sizer its controller grows, as tall as its rows to begin with', function (Closure $field, string $height): void {
         expect($this->renderSchemaComponent($field()))
-            ->toContainElement(".sy-fo-textarea.sy-autosizable .sy-fo-textarea-sizer[style=\"height: {$height}rem\"][data-controller=\"sylament--forms--textarea\"][data-sylament--forms--textarea-initial-height-value=\"{$height}\"] textarea.sy-fo-input[name=\"notes\"][data-sylament--forms--textarea-target=\"textarea\"][data-action=\"input->sylament--forms--textarea#resize\"]");
+            ->toContainElement(".sy-fo-textarea.sy-autosizable .sy-fo-textarea-sizer[style=\"height: {$height}rem\"][data-controller=\"sylament--forms--textarea\"][data-sylament--forms--textarea-initial-height-value=\"{$height}\"] textarea" . Selectors::INPUT . '[name="notes"][data-sylament--forms--textarea-target="textarea"][data-action="input->sylament--forms--textarea#resize"]');
     })->with([
         'four rows' => [fn (): Textarea => Textarea::make('notes')->rows(4)->autosize(), '6.75'],
         'no rows' => [fn (): Textarea => Textarea::make('notes')->autosize(), '3.75'],
@@ -46,7 +47,7 @@ describe('autosize', function (): void {
         $render = $this->renderSchemaComponent(Textarea::make('notes'));
 
         expect($render)
-            ->toContainElement('.sy-fo-textarea:not(.sy-autosizable) textarea.sy-fo-input[name="notes"]:not([data-action])')
+            ->toContainElement('.sy-fo-textarea:not(.sy-autosizable) textarea' . Selectors::INPUT . '[name="notes"]:not([data-action])')
             ->not->toContainElement('.sy-fo-textarea-sizer')
             ->not->toContainElement('[data-controller="sylament--forms--textarea"]');
     });

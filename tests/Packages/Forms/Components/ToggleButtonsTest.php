@@ -104,7 +104,7 @@ describe('layout', function (): void {
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->columns(3)->gridDirection(GridDirection::Row)))
             ->toContainElement('.sy-fo-toggle-buttons:not(' . SupportSelectors::GRID_DIRECTION_COLUMN . ')' . SupportSelectors::columns('lg', 3))
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->inline()))
-            ->toContainElement('.sy-fo-toggle-buttons' . SchemasSelectors::INLINE . ':not(.sy-grid):not([style])');
+            ->toContainElement('.sy-fo-toggle-buttons' . SchemasSelectors::INLINE . ':not(' . SupportSelectors::GRID . '):not([style])');
     });
 });
 
@@ -118,7 +118,7 @@ describe('grouped', function (): void {
 
         $render = $this->renderSchemaComponent($field);
 
-        expect($render->filter('.sy-fo-toggle-buttons.sy-btn-group > label.sy-btn.sy-btn-group-btn'))->toHaveCount(2)
+        expect($render->filter('.sy-fo-toggle-buttons' . SupportSelectors::BUTTON_GROUP . ' > label.sy-btn.sy-btn-group-btn'))->toHaveCount(2)
             ->and($render->filter('.sy-fo-toggle-buttons-btn-ctn'))->toHaveCount(0)
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])))
             ->toContainElement('.sy-fo-toggle-buttons-btn-ctn ' . Selectors::TOGGLE_BUTTONS_OPTION, 'Low');
@@ -127,7 +127,7 @@ describe('grouped', function (): void {
     it('picks its template by an explicit setting, then a default setting, then its grouping', function (): void {
         expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->grouped()->defaultTemplate('@Fixtures/forms/ToggleButtonsMarker.html.twig')))
             ->toContainElement('.toggle-buttons-marker', 'Marked level')
-            ->not->toContainElement('.sy-btn-group')
+            ->not->toContainElement(SupportSelectors::BUTTON_GROUP)
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->grouped()->defaultTemplate('@Fixtures/forms/ToggleButtonsMarker.html.twig')->template(ToggleButtons::TEMPLATE)))
             ->toContainElement('.sy-fo-toggle-buttons-btn-ctn ' . Selectors::TOGGLE_BUTTONS_OPTION, 'Low')
             ->not->toContainElement('.toggle-buttons-marker');
@@ -140,7 +140,7 @@ describe('grouped', function (): void {
         expect($default->filter('input[autofocus]')->each(static fn (Crawler $input): ?string => $input->attr('value')))->toBe(['low'])
             ->and($default)->toContainElement('.sy-fo-toggle-buttons' . SchemasSelectors::INLINE)
             ->and($grouped->filter('input.sy-fo-toggle-buttons-input:not([autofocus])'))->toHaveCount(2)
-            ->and($grouped)->toContainElement('.sy-fo-toggle-buttons.sy-btn-group:not(' . SchemasSelectors::INLINE . ')');
+            ->and($grouped)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::BUTTON_GROUP . ':not(' . SchemasSelectors::INLINE . ')');
     });
 });
 

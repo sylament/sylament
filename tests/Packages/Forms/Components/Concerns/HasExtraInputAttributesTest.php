@@ -22,7 +22,7 @@ describe('extraInputAttributes()', function (): void {
 
     it('lets its attributes win over those the field computes, its classes appending, while the controller keeps its target', function (): void {
         expect($this->renderSchemaComponent(TextInput::make('amount')->numeric()->disabled()->extraInputAttributes(['inputmode' => 'email', 'disabled' => false, 'class' => 'wide'])))
-            ->toContainElement('input.sy-fo-input.wide[name="amount"][inputmode="email"]:not([disabled])')
+            ->toContainElement('input' . Selectors::INPUT . '.wide[name="amount"][inputmode="email"]:not([disabled])')
             ->and($this->renderSchemaComponent(TextInput::make('code')->copyable()->extraInputAttributes(['data-sylament--forms--text-input-target' => 'other'])))
             ->toContainElement('input[name="code"]' . Selectors::TEXT_INPUT_TARGET);
     });

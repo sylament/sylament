@@ -579,8 +579,8 @@ describe('collapsing', function (): void {
         $one = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada']]]);
         $two = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
 
-        expect($two)->toContainButtons('.sy-fo-repeater-actions:not(.sy-hidden) button', ['Collapse all', 'Expand all'])
-            ->and($one->filter('.sy-fo-repeater-actions.sy-hidden button'))->toHaveCount(2);
+        expect($two)->toContainButtons('.sy-fo-repeater-actions:not(' . SupportSelectors::HIDDEN . ') button', ['Collapse all', 'Expand all'])
+            ->and($one->filter('.sy-fo-repeater-actions' . SupportSelectors::HIDDEN . ' button'))->toHaveCount(2);
     });
 
     it('marks a compact table view', function (): void {
@@ -683,7 +683,7 @@ describe('grid()', function (): void {
         $crawler = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
 
         foreach ($columns as $breakpoint => $count) {
-            expect($crawler)->toContainElement($list . '.sy-grid' . SupportSelectors::columns($breakpoint, $count));
+            expect($crawler)->toContainElement($list . SupportSelectors::GRID . SupportSelectors::columns($breakpoint, $count));
         }
     })->with([
         'without grid()' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['default' => 1]],
@@ -743,7 +743,7 @@ describe('table()', function (): void {
         expect($cells)->toHaveCount(4)
             ->and($cells->eq(0)->filter('input')->attr('value'))->toBe('Ada')
             ->and($cells->eq(0)->matches('.sy-vertical-align-center'))->toBeTrue()
-            ->and($cells->eq(1)->matches('.sy-hidden'))->toBeTrue()
+            ->and($cells->eq(1)->matches(SupportSelectors::HIDDEN))->toBeTrue()
             ->and($cells->eq(1)->children())->toHaveCount(0)
             ->and($cells->eq(2)->filter('input')->attr('value'))->toBe('n')
             ->and($crawler->filter('input[value="d"]'))->toHaveCount(0);

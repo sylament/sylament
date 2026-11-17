@@ -6,7 +6,9 @@ use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
 use Sylament\Tests\Fixtures\Actions\ToolbarHost;
+use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Tables\ProductTable;
 
 it('fails asserting that an action exists when its last level is missing, though its parent resolves', function (): void {
     $actions = [TestAction::make('clear')->schemaComponent('code'), TestAction::make('nope')->schemaComponent('code', schema: 'form')];
@@ -73,6 +75,20 @@ it('compares the mounted arguments only when the assertion names some', function
         ->toThrow(AssertionFailedError::class, 'Failed asserting that the mounted arguments for the action [rename] match the expected arguments.');
 });
 
+it('compares the mounted context with the one the assertion names', function (): void {
+    $this->seed($mounted = new Product('Lamp'), $other = new Product('Vase'));
+
+    $tester = $this->createLiveComponent(ProductTable::class)
+        ->mountAction(TestAction::make('delete')->table($mounted))
+        ->assertActionMounted(TestAction::make('delete')->table($mounted))
+        ->assertActionNotMounted(TestAction::make('delete')->table($other));
+
+    expect(fn () => $tester->assertActionMounted(TestAction::make('delete')->table($other)))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that the action [delete] is mounted in the expected context.')
+        ->and(fn () => $tester->assertActionNotMounted(TestAction::make('delete')->table($mounted)))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that the action is not mounted.');
+});
+
 it('fails asserting that no action is mounted until the mounted one is unmounted', function (): void {
     $tester = $this->createLiveComponent(MountedActionsHost::class)->mountAction('rename');
 
@@ -83,8 +99,10 @@ it('fails asserting that no action is mounted until the mounted one is unmounted
 
 it('fails asserting that the mounted action is not mounted', function (): void {
     $tester = $this->createLiveComponent(MountedActionsHost::class)
-        ->mountAction('rename')
-        ->assertActionNotMounted('hold');
+        ->mountAction('rename', ['tone' => 'loud'])
+        ->assertActionNotMounted('hold')
+        ->assertActionNotMounted(TestAction::make('rename')->arguments(['tone' => 'soft']))
+        ->assertActionNotMounted(TestAction::make('rename')->arguments(fn (array $arguments): bool => $arguments === []));
 
     expect(fn () => $tester->assertActionNotMounted('rename'))
         ->toThrow(AssertionFailedError::class, 'Failed asserting that the action is not mounted.');

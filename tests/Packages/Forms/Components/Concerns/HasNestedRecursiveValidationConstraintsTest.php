@@ -31,7 +31,7 @@ it("checks every element of the field's list against its nested constraints, a l
 
     $this->host->data = ['codes' => ['ab']];
 
-    expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+    expect($this->host->validateSchema($schema))->toBeNull();
 });
 
 it('checks nothing nested over a value that is no list, leaving the type refusal alone', function (): void {

@@ -107,7 +107,7 @@ describe('isRequiredByRecord()', function (): void {
         expect($this->host->getErrorsForSchemaStatePath($path))->toBe($requires ? ['This value should not be blank.'] : []);
     })->with([
         'a non-nullable property' => [fn (): TextInput => TextInput::make('name'), Product::class, 'data.name', true],
-        'a non-nullable property under a section framing its own class' => [fn (): Section => Section::make()->statePath('mooring')->record(BerthMooring::class)->components([TextInput::make('label')]), Berth::class, 'data.mooring.label', true],
+        'a non-nullable property of the class a section frames, read at the path inside that frame' => [fn (): Section => Section::make()->statePath('mooring')->record(BerthMooring::class)->components([TextInput::make('label')]), Product::class, 'data.mooring.label', true],
         'a non-nullable property the field leaves undehydrated' => [fn (): TextInput => TextInput::make('name')->dehydrated(false), Product::class, 'data.name', true],
         'a nullable property' => [fn (): TextInput => TextInput::make('title'), CappedHeadline::class, 'data.title', false],
         'a path the record does not declare' => [fn (): TextInput => TextInput::make('nickname'), Product::class, 'data.nickname', false],
@@ -351,7 +351,7 @@ describe('regex()', function (): void {
 
         $this->host->data['code'] = 'b1';
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
     });
 
     it('refuses a value notRegex() matches, with a message of its own', function (): void {
@@ -431,7 +431,7 @@ describe('startsWith()', function (): void {
 
         $this->host->data = ['code' => 'x1', 'site' => 'x.com', 'slug' => 'xab', 'host' => 'x.net', 'tag' => ' cd1'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
     });
 });
 
@@ -514,7 +514,7 @@ describe('value comparison', function (): void {
 
         $this->host->data = ['password' => 's3cret', 'passwordConfirmation' => 's3cret', 'echo' => 's3cret', 'hint' => 'a hint'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
     });
 
     it('confirms against the component at its own path suffixed _confirmation, by its plain-text label, or by that path humanised when no component holds it', function (): void {
@@ -555,7 +555,7 @@ describe('cross-field arms', function (): void {
         $this->host->data['again'] = 's3cret';
         $this->host->data['bound'] = '4';
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
     });
 
     it('builds no cross-field constraint for a field no live host holds', function (): void {
@@ -674,7 +674,7 @@ describe('conditional requirement', function (): void {
 
         $this->host->data = ['code' => '', 'coupon' => 'x', 'voucher' => 'x', 'plan' => 'free'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
     });
 
     it('puts a prohibits() violation on its own field, naming each filled sibling it rules out', function (): void {
@@ -693,7 +693,7 @@ describe('conditional requirement', function (): void {
 
         $this->host->data = ['email' => 'ada@example.com', 'phone' => '', 'fax' => ''];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
     });
 });
 
@@ -732,7 +732,7 @@ describe('distinct()', function (): void {
 
         $this->host->data = ['items' => ['x' => ['primary' => true], 'y' => ['primary' => false]]];
 
-        expect(fn () => $this->host->validateSchema($optional))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($optional))->toBeNull();
 
         $required = $this->host->mapping(Repeater::make('items')->components([Toggle::make('primary')->required()->distinct()]));
         $this->host->data = ['items' => ['x' => ['primary' => false], 'y' => ['primary' => false]]];
@@ -752,7 +752,7 @@ describe('unique()', function (): void {
         $schema = $this->host->mapping(TextInput::make('name')->unique())->record($this->reload($lamp));
         $this->host->data = ['name' => 'Lamp'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
 
         $this->host->data = ['name' => 'Desk'];
 
@@ -796,25 +796,27 @@ describe('unique()', function (): void {
 
     it('excludes the record ignorable: names, evaluating a closure for it', function (Closure $ignorable): void {
         $this->seed($lamp = new Product('Lamp'));
-        $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Product::class, ignorable: $ignorable($this->reload($lamp))));
-        $this->host->data = ['name' => 'Lamp'];
+        $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Product::class, ignorable: $ignorable($this->reload($lamp))), TextInput::make('title')->unique(entity: Product::class, property: 'name'));
+        $this->host->data = ['name' => 'Lamp', 'title' => 'Lamp'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.title' => ['This value is already taken.']]);
+        });
     })->with([
-        'a record' => [fn (): Closure => static fn (Product $lamp): Product => $lamp],
-        'a closure returning it' => [fn (): Closure => static fn (Product $lamp): Closure => static fn (): Product => $lamp],
+        'a record' => [static fn (Product $lamp): Product => $lamp],
+        'a closure returning it' => [static fn (Product $lamp): Closure => static fn (): Product => $lamp],
     ]);
 
     it('narrows the probe through modifyQueryUsing, handing it the query builder with the closure injection a field keeps', function (): void {
         $this->seed(new Product('Lamp'));
-        $schema = $this->host->mapping(TextInput::make('name')->unique(
-            entity: Product::class,
-            modifyQueryUsing: static fn (QueryBuilder $query, TextInput $component): QueryBuilder => $query->andWhere('record.name <> :spared')->setParameter('spared', $component->getName() === 'name' ? 'Lamp' : ''),
-        ));
-        $this->host->data = ['name' => 'Lamp'];
+        $narrowed = static fn (QueryBuilder $query, TextInput $component): QueryBuilder => $query->andWhere('record.name <> :spared')->setParameter('spared', $component->getName() === 'name' ? 'Lamp' : '');
+        $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Product::class, modifyQueryUsing: $narrowed), TextInput::make('title')->unique(entity: Product::class, property: 'name', modifyQueryUsing: $narrowed));
+        $this->host->data = ['name' => 'Lamp', 'title' => 'Lamp'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class)
-            ->and($this->statementsRun())->toHaveCount(1);
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.title' => ['This value is already taken.']]);
+        })
+            ->and($this->statementsRun())->toHaveCount(2);
     });
 
     it("excludes whatever row of another probed class carries the bound record's key", function (): void {
@@ -822,7 +824,7 @@ describe('unique()', function (): void {
         $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Article::class, property: 'title'))->record($this->reload($lamp));
         $this->host->data = ['name' => 'Lamp'];
 
-        expect(fn () => $this->host->validateSchema($schema))->not->toThrow(ValidationException::class);
+        expect($this->host->validateSchema($schema))->toBeNull();
 
         $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Article::class, property: 'title', ignoreRecord: false))->record($this->reload($lamp));
 

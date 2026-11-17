@@ -245,6 +245,18 @@ describe('a schema context', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['count: [{"extra":true},[]]']);
     });
 
+    it('drops a deeper frame whose schema context names a schema the host builds on demand, leaving its parent mounted', function (): void {
+        $tester = $this->createLiveComponent(SchemaModalHost::class)->mountAction(TestAction::make('peek')->schemaComponent(schema: 'sidebar'));
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['peek']);
+
+        $tester->mountAction('edit')
+            ->call('mountAction', ['name' => 'peek', 'context' => ['schemaComponent' => 'sidebar']])
+            ->assertActionMounted('edit');
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+    });
+
     it('throws when an action of a modal schema asks for $set, which no component of a root schema answers', function (): void {
         $tester = $this->createLiveComponent(SchemaModalHost::class)->mountAction('edit');
 

@@ -428,7 +428,7 @@ trait HasActions
 
         $cached = $this->cacheMountedActions(array_slice($this->mountedActions, 0, $actionNestingIndex + 1));
 
-        return $cached === [] ? null : array_last($cached);
+        return $cached[$actionNestingIndex] ?? null;
     }
 
     /**

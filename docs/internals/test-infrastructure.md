@@ -157,7 +157,7 @@ The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastr
 | `RecordingMiddleware` (with `RecordingDriver`, `RecordingConnection`, `RecordingStatement`) | Records every statement's SQL for a per-package suite's hand-built manager, so a test can assert what a read costs. `withoutRecording()` suspends it. The root suite counts through DoctrineBundle's profiling instead (above). |
 | `SqlNormalizer` | Renumbers Doctrine's minted aliases (`s0_` → `a0_`, `t0` → `p0`, result aliases by stem), so a pinned statement survives a Doctrine release that renumbers them. |
 | `DriverValues` | Canonicalises driver values: MySQL and PostgreSQL return `SUM` and `AVG` as decimal strings where SQLite returns numbers. |
-| `FailingWrite` | Makes the (n+1)-th delete from an entity's table fail on every platform, through a counter and a trigger, so a test can watch a transaction roll back. |
+| `FailingWrite` | Makes the (n+1)-th row deleted from an entity's table or a many-to-many's join table, or updated in an entity's table, fail on every platform, through a counter and a trigger, so a test can watch a transaction roll back; a join table has no entity class to name, so it is reached through its owner and association, and an update counts in a table of its own. |
 
 Each Doctrine suite's `tests/Fixtures/Doctrine/EntityManagerFactory` is a thin shim over `TestEntityManagers`: its entity path, its custom types and a `seed()` helper. **tables** also passes a configuration callback that turns on an in-memory second-level cache, which caches only entities marked `#[ORM\Cache]`.
 

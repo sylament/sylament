@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Actions\Action;
 use Sylament\Actions\Testing\TestAction;
+use Sylament\Forms\Components\DateTimePicker;
 use Sylament\Forms\Components\Hidden;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Repeater\TableColumn;
@@ -16,6 +17,17 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\VerticalAlignment;
+use Sylament\Tests\Fixtures\Entity\Atelier;
+use Sylament\Tests\Fixtures\Entity\AtelierLease;
+use Sylament\Tests\Fixtures\Entity\BenchPot;
+use Sylament\Tests\Fixtures\Entity\JarSeal;
+use Sylament\Tests\Fixtures\Entity\Larder;
+use Sylament\Tests\Fixtures\Entity\LarderBin;
+use Sylament\Tests\Fixtures\Entity\LarderBinNote;
+use Sylament\Tests\Fixtures\Entity\LarderCrock;
+use Sylament\Tests\Fixtures\Entity\LarderJar;
+use Sylament\Tests\Fixtures\Entity\NurseryBench;
+use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Trellis;
 use Sylament\Tests\Fixtures\Entity\TrellisPanel;
 use Sylament\Tests\Fixtures\Entity\VettedBinder;
@@ -1045,5 +1057,535 @@ describe('relationship() decoration and hooks', function (): void {
 
         expect(array_map(static fn (VettedBinderSheet $sheet): array => [$sheet->heading, $sheet->status], array_values($this->binder->sheets->toArray())))
             ->toBe([['One', 'Hooked Filed'], ['Two', 'Hooked Draft']]);
+    });
+});
+
+describe('relationship()', function (): void {
+    it('fills one item per child, keyed by its record key, and saves the diff for the one flush that commits it', function (Closure $owner, string $collection, string $ownerProperty, array $keys, string $removed, string $kept, array $keptItem, array $addedItem, array $rows): void {
+        $owner = $owner();
+        $this->seed($owner);
+        $owner = $this->reload($owner);
+        $fields = array_keys($addedItem);
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Repeater::make($collection)->relationship()->components(array_map(TextInput::make(...), $fields)))->record($owner)->fill($owner);
+        $childClass = $owner->{$collection}->first()::class;
+        $keptChild = array_find($owner->{$collection}->toArray(), static fn (object $child): bool => array_all($fields, static fn (string $field): bool => $child->{$field} === $host->data[$collection][$kept][$field]));
+
+        expect(array_keys($host->data[$collection]))->toEqualCanonicalizing($keys);
+
+        unset($host->data[$collection][$removed]);
+        $host->data[$collection][$kept] = $keptItem;
+        $host->data[$collection]['added'] = $addedItem;
+        $statements = count($this->statementsRun());
+        $schema->getData();
+
+        $added = array_find($owner->{$collection}->toArray(), static fn (object $child): bool => $child !== $keptChild);
+
+        expect(array_filter(array_slice($this->statementsRun(), $statements), static fn (string $statement): bool => preg_match('/^(INSERT|UPDATE|DELETE)\b/', $statement) === 1))->toBe([])
+            ->and($owner->{$collection})->toHaveCount(2)
+            ->and($owner->{$collection}->contains($keptChild))->toBeTrue()
+            ->and($added?->{$ownerProperty})->toBe($owner);
+
+        $this->entityManager()->flush();
+        $this->entityManager()->clear();
+
+        $stored = array_map(static fn (object $child): array => array_map(static fn (string $field): mixed => $child->{$field}, $fields), $this->reload($owner)->{$collection}->toArray());
+        sort($stored);
+
+        expect($stored)->toBe($rows)
+            ->and($this->entityManager()->getRepository($childClass)->count([]))->toBe(2);
+    })->with([
+        'a key of two scalars' => [
+            function (): NurseryBench {
+                $bench = new NurseryBench();
+                $bench->addPot(new BenchPot(bay: 'north', slot: '1', plant: 'basil'));
+                $bench->addPot(new BenchPot(bay: 'south', slot: '2', plant: 'thyme'));
+
+                return $bench;
+            },
+            'pots',
+            'bench',
+            ['record-north~1', 'record-south~2'],
+            'record-south~2',
+            'record-north~1',
+            ['bay' => 'north', 'slot' => '1', 'plant' => 'mint'],
+            ['bay' => 'east', 'slot' => '3', 'plant' => 'sage'],
+            [['east', '3', 'sage'], ['north', '1', 'mint']],
+        ],
+        'a key of an association and a scalar' => [
+            function (): Larder {
+                $larder = new Larder('Cellar');
+                $larder->addCrock(new LarderCrock(shelf: 'top', label: 'Plums'));
+                $larder->addCrock(new LarderCrock(shelf: 'low', label: 'Figs'));
+
+                return $larder;
+            },
+            'crocks',
+            'larder',
+            ['record-1~top', 'record-1~low'],
+            'record-1~low',
+            'record-1~top',
+            ['shelf' => 'top', 'label' => 'Damsons'],
+            ['shelf' => 'mid', 'label' => 'Pears'],
+            [['mid', 'Pears'], ['top', 'Damsons']],
+        ],
+    ]);
+
+    it('keys an added item by its new identifier once the host reloads, so the next save writes nothing', function (Closure $owner, string $collection, array $addedItem, array $keys): void {
+        $owner = $owner();
+        $this->seed($owner);
+        $owner = $this->reload($owner);
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Repeater::make($collection)->relationship()->components(array_map(TextInput::make(...), array_keys($addedItem))))->record($owner)->fill($owner);
+        $host->data[$collection]['added'] = $addedItem;
+        $schema->getData();
+        $this->entityManager()->flush();
+
+        expect(array_keys($host->data[$collection]))->toContain('added');
+
+        $schema->loadStateFromRelationships();
+        $statements = count($this->statementsRun());
+        $schema->getData();
+        $this->entityManager()->flush();
+
+        expect(array_keys($host->data[$collection]))->toEqualCanonicalizing($keys)
+            ->and(array_slice($this->statementsRun(), $statements))->toBe([]);
+    })->with([
+        'a generated id' => [
+            function (): VettedBinder {
+                $binder = new VettedBinder();
+                $binder->addSheet(new VettedBinderSheet('One'));
+
+                return $binder;
+            },
+            'sheets',
+            ['heading' => 'Two'],
+            ['record-1', 'record-2'],
+        ],
+        'an assigned key of two scalars' => [
+            function (): NurseryBench {
+                $bench = new NurseryBench();
+                $bench->addPot(new BenchPot(bay: 'north', slot: '1', plant: 'basil'));
+
+                return $bench;
+            },
+            'pots',
+            ['bay' => 'south', 'slot' => '2', 'plant' => 'thyme'],
+            ['record-north~1', 'record-south~2'],
+        ],
+    ]);
+
+    it("saves a new item on a blank single assigned key, which the host's reload then refuses to key", function (): void {
+        $larder = new Larder('Cellar');
+        $larder->addBin(new LarderBin('dry'));
+        $this->seed($larder);
+        $larder = $this->reload($larder);
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Repeater::make('bins')->relationship()->components([
+            Repeater::make('notes')->relationship()->components([TextInput::make('text')]),
+        ]))->record($larder)->fill($larder);
+        $host->data['bins']['added'] = ['notes' => []];
+        $schema->getData();
+        $this->entityManager()->flush();
+
+        expect($this->entityManager()->getRepository(LarderBin::class)->count(['code' => '']))->toBe(1)
+            ->and(fn (): Schema => $schema->loadStateFromRelationships())->toThrow(LogicException::class, sprintf('The identifier of [%s] is not a printable value. It holds code "".', LarderBin::class));
+    });
+
+    it("reads the association it names, and refuses a name that resolves to none in a field's words", function (): void {
+        $binder = new VettedBinder();
+        $binder->addSheet(new VettedBinderSheet('One'));
+        $this->seed($binder);
+        $binder = $this->reload($binder);
+        $host = new RecordMappingHost();
+
+        $host->mapping(Repeater::make('folios')->relationship('sheets')->components([TextInput::make('heading')]))->record($binder)->fill($binder);
+
+        expect($host->data['folios'])->toBe(['record-1' => ['heading' => 'One']]);
+
+        $schema = $host->mapping(Repeater::make('sheets')->relationship(static fn (): ?string => null)->components([TextInput::make('heading')]))->record($binder);
+
+        expect(fn (): Schema => $schema->fill($binder))->toThrow(LogicException::class, 'The [sheets] field was asked for its relationship, but relationship() named none and the field carries no name to fall back on.');
+    });
+
+    it('refuses an association it cannot repeat over as it fills, naming what to map instead', function (string $association, string $message): void {
+        $atelier = new Atelier('North');
+        $schema = new RecordMappingHost()->mapping(Repeater::make($association)->relationship()->components([TextInput::make('name')]))->record($atelier);
+
+        expect(fn (): Schema => $schema->fill($atelier))->toThrow(LogicException::class, $message);
+    })->with([
+        'a to-one association' => ['lease', sprintf('The [lease] repeater declares relationship("lease"), but that association holds a single %s rather than a collection, so there is nothing to repeat. Use a Select for a to-one association.', AtelierLease::class)],
+        'a collection not mapped orphanRemoval' => ['apprentices', 'The [apprentices] repeater declares relationship("apprentices"), but that association is not mapped orphanRemoval, so an item the user deletes would only be detached and would survive the flush. Map the association orphanRemoval: true — a repeater edits records the parent owns — or drop relationship() and diff the collection by hand after getData().'],
+    ]);
+
+    it('refuses simple() and itemsAs() beside it in either order, and a query scope', function (): void {
+        expect(fn (): Repeater => Repeater::make('sheets')->relationship()->simple(TextInput::make('heading')))
+            ->toThrow(LogicException::class, "simple() cannot compose with relationship(): a related record is mapped by the item schema's own fields, which the simple pluck would reduce to one scalar. Declare that one field with components() instead.")
+            ->and(fn (): Repeater => Repeater::make('sheets')->simple(TextInput::make('heading'))->relationship())
+            ->toThrow(LogicException::class, "relationship() cannot compose with simple(): a related record is mapped by the item schema's own fields, which the simple pluck would reduce to one scalar. Declare that one field with components() instead.")
+            ->and(fn (): Repeater => Repeater::make('sheets')->relationship()->itemsAs(LineItem::class))
+            ->toThrow(LogicException::class, "itemsAs() cannot compose with relationship(): the relationship already constructs each item as the association's target entity, and a freshly built value object would lose its identity. Drop itemsAs().")
+            ->and(fn (): Repeater => Repeater::make('sheets')->itemsAs(LineItem::class)->relationship())
+            ->toThrow(LogicException::class, "relationship() cannot compose with itemsAs(): the relationship already constructs each item as the association's target entity, and a freshly built value object would lose its identity. Drop itemsAs().")
+            ->and(fn (): Repeater => Repeater::make('sheets')->relationship(modifyQueryUsing: static fn (mixed $query): mixed => $query))
+            ->toThrow(LogicException::class, "relationship() was passed a modifyQueryUsing scope, but the items come from the collection the record already holds rather than from a query of their own, so the scope would silently never run. Scope the association itself with Doctrine's #[ORM\\OrderBy] or a filtered collection.");
+    });
+
+    describe('orderColumn()', function (): void {
+        it('stamps each child with its 0-based place in state order after the callbacks, a declined save keeping its old place and a declined create taking none', function (): void {
+            $larder = new Larder('Cellar');
+            $larder->addJar(new LarderJar('Plums', position: 0));
+            $larder->addJar(new LarderJar('Figs', position: 1));
+            $larder->addJar(new LarderJar('Pears', position: 2));
+            $this->seed($larder);
+            $larder = $this->reload($larder);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(
+                Repeater::make('jars')
+                    ->relationship()
+                    ->orderColumn('position')
+                    ->mutateRelationshipDataBeforeCreateUsing(static fn (): ?array => null)
+                    ->mutateRelationshipDataBeforeSaveUsing(static fn (array $state): ?array => ($state['label'] === 'Plums') ? null : [...$state, 'position' => 99])
+                    ->components([TextInput::make('label')]),
+            )->record($larder)->fill($larder);
+            $host->data['jars'] = [
+                'record-3' => $host->data['jars']['record-3'],
+                'added' => ['label' => 'Quinces'],
+                'record-1' => $host->data['jars']['record-1'],
+                'record-2' => $host->data['jars']['record-2'],
+            ];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            expect(array_column(array_map(static fn (LarderJar $jar): array => [$jar->label, $jar->position], $this->reload($larder)->jars->toArray()), 1, 0))
+                ->toEqual(['Pears' => 0, 'Plums' => 0, 'Figs' => 2]);
+        });
+
+        it('turns reordering on only for a column declared after relationship() that resolves to one', function (Closure $repeater, int $handles): void {
+            $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('label')]), ['jars' => ['a' => ['label' => 'Plums'], 'b' => ['label' => 'Figs']]]);
+
+            expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
+                ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[data-sortable-handle]'))->toHaveCount($handles);
+        })->with([
+            'orderColumn() after relationship()' => [fn (): Repeater => Repeater::make('jars')->relationship()->orderColumn('position'), 2],
+            'orderColumn() before relationship()' => [fn (): Repeater => Repeater::make('jars')->orderColumn('position')->relationship(), 0],
+            'a column closure resolving to none' => [fn (): Repeater => Repeater::make('jars')->relationship()->orderColumn(static fn (): ?string => null), 0],
+        ]);
+    });
+
+    describe('the mutate callbacks', function (): void {
+        beforeEach(function (): void {
+            $binder = new VettedBinder();
+            $binder->addSheet(new VettedBinderSheet('One'));
+            $binder->addSheet(new VettedBinderSheet('Two'));
+            $this->seed($binder);
+            $this->binder = $this->reload($binder);
+        });
+
+        it('hands each callback the item as its state, and the save callback the child it names, typed by its class', function (): void {
+            $handed = [];
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(
+                Repeater::make('sheets')
+                    ->relationship()
+                    ->mutateRelationshipDataBeforeFillUsing(static fn (array $state): array => [...$state, 'heading' => mb_strtoupper($state['heading'])])
+                    ->mutateRelationshipDataBeforeCreateUsing(static fn (array $state): array => [...$state, 'status' => 'Added'])
+                    ->mutateRelationshipDataBeforeSaveUsing(static function (array $state, VettedBinderSheet $sheet, object $record) use (&$handed): array {
+                        $handed[] = [$sheet, $record];
+
+                        return [...$state, 'heading' => "{$state['heading']}!"];
+                    })
+                    ->components([TextInput::make('heading'), TextInput::make('status')]),
+            )->record($this->binder)->fill($this->binder);
+
+            expect($host->data['sheets'])->toEqual([
+                'record-1' => ['heading' => 'ONE', 'status' => 'Filed'],
+                'record-2' => ['heading' => 'TWO', 'status' => 'Filed'],
+            ]);
+
+            $one = array_find($this->binder->sheets->toArray(), static fn (VettedBinderSheet $sheet): bool => $sheet->heading === 'One');
+            unset($host->data['sheets']['record-2']);
+            $host->data['sheets']['added'] = ['heading' => 'Three', 'status' => 'Filed'];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            $stored = array_map(static fn (VettedBinderSheet $sheet): array => [$sheet->heading, $sheet->status], $this->reload($this->binder)->sheets->toArray());
+            sort($stored);
+
+            expect($handed)->toBe([[$one, $one]])
+                ->and($stored)->toBe([['ONE!', 'Filed'], ['Three', 'Added']]);
+        });
+
+        it('declines an item a create or save callback returns null for, keeping the declined child in the collection', function (): void {
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(
+                Repeater::make('sheets')
+                    ->relationship()
+                    ->mutateRelationshipDataBeforeCreateUsing(static fn (): ?array => null)
+                    ->mutateRelationshipDataBeforeSaveUsing(static fn (array $state, VettedBinderSheet $sheet): ?array => ($sheet->heading === 'One') ? null : $state)
+                    ->components([TextInput::make('heading')]),
+            )->record($this->binder)->fill($this->binder);
+            $host->data['sheets']['record-1']['heading'] = 'Uno';
+            $host->data['sheets']['record-2']['heading'] = 'Dos';
+            $host->data['sheets']['added'] = ['heading' => 'Tres'];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            expect(array_map(static fn (VettedBinderSheet $sheet): string => $sheet->heading, $this->reload($this->binder)->sheets->toArray()))->toEqualCanonicalizing(['One', 'Dos'])
+                ->and($this->entityManager()->getRepository(VettedBinderSheet::class)->count([]))->toBe(2);
+        });
+
+        it('refuses a callback that returns anything but the item or null, naming the repeater', function (): void {
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('sheets')->relationship()->mutateRelationshipDataBeforeSaveUsing(static fn (): string => 'One')->components([TextInput::make('heading')]))->record($this->binder)->fill($this->binder);
+
+            expect(fn (): object => $schema->getData())->toThrow(LogicException::class, 'A relationship mutation callback on the [sheets] repeater returned string where the mutated item array was expected. Return the array the callback was handed, or null to skip the item.');
+        });
+
+        it('refuses a fill callback that declines an item', function (): void {
+            $schema = new RecordMappingHost()->mapping(Repeater::make('sheets')->relationship()->mutateRelationshipDataBeforeFillUsing(static fn (): ?array => null)->components([TextInput::make('heading')]))->record($this->binder);
+
+            expect(fn (): Schema => $schema->fill($this->binder))->toThrow(LogicException::class, "The [sheets] repeater's mutateRelationshipDataBeforeFillUsing callback returned null, but a fill has no item to skip — only the create and save callbacks may decline one. Return the array the callback was handed.");
+        });
+    });
+
+    describe('the fill and save arms', function (): void {
+        it('fills a date and an enum the item fields cast from the child, so a save that touches neither keeps them', function (): void {
+            $larder = new Larder('Cellar');
+            $larder->addJar(new LarderJar('Plums', new DateTimeImmutable('2026-05-01'), JarSeal::Wax));
+            $this->seed($larder);
+            $larder = $this->reload($larder);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('jars')->relationship()->components([
+                TextInput::make('label'),
+                DateTimePicker::make('sealedOn')->time(false),
+                Select::make('seal')->options(JarSeal::class),
+            ]))->record($larder)->fill($larder);
+
+            expect($host->data['jars'])->toBe(['record-1' => ['label' => 'Plums', 'sealedOn' => '2026-05-01', 'seal' => 'wax']]);
+
+            $host->data['jars']['record-1']['label'] = 'Damsons';
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+            $jar = $this->reload($larder)->jars->first();
+
+            expect([$jar?->label, $jar?->sealedOn?->format('Y-m-d'), $jar?->seal])->toBe(['Damsons', '2026-05-01', JarSeal::Wax]);
+        });
+
+        it('refuses an item naming a child the collection no longer holds', function (): void {
+            $binder = new VettedBinder();
+            $binder->addSheet(new VettedBinderSheet('One'));
+            $this->seed($binder);
+            $binder = $this->reload($binder);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('sheets')->relationship()->components([TextInput::make('heading')]))->record($binder)->fill($binder);
+            $binder->removeSheet($binder->sheets->first());
+
+            expect(fn (): object => $schema->getData())->toThrow(LogicException::class, 'The [sheets] repeater carries item "record-1", but the [sheets] association no longer holds a record with that identifier — it was deleted or detached since the schema was filled. Fill the schema from the record again before saving.');
+        });
+    });
+
+    describe('an incomplete identifier', function (): void {
+        it('refuses a new item whose key half no component supplies, naming the repeater and the class', function (Closure $owner, string $collection, array $addedItem, string $class): void {
+            $owner = $owner();
+            $this->seed($owner);
+            $owner = $this->reload($owner);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make($collection)->relationship()->components(array_map(TextInput::make(...), array_keys($addedItem))))->record($owner)->fill($owner);
+            $host->data[$collection]['added'] = $addedItem;
+
+            expect(fn (): object => $schema->getData())->toThrow(LogicException::class, sprintf("The [%s] repeater is saving an item of [%s] whose identifier is incomplete, so no record key can be minted for it. Put every identifier field in the repeater's components() — enabled and dehydrated for a new item — or build the child in mutateRelationshipDataBeforeCreateUsing().", $collection, $class));
+        })->with([
+            'a key of two scalars' => [fn (): NurseryBench => new NurseryBench(), 'pots', ['bay' => 'north', 'plant' => 'basil'], BenchPot::class],
+            'a key of an association and a scalar' => [fn (): Larder => new Larder('Cellar'), 'crocks', ['label' => 'Plums'], LarderCrock::class],
+        ]);
+
+        it('refuses a new item whose key half is hidden or disabled', function (Closure $slot): void {
+            $this->seed($bench = new NurseryBench());
+            $bench = $this->reload($bench);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('pots')->relationship()->components([TextInput::make('bay'), $slot(), TextInput::make('plant')]))->record($bench)->fill($bench);
+            $host->data['pots']['added'] = ['bay' => 'north', 'slot' => '1', 'plant' => 'basil'];
+
+            expect(fn (): object => $schema->getData())->toThrow(LogicException::class, sprintf('The [pots] repeater is saving an item of [%s] whose identifier is incomplete', BenchPot::class));
+        })->with([
+            'hidden' => [fn (): TextInput => TextInput::make('slot')->hidden()],
+            'disabled' => [fn (): TextInput => TextInput::make('slot')->disabled()],
+        ]);
+
+        it('saves a new item whose key half is disabled but dehydrated', function (): void {
+            $this->seed($bench = new NurseryBench());
+            $bench = $this->reload($bench);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('pots')->relationship()->components([TextInput::make('bay'), TextInput::make('slot')->disabled()->dehydrated(), TextInput::make('plant')]))->record($bench)->fill($bench);
+            $host->data['pots']['added'] = ['bay' => 'north', 'slot' => '1', 'plant' => 'basil'];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            expect(array_map(static fn (BenchPot $pot): array => [$pot->bay, $pot->slot, $pot->plant], $this->reload($bench)->pots->toArray()))->toBe([['north', '1', 'basil']]);
+        });
+
+        it('saves an existing item whose key half is disabled', function (): void {
+            $bench = new NurseryBench();
+            $bench->addPot(new BenchPot(bay: 'north', slot: '1', plant: 'basil'));
+            $this->seed($bench);
+            $bench = $this->reload($bench);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('pots')->relationship()->components([TextInput::make('bay'), TextInput::make('slot')->disabled(), TextInput::make('plant')]))->record($bench)->fill($bench);
+            $host->data['pots']['record-north~1']['plant'] = 'mint';
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            expect($this->reload($bench)->pots->first()?->plant)->toBe('mint');
+        });
+
+        it("saves a new item under an owner not yet flushed, whose identifier waits on the owner's", function (): void {
+            $larder = new Larder('Cellar');
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('crocks')->relationship()->components([TextInput::make('shelf'), TextInput::make('label')]))->record($larder)->fill($larder);
+            $host->data['crocks'] = ['added' => ['shelf' => 'top', 'label' => 'Plums']];
+            $schema->getData();
+            $this->entityManager()->persist($larder);
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            expect(array_map(static fn (LarderCrock $crock): array => [$crock->shelf, $crock->label], $this->reload($larder)->crocks->toArray()))->toBe([['top', 'Plums']]);
+        });
+
+        it("refuses an existing item's edited key half as unchangeable, and puts it back", function (): void {
+            $bench = new NurseryBench();
+            $bench->addPot(new BenchPot(bay: 'north', slot: '1', plant: 'basil'));
+            $this->seed($bench);
+            $bench = $this->reload($bench);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('pots')->relationship()->components([TextInput::make('bay'), TextInput::make('slot'), TextInput::make('plant')]))->record($bench)->fill($bench);
+            $host->data['pots']['record-north~1']['bay'] = 'east';
+
+            expect(fn (): object => $schema->getData())->toThrow(function (ValidationException $exception): void {
+                expect($exception->getErrors())->toBe(['data.pots.record-north~1.bay' => ['This value cannot be changed.']]);
+            })
+                ->and($bench->pots->first()?->bay)->toBe('north');
+        });
+    });
+
+    describe('a relation-backed field inside an item', function (): void {
+        beforeEach(function (): void {
+            $larder = new Larder('Cellar');
+            $larder->supplier = new Product('Larder Co');
+
+            $own = $larder->supplier;
+            $larder->addJar(new LarderJar('Plums', supplier: $jars = new Product('Jar Co')));
+            $larder->addJar(new LarderJar('Figs', supplier: $jars));
+            $this->seed($own, $jars, new Product('Third Co'), $larder);
+            $this->larder = $this->reload($larder);
+        });
+
+        it("fills and saves the field against the child its item maps, never the owner's association of that name", function (): void {
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('jars')->relationship()->components([
+                TextInput::make('label'),
+                Select::make('supplier')->relationship(titleAttribute: 'name'),
+            ]))->record($this->larder)->fill($this->larder);
+
+            expect(array_column(array_values($host->data['jars']), 'supplier', 'label'))->toEqual(['Plums' => '2', 'Figs' => '2']);
+
+            $plumsKey = array_find_key($host->data['jars'], static fn (array $item): bool => $item['label'] === 'Plums');
+            $host->data['jars'][$plumsKey]['supplier'] = '3';
+            $host->data['jars']['added'] = ['label' => 'Pears', 'supplier' => '3'];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+            $larder = $this->reload($this->larder);
+
+            expect(array_column(array_map(static fn (LarderJar $jar): array => [$jar->label, $jar->supplier?->name], $larder->jars->toArray()), 1, 0))->toEqual(['Plums' => 'Third Co', 'Figs' => 'Jar Co', 'Pears' => 'Third Co'])
+                ->and($larder->supplier?->name)->toBe('Larder Co');
+        });
+
+        it('hands the field what the save callback returned, and skips it with an item the callback declines', function (): void {
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(
+                Repeater::make('jars')
+                    ->relationship()
+                    ->mutateRelationshipDataBeforeSaveUsing(static fn (array $state): ?array => ($state['label'] === 'Plums') ? [...$state, 'supplier' => '1'] : null)
+                    ->components([TextInput::make('label'), Select::make('supplier')->relationship(titleAttribute: 'name')]),
+            )->record($this->larder)->fill($this->larder);
+
+            foreach (array_keys($host->data['jars']) as $key) {
+                $host->data['jars'][$key]['supplier'] = '3';
+            }
+
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            expect(array_column(array_map(static fn (LarderJar $jar): array => [$jar->label, $jar->supplier?->name], $this->reload($this->larder)->jars->toArray()), 1, 0))->toEqual(['Plums' => 'Larder Co', 'Figs' => 'Jar Co']);
+        });
+
+        it('saves a relationship repeater inside an item against the child its item maps', function (): void {
+            $larder = new Larder('Pantry');
+            $bin = new LarderBin('dry');
+            $bin->addNote(new LarderBinNote('rice'));
+
+            $larder->addBin($bin);
+            $this->seed($larder);
+            $larder = $this->reload($larder);
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('bins')->relationship()->components([
+                TextInput::make('code'),
+                Repeater::make('notes')->relationship()->components([TextInput::make('text')]),
+            ]))->record($larder)->fill($larder);
+
+            expect($host->data['bins'])->toBe(['record-dry' => ['notes' => ['record-1' => ['text' => 'rice']], 'code' => 'dry']]);
+
+            $host->data['bins']['record-dry']['notes']['record-1']['text'] = 'oats';
+            $host->data['bins']['record-dry']['notes']['added'] = ['text' => 'beans'];
+            $host->data['bins']['added'] = ['code' => 'wet', 'notes' => ['added' => ['text' => 'lentils']]];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+
+            $stored = [];
+
+            foreach ($this->reload($larder)->bins as $bin) {
+                $notes = array_map(static fn (LarderBinNote $note): string => $note->text, $bin->notes->toArray());
+                sort($notes);
+                $stored[$bin->code] = $notes;
+            }
+
+            ksort($stored);
+
+            expect($stored)->toBe(['dry' => ['beans', 'oats'], 'wet' => ['lentils']]);
+        });
+    });
+
+    describe('the item schema record', function (): void {
+        it('hands a closure in a loaded item its child, and one in an added item no record rather than the owner', function (): void {
+            $larder = new Larder('Cellar');
+            $larder->addJar(new LarderJar('Plums'));
+            $this->seed($larder);
+            $larder = $this->reload($larder);
+            $handed = [];
+            $host = new RecordMappingHost();
+            $schema = $host->mapping(Repeater::make('jars')->relationship()->components([
+                TextInput::make('label')->label(static function (?object $record) use (&$handed): string {
+                    $handed[] = $record;
+
+                    return 'Label';
+                }),
+            ]))->record($larder)->fill($larder);
+            $host->data['jars']['added'] = ['label' => 'Figs'];
+
+            foreach ($schema->getComponent('jars')->getItems() as $item) {
+                $item->getComponents(withActions: false)[0]->getLabel();
+            }
+
+            expect($handed)->toBe([$larder->jars->first(), null]);
+        });
     });
 });

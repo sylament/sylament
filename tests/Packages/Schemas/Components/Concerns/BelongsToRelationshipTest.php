@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Group;
 use Sylament\Schemas\State\AssociationReader;
+use Sylament\Tests\Fixtures\Entity\Atelier;
 use Sylament\Tests\Fixtures\Entity\Lighthouse;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 
@@ -42,3 +44,16 @@ it('refuses to read a relationship off a record it cannot name the class of, or 
         Group::class . ' was asked for its relationship, but relationship() named none.',
     ],
 ]);
+
+it("refuses a repeater relationship no entity manager backs as it fills, in a field's words", function (): void {
+    $atelier = new Atelier('North');
+    $repeater = Repeater::make('easels')->relationship()->components([TextInput::make('position')]);
+    $repeater->setAssociationReader(new AssociationReader());
+
+    $schema = new RecordMappingHost()->mapping($repeater)->record($atelier);
+
+    expect(fn (): mixed => $schema->fill($atelier))->toThrow(
+        LogicException::class,
+        'The [easels] field declares relationship("easels"), but no Doctrine EntityManager backs it, so the association it maps could never be read. Register Doctrine (doctrine/doctrine-bundle), or drop relationship() and map the items onto the record by hand after getData().',
+    );
+});

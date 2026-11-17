@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
+use Sylament\Forms\Components\Field;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Tests\Fixtures\Forms\Selectors;
+use Sylament\Tests\Infrastructure\ComponentRegistry;
+use Symfony\Component\DomCrawler\Crawler;
 
 describe('extraInputAttributes()', function (): void {
     it('puts its attributes on the control, a second call replacing them unless told to merge, a closure answering nothing adding none', function (): void {
@@ -23,3 +27,22 @@ describe('extraInputAttributes()', function (): void {
             ->toContainElement('input[name="code"]' . Selectors::TEXT_INPUT_TARGET);
     });
 });
+
+it('puts its extra input attributes on every control a field renders, and on nothing else', function (string $field): void {
+    $component = $field::make('a')->extraInputAttributes(['data-probe' => 'extra']);
+
+    if (method_exists($component, 'options')) {
+        $component->options(['x' => 'X', 'y' => 'Y']);
+    }
+
+    $render = $this->renderSchemaComponent($component);
+    $controls = $render->filter('input, select, textarea');
+
+    expect($controls->count())->toBeGreaterThan(0)
+        ->and($controls->each(static fn (Crawler $control): ?string => $control->attr('data-probe')))->toBe(array_fill(0, $controls->count(), 'extra'))
+        ->and($render->filter('[data-probe]'))->toHaveCount($controls->count());
+})->with(fn (): array => array_filter(
+    ComponentRegistry::componentsUsing(HasExtraInputAttributes::class),
+    // A table column renders in a table's cell, which tables' own files drive.
+    static fn (string $class): bool => is_subclass_of($class, Field::class),
+));

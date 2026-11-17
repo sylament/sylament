@@ -101,8 +101,7 @@ describe('render', function (): void {
                 ->uploadButtonPosition('left')
                 ->uploadProgressIndicatorPosition('left')
                 ->mimeTypeMap(['heic' => 'image/heic'])
-                ->alignCenter()
-                ->extraInputAttributes(['data-x' => '1']),
+                ->alignCenter(),
         );
 
         expect(FileUploadFixtures::values($crawler, 'data.gallery'))->toMatchArray([
@@ -126,8 +125,8 @@ describe('render', function (): void {
             'uploadProgressIndicatorPosition' => 'left',
             'mimeTypeMap' => ['heic' => 'image/heic'],
         ])
-            ->and($crawler)->toContainElement(Selectors::fileUpload('data.gallery') . SupportSelectors::align('center') . ':not([data-x])')
-            ->and($crawler)->toContainElement(Selectors::FILE_UPLOAD_POND . ' input[type="file"][multiple][data-x="1"]');
+            ->and($crawler)->toContainElement(Selectors::fileUpload('data.gallery') . SupportSelectors::align('center'))
+            ->and($crawler)->toContainElement(Selectors::FILE_UPLOAD_POND . ' input[type="file"][multiple]');
     });
 
     it('gives a grid layout a square item panel unless one is set', function (): void {

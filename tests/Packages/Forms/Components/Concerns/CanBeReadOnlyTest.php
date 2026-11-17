@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-use Sylament\Forms\Components\TextInput;
+use Sylament\Forms\Components\Concerns\CanBeReadOnly;
 use Sylament\Tests\Fixtures\Forms\ReadOnlyForm;
+use Sylament\Tests\Infrastructure\ComponentRegistry;
 
 describe('readOnly()', function (): void {
-    it('renders readonly on the control when told, and not when the condition is false', function (): void {
-        expect($this->renderSchemaComponent(TextInput::make('reference')->readOnly()))
-            ->toContainElement('input[name="reference"][readonly]:not([disabled])')
-            ->and($this->renderSchemaComponent(TextInput::make('reference')->readOnly(false)))
-            ->toContainElement('input[name="reference"]:not([readonly])');
-    });
+    it('renders readonly on the control of every field that offers it, and not when the condition is false', function (string $field): void {
+        expect($this->renderSchemaComponent($field::make('reference')->readOnly()))
+            ->toContainElement('[name="reference"][readonly]:not([disabled])')
+            ->and($this->renderSchemaComponent($field::make('reference')->readOnly(false)))
+            ->toContainElement('[name="reference"]:not([readonly])');
+    })->with(fn (): array => ComponentRegistry::componentsUsing(CanBeReadOnly::class));
 
     it('keeps a read-only field in the saved state and validates it like a writable one', function (): void {
         $tester = $this->createLiveComponent(ReadOnlyForm::class)->fillForm(['reference' => 'R-1', 'title' => 'Kept']);

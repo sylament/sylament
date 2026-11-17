@@ -197,17 +197,15 @@ describe('required', function (): void {
     });
 });
 
-describe('extra input attributes', function (): void {
-    it('puts its extra input attributes on every option input and its extra attributes on the field wrapper, the group repeating neither', function (): void {
+describe('extra attributes', function (): void {
+    it('puts its extra attributes on the field wrapper, the group repeating none of them', function (): void {
         $render = $this->renderSchemaComponent(Radio::make('plan')
             ->options(['basic' => 'Basic', 'pro' => 'Pro', 'team' => 'Team'])
-            ->extraInputAttributes(['data-probe' => 'x'])
             ->extraAttributes(['data-wrapper' => 'w', 'id' => 'mine']));
         $group = $render->filter(Selectors::RADIO_GROUP);
 
-        expect($group->filter(Selectors::RADIO)->each(static fn (Crawler $input): ?string => $input->attr('data-probe')))->toBe(['x', 'x', 'x'])
-            ->and($render->filter(Selectors::FIELD_WRAPPER)->each(static fn (Crawler $wrapper): array => [$wrapper->attr('data-wrapper'), $wrapper->attr('id')]))->toBe([['w', 'mine']])
+        expect($render->filter(Selectors::FIELD_WRAPPER)->each(static fn (Crawler $wrapper): array => [$wrapper->attr('data-wrapper'), $wrapper->attr('id')]))->toBe([['w', 'mine']])
             ->and($render->filter('[id="mine"]'))->toHaveCount(1)
-            ->and([$group->count(), $group->attr('data-probe'), $group->attr('data-wrapper'), $group->attr('id')])->toBe([1, null, null, null]);
+            ->and([$group->count(), $group->attr('data-wrapper'), $group->attr('id')])->toBe([1, null, null]);
     });
 });

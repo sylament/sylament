@@ -78,11 +78,10 @@ describe('rendering', function (): void {
             ->toHaveCount(2);
     })->with('variants');
 
-    it('puts its extra input attributes on every option input, outranking the ones it computes, and its extra attributes on the field wrapper', function (bool $grouped): void {
-        $render = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->disabled()->extraInputAttributes(['disabled' => false, 'class' => 'pick', 'data-pick' => 'yes'])->extraAttributes(['data-panel' => 'levels'])->grouped($grouped));
+    it('lets its extra input attributes outrank the ones it computes on every option input, and puts its extra attributes on the field wrapper', function (bool $grouped): void {
+        $render = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->disabled()->extraInputAttributes(['disabled' => false, 'class' => 'pick'])->extraAttributes(['data-panel' => 'levels'])->grouped($grouped));
 
-        expect($render->filter('input.sy-fo-toggle-buttons-input.pick[data-pick="yes"]:not([disabled])'))->toHaveCount(2)
-            ->and($render->filter(Selectors::TOGGLE_BUTTONS_OPTION . ':not([data-pick])'))->toHaveCount(2)
+        expect($render->filter('input.sy-fo-toggle-buttons-input.pick:not([disabled])'))->toHaveCount(2)
             ->and($render)->toContainElement(Selectors::FIELD_WRAPPER . '[data-panel="levels"] .sy-fo-toggle-buttons:not([data-panel])');
     })->with('variants');
 

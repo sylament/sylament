@@ -75,13 +75,6 @@ describe('rendering', function (): void {
             ->and($switches(CheckboxList::make('tags')->options($options)->autofocus()))->toBe([[false, true], [false, false]]);
     });
 
-    it('puts its extra input attributes on every option input, not on the group', function (): void {
-        $group = $this->renderSchemaComponent(CheckboxList::make('tags')->options(['fern' => 'Fern', 'moss' => 'Moss'])->extraInputAttributes(['data-plant' => 'yes']))->filter('[role="group"]');
-
-        expect($group->filter('input[type="checkbox"]')->each(static fn (Crawler $input): ?string => $input->attr('data-plant')))->toBe(['yes', 'yes'])
-            ->and($group->attr('data-plant'))->toBeNull();
-    });
-
     it('lays its options out down the columns it is given', function (): void {
         expect($this->renderSchemaComponent(CheckboxList::make('tags')->options(['fern' => 'Fern'])->columns(3)))
             ->toContainElement(Selectors::CHECKBOX_LIST_OPTIONS . SupportSelectors::columnWiseColumns('lg', 3));

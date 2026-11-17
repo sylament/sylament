@@ -13,9 +13,9 @@ describe('rendering', function (): void {
             ->toContainElement('.sy-fo-textarea textarea.sy-fo-input[name="plain"]', 'Hello');
     });
 
-    it('renders its placeholder, its read-only, disabled and autofocus marks on its control, its wrapper greyed out while disabled', function (): void {
-        expect($this->renderSchemaComponent(Textarea::make('notes')->placeholder('Your notes')->readOnly()->disabled()->autofocus()))
-            ->toContainElement('.sy-fo-textarea' . SupportSelectors::DISABLED . ' textarea.sy-fo-input[name="notes"][placeholder="Your notes"][readonly][disabled][autofocus]');
+    it('renders its placeholder, disabled and autofocus marks on its control, its wrapper greyed out while disabled', function (): void {
+        expect($this->renderSchemaComponent(Textarea::make('notes')->placeholder('Your notes')->disabled()->autofocus()))
+            ->toContainElement('.sy-fo-textarea' . SupportSelectors::DISABLED . ' textarea.sy-fo-input[name="notes"][placeholder="Your notes"][disabled][autofocus]');
     });
 
     it('renders its length bounds on its control', function (): void {

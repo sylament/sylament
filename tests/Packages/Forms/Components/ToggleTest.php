@@ -49,12 +49,6 @@ describe('rendering', function (): void {
         expect($tester->render()->crawler())->toContainElement('input[name="notify"][aria-invalid="false"]')
             ->and($tester->call('save')->assertHasFormErrors(['notify'])->render()->crawler())->toContainElement('input[name="notify"][aria-invalid="true"]');
     });
-
-    it('puts its extra input attributes on the input, not on the control root, where they outrank the ones it computes', function (): void {
-        expect($this->renderSchemaComponent(Toggle::make('notify')->disabled()->extraInputAttributes(['disabled' => false, 'data-channel' => 'email'])))
-            ->toContainElement('input[role="switch"][data-channel="email"]:not([disabled])')
-            ->toContainElement(Selectors::TOGGLE . ':not([data-channel])');
-    });
 });
 
 describe('state', function (): void {

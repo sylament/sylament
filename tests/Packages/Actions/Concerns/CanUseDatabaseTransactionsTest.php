@@ -6,7 +6,8 @@ use Sylament\Actions\Action;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Actions\ProductWriterHost;
 use Sylament\Tests\Fixtures\Entity\Product;
-use Sylament\Tests\Fixtures\Tables\BulkProductTable;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 it('wraps its call in a transaction only when told to', function (): void {
@@ -30,7 +31,7 @@ it('rolls back what it wrote before it threw only when told to use a transaction
 it("opens its transaction on its table's manager over the default one", function (): void {
     $tableManager = $this->platformEntityManager(TestPlatform::Sqlite);
     $action = Action::make('archive')->databaseTransaction()->table(
-        Table::make(new BulkProductTable($this->entityManager()))
+        Table::make(new DeletingProductTable($this->entityManager(), new HookLog()))
             ->query($tableManager->createQueryBuilder()->select('product')->from(Product::class, 'product')),
     );
 

@@ -16,7 +16,7 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Tally;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
-use Sylament\Tests\Fixtures\Tables\BulkProductTable;
+use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
 use Sylament\Tests\Fixtures\Tables\OrderLineTable;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
@@ -568,7 +568,7 @@ describe('a table host', function (): void {
     ]);
 
     it('resolves a bulk name through the bulk actions, and nothing for a name neither list holds', function (): void {
-        $this->createLiveComponent(BulkProductTable::class)
+        $this->createLiveComponent(DeletingProductTable::class)
             ->call('mountAction', ['name' => 'nowhere', 'context' => ['table' => true, 'bulk' => true]])
             ->assertActionNotMounted()
             ->mountAction(TestAction::make('delete')->table()->bulk())

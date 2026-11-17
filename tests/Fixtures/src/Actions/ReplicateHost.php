@@ -34,8 +34,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `PropagatedCutting` variants named `…Cutting…` (the cutting named Rose, or Graft for the
  * one whose parent is left off), `Tally`, and the key-shaped records. The `OrderLine` and
  * `InvoiceLine` variants are named `replicate<Class><Variant>` and replicate the line
- * numbered 2. `replicateWatched` hands its schema the recording reader, and the hooks and
- * `using()` closures record into the `HookLog`.
+ * numbered 2. The hooks and `using()` closures record
+ * into the `HookLog`.
  */
 #[AsLiveComponent(name: 'Actions:ReplicateHost', template: '@Fixtures/actions/ReplicateHost.html.twig')]
 class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
@@ -47,7 +47,6 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly HookLog $log,
-        private readonly RecordingAssociationReader $reader,
     ) {
     }
 
@@ -146,16 +145,6 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
         return $this->articleAction('replicateOverwritten')
             ->schema([TextInput::make('title')])
             ->mutateDataUsing(fn (array $data): array => [...$data, 'title' => 'By the hook']);
-    }
-
-    public function replicateWatchedAction(): ReplicateAction
-    {
-        return $this->articleAction('replicateWatched')
-            ->schema(function (Schema $schema): Schema {
-                $schema->setAssociationReader($this->reader);
-
-                return $schema->components([TextInput::make('title')]);
-            });
     }
 
     public function replicateTallyExcludedAction(): ReplicateAction

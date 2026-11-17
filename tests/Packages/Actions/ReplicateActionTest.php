@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Actions\ActionGroup;
 use Sylament\Actions\ReplicateAction;
+use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\ReplicateHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Entity\Article;
@@ -22,8 +23,10 @@ use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
 use Sylament\Tests\Fixtures\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\VolumeSpine;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Sylament\Tests\Fixtures\Tables\SecondManagerSpineTable;
 use Symfony\Component\Uid\Uuid;
 
 describe('the trigger', function (): void {
@@ -232,14 +235,18 @@ describe('the hooks', function (): void {
         expect($this->entityManager()->getRepository(Article::class)->findBy(['title' => 'By the hook']))->toHaveCount(1);
     });
 
-    it('asks the record check of the reader its schema holds, rebound to the manager it writes through', function (): void {
-        $this->seed(new Article('Sun'));
+    it("asks the record check of the reader its schema holds, rebound to the table query's manager rather than the registry's", function (): void {
+        $spine = new VolumeSpine();
+        $spine->code = 'SUN';
+        $spine->label = 'Sun';
+        $this->seed($spine);
 
-        $this->createLiveComponent(ReplicateHost::class)
-            ->callAction('replicateWatched', data: ['title' => 'Moon'])
+        $this->createLiveComponent(SecondManagerSpineTable::class)
+            ->callAction(TestAction::make('replicate')->table($spine), data: ['code' => 'MOON'])
             ->assertActionNotMounted();
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . Article::class . ' by the rebound reader']);
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . VolumeSpine::class . ' by the reader rebound to the second manager'])
+            ->and($this->entityManager()->find(VolumeSpine::class, 'MOON')?->label)->toBe('Sun');
     });
 });
 

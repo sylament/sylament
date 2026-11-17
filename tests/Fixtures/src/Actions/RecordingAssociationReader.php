@@ -11,32 +11,37 @@ use Sylament\Tests\Fixtures\Schemas\HookLog;
 
 /**
  * An application's own association reader, which a host hands its schema, recording each
- * changed-key question the record check asks it and whether it was rebound to a manager
- * first.
+ * changed-key question the record check asks it and which manager it was rebound to first:
+ * the registry's, the request's {@see SecondManager}, or none.
  */
 final class RecordingAssociationReader extends AssociationReader
 {
-    private bool $rebound = false;
+    private string $binding = 'unbound';
 
     public function __construct(
         private readonly HookLog $log,
-        EntityManagerInterface $entityManager,
+        private readonly SecondManager $secondManager,
+        private readonly EntityManagerInterface $registryManager,
         PropertyAccessor $propertyAccessor,
     ) {
-        parent::__construct($entityManager, $propertyAccessor);
+        parent::__construct($registryManager, $propertyAccessor);
     }
 
     public function withEntityManager(EntityManagerInterface $entityManager): static
     {
         $reader = parent::withEntityManager($entityManager);
-        $reader->rebound = true;
+        $reader->binding = match ($entityManager) {
+            $this->registryManager => "rebound to the registry's manager",
+            $this->secondManager->get() => 'rebound to the second manager',
+            default => 'rebound to another manager',
+        };
 
         return $reader;
     }
 
     public function revertIdentifierChanges(object $record): array
     {
-        $this->log->record(sprintf('key check on a %s by the %s reader', $record::class, $this->rebound ? 'rebound' : 'unbound'));
+        $this->log->record(sprintf('key check on a %s by the reader %s', $record::class, $this->binding));
 
         return parent::revertIdentifierChanges($record);
     }

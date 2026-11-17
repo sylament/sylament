@@ -58,7 +58,6 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly HookLog $log,
-        private readonly RecordingAssociationReader $reader,
     ) {
         $this->resolveRecordUsing(fn (string $key): ?Product => $this->entityManager->find(Product::class, (int) $key));
     }
@@ -135,13 +134,6 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
         return CreateAction::make('createBesidePage')
             ->recordClass(CappedHeadline::class)
             ->schema($this->headlineFields());
-    }
-
-    public function createWatchedAction(): CreateAction
-    {
-        return CreateAction::make('createWatched')
-            ->recordClass(CappedHeadline::class)
-            ->schema($this->watchedSchema(...));
     }
 
     public function createClasslessAction(): CreateAction
@@ -391,13 +383,6 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
             TextInput::make('shelf'),
             TextInput::make('label'),
         ];
-    }
-
-    private function watchedSchema(Schema $schema): Schema
-    {
-        $schema->setAssociationReader($this->reader);
-
-        return $schema->components($this->headlineFields());
     }
 
     /**

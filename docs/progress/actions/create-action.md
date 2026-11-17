@@ -106,7 +106,7 @@ The reader's [own section](../schemas/association-reader.md#a-blank-assigned-ide
 
 The reader the record check and the blank-key read go through is the mounted schema's own (the container's `sylament_schemas.association_reader` service, or whatever a host set on the schema), rebound to the manager the flush writes through with [`AssociationReader::withEntityManager()`](../schemas/association-reader.md), a clone, and set back on the schema for the mapping.
 A `new AssociationReader($manager)` built there instead would never reach a subclassed or decorated reader service.
-Pinned for create, edit and replicate by a spy reader the schema holds, which shows the rebind but not which manager it rebinds to.
+Pinned for create, edit and replicate on a table whose query runs on a second manager over the same database: a spy reader the schema holds records that it is rebound to that manager, not the registry's.
 The relationship arm's `attach()`, `detach()` and `describeRelationship()` go through the action's **own** reader, the container's, on its default manager, and that is recorded rather than changed: they read the owner's mapping and write the object graph through the property accessor, touching no unit of work but the `contains()` an attach's identifier guard asks, and a relation-scoped table's base query was built through that same default reader, so a second manager over the same mapping reads the same answer.
 Moving them onto the rebound reader would be a behaviour change no case needs.
 

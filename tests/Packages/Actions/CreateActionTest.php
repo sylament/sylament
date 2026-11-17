@@ -23,9 +23,11 @@ use Sylament\Tests\Fixtures\Entity\QuayMooring;
 use Sylament\Tests\Fixtures\Entity\SatchelCharm;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
 use Sylament\Tests\Fixtures\Entity\Terrace;
+use Sylament\Tests\Fixtures\Entity\VolumeSpine;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\LarderCrockTable;
+use Sylament\Tests\Fixtures\Tables\SecondManagerSpineTable;
 
 describe('the trigger', function (): void {
     it('reads "New" and its record label, and the bare verb when nothing names a record class', function (): void {
@@ -132,12 +134,13 @@ describe('the modal', function (): void {
             ->toThrow(LogicException::class, 'The action [createClassless] creates a record but nothing names its class — call recordClass(), host it on a query() table or a resource page, or bind the schema with record().');
     });
 
-    it('asks the record check of the reader its schema holds, rebound to the manager it writes through', function (): void {
-        $this->createLiveComponent(RecordActionsHost::class)
-            ->callAction('createWatched', data: ['code' => 'MOON', 'title' => 'Moon', 'slug' => 'moon'])
+    it("asks the record check of the reader its schema holds, rebound to the table query's manager rather than the registry's", function (): void {
+        $this->createLiveComponent(SecondManagerSpineTable::class)
+            ->callAction(TestAction::make('create')->table(), data: ['code' => 'MOON', 'label' => 'Moon'])
             ->assertActionNotMounted();
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . CappedHeadline::class . ' by the rebound reader']);
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . VolumeSpine::class . ' by the reader rebound to the second manager'])
+            ->and($this->entityManager()->find(VolumeSpine::class, 'MOON')?->label)->toBe('Moon');
     });
 });
 

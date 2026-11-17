@@ -12,11 +12,13 @@ use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Entity\VolumeSpine;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\EditableHeadlineTable;
 use Sylament\Tests\Fixtures\Tables\EditableInvoiceLineTable;
 use Sylament\Tests\Fixtures\Tables\EditableOrderLineTable;
+use Sylament\Tests\Fixtures\Tables\SecondManagerSpineTable;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 
 describe('the trigger', function (): void {
@@ -115,14 +117,17 @@ describe('the modal', function (): void {
             ->toThrow(LogicException::class, 'The action [editBare] edits a record through a form, but none resolved');
     });
 
-    it('asks the record check of the reader its schema holds, rebound to the manager it writes through', function (): void {
-        $this->seed($sun = new CappedHeadline('SUN', 'Sun', slug: 'sun'));
+    it("asks the record check of the reader its schema holds, rebound to the table query's manager rather than the registry's", function (): void {
+        $spine = new VolumeSpine();
+        $spine->code = 'SUN';
+        $this->seed($spine);
 
-        $this->createLiveComponent(EditableHeadlineTable::class)
-            ->callAction(TestAction::make('editWatched')->table($sun), data: ['title' => 'Moon'])
+        $this->createLiveComponent(SecondManagerSpineTable::class)
+            ->callAction(TestAction::make('edit')->table($spine), data: ['label' => 'Moon'])
             ->assertActionNotMounted();
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . CappedHeadline::class . ' by the rebound reader']);
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . VolumeSpine::class . ' by the reader rebound to the second manager'])
+            ->and($this->reload($spine)->label)->toBe('Moon');
     });
 });
 

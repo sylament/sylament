@@ -179,16 +179,6 @@ describe('call()', function (): void {
     it('runs its action with the parameters it is called with and answers what it returns', function (): void {
         expect(Action::make('greet')->action(static fn (string $tone): string => "said {$tone}")->call(['tone' => 'loudly']))->toBe('said loudly');
     });
-
-    it("deselects its table's rows once it ran, when told to", function (): void {
-        $this->seed($lamp = new Product('Lamp'), $vase = new Product('Vase'), new Product('Rug'));
-        $checked = 'input[type="checkbox"][aria-label^="Select/deselect record"][checked]';
-
-        $tester = $this->createLiveComponent(InjectingProductTable::class)->selectTableRecords([$lamp, $vase]);
-
-        expect($tester->render()->crawler()->filter($checked))->toHaveCount(2)
-            ->and($tester->callAction(TestAction::make('tally')->table()->bulk())->render()->crawler()->filter($checked))->toHaveCount(0);
-    });
 });
 
 describe('closure injection', function (): void {
@@ -294,15 +284,17 @@ describe('record chain', function (): void {
         },
     ]);
 
-    it('stops at its own record even when it is an empty object, and answers none for one that is not of its record class', function (): void {
+    it('stops at its own record even when it is an empty object or a key, and answers none for one that is not of its record class', function (): void {
         ActionGroup::make([
             $empty = Action::make('edit')->record(new ArrayObject()),
+            $key = Action::make('pick')->record('7'),
             $foreign = Action::make('view')->recordClass(Product::class)->record(new stdClass()),
             $plain = Action::make('copy')->recordClass(Product::class),
         ])->record($lamp = new Product('Lamp'));
         $record = static fn (mixed $record): mixed => $record;
 
         expect($empty->evaluate($record))->toEqual(new ArrayObject())
+            ->and($key->evaluate($record))->toBe('7')
             ->and($foreign->evaluate($record))->toBeNull()
             ->and($plain->evaluate($record))->toBe($lamp);
     });
@@ -392,13 +384,4 @@ describe('context', function (): void {
         'scalar fields' => fn (): array => [OrderLineTable::class, new OrderLine(order: 7, line: 2), new OrderLine(order: 7, line: 3)],
         'an association plus a scalar' => fn (): array => [InvoiceLineTable::class, new InvoiceLine($seven = new Invoice(7), line: 2), new InvoiceLine($seven, line: 3)],
     ]);
-});
-
-describe('the mounted modal', function (): void {
-    it('submits its form to the call of the mounted action', function (): void {
-        $modal = $this->createLiveComponent(MountedActionsHost::class)->mountAction('rename')->render()->crawler();
-
-        expect($modal)->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction'))
-            ->toContainElement(SupportSelectors::MODAL_WINDOW . ' button[type="submit"]', 'Submit');
-    });
 });

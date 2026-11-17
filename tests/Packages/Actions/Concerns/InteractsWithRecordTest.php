@@ -28,20 +28,6 @@ describe('the record', function (): void {
             ->and($binds->hasRecord())->toBeTrue();
     });
 
-    it("stops at a bound record, even one the class guard drops, rather than taking its group's", function (): void {
-        $groupRecord = new Product('Lamp');
-
-        ActionGroup::make([
-            $mismatched = Action::make('open')->record(new Article('Notes'))->recordClass(Product::class),
-            $empty = Action::make('close')->record($emptyCollection = new ArrayObject()),
-            $key = Action::make('pick')->record('7'),
-        ])->record($groupRecord);
-
-        expect($mismatched->getRecord())->toBeNull()
-            ->and($empty->getRecord())->toBe($emptyCollection)
-            ->and($key->getRecord())->toBe('7');
-    });
-
     it('drops a record of another class than the declared one, and passes an array record through', function (): void {
         ActionGroup::make([$create = Action::make('create')->recordClass(Product::class)])->record(new Article('Notes'));
 

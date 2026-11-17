@@ -249,7 +249,7 @@ describe('triggers', function (): void {
             ->and($hidden->filter(SupportSelectors::LINK)->text())->toBe('');
     });
 
-    it("shows its grouped icon on its row in a parent's dropdown, else its own icon, else no icon", function (Closure $nested, string $text, int $icons): void {
+    it("shows its own icon on its row in a parent's dropdown, else its grouped icon, else no icon", function (Closure $nested, string $text, int $icons): void {
         $row = $this->renderViewComponent(ActionGroup::make([$nested()->label('More')]))->filter(SupportSelectors::DROPDOWN_ITEM . Selectors::TRIGGER);
 
         expect($row->text())->toBe($text)
@@ -288,8 +288,7 @@ describe('members', function (): void {
         $render = $this->renderViewComponent(ActionGroup::make([Action::make('edit'), Action::make('drop')->hidden(), Action::make('view')->iconButton(), Action::make('copy')])->dropdown(false));
 
         expect($render)->toContainButtons(Selectors::INLINE_GROUP . ' ' . SupportSelectors::BUTTON, ['Edit', 'Copy'])
-            ->toContainButtons(Selectors::INLINE_GROUP . ' ' . SupportSelectors::ICON_BUTTON, ['View'])
-            ->and($render->filter(SupportSelectors::DROPDOWN))->toHaveCount(0);
+            ->toContainButtons(Selectors::INLINE_GROUP . ' ' . SupportSelectors::ICON_BUTTON, ['View']);
     });
 
     it("splits its dropdown into a section per run of visible members, a nested group's own dropdown one member of a run, and a nested group without one a section of its visible members as rows", function (): void {

@@ -91,7 +91,7 @@ Twig has no equivalent implicit-render path, so the bundle registers [`ActionExt
 The helper resolves the name through the **surrounding live component's** `getAction()` (so the rendered action is bound to its host), renders nothing when the name does not resolve or the action is hidden, and throws a `RuntimeException` when the enclosing `this` is not an [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) host.
 An optional second parameter binds per-render arguments, `renderAction('delete', { id: 5 })`, through `HasMountableArguments`'s `__invoke()`, which Twig syntax cannot call directly: the bound instance is a clone, so the host-cached action stays argument-free, and the serialized `arguments` mount param reaches the trigger markup.
 The order is resolve, bind, hidden-check, so a visibility closure can read the bound arguments.
-`ActionExtensionTest` covers it through a fixture host template's `{{ renderAction('delete') }}`.
+A host template's `{{ renderAction('delete') }}` renders the host's resolved action, which a case pins.
 
 ### Asset registration is an AssetMapper prepend
 
@@ -102,7 +102,7 @@ The base [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) su
 Without it the failure is loud rather than silent, which is worth knowing because it lands nowhere near a click.
 StimulusBundle resolves a `controllers.json` entry by reading the PHP package's `assets/package.json` ([`UxPackageReader`](../../../vendor/symfony/stimulus-bundle/src/Ux/UxPackageReader.php) turns `@sylament/actions` back into the `sylament/actions` install path), then calls `assetMapper->getAssetFromSourcePath()` on `<packageDirectory>/` plus the controller's `main` and **throws** `Could not find an asset mapper path that points to the "…" controller` when the path sits outside every registered one ([`ControllersMapGenerator`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)).
 So an app that enables the controller without the prepend fails at controllers-map generation.
-That is the call `SylamentActionsBundleTest` makes against the compiled container, asking the real `AssetMapperInterface` for the built controller by source path, which is why the test is written at the AssetMapper seam rather than against the raw config array.
+The bundle's case makes that call against the compiled container, asking the real `AssetMapperInterface` for the built controller by source path, so it pins the AssetMapper seam rather than the raw config array.
 
 ### The asset workspace is JS-only, and its importmap block names only Stimulus
 

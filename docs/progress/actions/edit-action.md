@@ -14,7 +14,7 @@ owns:
 Like [`CreateAction`](create-action.md) it works both of Filament's ways off one class: with an edit page to link to it renders an anchor, and without one it opens a modal, fills a form from the bound record, maps the validated state back onto that record and flushes it.
 [A page beats a modal](create-action.md#a-page-beats-a-modal-for-every-record-action) here as on every record action.
 
-`EditActionTest` covers the chrome, the rendered link to the page its host routes it to and the modal arm end to end; the entries below say what each rule's case pins.
+The chrome, the rendered link to the page its host routes it to and the modal arm are pinned end to end; the entries below say what each rule's case pins.
 
 ## Surface
 
@@ -84,7 +84,7 @@ So `getRecordDataForFill(Schema $schema, object|array $record, array $except = [
 `mutateRecordData()` re-checks the closure's return through the same [`HasData::assertFieldKeyedData()`](../../../packages/actions/src/Concerns/HasData.php) that `data()` runs `mutateDataUsing()`'s through, throwing a `TypeError` that names the setter.
 `getRecordForFill()` answers an array record through `array_filter(..., ARRAY_FILTER_USE_KEY)` on string keys, the normalisation [`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation) applies to the same value: `getRecord()` is `mixed`, so an `is_array()` narrowing alone cannot prove the `array<string, mixed>` the seam declares.
 No member changed name, so it needs no `renames.md` row.
-Covered by `CanMutateRecordDataTest`, through a modal fill.
+Pinned through a modal fill.
 
 ### One plain icon replaces Filament's table-and-grouped pair
 

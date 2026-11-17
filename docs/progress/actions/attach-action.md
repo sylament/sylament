@@ -15,7 +15,7 @@ It only makes sense on a [relation-scoped table](../tables/table.md): `Table::re
 
 Its undo, [`DetachAction`](detach-action.md), is a file of its own, with [`DetachBulkAction`](detach-action.md#surface--detachbulkaction) riding along in it.
 
-`AttachActionTest` covers the class end to end on a relation table, record select included, and the tables suite's [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) runs it too.
+The class is pinned end to end on a relation table, record select included, and the tables suite's [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) runs it too.
 
 ## Surface
 

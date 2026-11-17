@@ -57,7 +57,7 @@ So every bulk body's catch swallows silently, `DeleteBulkAction`'s, [`DetachBulk
 ### The delete bodies resolve their manager through the registry alone
 
 [`DeleteAction`](../../../packages/actions/src/DeleteAction.php) and [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php)'s fetching arm call `getManagerForClass()` on the injected registry themselves rather than [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins), so a query-lane table's manager does not take precedence for a delete as it does for the other write actions.
-They keep their own resolution because their container-built-instance messages are pinned by tests (`DeleteActionTest`).
+They keep their own resolution because their container-built-instance messages are pinned: a delete built with `new` refuses by name.
 The by-key arm is the exception: it has no record to ask the registry about, so it deletes through the table's `getQueryEntityManager()` ([below](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)).
 
 ### The headings interpolate, and fall back to the bare verb

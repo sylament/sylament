@@ -15,7 +15,7 @@ Filament duplicates through Eloquent's `Model::replicate()`; Doctrine ships no s
 
 It is modal-only, and unlike [`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) it has no URL arm to grow: Filament routes no page at a replication either.
 
-`ReplicateActionTest` covers both arms end to end, and `RecordReplicatorTest` the copy rules against real Doctrine metadata; the entries below say what each rule's case pins.
+Both arms are pinned end to end, and the copy rules against real Doctrine metadata; the entries below say what each rule's case pins.
 
 ## Surface
 

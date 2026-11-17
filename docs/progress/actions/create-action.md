@@ -15,7 +15,7 @@ owns:
 It works both of Filament's ways off one class.
 With a create page to link to it renders as a link; without one it opens a modal, fills a form from whatever [`HasSchema::getSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing) resolves, maps the validated state onto a new record of the action's class, persists it through Doctrine and reports `success()`.
 
-`CreateActionTest` covers both arms, the relationship arm on a relation table and on hosts that name a relationship; tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php) runs the relationship arm too, as [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) runs the delete.
+Both arms are pinned end to end, the relationship arm on a relation table and on hosts that name a relationship; tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php) runs the relationship arm too, as [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) runs the delete.
 The tests that pin each rule are named in its entry below.
 
 ## Surface

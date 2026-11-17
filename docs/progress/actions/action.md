@@ -134,7 +134,7 @@ The three missing names:
   The port has `getParentAction()` but neither the setter nor the host stamp.
 - `schemaOperation`/`context`/`operation` would read [`getOperation()`](../schemas/has-operation.md) off the bound schema container, falling back to the component's container; both exist, and the arm has no caller.
 
-Pinned by `ActionTest`'s injection cases, by `BelongsToLiveComponentTest` for `liveComponent`, and by the tables suite's [`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php), where a real host answers the two selected-record names.
+Pinned by a case per injection name and type, `liveComponent` included, and by the tables suite's [`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php), where a real host answers the two selected-record names.
 
 ### The by-type resolver has no record arm
 
@@ -150,7 +150,7 @@ The override also carries [`Table::class`](#tableclass-resolves-by-type-as-well-
 ### CanBeHidden omits authorization, group, and table-cache integration
 
 **In:** `hidden()`, `visible()`, `isHidden()` and `isVisible()`, resolved as Filament's base resolution is: an evaluated `$isHidden` that is true wins, otherwise `! evaluate($isVisible)`.
-Covered by `CanBeHiddenTest`, through the render.
+Pinned through the render: a hidden or not visible action is left out of it.
 
 **Missing vs Filament:** Filament's `isHidden()` short-circuits true when the action's group reports `baseIsHidden()`, then defers to `isHiddenInGroup()`, and both cache their answer per record when the action has a table (`prepareVisibilityCache()`, `clearVisibilityCache()`, keyed by `getCurrentVisibilityRecordKey()`).
 Under the cache, `resolveIsHiddenInGroup()` hides an `ActionGroup` whose children all report `isHiddenInGroup()`, and otherwise falls back to `! isAuthorizedOrNotHiddenWhenUnauthorized()`, so an action with no `hidden()` or `visible()` call is hidden when the current user is unauthorized.
@@ -216,12 +216,12 @@ The key is stringified before the call, so a numeric item key from the wire reac
 The guard is a bare `!== ''` rather than [`filled()`](../support/helpers.md): the key is already narrowed to `int|string` there, and `filled()`'s only static assertion is a null check, so calling it is an `alreadyNarrowedType` error at level max.
 Otherwise the walk returns the first state-path-bearing container's `getState()`, which is the port's equivalent of Filament's `getStateSnapshot()` ([`HasState`](../../../packages/schemas/src/Concerns/HasState.php)).
 `getSchemaComponentState()` walks the other way, up to the nearest parent component with a state path, and falls back to the bound component's own state.
-Pinned by `ActionTest`'s `$state` and `$schemaState` cases.
+Pinned for `$state` and `$schemaState` on a schema's action and on a repeater item's extra action, an item keyed by a number included.
 
 ### `$get` and `$set` throw on an action with no schema component, where Filament fatals
 
 The `get` and `set` arms keep Filament's non-null-safe reach for the schema component, routed through [`getSchemaComponentOrFail()`](belongs-to-schema-component.md#getschemacomponentorfail-throws-where-filament-fatals), whose `?? throw` is what satisfies level max.
-A schema-less action evaluating a `$get` or `$set` closure therefore stops the request where Filament's does, on a `LogicException` naming the class rather than a fatal on null, pinned by `ActionTest`.
+A schema-less action evaluating a `$get` or `$set` closure therefore stops the request where Filament's does, on a `LogicException` naming the class rather than a fatal on null, which a case pins.
 An action declared inside a mounted-action schema throws the same way, as it fails in Filament, because that schema is a root schema with no parent component ([has-actions.md](has-actions.md#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema)).
 
 Both arms chain `->skipComponentsChildContainersWhileSearching(false)` onto the returned [`Get`](../schemas/get.md) or [`Set`](../schemas/set.md), as Filament's do.
@@ -325,7 +325,7 @@ So all of these arms are wrapped in `hasCanAccessSelectedRecords()` (the **prese
 The parameter then resolves the ordinary way: an injection, the container, its own default, or `null`.
 
 The gate is deliberately *not* `canAccessSelectedRecords()`: evaluating the flag to decide whether to resolve would run a user closure on every parameter of every action, and a flag that evaluates false would silently hand the parameter a container service rather than raising the gate the caller asked for.
-Pinned by `ActionTest`'s fall-through cases.
+Pinned by the selected-record names resolving as any other parameter unless the action reads the selection, a flag given as a closure included.
 
 ### `$get`/`$set` resolve by type as well as by name
 
@@ -348,13 +348,13 @@ Reversible by deleting the two arms if upstream ever gives its own reason for th
 Filament resolves the bound table only by the parameter name `table` (`Action.php:585`).
 The port keeps that arm and adds `Table::class` to the by-type resolver, resolving [`getTable()`](belongs-to-table.md) the same way.
 The reason is the port's [`Invoker`](../../../packages/support/src/Evaluation/Invoker.php), which falls back to the DI container for an unresolved class-typed parameter where Laravel's does not: a `fn (Table $table)` closure would otherwise be handed a **fresh, unconfigured** `Table` service instead of the action's own.
-Explicit injections resolve before the container, so with the arm a table-less action answers `null`, pinned by `ActionTest`.
+Explicit injections resolve before the container, so with the arm a table-less action answers `null`, which a case pins beside a table row's action handed its table.
 It costs nothing at the seam: a `match` over a `::class` constant compares compile-time strings and never autoloads, so the [guarded soft dependency](belongs-to-table.md#the-table-reference-is-a-guarded-soft-dependency-not-a-declared-one) on `sylament/tables` holds.
 
 ### The view switch renders through Twig templates, not toHtml() fast paths
 
 Filament's five-way view switch is ported: `badge()`/`button()`/`grouped()`/`iconButton()`/`link()` each point `template()` at one of the five template constants (`BADGE_TEMPLATE`/`BUTTON_TEMPLATE`/`GROUPED_TEMPLATE`/`ICON_BUTTON_TEMPLATE`/`LINK_TEMPLATE`, the `*_VIEW` → `*_TEMPLATE` translation), with the `isBadge()`/`isButton()`/`isIconButton()`/`isLink()` predicates comparing `getTemplate()` against them (no `isGrouped()`, as Filament has none).
-The default is `BUTTON_TEMPLATE` via `$defaultTemplate`, so `ActionGroup` can push `GROUPED_TEMPLATE` as a default while an explicit switcher call survives the push, Filament's precedence, pinned by `ActionTest`.
+The default is `BUTTON_TEMPLATE` via `$defaultTemplate`, so `ActionGroup` can push `GROUPED_TEMPLATE` as a default while an explicit switcher call survives the push, Filament's precedence, which a render inside a group pins.
 Each shape has its own template under [`partials/Action/`](../../../packages/actions/templates/partials/Action), and each is a thin composition over the support primitive Filament's corresponding `*_VIEW` constant points at: [`Badge`](../support/badge.md), [`Button`](../support/button.md), [`DropdownItem`](../support/dropdown-item.md), [`IconButton`](../support/icon-button.md) and [`Link`](../support/link.md), invoked as `<twig:>` tags.
 Each builds its mount wiring with `stimulus_action('live', 'action', …)` and spreads it into the tag with `{{ ...map }}`, which is byte-equivalent to what `live_action()` emits inline.
 `actions` owns no trigger CSS: the class list on every trigger root is the primitive's, plus the bare `sy-ac` marker the template contributes.
@@ -395,7 +395,7 @@ The two schema hops read through the schemas side's Sylament-only `getLiveCompon
 The chain itself lives in the Sylament-only `getLiveComponentOrNull()` peek (named after the schemas-side precedent), which `prepareModalAction()`/`prepareModalActionGroup()` use to bind footer actions without forcing an unbound owner to throw.
 
 The group hop is kept even though [`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php) eagerly propagates the host to child actions at set time: the eager push only fires at `liveComponent()`-call time, so an action added to an already-bound group afterwards resolves through this lazy hop and nothing else.
-Covered by `BelongsToLiveComponentTest`, the table hop included, and by the tables suite's [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php).
+Pinned for each hop, its own binding, its schema's, its component's, its table's and its group's, and by the tables suite's [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php).
 
 ### `getContext()` drops the record model gate
 
@@ -429,7 +429,7 @@ The **`bulk` flag** is Filament's, in Filament's position and with Filament's do
 The **child-frame short-circuit** is Filament's: `if ($this->parentAction instanceof self) { return $context; }` runs after the `recordKey` branch and before the table and schema branches, so a modal action declared by another action carries its record identity up and nothing else, neither the schema binding it inherited from `prepareModalAction()` nor the table binding it inherited from its parent.
 Without it, a nested frame would carry a `schemaComponent` key up to the host and, but for the host's own [deeper-frame gate](has-actions.md#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache), try to resolve against the host's schema instead of its parent's declared modal actions.
 `parentAction()` is stamped by [`prepareModalAction()`](can-open-modal.md) on every action an action declares, and `nestingIndex()` by `resolveActions()` per frame.
-Covered by `ActionTest`'s context cases and by [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php) for the arms that need a real `Table`: the composite key, the `table` and `bulk` flags and their suppression on a nested frame.
+Pinned by the context a trigger puts on the wire, the record key per identifier shape, the schema key beside it and a declared modal action's record key alone, and by [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php) for the arms that need a real `Table`: the composite key, the `table` and `bulk` flags and their suppression on a nested frame.
 
 ### CanBeDisabled drops the authorization short-circuits
 
@@ -466,7 +466,7 @@ A type-signature tightening with no behavioural change (both throw on a blank na
 ### HasSize drops the optimized-render fast-path helper
 
 Filament's `HasSize` carries `hasSmallSizeDefault(): bool` (`$this->size === null && $this->defaultSize === Size::Small`), read only by `Action::canRenderOptimizedLink()` and `canRenderOptimizedGrouped()`, the guards of a Blade-bypass fast path that hand-builds link and grouped-item HTML when the action carries no non-default styling.
-The port has [no string fast paths](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths), so the helper would have no reader; the rest of the trait (`size()`, `defaultSize()`, `getSize()`, `getDefaultSize()`, `hasSize()`) is Filament's, and `HasSizeTest` pins through the render a given size over the default.
+The port has [no string fast paths](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths), so the helper would have no reader; the rest of the trait (`size()`, `defaultSize()`, `getSize()`, `getDefaultSize()`, `hasSize()`) is Filament's, and a render pins a given size over the default.
 
 ### `redirect()` records a pending URL instead of redirecting the host
 
@@ -474,7 +474,7 @@ Filament's `redirect(string|Closure $url, ?bool $navigate = null)` calls the Liv
 The port's [`redirect(string|Closure $url)`](../../../packages/actions/src/Concerns/CanRedirect.php) evaluates the URL into a pending URL that `getPendingRedirectUrl()` exposes and `resetPendingRedirect()` clears, because [a redirect leaves the pipeline as a returned response](has-actions.md#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag); `$navigate` goes with the SPA facade.
 `dispatchSuccessRedirect()` and `dispatchFailureRedirect()` resolve the action's own URL first and the host's [default-URL hooks](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) second, through the nullable `getLiveComponentOrNull()` where Filament dereferences `getHasActionsLivewire()` unguarded, so a detached action dispatches nothing rather than failing.
 No `instanceof` re-check is written, because the accessor already returns the contract that carries both hooks, and one would be provably always true and fail level max.
-Covered by `CanRedirectTest`, end to end through a live host.
+Pinned end to end through a live host: the action's own URL, else the host's, for a success and a failure.
 
 ### The deprecated `hold()` and `withAttributes()` aliases are not ported
 

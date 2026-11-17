@@ -78,7 +78,7 @@ What is absent is the full-empty reset of `defaultAction` / `defaultActionArgume
 Filament unmounts a frame that has no modal to be seen in, at two places.
 After auto-running a modal-less action, `mountAction()` unmounts it when it is still the mounted action, which is what a `halt()` leaves behind (`InteractsWithActions.php:230-237`); the port returns `callMountedAction()`'s result and leaves the halted frame standing (`HasActions.php:171-173`).
 And a top-level `unmountAction()` calls `unmountActionsWithoutModals()` (`:864-868`), popping every exposed top frame whose `mountedActionShouldOpenModal()` is false; the port has neither the method nor the `$mountActionNestingLevel` counter that gates it.
-`HasActionsTest`'s `keeps a parent open when a non-modal child halts on top of it` pins the port's behaviour, a halted non-modal child staying mounted under an open parent, which Filament's `mountAction()` would unmount.
+A case pins the port's behaviour, a halted non-modal child staying mounted under an open parent, which Filament's `mountAction()` would unmount.
 
 ### `getAction()` ports the generic method-discovery arm in full
 

@@ -7,7 +7,7 @@ use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Actions\ToolbarHost;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Notifications\NotificationOverrideHost;
-use Sylament\Tests\Fixtures\Tables\PartlyFailingBulkTable;
+use Sylament\Tests\Fixtures\Tables\SelectionReadingProductTable;
 
 it('toasts its success title when the action succeeds', function (): void {
     $this->createLiveComponent(ToolbarHost::class)
@@ -67,13 +67,13 @@ describe('failure notification', function (): void {
     it('titles a bulk failure and its notification from the counts of the selected records, warning when some succeeded', function (string $action, Closure $notification): void {
         $this->seed($lamp = new Product('Lamp'), $vase = new Product('Vase'), $rug = new Product('Rug'));
 
-        $this->createLiveComponent(PartlyFailingBulkTable::class)
+        $this->createLiveComponent(SelectionReadingProductTable::class)
             ->selectTableRecords([$lamp, $vase, $rug])
             ->callAction(TestAction::make($action)->table()->bulk())
             ->assertNotified($notification());
     })->with([
-        'some succeeded' => ['archive', static fn (): Notification => Notification::make()->warning()->title('2 of 3 not done')->persistent()->body('1 done and 2 not, of 3')],
-        'none succeeded' => ['purge', static fn (): Notification => Notification::make()->danger()->title('None of 3 done')->persistent()->body('0 done and 3 not, of 3, every one failed')],
+        'some succeeded' => ['succeedOne', static fn (): Notification => Notification::make()->warning()->title('1 of 3 done')->persistent()->body('1 done and 2 not, of 3')],
+        'none succeeded' => ['failAll', static fn (): Notification => Notification::make()->danger()->title('0 of 3 done')->persistent()->body('0 done and 3 not, of 3, every one failed')],
     ]);
 
     it('toasts danger for a failure that reports a successful count without reading selected records', function (): void {

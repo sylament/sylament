@@ -10,6 +10,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
+use Sylament\Notifications\Notification;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
@@ -23,7 +24,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A product table whose toolbar actions read the selection and record what they read:
  * `archive` as a bulk action, `peek` as a plain action made one, `archiveByKey` by key and
  * `count` through the selection's query; `failOne`, `succeedOne` and `failAll` report their
- * counts to a title naming them; `tidy` and `tidyHalted` clear the selection afterwards, the
+ * counts to a failure title and body naming them; `tidy` and `tidyHalted` clear the selection afterwards, the
  * second after halting.
  */
 #[AsLiveComponent(name: 'Tables:SelectionReadingProductTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
@@ -86,6 +87,7 @@ class SelectionReadingProductTable implements InteractsWithActions, InteractsWit
     {
         return BulkAction::make($name)
             ->action($report)
-            ->failureNotificationTitle(static fn (int $successCount, int $totalCount): string => "{$successCount} of {$totalCount} done");
+            ->failureNotificationTitle(static fn (int $successCount, int $totalCount): string => "{$successCount} of {$totalCount} done")
+            ->failureNotification(static fn (Notification $notification, int $successCount, int $failureCount, int $totalCount, bool $isAll): Notification => $notification->body(sprintf('%d done and %d not, of %d%s', $successCount, $failureCount, $totalCount, $isAll ? ', every one failed' : '')));
     }
 }

@@ -30,4 +30,18 @@ trait FormsHelpers
 
         return json_decode($value, true, flags: JSON_THROW_ON_ERROR);
     }
+
+    /**
+     * Each radio option of the render as its value and the description line shown under
+     * it, null where the option shows none.
+     *
+     * @return list<array{?string, ?string}>
+     */
+    protected function radioDescriptions(Crawler $render): array
+    {
+        return $render->filter(Selectors::RADIO_GROUP . ' label')->each(static fn (Crawler $option): array => [
+            $option->filter(Selectors::RADIO)->attr('value'),
+            $option->filter(Selectors::RADIO_OPTION_DESCRIPTION)->count() === 1 ? $option->filter(Selectors::RADIO_OPTION_DESCRIPTION)->text() : null,
+        ]);
+    }
 }

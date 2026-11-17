@@ -43,8 +43,8 @@ Two consequences worth stating:
 - **The enum-case key idiom is `$case instanceof BackedEnum ? $case->value : $case->name`.**
   Filament writes `$case->value ?? $case->name`, which reads as a null-coalesce but is really a "property may not exist" fallback — PHPStan at level max rejects `->value` on a `UnitEnum` outright, and `??` does not save it.
   Every enum fallback in the port spells the `instanceof` out.
-- **A pure `UnitEnum` is a legitimate option source** as long as nothing asks for its cast: `options(MySize::class)` on a field whose state never round-trips through the enum renders fine.
-  It is `getEnumDefaultStateCast()` that refuses, and it only runs when a cast is actually assembled.
+- **A pure `UnitEnum` is a legitimate option source** as long as nothing asks for its cast: `getOptions()` expands `options(MySize::class)` into options keyed by case name.
+  It is `getEnumDefaultStateCast()` that refuses, when a cast is assembled, and every option field's template assembles one on its first render, since it reads the state to mark the selected option, so a form field refuses a pure enum before anything renders.
 
 ### A custom cast suppresses the option casts, not the enum one
 

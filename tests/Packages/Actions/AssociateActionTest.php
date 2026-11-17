@@ -137,6 +137,35 @@ describe('over a garden', function (): void {
                 ->and($this->entityManager()->getUnitOfWork()->tryGetById($this->clover->id, Seedling::class))->toBeFalse();
         });
 
+        it("titles the options through the action's own recordTitle() closure by loading each candidate, and projects an action's own title attribute over a table's recordTitle() closure", function (): void {
+            $titled = array_values($this->recordSelectSearch(($this->mounted)(['actionTitleClosure']), ''));
+            $hydratedClover = $this->entityManager()->getUnitOfWork()->tryGetById($this->clover->id, Seedling::class);
+
+            $projected = array_values($this->recordSelectSearch(($this->mounted)(['tableTitleClosure', 'actionTitleAttribute']), ''));
+
+            expect($titled)->toBe(['Titled: Clover', 'Titled: Nettle', 'Titled: Yarrow'])
+                ->and($hydratedClover)->toBeInstanceOf(Seedling::class)
+                ->and($projected)->toBe(['Clover', 'Nettle', 'Yarrow'])
+                ->and($this->entityManager()->getUnitOfWork()->tryGetById($this->clover->id, Seedling::class))->toBeFalse();
+        });
+
+        it('keeps the order a candidate query gives itself over the title order', function (): void {
+            expect(array_values($this->recordSelectSearch(($this->mounted)(['selfOrdered']), '')))->toBe(['Yarrow', 'Nettle', 'Clover']);
+        });
+
+        it('accepts a pick past the options limit by asking the candidate query, and refuses it once preloaded, whose options are the whole choice', function (array $variants, bool $refused): void {
+            $tester = ($this->table)(['limitedToOne', ...$variants])->callAction(TestAction::make('associate')->table(), data: ['recordId' => ($this->key)($this->yarrow)]);
+
+            if ($refused) {
+                $tester->assertHasActionErrors(['recordId']);
+            }
+
+            expect(($this->seedlingsOf)($this->kew))->toBe($refused ? ['Bramble', 'Thistle'] : ['Bramble', 'Thistle', 'Yarrow']);
+        })->with([
+            'searched' => [[], false],
+            'preloaded' => [['preloaded'], true],
+        ]);
+
         it('hands recordSelectOptionsQuery() the candidate query and the search, null outside a search, and offers only what the closure keeps', function (): void {
             $tester = ($this->mounted)(['scoped']);
             $searched = $this->recordSelectSearch($tester, 'e');

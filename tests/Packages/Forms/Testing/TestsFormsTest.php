@@ -7,7 +7,7 @@ use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Tests\Fixtures\Forms\RedirectingForm;
 use Sylament\Tests\Fixtures\Forms\SelectBerthForm;
-use Sylament\Tests\Fixtures\Forms\TagListForm;
+use Sylament\Tests\Fixtures\Forms\TagFieldsForm;
 use Sylament\Tests\Fixtures\Forms\WithdrawnCardForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\RepeaterForm;
@@ -97,7 +97,7 @@ describe('fillForm()', function (): void {
     ]);
 
     it('replaces a list with the list it is given, a shorter or an empty one', function (array $tags): void {
-        $this->createLiveComponent(TagListForm::class)
+        $this->createLiveComponent(TagFieldsForm::class, ['record' => ['tags' => ['php', 'twig', 'ux']]])
             ->fillForm(['tags' => $tags])
             ->assertFormSet(['tags' => $tags]);
     })->with([
@@ -106,7 +106,7 @@ describe('fillForm()', function (): void {
     ]);
 
     it('removes a numeric key the filled state leaves out', function (): void {
-        $this->createLiveComponent(TagListForm::class)
+        $this->createLiveComponent(TagFieldsForm::class, ['record' => ['tags' => ['php', 'twig', 'ux']]])
             ->fillForm(['tags' => [1 => 'twig']])
             ->assertFormSet(['tags' => [1 => 'twig']]);
     });

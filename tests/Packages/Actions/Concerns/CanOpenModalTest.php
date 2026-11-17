@@ -104,7 +104,7 @@ describe('a confirmation', function (): void {
             ->toContainElement('p', 'Are you sure you would like to do this?')
             ->toContainElement(Selectors::MODAL_FOOTER . SupportSelectors::align('center'))
             ->toContainButtons(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Cancel', 'Confirm'])
-            ->and($modal->filter('header svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark', ''])
+            ->and($modal->filter('header svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark', 'exclamation-triangle'])
             ->and(($this->modal)(Action::make('archive'))->filter('header svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark']);
     });
 

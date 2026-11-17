@@ -22,6 +22,8 @@ namespace Sylament\Tests\Fixtures\Support;
  * the outlined look, and a dropdown, its trigger, its panel and its items by the `sy-` classes
  * the stylesheet paints them by, and its panel's size by the custom properties it sets there;
  * the modal's close, the badge's delete and the pagination's chevron buttons by their names;
+ * the pagination by its name, its page buttons by their names and the current one by its
+ * `aria-current`, and its per-page select by the live model it binds;
  * the values the modal controller reads and the dismiss a button wires to it, and a dropdown's
  * controller and its placement, offset, flip and teleport by the Stimulus hooks it reads.
  * The input wrapper, its invalid state and each side of it are named by their `sy-` classes,
@@ -180,6 +182,21 @@ final class Selectors
 
     public const string LAST_PAGE_BUTTON = 'button[aria-label="Go to the last page"]';
 
+    /**
+     * The pagination landmark under a paginated table.
+     */
+    public const string PAGINATION = 'nav[aria-label="Pagination"]';
+
+    /**
+     * The button of the page being shown.
+     */
+    public const string CURRENT_PAGE_BUTTON = 'button[aria-current="page"]';
+
+    /**
+     * The per-page select a pagination with more than one page option shows.
+     */
+    public const string PER_PAGE_SELECT = 'select[data-model="tableRecordsPerPage"]';
+
     public const string OUTLINED = '.sy-outlined';
 
     public const string LINK_LABEL = '.sy-link-label';
@@ -232,6 +249,14 @@ final class Selectors
     public static function textShades(int $light, int $dark): string
     {
         return "[class~=\"sy-text-color-{$light}\"][class~=\"dark:sy-text-color-{$dark}\"]";
+    }
+
+    /**
+     * The button going to a numbered page.
+     */
+    public static function pageButton(int $page): string
+    {
+        return "button[aria-label=\"Go to page {$page}\"]";
     }
 
     public static function size(string $name): string

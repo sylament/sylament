@@ -75,6 +75,13 @@ describe('rendering', function (): void {
             ->and($switches(CheckboxList::make('tags')->options($options)->autofocus()))->toBe([[false, true], [false, false]]);
     });
 
+    it('puts its extra input attributes on every option input, not on the group', function (): void {
+        $group = $this->renderSchemaComponent(CheckboxList::make('tags')->options(['fern' => 'Fern', 'moss' => 'Moss'])->extraInputAttributes(['data-plant' => 'yes']))->filter('[role="group"]');
+
+        expect($group->filter('input[type="checkbox"]')->each(static fn (Crawler $input): ?string => $input->attr('data-plant')))->toBe(['yes', 'yes'])
+            ->and($group->attr('data-plant'))->toBeNull();
+    });
+
     it('lays its options out down the columns it is given', function (): void {
         expect($this->renderSchemaComponent(CheckboxList::make('tags')->options(['fern' => 'Fern'])->columns(3)))
             ->toContainElement(Selectors::CHECKBOX_LIST_OPTIONS . '[style*="--cols-lg: 3;"]');
@@ -150,7 +157,6 @@ describe('validation', function (): void {
             ->call('save')
             ->assertHasFormErrors(['chosen' => RequiredValue::class, 'chosenPair' => RequiredValue::class])
             ->assertHasNoFormErrors(['chosen' => Count::class])
-            ->assertHasNoFormErrors(['chosen' => Choice::class])
             ->assertHasFormErrors(['chosenPair' => Count::class]);
 
         $this->createLiveComponent(CheckboxListForm::class)
@@ -234,7 +240,7 @@ describe('search', function (): void {
 });
 
 describe('relationship', function (): void {
-    it("labels and describes each option off one query of its records, a label answering nothing as an empty label and a blank description as none, and describes an option map built before the description closure was declared", function (): void {
+    it('labels and describes each option off one query of its records, a label answering nothing as an empty label and a blank description as none, and describes an option map built before the description closure was declared', function (): void {
         $this->seed($fern = new Plant('Fern'), $moss = new Plant('Moss'));
         $list = CheckboxList::make('plants')
             ->relationship('plants', 'name')

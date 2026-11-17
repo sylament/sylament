@@ -35,7 +35,20 @@ final class FailingWrite
         $platform = $entityManager->getConnection()->getDatabasePlatform();
         $metadata = $entityManager->getClassMetadata($entityClass);
 
-        self::failDeletesFrom($entityManager, $entityManager->getConfiguration()->getQuoteStrategy()->getTableName($metadata, $platform), $metadata->getTableName(), $allowed);
+        self::failWritesTo($entityManager, 'DELETE', $entityManager->getConfiguration()->getQuoteStrategy()->getTableName($metadata, $platform), $metadata->getTableName(), $allowed);
+    }
+
+    /**
+     * {@see afterDeletes()} for the rows updated in the entity's table.
+     *
+     * @param class-string $entityClass
+     */
+    public static function afterUpdates(EntityManagerInterface $entityManager, string $entityClass, int $allowed): void
+    {
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $metadata = $entityManager->getClassMetadata($entityClass);
+
+        self::failWritesTo($entityManager, 'UPDATE', $entityManager->getConfiguration()->getQuoteStrategy()->getTableName($metadata, $platform), $metadata->getTableName(), $allowed);
     }
 
     /**
@@ -54,32 +67,36 @@ final class FailingWrite
             throw new LogicException(sprintf('[%s::$%s] is not the owning side of a many-to-many, so it has no join table of its own.', $ownerClass, $association));
         }
 
-        self::failDeletesFrom($entityManager, $entityManager->getConfiguration()->getQuoteStrategy()->getJoinTableName($mapping, $metadata, $platform), $mapping->joinTable->name, $allowed);
+        self::failWritesTo($entityManager, 'DELETE', $entityManager->getConfiguration()->getQuoteStrategy()->getJoinTableName($mapping, $metadata, $platform), $mapping->joinTable->name, $allowed);
     }
 
-    private static function failDeletesFrom(EntityManagerInterface $entityManager, string $table, string $tableName, int $allowed): void
+    /**
+     * @param 'DELETE'|'UPDATE' $write
+     */
+    private static function failWritesTo(EntityManagerInterface $entityManager, string $write, string $table, string $tableName, int $allowed): void
     {
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
-        $name = 'sy_failing_' . mb_strtolower((string) preg_replace('/\W+/', '_', $tableName));
+        $name = ($write === 'DELETE' ? 'sy_failing_' : 'sy_failing_update_') . mb_strtolower((string) preg_replace('/\W+/', '_', $tableName));
         $message = self::MESSAGE;
+        $row = $write === 'DELETE' ? 'OLD' : 'NEW';
 
         [$create, $cleanup] = match (true) {
             $platform instanceof SQLitePlatform => [[
-                "CREATE TABLE {$name} (deletes INTEGER NOT NULL)",
-                "INSERT INTO {$name} (deletes) VALUES (0)",
-                "CREATE TRIGGER {$name} BEFORE DELETE ON {$table} FOR EACH ROW BEGIN UPDATE {$name} SET deletes = deletes + 1; SELECT RAISE(ABORT, '{$message}') WHERE (SELECT deletes FROM {$name}) > {$allowed}; END",
+                "CREATE TABLE {$name} (writes INTEGER NOT NULL)",
+                "INSERT INTO {$name} (writes) VALUES (0)",
+                "CREATE TRIGGER {$name} BEFORE {$write} ON {$table} FOR EACH ROW BEGIN UPDATE {$name} SET writes = writes + 1; SELECT RAISE(ABORT, '{$message}') WHERE (SELECT writes FROM {$name}) > {$allowed}; END",
             ], []],
             $platform instanceof AbstractMySQLPlatform => [[
-                "CREATE TABLE {$name} (deletes INT NOT NULL)",
-                "INSERT INTO {$name} (deletes) VALUES (0)",
-                "CREATE TRIGGER {$name} BEFORE DELETE ON {$table} FOR EACH ROW BEGIN UPDATE {$name} SET deletes = deletes + 1; IF (SELECT deletes FROM {$name}) > {$allowed} THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '{$message}'; END IF; END",
+                "CREATE TABLE {$name} (writes INT NOT NULL)",
+                "INSERT INTO {$name} (writes) VALUES (0)",
+                "CREATE TRIGGER {$name} BEFORE {$write} ON {$table} FOR EACH ROW BEGIN UPDATE {$name} SET writes = writes + 1; IF (SELECT writes FROM {$name}) > {$allowed} THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '{$message}'; END IF; END",
             ], ["DROP TRIGGER IF EXISTS {$name}", "DROP TABLE IF EXISTS {$name}"]],
             $platform instanceof PostgreSQLPlatform => [[
-                "CREATE TABLE {$name} (deletes INTEGER NOT NULL)",
-                "INSERT INTO {$name} (deletes) VALUES (0)",
-                "CREATE FUNCTION {$name}() RETURNS trigger LANGUAGE plpgsql AS \$\$ BEGIN UPDATE {$name} SET deletes = deletes + 1; IF (SELECT deletes FROM {$name}) > {$allowed} THEN RAISE EXCEPTION '{$message}'; END IF; RETURN OLD; END \$\$",
-                "CREATE TRIGGER {$name} BEFORE DELETE ON {$table} FOR EACH ROW EXECUTE FUNCTION {$name}()",
+                "CREATE TABLE {$name} (writes INTEGER NOT NULL)",
+                "INSERT INTO {$name} (writes) VALUES (0)",
+                "CREATE FUNCTION {$name}() RETURNS trigger LANGUAGE plpgsql AS \$\$ BEGIN UPDATE {$name} SET writes = writes + 1; IF (SELECT writes FROM {$name}) > {$allowed} THEN RAISE EXCEPTION '{$message}'; END IF; RETURN {$row}; END \$\$",
+                "CREATE TRIGGER {$name} BEFORE {$write} ON {$table} FOR EACH ROW EXECUTE FUNCTION {$name}()",
             ], ["DROP TRIGGER IF EXISTS {$name} ON {$table}", "DROP FUNCTION IF EXISTS {$name}()", "DROP TABLE IF EXISTS {$name}"]],
             default => throw new LogicException(sprintf('FailingWrite knows no trigger for [%s].', $platform::class)),
         };

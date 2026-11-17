@@ -34,6 +34,16 @@ it('counts rows rather than statements, so one statement deleting past the allow
         ->and($this->entityManager()->getRepository(Tally::class)->count())->toBe(3);
 });
 
+it('fails the update past the allowance, and keeps the updates within it', function (): void {
+    $this->seed(new Tally(), new Tally(), new Tally());
+    FailingWrite::afterUpdates($this->entityManager(), Tally::class, 2);
+    $connection = $this->entityManager()->getConnection();
+
+    expect($connection->executeStatement('UPDATE Tally SET count = 1 WHERE id < 3'))->toBe(2)
+        ->and(fn (): int|string => $connection->executeStatement('UPDATE Tally SET count = 2'))->toThrow(DriverException::class, FailingWrite::MESSAGE)
+        ->and(array_map(DriverValues::number(...), $connection->fetchFirstColumn('SELECT count FROM Tally ORDER BY id')))->toBe([1, 1, 0]);
+});
+
 it("fails a many-to-many's join-row delete past the allowance, which no entity maps", function (): void {
     $garden = new Garden();
     $garden->addPlant($rock = new Plant('Rock'));

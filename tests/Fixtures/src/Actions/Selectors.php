@@ -19,8 +19,8 @@ namespace Sylament\Tests\Fixtures\Actions;
  * action binding sends, by the `data-` hooks the controllers read.
  *
  * An action's trigger, by the action name its Stimulus parameters mount, and the parts of
- * the open action modal a test reads: its heading, its icon, its footer actions and the
- * submit among them.
+ * the open action modal a test reads: its heading, its description, its icon, its footer
+ * actions and the submit among them.
  */
 final class Selectors
 {
@@ -47,6 +47,8 @@ final class Selectors
     public const string MODAL = 'dialog.sy-modal[open]';
 
     public const string MODAL_HEADING = self::MODAL . ' .sy-modal-heading';
+
+    public const string MODAL_DESCRIPTION = self::MODAL . ' .sy-modal-description';
 
     public const string MODAL_ICON = self::MODAL . ' .sy-modal-icon-ctn svg';
 

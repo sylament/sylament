@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
+use Sylament\Actions\Action;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
+use Sylament\Tests\Fixtures\Actions\NestedModalHost;
 use Sylament\Tests\Fixtures\Actions\ToolbarHost;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 
 it('fails asserting that an action exists when its last level is missing, though its parent resolves', function (): void {
@@ -17,8 +20,37 @@ it('fails asserting that an action exists when its last level is missing, though
         ->toThrow(AssertionFailedError::class, 'Failed asserting that an action with name [clear > nope] exists');
 });
 
+it('fails asserting that an action exists when the host resolves none by its name', function (): void {
+    $tester = $this->createLiveComponent(ToolbarHost::class)->assertActionExists('archive');
+
+    expect(fn () => $tester->assertActionExists('nope'))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that an action with name [nope] exists on the [Sylament\Tests\Fixtures\Actions\ToolbarHost] component.');
+});
+
+it('fails asserting that an action exists when the check rejects it, with the message the closure generates', function (): void {
+    $isRestore = fn (Action $action): bool => $action->getName() === 'restore';
+    $tester = $this->createLiveComponent(ToolbarHost::class)->assertActionExists('restore', checkActionUsing: $isRestore);
+
+    expect(fn () => $tester->assertActionExists('archive', checkActionUsing: $isRestore))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that an action with the name [archive] and provided configuration exists on the [Sylament\Tests\Fixtures\Actions\ToolbarHost] component.')
+        ->and(fn () => $tester->assertActionExists('archive', checkActionUsing: $isRestore, generateMessageUsing: fn (string $name, string $host): string => "No restore named [{$name}] on [{$host}]."))
+        ->toThrow(AssertionFailedError::class, 'No restore named [archive] on [Sylament\Tests\Fixtures\Actions\ToolbarHost].');
+});
+
+it('fails asserting that a missing nested or table action exists, never throwing past the assertion', function (): void {
+    $this->seed($product = new Product('Lamp'));
+
+    $nested = $this->createLiveComponent(NestedModalHost::class)->assertActionExists('outer.inner');
+    $table = $this->createLiveComponent(ProductTable::class)->assertActionExists(TestAction::make('open')->table($product));
+
+    expect(fn () => $nested->assertActionExists('outer.nope'))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that an action with name [outer > nope] exists')
+        ->and(fn () => $table->assertActionExists(TestAction::make('nope')->table($product)))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that an action with name [nope] exists');
+});
+
 it('fails asserting that a hidden action is visible', function (): void {
-    $tester = $this->createLiveComponent(ToolbarHost::class)->assertActionExists('purge');
+    $tester = $this->createLiveComponent(ToolbarHost::class)->assertActionExists('purge')->assertActionVisible('archive');
 
     expect(fn () => $tester->assertActionVisible('purge'))
         ->toThrow(AssertionFailedError::class, 'Failed asserting that an action with name [purge] is visible');
@@ -106,4 +138,60 @@ it('fails asserting that the mounted action is not mounted', function (): void {
 
     expect(fn () => $tester->assertActionNotMounted('rename'))
         ->toThrow(AssertionFailedError::class, 'Failed asserting that the action is not mounted.');
+});
+
+describe('mounting and calling', function (): void {
+    it('runs an action with no modal while mounting it, leaving nothing mounted', function (): void {
+        $this->createLiveComponent(ToolbarHost::class)
+            ->mountAction('archive')
+            ->assertNotified('Archived')
+            ->assertActionNotMounted();
+    });
+
+    it('stops calling an action that ran while it was mounted, filling no form it has not got', function (): void {
+        $this->createLiveComponent(ToolbarHost::class)
+            ->callAction('archive', ['note' => 'Seasonal'])
+            ->assertNotified('Archived')
+            ->assertActionNotMounted();
+    });
+
+    it("fills a modal action's form with the data it is given, and calls it", function (): void {
+        $this->createLiveComponent(MountedActionsHost::class)
+            ->callAction('rename', ['name' => 'Lamp'])
+            ->assertActionNotMounted();
+    });
+
+    it('calls the nested action a dotted path mounted, one level per name', function (): void {
+        $this->createLiveComponent(NestedModalHost::class)
+            ->callAction('outer.inner')
+            ->assertActionMounted('outer');
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['inner']);
+    });
+});
+
+describe('parseNestedActions()', function (): void {
+    it('parses a name, a dotted path, a TestAction or a list of them into one descriptor per level', function (): void {
+        $tester = $this->createLiveComponent(NestedModalHost::class);
+
+        expect($tester->parseNestedActions('outer'))->toBe([['name' => 'outer', 'context' => []]])
+            ->and($tester->parseNestedActions('outer.inner'))->toBe([['name' => 'outer', 'context' => []], ['name' => 'inner', 'context' => []]])
+            ->and($tester->parseNestedActions(TestAction::make('outer')->arguments(['tone' => 'loud'])))->toBe([['name' => 'outer', 'arguments' => ['tone' => 'loud'], 'context' => []]])
+            ->and($tester->parseNestedActions(['outer', TestAction::make('inner')->schemaComponent('note')]))
+            ->toBe([['name' => 'outer', 'context' => []], ['name' => 'inner', 'context' => ['schemaComponent' => 'mountedActionSchema0.note']]]);
+    });
+
+    it("mounts each level with the arguments keyed by its name, or with arguments not keyed by any level's name at every level", function (): void {
+        $this->createLiveComponent(NestedModalHost::class)
+            ->mountAction('outer.inner', ['outer' => ['tone' => 'loud'], 'inner' => ['tone' => 'soft']])
+            ->assertActionMounted([TestAction::make('outer')->arguments(['tone' => 'loud']), TestAction::make('inner')->arguments(['tone' => 'soft'])]);
+
+        $this->createLiveComponent(NestedModalHost::class)
+            ->mountAction('outer.inner', ['outer' => ['tone' => 'loud']])
+            ->assertActionMounted([TestAction::make('outer')->arguments(['tone' => 'loud']), TestAction::make('inner')->arguments([])]);
+
+        $this->createLiveComponent(NestedModalHost::class)
+            ->mountAction('outer.inner', ['tone' => 'loud'])
+            ->assertActionMounted([TestAction::make('outer')->arguments(['tone' => 'loud']), TestAction::make('inner')->arguments(['tone' => 'loud'])]);
+    });
 });

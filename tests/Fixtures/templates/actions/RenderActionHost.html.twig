@@ -1,0 +1,8 @@
+<div {{ attributes }}>
+    <div data-slot="bound">{{ renderAction('delete', {id: 5}) }}</div>
+    <div data-slot="plain">{{ renderAction('delete') }}</div>
+    <div data-slot="missing">{{ renderAction('missing') }}</div>
+    <div data-slot="hidden">{{ renderAction('purge') }}</div>
+    <div data-slot="scoped-bound">{{ renderAction('scoped', {id: 5}) }}</div>
+    <div data-slot="scoped">{{ renderAction('scoped') }}</div>
+</div>

@@ -20,7 +20,7 @@ The sending helpers send the host's own `mountAction()`, `callMountedAction()` a
 | [`parseNestedActions()` with a name, a `TestAction` or a list of them, and its refusal of a table record on a host that is not a table](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
 | [`callMountedAction()`, and `parseNestedActions()`'s action class-string and table record key](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
 | [`parseNestedActions()`'s `$arguments` for every level, and a level given none](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#a-level-carries-arguments-only-when-the-call-gives-some) |
-| [`parseNestedActions()`'s dotted path, and the helpers' `$arguments` keyed by action name](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#a-dotted-path-and-arguments-keyed-by-action-name-wait-for-a-test-that-needs-them) |
+| [`parseNestedActions()`'s dotted path, and the helpers' `$arguments` keyed by action name](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#arguments-keyed-by-action-name-stop-at-the-first-level-that-names-one) |
 | [`unmountAction()` / `setActionData()` / `assertActionDataSet()` / `assertHasActionErrors()` / `assertHasNoActionErrors()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#unmountactions-cancelparentactions-waits-for-a-test-that-needs-it) |
 | `assertActionDoesNotExist()` / `assertActionHidden()` / `assertActionEnabled()` / `assertActionDisabled()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionHas…()` / `assertActionDoesNotHave…()` (icon, label, colour, URL) / `assertActionShouldOpenUrlInNewTab()` / `assertActionShouldNotOpenUrlInNewTab()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
@@ -30,10 +30,6 @@ The sending helpers send the host's own `mountAction()`, `callMountedAction()` a
 | `assertActionHeld()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertActionHalted()`](../README.md#statuses) |
 
 ## Details
-
-### A dotted path and arguments keyed by action name wait for a test that needs them
-
-A dotted path (`'archive.confirm'`) and `$arguments` keyed by action name are ported, and no test passes either yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ### `unmountAction()`'s `$cancelParentActions` waits for a test that needs it
 
@@ -60,6 +56,11 @@ With no actions, `assertActionMounted()` asserts that the stack is not empty and
 Otherwise the parsed levels, never relative to the mounted stack, are lined up with its last frames, and each level's name and context are compared, its arguments when the call gives some, and a `TestAction`'s closure `arguments()` through `checkArguments()` on the frame's arguments.
 `assertActionMounted()` compares loosely, as Livewire's `assertSet()` does, and `assertActionNotMounted()` strictly, failing only when every level matches, as Filament's two do.
 Only an empty array means "no actions", where Filament's `empty()` also reads `''` and `'0'` so.
+
+### Arguments keyed by action name stop at the first level that names one
+
+`$arguments` reach a level by its action's name once any level is keyed so: from the first level whose name is a key, a later level gets only its own key's arguments, or none.
+A level before that one gets the whole array, as Filament's does, so a map that keys only a nested level also reaches its parent; keying the first level keeps every level to its own.
 
 ## Divergences
 

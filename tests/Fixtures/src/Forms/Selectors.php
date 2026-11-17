@@ -12,7 +12,9 @@ namespace Sylament\Tests\Fixtures\Forms;
  * input's control and an affix button its Stimulus controller answers in the browser,
  * with no live click, by the controller's target and action;
  * a file field's controller element, by the state path its value map names, the pond
- * container FilePond builds inside, and the image editor's dialog.
+ * container FilePond builds inside, and the image editor's dialog; a toggle's control root and track, and a
+ * toggle-buttons option's button label, which must follow its input, named by the `sy-fo-`
+ * class the stylesheet lays out or paints each by.
  */
 final class Selectors
 {
@@ -39,6 +41,15 @@ final class Selectors
     public const string FILE_UPLOAD_POND = '[data-sylament--forms--file-upload-target="pond"]';
 
     public const string FILE_UPLOAD_EDITOR = 'dialog[aria-label="Image editor"]';
+
+    public const string TOGGLE = '.sy-fo-toggle';
+
+    public const string TOGGLE_TRACK = '.sy-fo-toggle-track';
+
+    /**
+     * The adjacency the selected-state stylesheet reads, `input:checked + label.sy-btn`.
+     */
+    public const string TOGGLE_BUTTONS_OPTION = 'input.sy-fo-toggle-buttons-input + label.sy-btn';
 
     public static function textInputAction(string $method): string
     {

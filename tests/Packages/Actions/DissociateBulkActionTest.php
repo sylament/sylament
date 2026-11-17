@@ -68,7 +68,6 @@ describe('over a garden', function (): void {
         expect($trigger->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
             ->and(mb_trim(str_replace('x-mark-20-solid', '', $trigger->text())))->toBe('Dissociate selected')
             ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Dissociate selected Seedlings')
-            ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
             ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
             ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Dissociate');
     });

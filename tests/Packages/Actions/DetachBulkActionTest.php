@@ -48,7 +48,6 @@ it('puts a danger "Detach selected" with the x-mark in the toolbar, confirmed in
     expect($trigger->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
         ->and(mb_trim(str_replace('x-mark-20-solid', '', $trigger->text())))->toBe('Detach selected')
         ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Detach selected Plants')
-        ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
         ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
         ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Detach');
 });

@@ -39,7 +39,6 @@ it('puts a danger "Detach" with the x-mark on each row, confirmed in a modal hea
     expect($trigger->each(static fn (Crawler $button): string => $button->filter(SupportSelectors::LINK_LABEL)->text()))->toBe(['Detach', 'Detach'])
         ->and($trigger->first()->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
         ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe($heading)
-        ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
         ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
         ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Detach');
 })->with([

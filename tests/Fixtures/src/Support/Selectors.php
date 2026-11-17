@@ -6,20 +6,21 @@ namespace Sylament\Tests\Fixtures\Support;
 
 /**
  * The standalone-root marker, and the looks support's components give any area's markup:
- * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge and
- * its label, breadcrumb separator, a fieldset with its hidden label and required mark, a
- * section's container, variants and collapsibility, a tabs layout, the active tab or step,
- * the screen-reader-only text and the cloak a persisted state hides behind until its
- * controller connects, named by the `sy-` class or custom property the stylesheet paints
- * them by; the column counts, spans, starts and orders support's grid gives a schema, and
- * the bare counts and direction class of a column-wise grid, by the custom property or class
- * the stylesheet lays its grid out by; a section's Stimulus controller and the values it
- * reads, and the sortable controller with its handles, items and animation duration, by the
- * `data-` hooks it reads; a section's collapse button by its place and its state, whose name
- * changes; the modal's close, the badge's delete and the pagination's chevron buttons by their
- * names, and a dropdown's teleport by its Stimulus value. The input wrapper, its invalid state
- * and each side of it are named by their `sy-` classes, because which side an affix sits on is
- * the stylesheet's contract; what sits there is asserted by its text, its role or its element.
+ * colour, palette, size, font, alignment, state, the hidden and wrapped looks, button, button
+ * group, icon button, icon, link, badge and its label, breadcrumb separator, a fieldset with its
+ * hidden label and required mark, a section's container, variants and collapsibility, a tabs
+ * layout, the active tab or step, the screen-reader-only text and the cloak a persisted state
+ * hides behind until its controller connects, named by the `sy-` class or custom property the
+ * stylesheet paints them by; the grid itself, the column counts, spans, starts and orders
+ * support's grid gives a schema, and the bare counts and direction class of a column-wise grid,
+ * by the custom property or class the stylesheet lays its grid out by; a section's Stimulus
+ * controller and the values it reads, and the sortable controller with its handles, items and
+ * animation duration, by the `data-` hooks it reads; a section's collapse button by its place
+ * and its state, whose name changes; the modal's close, the badge's delete and the pagination's
+ * chevron buttons by their names, and a dropdown's teleport by its Stimulus value. The input
+ * wrapper, its invalid state and each side of it are named by their `sy-` classes, because which
+ * side an affix sits on is the stylesheet's contract; what sits there is asserted by its text,
+ * its role or its element.
  */
 final class Selectors
 {
@@ -41,6 +42,10 @@ final class Selectors
     public const string UNSIZED = ':not([class*="sy-size-"])';
 
     public const string DISABLED = '.sy-disabled';
+
+    public const string HIDDEN = '.sy-hidden';
+
+    public const string WRAPPED = '.sy-wrapped';
 
     public const string INVALID = '.sy-invalid';
 
@@ -103,9 +108,13 @@ final class Selectors
      */
     public const string ANY_COLUMN_SPAN = '[style*="--col-span-"]';
 
+    public const string GRID = '.sy-grid';
+
     public const string GRID_DIRECTION_COLUMN = '.sy-grid-direction-col';
 
     public const string BUTTON = '.sy-btn';
+
+    public const string BUTTON_GROUP = '.sy-btn-group';
 
     public const string ICON_BUTTON = '.sy-icon-btn';
 

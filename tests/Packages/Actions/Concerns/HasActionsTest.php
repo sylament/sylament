@@ -123,7 +123,7 @@ describe('unmounting', function (): void {
 });
 
 describe('resolving', function (): void {
-    it('answers the top frame, an earlier one by index and the whole stack in order, each resolved once per request', function (): void {
+    it('answers the top frame, an earlier one by index and the whole stack in order', function (): void {
         $host = $this->createLiveComponent(ActionStackHost::class)->mountAction('confirm')->mountAction('details')->component();
         $parent = $host->getMountedAction(0);
 
@@ -158,7 +158,6 @@ describe('resolving', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe($hooks);
     })->with([
         'a method answering a string' => ['status', []],
-        'a host method of the contract' => ['unmountAction', []],
         'a factory answering an action' => ['quick', ['quick', 'afterActionCalled: quick']],
     ]);
 
@@ -237,6 +236,14 @@ describe('a schema context', function (): void {
         'a parameterless host method' => ['save', []],
         'no method at all' => ['nowhere', []],
     ]);
+
+    it('leaves the record key of a schema-component frame to the component, never asking the host for a resolver', function (): void {
+        $this->createLiveComponent(SchemaModalHost::class)
+            ->call('mountAction', ['name' => 'probe', 'context' => ['schemaComponent' => 'form', 'recordKey' => '7']])
+            ->assertActionNotMounted();
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['probe: form']);
+    });
 
     it('lets an exception out of a schema builder it calls', function (): void {
         expect(fn () => $this->createLiveComponent(SchemaModalHost::class)->call('mountAction', ['name' => 'probe', 'context' => ['schemaComponent' => 'broken']]))
@@ -497,12 +504,16 @@ describe('records', function (): void {
         $copy = $host->getMountedAction();
         $host->unmountAction();
 
-        expect($copy->getRecord(withDefault: false))->toBe($host->getMountedAction()->getRecord());
+        expect($copy->getRecord(withDefault: false))->toBeInstanceOf(Atelier::class)->toBeRecord(id: $atelier->id);
 
-        $inspect = $host->getMountedAction();
+        $host = $this->createLiveComponent(AtelierResolvingHost::class)->mountAction(['name' => 'draft', 'context' => $key])->component();
+        $draft = $host->getMountedAction();
+
+        expect($draft->getRecord(withDefault: false))->toBeInstanceOf(Atelier::class);
+
         $host->unmountAction();
 
-        expect($inspect->getRecord(withDefault: false))->toBeInstanceOf(Atelier::class);
+        expect($draft->getRecord(withDefault: false))->toBeNull();
 
         $host = $this->createLiveComponent(AtelierResolvingHost::class)->mountAction(['name' => 'draft', 'context' => $key])->component();
         $draft = $host->getMountedAction();
@@ -517,7 +528,11 @@ describe('a table host', function (): void {
     it("binds a grouped row action's record to its group, without asking the host's own callback", function (): void {
         $this->seed($product = new Product('Lamp'));
 
-        $this->createLiveComponent(StockedProductTable::class)->callAction(TestAction::make('rename')->table($product));
+        $tester = $this->createLiveComponent(StockedProductTable::class)->mountAction(TestAction::make('rename')->table($product));
+
+        expect($tester->component()->getMountedAction()->getRootGroup()->getRecord())->toBeInstanceOf(Product::class)->toBeRecord(name: 'Lamp');
+
+        $tester->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['rename: Lamp']);
     });

@@ -27,7 +27,7 @@ it('refuses a property the entity does not map, naming the fields it does, befor
         ->and($this->statementsRun())->toBe([]);
 });
 
-it('binds the value under the next free probe name, after any parameter already on the query, and lets the modifier rebind it', function (): void {
+it('binds the value as sylament_probe_0, a name the modifier can rebind', function (): void {
     $this->seed(new Product('Lamp'));
     $validator = $this::getContainer()->get(ValidatorInterface::class);
 

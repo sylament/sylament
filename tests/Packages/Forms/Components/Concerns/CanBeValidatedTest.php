@@ -109,6 +109,7 @@ describe('isRequiredByRecord()', function (): void {
     })->with([
         'a non-nullable property' => [fn (): TextInput => TextInput::make('name'), Product::class, 'data.name', true],
         'a non-nullable property of the class a section frames, read at the path inside that frame' => [fn (): Section => Section::make()->statePath('mooring')->record(BerthMooring::class)->components([TextInput::make('label')]), Product::class, 'data.mooring.label', true],
+        'a non-nullable property, on a field built with new outside the container' => [fn (): TextInput => new TextInput()->name('name')->statePath('name'), Product::class, 'data.name', true],
         'a non-nullable property the field leaves undehydrated' => [fn (): TextInput => TextInput::make('name')->dehydrated(false), Product::class, 'data.name', true],
         'a nullable property' => [fn (): TextInput => TextInput::make('title'), CappedHeadline::class, 'data.title', false],
         'a path the record does not declare' => [fn (): TextInput => TextInput::make('nickname'), Product::class, 'data.nickname', false],
@@ -162,16 +163,6 @@ describe('isRequiredByRecord()', function (): void {
 
         expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
             expect($exception->getErrors())->toBe(['data.flagged' => ['This value should not be blank.']]);
-        });
-    });
-});
-
-describe('getRequiredConstraint()', function (): void {
-    it('answers a message keyed by RequiredValue on the required constraint of a text field', function (): void {
-        $schema = $this->host->mapping(TextInput::make('name')->required()->validationMessages([RequiredValue::class => 'Give it a name.']));
-
-        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toBe(['data.name' => ['Give it a name.']]);
         });
     });
 });

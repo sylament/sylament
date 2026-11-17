@@ -6,8 +6,8 @@ use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Notifications\Notification;
-use Sylament\Tests\Fixtures\Actions\ProductTable;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Tables\ProductTable;
 
 it('matches a sent notification by its configuration, and consumes what it read', function (): void {
     $this->seed($gone = new Product('Gone'));

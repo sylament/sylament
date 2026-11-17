@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tests\Fixtures\Actions;
+namespace Sylament\Tests\Fixtures\Tables;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Actions\Concerns\HasActions;
@@ -16,7 +16,7 @@ use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
-#[AsLiveComponent(name: 'Actions:OrderLineTable', template: '@Fixtures/actions/table.html.twig')]
+#[AsLiveComponent(name: 'Tables:OrderLineTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class OrderLineTable implements InteractsWithActions, InteractsWithTable
 {
     use DefaultActionTrait;

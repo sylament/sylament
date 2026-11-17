@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\Testing\TestAction;
-use Sylament\Tests\Fixtures\Actions\InvoiceLineTable;
-use Sylament\Tests\Fixtures\Actions\OrderLineTable;
-use Sylament\Tests\Fixtures\Actions\ProductTable;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Tables\InvoiceLineTable;
+use Sylament\Tests\Fixtures\Tables\OrderLineTable;
+use Sylament\Tests\Fixtures\Tables\ProductTable;
 
 it("deletes the row's record and toasts", function (): void {
     $this->seed($kept = new Product('Kept'), $gone = new Product('Gone'));

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\Testing\TestAction;
-use Sylament\Tests\Fixtures\Actions\ProductTable;
 use Sylament\Tests\Fixtures\Actions\ToolbarHost;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Tables\ProductTable;
 
 it('rethrows what a host action throws, never an error page, while a failed validation answers its re-render', function (): void {
     expect($this->createLiveComponent(CodeForm::class)->call('save')->response()->getStatusCode())->toBe(422)

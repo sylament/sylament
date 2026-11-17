@@ -640,11 +640,11 @@ it('requires the field when the sibling matches, loosely for scalars', function 
 it("lets the sibling's own type decide the strictness, as Laravel does", function (): void {
     // `in_array($sibling, $values, is_bool($sibling) || is_null($sibling))` — the
     // *sibling* picks strict or loose, not the declared value. So a raw `true`
-    // sibling is never matched by the string `'1'`, while a `'1'` sibling is
-    // matched by `true` under PHP's loose comparison.
+    // sibling is never matched by the string `'1'`, and a `'1'` sibling is not
+    // matched by `true`, which Filament spells `'true'` into its rule string.
     expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => true]), RequiredValue::class))->toHaveCount(1)
         ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', '1'), ['flag' => true]), RequiredValue::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => '1']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => '1']), RequiredValue::class))->toBe([])
         ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', null), ['flag' => null]), RequiredValue::class))->toHaveCount(1)
         ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', ''), ['flag' => null]), RequiredValue::class))->toBe([]);
 });

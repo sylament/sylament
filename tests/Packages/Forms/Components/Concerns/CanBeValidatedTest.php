@@ -602,6 +602,8 @@ describe('conditional requirement', function (): void {
         expect($this->host->getErrorsForSchemaStatePath('data.note'))->toBe($requires ? ['This value should not be blank.'] : []);
     })->with([
         'a text sibling against an integer' => ['1', 1, true],
+        'a text sibling against true' => ['1', true, false],
+        'a text sibling spelling true' => ['true', true, true],
         'a boolean sibling against true' => [true, true, true],
         'a null sibling against null' => [null, null, true],
     ]);

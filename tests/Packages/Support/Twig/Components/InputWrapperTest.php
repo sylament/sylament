@@ -42,6 +42,20 @@ it('draws an affix icon, the one an application registers under its alias even w
         ->not->toContainElement(SupportSelectors::SUFFIX);
 });
 
+it('reads action, icon and label before its content, and label, icon and action after it', function (): void {
+    $render = $this->renderTwigComponent('SylamentSupport:InputWrapper', [
+        'prefixActions' => [Html::make('<button type="button">Copy</button>')],
+        'prefixIcon' => 'support:star',
+        'prefix' => '€',
+        'suffix' => 'per kg',
+        'suffixIcon' => 'support:heart',
+        'suffixActions' => [Html::make('<button type="button">Clear</button>')],
+    ], content: '<input name="price">')->crawler();
+
+    expect($render->filter(SupportSelectors::PREFIX)->text())->toBe('Copy Star €')
+        ->and($render->filter(SupportSelectors::SUFFIX)->text())->toBe('per kg Heart Clear');
+});
+
 it('puts an affix inside the border only on the side told', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '€', 'suffix' => 'per kg', 'inlinePrefix' => true])->crawler())
         ->toContainElement(SupportSelectors::INLINE_PREFIX, '€')

@@ -30,5 +30,5 @@ it('refuses a relationship whose options it cannot enumerate, naming the field a
 it('refuses a relationship whose name resolves to nothing, naming the field', function (): void {
     [$list] = new RecordMappingHost()->mapping(CheckboxList::make('plants')->relationship(static fn (): ?string => null, 'name'))->record(Garden::class)->getComponents();
 
-    expect(fn (): array => $list->getOptions())->toThrow(LogicException::class, 'The [plants] field was asked for its relationship, but relationship() named none and the field carries no name to fall back on.');
+    expect(fn (): array => $list->getOptions())->toThrow(LogicException::class, "The [plants] field was asked for its relationship, but relationship() named none, and the field's own name stands in only when relationship() is called without a name.");
 });

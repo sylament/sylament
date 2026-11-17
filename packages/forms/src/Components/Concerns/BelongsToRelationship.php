@@ -10,8 +10,9 @@ use Sylament\Schemas\Components\Concerns\BelongsToRelationship as SchemasBelongs
  * The field-flavoured face of {@see SchemasBelongsToRelationship}: the
  * association resolution and its refusals live one package down, shared with the
  * layout components that entangle a whole subtree, and this fills in the two
- * clauses a *field* says differently — how a refusal names it, and that a field
- * has its own name to fall back on when `relationship()` passes none.
+ * clauses a *field* says differently — how a refusal names it, and that a field's
+ * own name stands in only when `relationship()` is called without a name, never for
+ * a name that resolves to nothing.
  */
 trait BelongsToRelationship
 {
@@ -24,6 +25,6 @@ trait BelongsToRelationship
 
     protected function getMissingRelationshipNameNote(): string
     {
-        return ' and the field carries no name to fall back on';
+        return ", and the field's own name stands in only when relationship() is called without a name";
     }
 }

@@ -1205,7 +1205,7 @@ describe('relationship()', function (): void {
 
         $schema = $host->mapping(Repeater::make('sheets')->relationship(static fn (): ?string => null)->components([TextInput::make('heading')]))->record($binder);
 
-        expect(fn (): Schema => $schema->fill($binder))->toThrow(LogicException::class, 'The [sheets] field was asked for its relationship, but relationship() named none and the field carries no name to fall back on.');
+        expect(fn (): Schema => $schema->fill($binder))->toThrow(LogicException::class, "The [sheets] field was asked for its relationship, but relationship() named none, and the field's own name stands in only when relationship() is called without a name.");
     });
 
     it('refuses an association it cannot repeat over as it fills, naming what to map instead', function (string $association, string $message): void {

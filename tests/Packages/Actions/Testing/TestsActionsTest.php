@@ -107,6 +107,14 @@ it('compares the mounted arguments only when the assertion names some', function
         ->toThrow(AssertionFailedError::class, 'Failed asserting that the mounted arguments for the action [rename] match the expected arguments.');
 });
 
+it('refuses the closure check a frame whose arguments are a list, naming them unnamed', function (): void {
+    $tester = $this->createLiveComponent(MountedActionsHost::class)->mountAction('rename', ['loud']);
+
+    expect(fn () => $tester->assertActionMounted(TestAction::make('rename')->arguments(fn (array $arguments): bool => true)))
+        ->toThrow(LogicException::class, 'A mounted action frame keeps arguments that are not named.')
+        ->and($tester->assertActionMounted('rename'))->toBe($tester);
+});
+
 it('compares the mounted context with the one the assertion names', function (): void {
     $this->seed($mounted = new Product('Lamp'), $other = new Product('Vase'));
 

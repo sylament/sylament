@@ -1043,12 +1043,14 @@ trait CanBeValidated
      * Laravel's exact strictness rule: loose for strings and ints, so a text input's
      * `'1'` still matches `1`, but strict for booleans and nulls, so a checkbox's raw
      * `true` is not matched by the string `'1'`. A declared boolean meets a sibling
-     * that is neither in the spelling Filament's rule string gives it, `'true'` or
-     * `'false'`, so a text sibling's `'1'` does not match `true`.
+     * that is neither in the spelling Filament's rule string gives it: `'true'` or
+     * `'false'` alone, so a text sibling's `'1'` does not match `true`, and `'1'` or
+     * `''` inside a list, which Filament's rule string joins with `implode()`.
      */
     private function matchesConditionValues(mixed $other, mixed $values): bool
     {
         $isStrict = is_bool($other) || $other === null;
+        $isList = is_array($values);
 
         // Not `wrap()`: its `null` → `[]` arm reads null as absence, and here null is a
         // value the caller asked to match — `requiredIf('other', null)` means "when the
@@ -1056,10 +1058,11 @@ trait CanBeValidated
         $values = array_map(
             static fn (mixed $value): mixed => match (true) {
                 $value instanceof BackedEnum => $value->value,
+                is_bool($value) && ! $isStrict && $isList => $value ? '1' : '',
                 is_bool($value) && ! $isStrict => $value ? 'true' : 'false',
                 default => $value,
             },
-            is_array($values) ? $values : [$values],
+            $isList ? $values : [$values],
         );
 
         return in_array($other, $values, strict: $isStrict);

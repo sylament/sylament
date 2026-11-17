@@ -113,7 +113,7 @@ A new closure registered from inside a field follows the same shape.
 `requiredIf`, `requiredUnless`, `prohibitedIf` and `prohibitedUnless` port Laravel's rule exactly — `in_array($sibling, $values, is_bool($sibling) || is_null($sibling))` — and it is the **sibling's** own type that picks strict or loose, not the declared value.
 So `requiredIf('count', 1)` still matches the `'1'` a text input submits, `requiredIf('flag', true)` is *not* matched by a `'1'` sibling, and `requiredIf('flag', true)` **is** matched by a raw `true` one.
 Reading the strictness off the declared value instead is the natural misreading, and it inverts two of those three.
-Under the loose comparison a declared boolean is compared in the spelling Filament's rule string gives it, `'true'` or `'false'`, since PHP's own `'1' == true` would otherwise match it.
+Under the loose comparison a declared boolean is compared in the spelling Filament's rule string gives it, since PHP's own `'1' == true` would otherwise match it: `'true'` or `'false'` alone, and `'1'` or `''` inside a list, which Filament joins with `implode()`, so a text `'1'` matches `[true]` but not `true`.
 
 One delta is forced by the live bag: a null sibling is "present and null" here, because `PropertyAccessor::get()` answers null for an absent key too.
 Laravel's `Arr::has` guard on `required_if` therefore collapses into the strict-null match.

@@ -14,6 +14,7 @@ it("answers by the value's type: a scalar a sibling holds loosely, a list any si
     'a scalar no sibling holds' => ['a', new Distinct(mode: Distinct::SCALAR, siblingValues: ['b']), null],
     'a list meeting a sibling list' => [['a', 'b'], new Distinct(mode: Distinct::ARRAY, siblingValues: ['c', 'b']), 'This value is already used by another item.'],
     'a list no sibling list meets, an uncastable member ignored' => [['a', ['b']], new Distinct(mode: Distinct::ARRAY, siblingValues: ['c', ['b']]), null],
+    'a scalar under the array mode' => ['a', new Distinct(mode: Distinct::ARRAY, siblingValues: ['a']), null],
     'a ticked box beside a ticked sibling' => [true, new Distinct(mode: Distinct::BOOLEAN, isSiblingSelected: true), 'Only one item may be selected.'],
     'the one ticked box' => [true, new Distinct(mode: Distinct::BOOLEAN), null],
     'no ticked box while one is required' => [false, new Distinct(mode: Distinct::BOOLEAN, mustBeSelected: true), 'At least one item must be selected.'],

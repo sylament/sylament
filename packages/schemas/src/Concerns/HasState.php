@@ -113,7 +113,7 @@ trait HasState
      */
     public function fill(object|array|null $state = null): static
     {
-        $isRecordFill = is_object($state);
+        $isRecordFill = is_object($state) || is_object($this->getRecord());
 
         if (is_object($state)) {
             $state = $this->readStateFromRecord($state);

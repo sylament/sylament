@@ -232,10 +232,12 @@ trait BelongsToRecord
     }
 
     /**
-     * Walk the map again over the tree a record fill has just hydrated: the read
-     * walked it before a container that builds its children from its state (a
-     * repeater's items) held any, so only this walk sees a hook declared inside
-     * one, and refuses it on the first render rather than first on submit.
+     * Walk the map again over the tree a fill has just hydrated, when the fill was
+     * handed a record or the schema is bound to one — the state a host read off
+     * that record included: the read walked the map before a container that
+     * builds its children from its state (a repeater's items) held any, so only
+     * this walk sees a hook declared inside one, and refuses it on the first
+     * render rather than first on submit.
      *
      * @throws LogicException as {@see getRecordPathMap()} does
      */

@@ -872,9 +872,9 @@ describe('exists()', function (): void {
 });
 
 describe('date comparison', function (): void {
-    it("builds the comparison Filament's rule spelling names", function (string $rule, array $errors): void {
+    it("builds the comparison Filament's rule spelling names", function (string $rule, string $value, array $errors): void {
         $schema = $this->host->mapping(TextInput::make('endsAt')->dateComparisonRule($rule, '2026-01-01'));
-        $this->host->data = ['endsAt' => '2026-01-01'];
+        $this->host->data = ['endsAt' => $value];
 
         if ($errors === []) {
             expect($this->host->validateSchema($schema))->toBeNull();
@@ -886,10 +886,12 @@ describe('date comparison', function (): void {
             expect($exception->getErrors())->toBe(['data.endsAt' => $errors]);
         });
     })->with([
-        'after' => ['after', ['This value must be after 2026-01-01 00:00:00.']],
-        'after_or_equal' => ['after_or_equal', []],
-        'before' => ['before', ['This value must be before 2026-01-01 00:00:00.']],
-        'before_or_equal' => ['before_or_equal', []],
+        'after, on the bound' => ['after', '2026-01-01', ['This value must be after 2026-01-01 00:00:00.']],
+        'after_or_equal, on the bound' => ['after_or_equal', '2026-01-01', []],
+        'after_or_equal, before the bound' => ['after_or_equal', '2025-12-31', ['This value must be on or after 2026-01-01 00:00:00.']],
+        'before, on the bound' => ['before', '2026-01-01', ['This value must be before 2026-01-01 00:00:00.']],
+        'before_or_equal, on the bound' => ['before_or_equal', '2026-01-01', []],
+        'before_or_equal, after the bound' => ['before_or_equal', '2026-01-02', ['This value must be on or before 2026-01-01 00:00:00.']],
     ]);
 
     it('compares against a literal date, or against a sibling field read again on each run', function (): void {

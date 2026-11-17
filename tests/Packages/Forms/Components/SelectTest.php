@@ -597,6 +597,7 @@ describe('dynamic options', function (): void {
         'a search closure' => [static fn (): Select => Select::make('garden')->searchable()->getSearchResultsUsing(static fn (): array => []), ['true', 'false']],
         'a searchable relationship' => [static fn (): Select => Select::make('garden')->relationship('garden', 'name')->searchable(), ['true', 'false']],
         'a preloaded relationship' => [static fn (): Select => Select::make('garden')->relationship('garden', 'name')->searchable()->preload(), ['true', 'true']],
+        'a preloaded search closure' => [static fn (): Select => Select::make('garden')->searchable()->getSearchResultsUsing(static fn (): array => [])->preload(), ['true', 'true']],
         'a relationship with no search column' => [static fn (): Select => Select::make('garden')->relationship('garden', 'name')->searchable([]), ['false', 'false']],
     ]);
 });
@@ -796,7 +797,7 @@ describe('option actions', function (): void {
         'a mapped path overwritten' => ['overwritten', ['name' => 'Rose'], 'ROSE'],
     ]);
 
-    it("runs the manage-level modifier, then the action's own, each replacing the action only when it answers one", function (): void {
+    it("runs the manage-level modifier, then the action's own, each replacing the action only when it answers one, the edit action's as the create action's", function (): void {
         $select = static fn (): Select => Select::make('plant')->options(['fern' => 'Fern'])->createOptionForm([TextInput::make('name')])->createOptionUsing(static fn (): string => 'fern');
 
         expect($this->renderSchemaComponent($select()->manageOptionActions(static fn (Action $action): Action => $action->label('Add a plant'))->createOptionAction(static function (Action $action): void {
@@ -804,7 +805,11 @@ describe('option actions', function (): void {
         })))->toContainButtons(SupportSelectors::SUFFIX_ACTIONS . SupportSelectors::color('danger'), ['Add a plant'])
             ->and($this->renderSchemaComponent($select()->createOptionAction(static fn (): Action => Action::make('createOption')->label('Plant something'))))->toContainButtons(SupportSelectors::SUFFIX_ACTIONS, ['Plant something'])
             ->and(fn () => $this->renderSchemaComponent($select()->createOptionAction(static fn (): string => 'not an action')))
-            ->toThrow(RuntimeError::class, 'An option action modifier on ' . Select::class . ' must return an ' . Action::class . ' instance or null.');
+            ->toThrow(RuntimeError::class, 'An option action modifier on ' . Select::class . ' must return an ' . Action::class . ' instance or null.')
+            ->and($this->renderSchemaComponent(
+                Select::make('plant')->options(['fern' => 'Fern'])->editOptionForm([TextInput::make('name')])->editOptionAction(static fn (Action $action): Action => $action->label('Revise')),
+                ['plant' => 'fern'],
+            ))->toContainButtons(SupportSelectors::SUFFIX_ACTIONS, ['Revise']);
     });
 
     it('refuses a created option on a key a record already holds under the key fields, writing nothing', function (): void {

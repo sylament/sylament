@@ -269,6 +269,18 @@ describe('relationship', function (): void {
             ->and($this->statementsRun())->toHaveCount(2);
     });
 
+    it('keeps its record-built options for the next read, and queries again on every read under a query scope', function (): void {
+        $this->seed($fern = new Plant('Fern'));
+        $label = static fn (Plant $record): string => mb_strtoupper($record->name);
+        [$list, $scoped] = new RecordMappingHost()->mapping(
+            CheckboxList::make('plants')->relationship('plants', 'name')->getOptionLabelFromRecordUsing($label),
+            CheckboxList::make('scoped')->relationship('plants', 'name', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query)->getOptionLabelFromRecordUsing($label),
+        )->record(Garden::class)->getComponents();
+
+        expect([$list->getOptions(), $list->getOptions(), $scoped->getOptions(), $scoped->getOptions()])->toBe(array_fill(0, 4, [$fern->id => 'FERN']))
+            ->and($this->statementsRun())->toHaveCount(3);
+    });
+
     it('lists its record-built options in the order modifyQueryUsing gives the query', function (): void {
         $this->seed(new Plant('Moss'), new Plant('Fern'), new Plant('Ivy'));
         $list = CheckboxList::make('plants')

@@ -156,7 +156,7 @@ describe('record frame', function (): void {
         'a string property' => [StampedNote::class, 'publishedAt', '2026-08-18 14:30:00'],
     ]);
 
-    it('reads a raw wire string as the formatted string with no record behind it, and as the object of the record a subtree binds', function (): void {
+    it('reads a raw wire string as the formatted string with no record behind it or no property of it, and as the object of the record a subtree binds', function (): void {
         $host = $this->validatingRecordMappingHost();
         $frameless = $host->mapping(DateTimePicker::make('publishedAt'));
         $host->data = ['publishedAt' => '2026-08-18 14:30:00'];
@@ -165,13 +165,14 @@ describe('record frame', function (): void {
 
         $host = $this->validatingRecordMappingHost();
         $nested = $host->mapping(
-            Section::make('Manuscript')->statePath('manuscript')->record(ManuscriptObjectKinds::class)->components([DateTimePicker::make('immutableAt')]),
+            Section::make('Manuscript')->statePath('manuscript')->record(ManuscriptObjectKinds::class)->components([DateTimePicker::make('immutableAt'), DateTimePicker::make('remindedAt')]),
             DateTimePicker::make('publishedAt'),
         )->record(StampedNote::class);
-        $host->data = ['manuscript' => ['immutableAt' => '2026-08-18 14:30:00'], 'publishedAt' => '2026-08-18 14:30:00'];
+        $host->data = ['manuscript' => ['immutableAt' => '2026-08-18 14:30:00', 'remindedAt' => '2026-08-18 14:30:00'], 'publishedAt' => '2026-08-18 14:30:00'];
         $state = $nested->getState();
 
         expect($state['manuscript']['immutableAt'])->toBeInstanceOf(DateTimeImmutable::class)
+            ->and($state['manuscript']['remindedAt'])->toBe('2026-08-18 14:30:00')
             ->and($state['publishedAt'])->toBe('2026-08-18 14:30:00');
     });
 });

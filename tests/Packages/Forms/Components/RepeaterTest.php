@@ -109,7 +109,7 @@ describe('the item pipeline', function (): void {
         });
     });
 
-    it('keys items by position end to end under fake()', function (): void {
+    it('keys items by position end to end under fake(), its declared default and an added item included', function (): void {
         Repeater::fake();
         $host = new RecordMappingHost();
         $schema = $host->mapping(Repeater::make('lines')->components([TextInput::make('name')]));
@@ -118,6 +118,13 @@ describe('the item pipeline', function (): void {
 
         expect($host->data['lines'])->toBe([['name' => 'Ada'], ['name' => 'Grace']])
             ->and($schema->getState())->toBe(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
+
+        $defaults = new RecordMappingHost();
+        $defaults->mapping(Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name')]))->fill();
+
+        expect($defaults->data['lines'])->toBe([['name' => 'Ada']])
+            ->and($this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => [['name' => 'Ada']]]])->callAction(TestAction::make('add')->schemaComponent('lines'))->component()->data['lines'])
+            ->toBe([['name' => 'Ada'], ['name' => null]]);
     });
 
     it('fills a simple repeater without clobbering its scalars', function (): void {
@@ -317,7 +324,9 @@ describe('the add action', function (): void {
         expect($this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items))
             ->toContainElement(FormsSelectors::REPEATER_ADD_BUTTON, 'Add to lines')
             ->and($this->renderSchemaComponent(Repeater::make('lines')->addActionLabel('Add a line')->addActionAlignment(Alignment::End)->components([TextInput::make('name')]), $items))
-            ->toContainElement(FormsSelectors::REPEATER_ADD . SupportSelectors::align('end') . ' button', 'Add a line');
+            ->toContainElement(FormsSelectors::REPEATER_ADD . SupportSelectors::align('end') . ' button', 'Add a line')
+            ->and($this->renderSchemaComponent(Repeater::make('lines')->addActionAlignment('center')->components([TextInput::make('name')]), $items))
+            ->toContainElement(FormsSelectors::REPEATER_ADD . SupportSelectors::align('center') . ' button', 'Add to lines');
 
         $crawler = $this->renderSchemaComponent(Repeater::make('lines')->addable(false)->components([TextInput::make('name')]), $items);
 
@@ -440,6 +449,7 @@ describe('the reorder action', function (): void {
             ->and($crawler->filter('.sy-fo-repeater[data-controller]'))->toHaveCount(0);
     })->with([
         'not reorderable' => [fn (): Repeater => Repeater::make('lines')->reorderable(false)],
+        'not reorderable by drag' => [fn (): Repeater => Repeater::make('lines')->reorderableWithDragAndDrop(false)],
         'disabled' => [fn (): Repeater => Repeater::make('lines')->disabled()],
     ]);
 
@@ -907,9 +917,9 @@ describe('unmanaged item keys', function (): void {
 });
 
 describe('itemsAs()', function (): void {
-    it('builds DTOs only at the pipeline boundaries', function (): void {
+    it('builds DTOs only at the pipeline boundaries, from the item class or a cast built over it', function (Closure $items): void {
         $host = new RecordMappingHost();
-        $schema = $host->mapping($repeater = Repeater::make('lines')->itemsAs(LineItem::class)->components([TextInput::make('title')]))->record($sheet = new LineSheet());
+        $schema = $host->mapping($repeater = Repeater::make('lines')->itemsAs($items())->components([TextInput::make('title')]))->record($sheet = new LineSheet());
         $sheet->setLines([new LineItem('One', note: 'kept'), new LineItem('Two')]);
 
         $schema->fill($sheet);
@@ -921,7 +931,10 @@ describe('itemsAs()', function (): void {
         $schema->getData();
 
         expect($sheet->getLines())->toEqual([new LineItem('One', note: 'kept'), new LineItem('Three')]);
-    });
+    })->with([
+        'the item class' => [fn (): string => LineItem::class],
+        'a prebuilt cast' => [fn (): ObjectStateCast => new ObjectStateCast(LineItem::class)],
+    ]);
 
     it('is schema-complete: a key the item class does not declare is dropped at construction', function (): void {
         $host = new RecordMappingHost();
@@ -1022,17 +1035,20 @@ describe('relationship() decoration and hooks', function (): void {
         expect($seen)->toBe($this->binder);
     });
 
-    it('refuses a hooked field in a decoration schema, a dotted path whose remainder names an item hook included', function (): void {
+    it('refuses a hooked field in a decoration schema, at a plain path or a dotted one whose remainder names an item hook', function (string $path): void {
         $host = new RecordMappingHost();
         $schema = $host->mapping(
             Repeater::make('sheets')
                 ->relationship()
-                ->belowContent([TextInput::make('meta.heading')->loadStateFromRelationshipsUsing(static fn (): string => 'decoration')])
+                ->belowContent([TextInput::make($path)->loadStateFromRelationshipsUsing(static fn (): string => 'decoration')])
                 ->components([TextInput::make('heading')->loadStateFromRelationshipsUsing(static fn (): string => 'item')]),
         )->record($this->binder);
 
         expect(fn (): Schema => $schema->fill($this->binder))->toThrow(LogicException::class, sprintf('%s declares a relationship hook, but the record path map does not carry it, so the hook could never fire', TextInput::class));
-    });
+    })->with([
+        'a plain path' => ['note'],
+        'a dotted path whose remainder names an item hook' => ['meta.heading'],
+    ]);
 
     it('routes the save hooks of an item a caller hands getData() as it routes a rendered one', function (): void {
         $host = new RecordMappingHost();
@@ -1563,7 +1579,7 @@ describe('relationship()', function (): void {
     });
 
     describe('the item schema record', function (): void {
-        it('hands a closure in a loaded item its child, and one in an added item no record rather than the owner', function (): void {
+        it('hands a closure in a loaded item its child, and one in an added item or in an item naming a child the record no longer holds no record rather than the owner', function (): void {
             $larder = new Larder('Cellar');
             $larder->addJar(new LarderJar('Plums'));
             $this->seed($larder);
@@ -1578,12 +1594,13 @@ describe('relationship()', function (): void {
                 }),
             ]))->record($larder)->fill($larder);
             $host->data['jars']['added'] = ['label' => 'Figs'];
+            $host->data['jars']['record-' . ($larder->jars->first()->id + 1)] = ['label' => 'Gone'];
 
             foreach ($schema->getComponent('jars')->getItems() as $item) {
                 $item->getComponents(withActions: false)[0]->getLabel();
             }
 
-            expect($handed)->toBe([$larder->jars->first(), null]);
+            expect($handed)->toBe([$larder->jars->first(), null, null]);
         });
 
         it("probes a unique() field in an item against its child's class, ignoring the child a loaded item maps", function (): void {

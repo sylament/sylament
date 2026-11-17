@@ -559,18 +559,21 @@ describe('cross-field arms', function (): void {
         expect($this->host->validateSchema($schema))->toBeNull();
     });
 
-    it('builds no cross-field constraint for a field no live host holds', function (): void {
+    it('builds no cross-field constraint for a field no live host holds, and no distinct() one for a field outside a repeater', function (): void {
         $components = static fn (): array => [
             TextInput::make('amount')->gt('bound'),
             TextInput::make('password')->same('bound'),
             TextInput::make('note')->requiredIf('bound', '9'),
             TextInput::make('email')->prohibits('bound'),
+            TextInput::make('endsAt')->after('startsAt'),
+            TextInput::make('code')->distinct(),
             TextInput::make('bound'),
+            TextInput::make('startsAt'),
         ];
-        $this->host->data = ['amount' => '5', 'password' => 'x', 'note' => '', 'email' => 'x', 'bound' => '9'];
+        $this->host->data = ['amount' => '5', 'password' => 'x', 'note' => '', 'email' => 'x', 'endsAt' => '2026-01-01', 'code' => 'x', 'bound' => '9', 'startsAt' => '2025-01-01'];
 
         expect(Schema::make()->statePath('data')->components($components())->getValidationConstraints())->toBe([])
-            ->and(array_keys($this->host->mapping(...$components())->getValidationConstraints()))->toBe(['data.amount', 'data.password', 'data.note', 'data.email']);
+            ->and(array_keys($this->host->mapping(...$components())->getValidationConstraints()))->toBe(['data.amount', 'data.password', 'data.note', 'data.email', 'data.endsAt']);
     });
 });
 

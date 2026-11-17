@@ -43,7 +43,9 @@ it('puts an inline suffix inside the border, and pads the control on an inline s
 it('renders an affix icon in gray unless a colour is set', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('a')->prefixIcon('forms:envelope')->suffixIcon('forms:check')->suffixIconColor('success')))
         ->toContainElement(SupportSelectors::PREFIX_ICON . SupportSelectors::GRAY)
-        ->toContainElement(SupportSelectors::SUFFIX_ICON . SupportSelectors::color('success'));
+        ->toContainElement(SupportSelectors::SUFFIX_ICON . SupportSelectors::color('success'))
+        ->and($this->renderSchemaComponent(TextInput::make('b')->prefixIcon('forms:envelope')->prefixIconColor('danger')))
+        ->toContainElement(SupportSelectors::PREFIX_ICON . SupportSelectors::color('danger'));
 });
 
 it('renders affix actions in order; plural calls append and a closure may return several or none', function (): void {

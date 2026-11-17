@@ -390,20 +390,23 @@ describe('removeUploadedFile()', function (): void {
             ->and(($this->temporaryFiles)())->toBe([]);
     });
 
-    it('removes a stored path and its stored name, leaving the bytes, and answers the path', function (): void {
+    it('removes a stored path and its stored name, leaving the bytes, and answers the path', function (string $field, string $namesField, mixed $names, mixed $removedNames): void {
         $this->primary->write('photos/a.png', 'x');
 
         $tester = $this->createLiveComponent(GalleryForm::class, ['record' => [
-            'gallery' => ['a' => 'photos/a.png'],
-            'galleryNames' => ['photos/a.png' => 'Holiday.png'],
+            $field => ['a' => 'photos/a.png'],
+            $namesField => $names,
         ]]);
 
-        ($this->callMethod)($tester, 'gallery', 'removeUploadedFile', ['fileKey' => 'a']);
+        ($this->callMethod)($tester, $field, 'removeUploadedFile', ['fileKey' => 'a']);
 
         expect(($this->result)($tester))->toBe('photos/a.png')
-            ->and($tester->component()->data)->toMatchArray(['gallery' => [], 'galleryNames' => []])
+            ->and($tester->component()->data)->toMatchArray([$field => [], $namesField => $removedNames])
             ->and($this->primary->fileExists('photos/a.png'))->toBeTrue();
-    });
+    })->with([
+        'a multiple field, keeping a map of names' => ['gallery', 'galleryNames', ['photos/a.png' => 'Holiday.png'], []],
+        'a single field, keeping one name' => ['cover', 'coverName', 'Holiday.png', null],
+    ]);
 
     it('removes nothing and answers null for a disabled or undeletable field, or a key it does not hold', function (string $field, string $fileKey): void {
         $this->primary->write('kept.png', 'x');

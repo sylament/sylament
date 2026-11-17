@@ -20,8 +20,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `javascript:` URL, a twin `closed` whose two URL callbacks are set but whose toggles are off,
  * a `downloads` one whose items download at `/download/<path>`, a `described` one whose file
  * information comes from a callback, a `fixed` one that is not reorderable, a `capped` one of at
- * most one file, and a `brief` one whose every path is at most five characters. `mount()` fills
- * the form from the record it is given; `save()` validates it.
+ * most one file, and a `brief` one whose every path is at most five characters; beside them a
+ * single `cover` whose name is kept at `coverName`. `mount()` fills the form from the record it
+ * is given; `save()` validates it.
  */
 #[AsLiveComponent(name: 'Forms:GalleryForm', template: '@Fixtures/forms/GalleryForm.html.twig')]
 class GalleryForm implements InteractsWithSchemas
@@ -79,6 +80,7 @@ class GalleryForm implements InteractsWithSchemas
                 FileUpload::make('fixed')->multiple(),
                 FileUpload::make('capped')->multiple()->maxFiles(1),
                 FileUpload::make('brief')->multiple()->nestedRecursiveConstraint(new Length(max: 5)),
+                FileUpload::make('cover')->storeFileNamesIn('coverName'),
             ]);
     }
 

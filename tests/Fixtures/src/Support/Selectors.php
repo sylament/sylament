@@ -16,7 +16,7 @@ namespace Sylament\Tests\Fixtures\Support;
  * by the custom property or class the stylesheet lays its grid out by; a section's Stimulus
  * controller and the values it reads, and the sortable controller with its handles, items and
  * animation duration, by the `data-` hooks it reads; a section's collapse button by its place
- * and its state, whose name changes; the modal's close, the badge's delete and the pagination's
+ * and its state, whose name changes; the modal's dialog and the window inside it by the `sy-` classes the stylesheet paints them by; the modal's close, the badge's delete and the pagination's
  * chevron buttons by their names, and a dropdown's teleport by its Stimulus value. The input
  * wrapper, its invalid state and each side of it are named by their `sy-` classes, because which
  * side an affix sits on is the stylesheet's contract; what sits there is asserted by its text,
@@ -137,6 +137,10 @@ final class Selectors
     public const string SECTION_COLLAPSE_BUTTON = 'header button[aria-expanded]';
 
     public const string BADGE_DELETE_BUTTON = 'button[aria-label="Remove"]';
+
+    public const string MODAL = 'dialog.sy-modal';
+
+    public const string MODAL_WINDOW = '.sy-modal-window';
 
     public const string MODAL_CLOSE_BUTTON = 'button[aria-label="Close"]';
 

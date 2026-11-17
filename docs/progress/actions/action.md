@@ -81,7 +81,7 @@ The Livewire → UX LiveComponent, Blade → Twig and `Htmlable` → `Markup` tr
 | `alpineClickHandler()` / `actionJs()` / `getAlpineClickHandler()` / `getCustomAlpineClickHandler()` / `hasAlpineClickHandler()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | skipped | — | [diverges](has-action.md#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | `livewireTarget()` / `getLivewireTarget()` / `hasLivewireTarget()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | — | — |
 | `withAttributes()` (deprecated) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | skipped | — | [diverges](#the-deprecated-hold-and-withattributes-aliases-are-not-ported) |
-| [Trigger rendering](../../../packages/actions/templates/partials/Action/) (five templates) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`CanGenerate*Html`) | in progress | — | [detail](#tooltip-and-icon-position-rendering-on-an-action-are-untested) · [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray) · [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
+| [Trigger rendering](../../../packages/actions/templates/partials/Action/) (five templates) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`CanGenerate*Html`) | done | — | [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray) · [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | `toHtml()` / `toOptimized*Html()` / `renderModal()` / `toModalHtmlable()` / `hasCustomLivewireClickHandler()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | skipped | — | [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | `HasBadge` / `HasBadgeTooltip` on `Action` | [`Concerns/HasBadge.php`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | todo | — | [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [component.md](../support/component.md) |
@@ -174,16 +174,6 @@ Neither exists here: there is no database-notifications panel to mark anything r
 So `->markAsRead()` changes nothing a user can see.
 
 **Next step:** wire both flags into the click precedence when the database-notifications panel exists, alongside the notification-side surface [`notifications/README.md`](../notifications/README.md) tracks.
-
-### Tooltip and icon-position rendering on an action are untested
-
-**In:** every trigger template passes the action's label, icon, icon size and position, colour, size, disabled state, URL and new-tab target, tooltip and extra attributes to the support primitive it composes.
-[`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php) covers the label, colour, size, icon, disabled state, link-versus-button choice and mount wiring, and [`ActionViewVariantsRenderTest`](../../../packages/actions/tests/Integration/ActionViewVariantsRenderTest.php) covers extra attributes merging onto the icon-button root.
-
-**Missing test coverage:** no test renders an `Action` with `->tooltip(…)` and checks the `title` attribute, and none renders `->iconPosition('after')` and checks that the icon follows the label.
-The primitives' own tests ([`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php), [`LinkRenderTest`](../../../packages/actions/tests/Integration/Components/LinkRenderTest.php)) cover icon position on the primitive, not through an action.
-
-**Next step:** add both cases to `ActionRenderTest`; no code change is expected.
 
 ### HasData lacks `getValidatedData()` and `fillData()`
 

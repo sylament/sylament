@@ -93,8 +93,14 @@ describe('over a garden', function (): void {
             expect($modal->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->each(static fn (Crawler $option): string => $option->text()))->toBe(['Basil', 'Fern', 'Ivy']);
         });
 
-        it("caps the options at the select's optionsLimit, which a recordSelect() closure reshapes", function (): void {
-            expect($this->recordSelectSearch(($this->mounted)(['limitedToTwo']), ''))->toBe([(string) $this->basil->id => 'Basil', (string) $this->fern->id => 'Fern']);
+        it("caps the options at the select's optionsLimit, which a recordSelect() closure reshapes, returning the select or nothing", function (string $variant): void {
+            expect($this->recordSelectSearch(($this->mounted)([$variant]), ''))->toBe([(string) $this->basil->id => 'Basil', (string) $this->fern->id => 'Fern']);
+        })->with(['limitedToTwo', 'limitedToTwoInPlace']);
+
+        it('carries the select a recordSelect() closure returns in place of its own', function (): void {
+            $modal = ($this->mounted)(['swappedSelect'])->render()->crawler();
+
+            expect($modal->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->each(static fn (Crawler $option): string => $option->text()))->toBe(['Spare']);
         });
 
         it('keeps the order a candidate query gives itself over the title order', function (): void {

@@ -33,7 +33,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A table over one owner's to-many, named by its class, its identifier and the association,
  * titled by an attribute of the target, with `AttachAction` in the header, `DetachAction` on
  * each row and `DetachBulkAction` in the toolbar. Each variant configures one thing: the
- * attach select (`multiple`, `preloaded`, `noAttachAnother`, `limitedToTwo`, `permissive`,
+ * attach select (`multiple`, `preloaded`, `noAttachAnother`, `limitedToTwo` and
+ * `limitedToTwoInPlace`, which cap its options by returning the select and by returning
+ * nothing, `swappedSelect`, which returns a select of its own, `permissive`,
  * which neither requires a pick nor refuses a label, `searchLatin`, `searchKeyed`,
  * `searchUnmapped`, `caseless`), its candidate query (`scoped` leaves Basil out, `replaced`
  * offers Rock alone, `selfOrdered` orders by descending id, the first two recording the
@@ -149,6 +151,16 @@ class AttachableRelationTable implements InteractsWithActions, InteractsWithSche
 
         if ($this->has('limitedToTwo')) {
             $action->recordSelect(static fn (Select $select): Select => $select->optionsLimit(2));
+        }
+
+        if ($this->has('limitedToTwoInPlace')) {
+            $action->recordSelect(static function (Select $select): void {
+                $select->optionsLimit(2);
+            });
+        }
+
+        if ($this->has('swappedSelect')) {
+            $action->recordSelect(static fn (): Select => Select::make('recordId')->options(['spare' => 'Spare']));
         }
 
         if ($this->has('permissive')) {

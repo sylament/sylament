@@ -54,13 +54,14 @@ it('puts a danger "Detach selected" with the x-mark in the toolbar, confirmed in
 });
 
 it('detaches every selected plant from the garden in one flush, keeping the plants, toasts "Detached" and clears the selection', function (array $variants): void {
-    $tester = ($this->table)($variants)
-        ->selectTableRecords([$this->rock, $this->moss])
-        ->callAction(TestAction::make('detach')->table()->bulk())
-        ->assertNotified('Detached');
+    $tester = ($this->table)($variants)->selectTableRecords([$this->rock, $this->moss]);
+    $selected = $tester->component()->selectedTableRecordKeys;
+
+    $tester->callAction(TestAction::make('detach')->table()->bulk())->assertNotified('Detached');
     $commits = array_count_values($this->statementsRun())['"COMMIT"'] ?? 0;
 
-    expect($commits)->toBe(1)
+    expect($selected)->toHaveCount(2)
+        ->and($commits)->toBe(1)
         ->and($tester->component()->selectedTableRecordKeys)->toBe([])
         ->and(($this->plantsOf)($this->kew))->toBe(['Fern'])
         ->and(($this->plantsOf)($this->wisley))->toBe(['Rock'])

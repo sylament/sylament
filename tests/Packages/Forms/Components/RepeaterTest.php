@@ -206,6 +206,29 @@ describe('defaultItems()', function (): void {
 
         expect(array_values($host->data['lines']))->toBe([['name' => 'Hedy']]);
     });
+
+    it("gives each new item its fields' own defaults, beside what a declared default holds", function (Closure $repeater, array $item): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping($repeater());
+
+        $schema->fill();
+
+        expect(array_values($host->data['lines']))->toBe([$item]);
+    })->with([
+        'defaultItems()' => [fn (): Repeater => Repeater::make('lines')->defaultItems(1)->components([TextInput::make('name'), TextInput::make('unit')->default('kg')]), ['name' => null, 'unit' => 'kg']],
+        'a declared default' => [fn (): Repeater => Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name'), TextInput::make('unit')->default('kg')]), ['name' => 'Ada', 'unit' => 'kg']],
+        "a declared default over an item field's hydration hook" => [fn (): Repeater => Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name')->afterStateHydrated(static fn (TextInput $component): TextInput => $component->state('hooked')), TextInput::make('unit')->default('kg')]), ['name' => 'Ada', 'unit' => 'kg']],
+    ]);
+
+    it('replaces the items a populated repeater holds with exactly the default ones', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('tags')->generateUuidUsing(static fn (): string => 'fresh')->components([TextInput::make('name')]));
+        $host->data = ['tags' => [['name' => 'a'], ['name' => 'b']]];
+
+        $schema->fill();
+
+        expect($host->data['tags'])->toBe(['fresh' => ['name' => null]]);
+    });
 });
 
 describe('simple()', function (): void {
@@ -828,18 +851,6 @@ describe('an object collection', function (): void {
         $drafts->getData();
 
         expect($anthology->drafts)->toBe([['name' => 'Ada']]);
-    });
-});
-
-describe('a defaults fill', function (): void {
-    it('characterises the ghost items a defaults fill leaves over a populated repeater', function (): void {
-        $host = new RecordMappingHost();
-        $schema = $host->mapping(Repeater::make('tags')->generateUuidUsing(static fn (): string => 'fresh')->components([TextInput::make('name')]));
-        $host->data = ['tags' => [['name' => 'a'], ['name' => 'b']]];
-
-        $schema->fill();
-
-        expect($host->data['tags'])->toBe(['fresh' => ['name' => null], 0 => ['name' => null], 1 => ['name' => null]]);
     });
 });
 

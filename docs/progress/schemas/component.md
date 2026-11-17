@@ -116,11 +116,11 @@ The asymmetry is only reachable when the bag already holds state at fill time, w
 
 The null-write cannot stand alone, and that is what `$hydratedDefaultState` is for.
 It is a by-ref record, threaded through the whole walk by the [`Schema`](schema.md)-level `hydrateState()`, of every default already written, keyed by absolute state path; a component whose path the record already covers returns untouched.
-Without it, a container's default is destroyed by its own children: `Group::make([...])->statePath('author')->default(['name' => 'Ada'])` writes the whole map, and then the defaultless `author.name` inside it — visited next, because `getFlatComponents()` is parent-first — nulls the very key the parent just filled.
+Without it, a container's default is destroyed by its own children: `Group::make([...])->statePath('author')->default(['name' => 'Ada'])` writes the whole map, and then the defaultless `author.name` inside it — visited next, because the walk hydrates a component before it descends into its child schemas — nulls the very key the parent just filled.
 With the record, `author.name` is already covered and skips; its sibling `author.surname`, which the parent default never mentioned, is not covered and still nulls.
 Both halves are pinned.
 
-What the record cannot protect is a container whose child paths are *derived from the state the default replaces* — a repeater, whose item schemas the flat walk materialised before the default rewrote their keys: those children sit at paths the new default never mentions, so the record waves them through and their null-writes rebuild the items the default just dropped ([the repeater divergence](../forms/repeater.md#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items)).
+A container whose child schemas derive from its state — a repeater, whose item schemas are keyed by the items it holds — is protected by the order instead: the walk reads its child schemas only after its own default has been written, so it descends into the items that default produced, never the ones it replaced ([the repeater semantics](../forms/repeater.md#a-defaults-fill-gives-each-item-its-fields-own-defaults-under-the-declared-one)).
 
 ### Dehydration prunes around shared state paths and pathless components
 
@@ -217,7 +217,7 @@ Revisit when one arrives (infolists is the likely first).
 ### Child-schema recursion moves from the component trait up to the schema trait
 
 Filament's component-level `hydrateState` and `fillStateWithNull` recurse into `getChildSchemas()` to walk the tree.
-Sylament's leaf variants handle only their own component (`hydrateState`: the defaults pass plus one cast-set pass keyed by `appliedStateCastPaths`; `fillStateWithNull`: `state(null)` when the raw slot is null); the whole-tree walk, and the `callAfterStateHydrated()` pass Filament runs inside each `hydrateState()`, are driven by the [`Schema`](schema.md)-level state trait via `getFlatComponents()`.
+Sylament's leaf variants handle only their own component (`hydrateState`: the defaults pass plus one cast-set pass keyed by `appliedStateCastPaths`; `fillStateWithNull`: `state(null)` when the raw slot is null); the whole-tree walk, and the `callAfterStateHydrated()` pass Filament runs inside each `hydrateState()`, are driven by the [`Schema`](schema.md)-level state trait: `hydrateState()` hydrates each component and only then reads the child schemas it descends into, `callAfterStateHydrated()` descends children-first, and `fillStateWithNull()` walks `getFlatComponents()`.
 This is why the leaf `hydrateState` signature reads `(bool $applyDefaults = true, array &$appliedStateCastPaths = [], array &$hydratedDefaultState = [])` — no `$shouldCallHydrationHooks`, no `$shouldApplyStateCasts` and no `Arrayable`→array normalization, and the defaults flag is an explicit `bool` where Filament encodes it in the nullability of `$hydratedDefaultState`.
 The shared record itself is ported, along with the `hydrateDefaultState` it feeds ([why it has to be](#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default)), one visibility down: Filament's is public, ours is `protected`, because only the component's own `hydrateState()` calls it.
 

@@ -38,7 +38,7 @@ The Surface table lists every public member of the ported classes and traits exc
 | `hydrateItems()` / `dehydrateItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) |
 | `generateUuidUsing()` / `generateUuid()` / `fake()` | [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | done | — | [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
 | `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
-| `defaultItems()` / `default()` and the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items) |
+| `defaultItems()` / `default()` and the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-defaults-fill-gives-each-item-its-fields-own-defaults-under-the-declared-one) |
 | `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
 | `getAddAction()` / `addAction()` / `getAddActionName()` / `addActionLabel()` / `getAddActionLabel()` / `addActionAlignment()` / `getAddActionAlignment()` / `addable()` / `isAddable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | `getDeleteAction()` / `deleteAction()` / `getDeleteActionName()` / `deletable()` / `isDeletable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
@@ -85,8 +85,15 @@ Two consequences: the same field shows a *different* absolute path on every moun
 Two orderings are load-bearing, and schemas' root [`HasState`](../schemas/schema.md#fill-fires-the-hydrated-hooks-children-first-and-before-the-null-fill-pass) keeps both.
 **Hooks run before `fillStateWithNull()`**: an item's raw value is a scalar in simple mode (`['x', 'y']`), and the null-fill pass writes null at every unset leaf path — `tags.0.value` — which clobbers the scalar the wrap step was about to read, so a record fill would land two empty items.
 **Hooks run children-first**, each descent re-reading `getChildSchemas()`: a nested repeater's hook has to re-key its own items *before* the outer one re-keys the map they sit in, or the inner component writes at a path its parent has just renamed and vivifies phantom items beside the real ones.
-Filament reaches both orderings for free — it hydrates recursively and fires each component's hooks at the end of its own descent — where the port walks flat lists, so it states the order explicitly.
+Filament reaches both orderings for free — it hydrates recursively and fires each component's hooks at the end of its own descent — where the port fires the hooks in a pass of its own after the hydration walk, so it states the order explicitly.
 Dehydration runs inner-first (a component's `mutateDehydratedState` applies after its children's), which is why a nested repeater positionalises inner-first and the shapes compose.
+
+### A defaults fill gives each item its fields' own defaults, under the declared one
+
+`Schema::fill()` with no argument writes the repeater's default first and only then descends into its item schemas, read off the state that default has just written, so each item field applies its own default — `TextInput::make('unit')->default('kg')` puts `'kg'` into every item `defaultItems()` creates — or [null-writes](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default) when it declares none.
+A key the repeater's declared `default([...])` holds is already in the walk's shared record, so the item field at that path keeps the declared value rather than its own default.
+After the item hooks have run, `hydrateItems()` merges the declared default back over each item, so a declared value also outranks an item field's `afterStateHydrated` hook, while every key it does not declare keeps what the item fields wrote; `defaultItems()` declares no item values and skips the merge.
+Because the descent reads the item schemas the default produced, a defaults fill over a repeater that already holds items leaves exactly the default items: the pre-fill items' schemas are never visited, so they write nothing back.
 
 ### A structural action fires the repeater's afterStateUpdated hooks itself
 
@@ -267,7 +274,7 @@ Inside the port it diverges a second time, from the generic state-cast seam: the
 Get-ward at `getStateToDehydrate()` would construct the outer DTOs while a plain inner repeater's uuid map still sits inside them — the inner's positionalisation runs later, in the mutate pass, whose `setInArray()` would then vivify phantom uuid paths beside the already-built DTO list.
 Set-ward anywhere in the hook phase is the mirror image: `afterStateHydrated` runs children-first, so an inner repeater would read through outer items that are still DTOs, meet a non-array mid-path, and the write-back would clobber the DTO wholesale under `setInArray()`'s documented contract.
 
-So the repeater applies the cast itself, at the two item-pipeline boundaries where the directionality is already correct: **set-ward in its `hydrateState()` position** (the flat pass walks parents before descendants and runs before every hook, so record-read DTOs are deconstructed to arrays — keys preserved — before any inner component or the `hydrateItems()` re-key looks at them), and **get-ward at the tail of `dehydrateItems()`** (the mutate pass runs children-first, so an outer cast constructs from items whose inner repeaters are already positionalised — and already objects, when the inner declares a cast of its own, so nesting composes in both directions).
+So the repeater applies the cast itself, at the two item-pipeline boundaries where the directionality is already correct: **set-ward in its `hydrateState()` position** (the hydration walk visits a component before it descends into its child schemas and runs before every hook, so record-read DTOs are deconstructed to arrays — keys preserved — before any inner component or the `hydrateItems()` re-key looks at them), and **get-ward at the tail of `dehydrateItems()`** (the mutate pass runs children-first, so an outer cast constructs from items whose inner repeaters are already positionalised — and already objects, when the inner declares a cast of its own, so nesting composes in both directions).
 `array_values()` therefore always runs over arrays, and construction always follows it.
 All four nesting quadrants are pinned by tests.
 
@@ -319,30 +326,6 @@ A generator returning something else therefore raises PHP's own return `TypeErro
 An **unknown key** returns the array unchanged — Filament's after-arm runs `array_search()`'s `false` through `+ 1`, indexing a neighbour that may not exist and corrupting the array with a `key => null` entry under an "Undefined array key" warning.
 And the **neighbour guard** is `=== null` rather than `blank()`, so an empty-string key is a movable neighbour here where Filament aborts the swap — `''` is a legal array key, and refusing to move past it was the helper leaking value semantics into key mechanics.
 Key matching is strict over `strval()`-normalised keys, the same normalisation the record walks use, so a client-sent `'2'` matches a fake-mode integer key without the loose comparison Rector rejects.
-
-### A defaults fill over a populated repeater resurrects its pre-fill items
-
-`Schema::fill()` with **no argument** over a repeater that already holds items writes the declared default and then rebuilds every pre-fill item beside it as an all-null ghost.
-Measured over `Repeater::make('tags')->defaultItems(1)->components([TextInput::make('name')])`, with the uuid generator pinned to a fixed key so the shape is readable — the bag holds two items, the fill declares one, and three come out:
-
-```
-before  ['tags' => [['name' => 'a'], ['name' => 'b']]]
-after   ['tags' => ['fresh' => ['name' => null], 0 => ['name' => null], 1 => ['name' => null]]]
-```
-
-The mechanism is the flat walk.
-Schemas' `Schema::hydrateState()` materialises `getFlatComponents()` **once**, up front, so the list it walks holds the item schemas built from the *pre-fill* map — fields at `tags.0.name` and `tags.1.name`.
-The repeater itself is visited first (parent-first) and writes its default, a freshly keyed map, recording it at `tags` in the walk's shared `$hydratedDefaultState`.
-The stale item fields run next, and that record does not cover them: the default's keys are new, so `tags.0.name` is not a path any default mentioned.
-Each field is defaultless, so each [null-writes](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default), and the accessor vivifies the missing intermediates on the way — which is what rebuilds `tags.0` and `tags.1` as items.
-Filament never reaches this: its `hydrateState()` recurses, re-reading `getChildSchemas()` at each descent, so the item schemas it visits are the ones the default just created.
-
-A stale item schema produces state only because a defaultless component [null-writes](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default) in a defaults fill.
-Nothing that ships reaches it, caller by caller: `HasFilters::mountTableFilters()` and `CanBeMounted`'s default `mountUsing` fill a freshly built schema over an empty bag; `Repeater::getAddAction()` fills the one item schema it has just created empty; `HasSchemas::fill(null)` is the host-facing entry and every host calls it from `mount()`, again over an empty bag; and `HasFilters::resetTableFiltersForm()`, the only one that fills a **populated** bag, fills a filters form, and no filter that ships puts a repeater in one.
-It becomes reachable the first time a host re-fills a populated form: a "reset to defaults" button over a form holding a repeater is the exact shape.
-
-The current output is pinned by [`it characterizes the ghost items a defaults fill leaves over a populated repeater`](../../../packages/forms/tests/Unit/Components/RepeaterTest.php), a characterization test rather than a wanted one: the assertion changes with the fix, and the diff states its cost.
-The fix is on the walk, not on the repeater: either recurse the way Filament does (re-reading child schemas per descent), or flush a container's cached child schemas the moment its own default replaces the state they were derived from.
 
 ### The repeater item owns its collapse state, unlike the Section
 

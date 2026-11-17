@@ -272,7 +272,17 @@ describe('record chain', function (): void {
 
             return [$action, $lamp];
         },
+        "its group's before its schema's" => function (): array {
+            ActionGroup::make([$action = Action::make('edit')->schemaContainer(new MountedActionsHost()->makeSchema()->record(new Product('Schema lamp')))])->record($lamp = new Product('Group lamp'));
+
+            return [$action, $lamp];
+        },
         "its schema's" => fn (): array => [Action::make('edit')->schemaContainer(new MountedActionsHost()->makeSchema()->record($lamp = new Product('Schema lamp'))), $lamp],
+        "its schema's before its component's" => function (): array {
+            [$component] = new MountedActionsHost()->makeSchema()->record(new Product('Component lamp'))->components([TextInput::make('name')])->getComponents();
+
+            return [Action::make('edit')->schemaContainer(new MountedActionsHost()->makeSchema()->record($lamp = new Product('Schema lamp')))->schemaComponent($component), $lamp];
+        },
         "its component's" => function (): array {
             [$component] = new MountedActionsHost()->makeSchema()->record($lamp = new Product('Component lamp'))->components([TextInput::make('name')])->getComponents();
 

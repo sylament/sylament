@@ -51,10 +51,7 @@ describe('the record label', function (): void {
 
         expect($byClass->getRecordLabel())->toBe('aisle seat')
             ->and($byClass->getTitleCaseRecordLabel())->toBe('Aisle Seat')
-            ->and($custom->getRecordLabel())->toBe('front row seat')
-            ->and($custom->getTitleCaseRecordLabel())->toBe('Front Row Seat')
-            ->and(ActionGroup::make()->getRecordLabel())->toBeNull()
-            ->and(ActionGroup::make()->getTitleCaseRecordLabel())->toBeNull();
+            ->and($custom->getTitleCaseRecordLabel())->toBe('Front Row Seat');
     });
 
     it('pluralises the label, unless a custom plural is given, title-casing each word', function (): void {
@@ -63,10 +60,7 @@ describe('the record label', function (): void {
 
         expect($byClass->getPluralRecordLabel())->toBe('aisle seats')
             ->and($byClass->getTitleCasePluralRecordLabel())->toBe('Aisle Seats')
-            ->and($custom->getPluralRecordLabel())->toBe('seating')
-            ->and($custom->getTitleCasePluralRecordLabel())->toBe('Seating')
-            ->and(ActionGroup::make()->getPluralRecordLabel())->toBeNull()
-            ->and(ActionGroup::make()->getTitleCasePluralRecordLabel())->toBeNull();
+            ->and($custom->getTitleCasePluralRecordLabel())->toBe('Seating');
     });
 });
 

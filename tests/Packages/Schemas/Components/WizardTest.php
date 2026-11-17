@@ -96,8 +96,8 @@ describe('render', function (): void {
         $slots = static fn (string $state): array => $rendered->filter("[data-sylament--schemas--wizard-target\$=\"Slot\"]{$state}")
             ->each(static fn (Crawler $slot): ?string => $slot->attr('data-sylament--schemas--wizard-target'));
 
-        expect($slots(':not(.sy-hidden)'))->toBe($shown)
-            ->and($slots('.sy-hidden'))->toBe($hidden);
+        expect($slots(':not(' . SupportSelectors::HIDDEN . ')'))->toBe($shown)
+            ->and($slots(SupportSelectors::HIDDEN))->toBe($hidden);
     })->with([
         'the first step, by default' => [null, ['cancelSlot', 'nextSlot'], ['previousSlot', 'submitSlot']],
         'a middle step' => [2, ['previousSlot', 'nextSlot'], ['cancelSlot', 'submitSlot']],

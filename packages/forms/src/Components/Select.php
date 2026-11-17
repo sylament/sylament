@@ -1163,9 +1163,9 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * answers the count alone. Then, once the payload left anything there: a
      * select whose option map is the whole truth is guarded by a `Choice` over its
      * enabled options, and one whose map is not — a searchable relationship
-     * select, or a select labelling values through a closure with no `options()` —
-     * by probing the label of what was submitted, Filament's rule, where a failed
-     * probe is a `Choice` over nothing.
+     * select, an `ignoreRecord:` one, or a select labelling values through a
+     * closure with no `options()` — by probing the label of what was submitted,
+     * Filament's rule, where a failed probe is a `Choice` over nothing.
      *
      * @return list<Constraint>
      */

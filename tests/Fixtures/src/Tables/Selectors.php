@@ -14,8 +14,9 @@ namespace Sylament\Tests\Fixtures\Tables;
  * the live model they bind; the filters and column manager triggers, an indicator's remove
  * button, the remove-all button and a record's reorder handle by their accessible names; the
  * filters modal by its id, the column manager by its Stimulus controller and the selection
- * banner by the controller's target; and the filters panel, an active-filter indicator and the
- * empty state by the `sy-ta-` class that is their one hook.
+ * banner by the controller's target; and the header band, the toolbar band, a cell's wrapper,
+ * the filters panel, an active-filter indicator and the empty state by the `sy-ta-` class that
+ * is their one hook.
  */
 final class Selectors
 {
@@ -42,6 +43,21 @@ final class Selectors
      * A group's summary row.
      */
     public const string GROUP_SUMMARY_ROW = 'tr[id*=".table.group-summary."]';
+
+    /**
+     * The header band above the table, rendered only when it holds a heading, a description or header actions; its class is its one hook.
+     */
+    public const string HEADER = '.sy-ta-header';
+
+    /**
+     * The toolbar band above the table, rendered only when it holds search, filters, toolbar actions, reordering, grouping or the column manager; its class is its one hook.
+     */
+    public const string TOOLBAR = '.sy-ta-header-toolbar';
+
+    /**
+     * The `<a>`, `<button>` or `<div>` wrapping a column's content inside its cell (inside `cell()`); its class is its one hook.
+     */
+    public const string CELL_WRAPPER = '.sy-ta-col';
 
     /**
      * The table's global search input.

@@ -315,6 +315,7 @@ describe('validation', function (): void {
         'a list the labels closure labels' => ['labelledMany', ['fern', 'moss'], true],
         'a list with a value the labels closure leaves out' => ['labelledMany', ['fern', 'yew'], false],
         'a list with a value the labels closure labels blank' => ['labelledMany', ['fern', 'bare'], false],
+        'a labelled list with a value whose option is disabled' => ['labelledMany', ['fern', 'ivy'], false],
     ]);
 
     it('refuses a value the enum cast would null out, and a single select handed a list or false, as a violation', function (mixed $state): void {
@@ -581,6 +582,26 @@ describe('option actions', function (): void {
             ->and($this->dispatchedBrowserEvents($tester, 'sylament:select-refresh-selected-option-label'))->toBe([['statePath' => 'data.garden']]);
 
         $tester->call('save')->assertHasNoFormErrors(['garden']);
+    });
+
+    it('appends a created option to a multiple selection, and keeps the modal open on a blank form to create another', function (): void {
+        $tester = $this->createLiveComponent(SelectOptionActionForm::class)
+            ->fillForm(['plants' => ['fern']])
+            ->callAction(TestAction::make('createOption')->schemaComponent('plants'), data: ['subject' => 'Moss'])
+            ->assertFormSet(['plants' => ['fern', 'moss']], 'form');
+
+        expect($tester->render()->crawler())->not->toContainElement('dialog[open]');
+
+        $another = $this->createLiveComponent(SelectOptionActionForm::class)
+            ->fillForm(['plants' => ['fern']])
+            ->mountAction(TestAction::make('createOption')->schemaComponent('plants'))
+            ->fillForm(['subject' => 'Moss'])
+            ->callMountedAction(['another' => true])
+            ->assertFormSet(['plants' => ['fern', 'moss']], 'form')
+            ->assertSchemaStateSet(['subject' => null]);
+        $dialog = $another->render()->crawler()->filter('dialog[open]');
+
+        expect($dialog->filter('#' . $dialog->attr('aria-labelledby'))->text())->toBe('Create');
     });
 
     it('validates the create modal alone, writing nothing while it fails', function (): void {

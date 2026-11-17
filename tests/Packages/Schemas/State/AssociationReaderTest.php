@@ -888,8 +888,8 @@ describe('attach() and detach()', function (): void {
     it('lets every many-to-many and an ordinary one-to-many be associated and dissociated', function (string $name): void {
         $relationship = new Relationship($this->ash, $name);
 
-        expect(fn () => $this->reader->assertRelationshipAcceptsAssociate($relationship))->not->toThrow(LogicException::class)
-            ->and(fn () => $this->reader->assertRelationshipAcceptsDetach($relationship))->not->toThrow(LogicException::class);
+        expect($this->reader->assertRelationshipAcceptsAssociate($relationship))->toBeNull()
+            ->and($this->reader->assertRelationshipAcceptsDetach($relationship))->toBeNull();
     })->with([
         'a many-to-many' => ['plants'],
         'a one-to-many' => ['seedlings'],

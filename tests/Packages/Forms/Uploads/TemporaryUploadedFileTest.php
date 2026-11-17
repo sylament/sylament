@@ -45,7 +45,7 @@ it('reads, checks and deletes the file it holds, and shrugs at a second delete',
 
     expect($this->file->exists())->toBeFalse()
         ->and($this->disk->fileExists($this->file->getPath() . '.json'))->toBeFalse()
-        ->and(fn () => $this->file->delete())->not->toThrow(Exception::class);
+        ->and($this->file->delete())->toBeNull();
 });
 
 it('serialises to its token in JSON and as a string, so raw state holds one string', function (): void {

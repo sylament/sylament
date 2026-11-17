@@ -158,6 +158,6 @@ describe('construction', function (): void {
                 ->toThrow(InvalidArgumentException::class, 'cannot normalise to the storage root');
         }
 
-        expect(fn (): TemporaryUploads => new TemporaryUploads($this->registry, 'test-secret', directory: '   '))->not->toThrow(InvalidArgumentException::class);
+        expect(new TemporaryUploads($this->registry, 'test-secret', directory: '   '))->toBeInstanceOf(TemporaryUploads::class);
     });
 });

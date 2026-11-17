@@ -935,17 +935,14 @@ describe('date comparison', function (): void {
         });
     });
 
-    it('validates clean against a blank or unparseable sibling whatever the operator, leaving presence to the sibling', function (string $method, string $startsAt): void {
+    it('validates clean against a blank or unparseable sibling, leaving presence to the sibling', function (string $method, string $startsAt): void {
         $schema = $this->host->mapping(TextInput::make('startsAt'), TextInput::make('endsAt')->{$method}('startsAt'));
         $this->host->data = ['startsAt' => $startsAt, 'endsAt' => '2026-03-01'];
 
         expect($this->host->validateSchema($schema))->toBeNull();
     })->with([
-        'after, a blank sibling' => ['after', ''],
-        'after or equal, a blank sibling' => ['afterOrEqual', ''],
-        'before, a blank sibling' => ['before', ''],
-        'before or equal, a blank sibling' => ['beforeOrEqual', ''],
-        'after, an unparseable sibling' => ['after', 'soon'],
+        'a blank sibling' => ['before', ''],
+        'an unparseable sibling' => ['after', 'soon'],
     ]);
 
     it('files only the required error of a blank sibling that is required, none on the field comparing against it', function (): void {

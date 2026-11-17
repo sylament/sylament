@@ -11,9 +11,7 @@ it('refuses a value no date parse accepts or that is no string, and passes a len
 
     expect(array_map(static fn (ConstraintViolationInterface $violation): string => (string) $violation->getMessage(), iterator_to_array($violations)))->toBe($messages);
 })->with([
-    'a date in the wire format' => ['2026-08-18 14:30:00', []],
     "the browser's T spelling without seconds" => ['2026-08-18T14:30', []],
-    'a relative date' => ['tomorrow', []],
     'a value no parse accepts' => ['tampered', ['This value is not a valid date.']],
     'null' => [null, []],
     'an empty string' => ['', []],

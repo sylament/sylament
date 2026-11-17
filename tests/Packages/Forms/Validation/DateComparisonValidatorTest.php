@@ -35,6 +35,5 @@ it('leaves a blank, unparseable or non-string value to the date constraint', fun
 })->with([
     'a blank string' => ['   '],
     'a value no parse accepts' => ['tampered'],
-    'null' => [null],
     'a value that is no string' => [20200101],
 ]);

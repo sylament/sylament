@@ -9,6 +9,7 @@ use Sylament\Tests\Fixtures\Actions\AtelierResolvingHost;
 use Sylament\Tests\Fixtures\Actions\MemoDefaultsHost;
 use Sylament\Tests\Fixtures\Actions\SchemaDeclarationHost;
 use Sylament\Tests\Fixtures\Actions\SchemaModalHost;
+use Sylament\Tests\Fixtures\Actions\SchemaRecordHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Entity\Atelier;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
@@ -351,6 +352,21 @@ describe('the mounted schema', function (): void {
             ->assertHasActionErrors(['title'])
             ->setActionData(['title' => 'Lamp'])
             ->assertHasNoActionErrors();
+    });
+
+    it("checks a field of an action that names no record class against the record class the host answers for its modal schemas", function (): void {
+        $this->seed(new Product('Lamp'));
+
+        $this->createLiveComponent(SchemaRecordHost::class)
+            ->mountAction('register')
+            ->setActionData(['name' => 'Lamp'])
+            ->callMountedAction()
+            ->assertHasActionErrors(['name'])
+            ->setActionData(['name' => 'Desk'])
+            ->callMountedAction()
+            ->assertActionNotMounted();
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['register: {"name":"Desk"}']);
     });
 
     it("replaces the whole stack from an action's own call, forgetting the old frame's data and form", function (): void {

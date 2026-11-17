@@ -68,7 +68,7 @@ A one-to-many detach is a *dissociation*, and the reader refuses it [where the m
 
 `DetachBulkAction` walks the selection before its `try`: a selection entry that is neither an entity nor a key is a host feeding the action something it never promised, so it throws `DetachBulkAction can only detach entities or their keys, got %s.` and propagates as a developer error, while each key is cast to `string`.
 That is the placement [`DeleteBulkAction`](delete-action.md#both-arms-swallow-and-report-the-same-failure) follows too.
-A *malformed* key never arrives from a table at all, because the selection query narrowed it through the codec before it was plucked, so what stays inside the `try` is the **stale** key: a row detached or deleted between the render and the submit.
+A *malformed* key never arrives from a table at all, because the selection query narrowed it through the codec before it was plucked, so what stays inside the `try` is the **stale** key: a row detached or deleted after the submitting request plucked the selection, since that request re-derives the selection from the table's relation-scoped query and drops a row already gone, so only a concurrent request reaches what follows.
 
 What a stale key produces depends on the route the reference took.
 On [the loading route](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route) `find()` answers null and the reader's own `LogicException` becomes the failure toast; on a one-to-many the reference route reaches the same place by another door, because nulling the mapped-by initialises the proxy and Doctrine raises `EntityNotFoundException`.
@@ -106,7 +106,7 @@ The owning collection still loads once, which is the price of writing through th
 On the **inverse** side the reader writes through the owning side, which is each selected record's own collection, so each reference is initialised: one `SELECT` of the row per key, where the fetching arm reads them all in one statement, and one collection load per key on either arm, so the flag costs statements there rather than saving them.
 
 The reported count is the number of records the loop detached, not an affected-row count, because there is no statement to read one off.
-A key naming a row that is already detached therefore still counts, where Filament's `DELETE` would not count it.
+A key naming a row that is already detached therefore still counts, where Filament's `DELETE` would not count it; within one request the selection's re-pluck drops such a key first, so only a concurrent detach reaches this.
 
 ### The bulk detach is atomic where Filament's fetching arm is per-record
 

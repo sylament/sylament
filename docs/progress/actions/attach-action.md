@@ -69,7 +69,7 @@ The re-resolution is what refuses a key that reaches the action body with the sc
 The fetch runs one statement per batch of `IdentifierConstraint::batch()`: the whole submission for a single identifier, and at most 500 keys a statement for a composite one.
 A forged `multiple()` submission therefore costs time linear in its length.
 The batches' records merge in PHP, each record once: two spellings of one key that the database compares equal (a decimal `1` and `1.0`, or a case variant under a case-insensitive collation) can land in different batches and resolve the same managed record twice.
-The count check then compares them against every submitted key, so a duplicated, doubly spelled or unknown key is refused as one statement refused it.
+The count check then compares them against every submitted key, so a doubly spelled or unknown key is refused as one statement refused it; a duplicated key meets the select's validation first, so on a stock submit only a doubly spelled one reaches the count check.
 Pinned by [`CompositeAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/CompositeAttachAssociateActionsTest.php), which also attaches and associates a 501-key submission whole.
 
 ### The title fast path projects the attribute

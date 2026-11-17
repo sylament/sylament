@@ -13,7 +13,7 @@ owns:
 It is the one-to-many half of the pair Filament ships; [`AttachAction`](attach-action.md) is the many-to-many half, and the two are separate classes here as they are there.
 The record select, its options and the submit's re-resolution are the same code in both classes, written up once in attach-action.md and linked from the rows below.
 
-The relationship it writes is the **table's**: [`Table::relationship()`](../tables/table.md) is the only thing that supplies one, and the action refuses with a `LogicException` naming that when a host mounts it without one.
+The relationship it writes is the **table's**: [`Table::relationship()`](../tables/table.md) is the only thing that supplies one, and the action refuses with a `LogicException` naming that when a host mounts it without one; a stock submit meets the same message first in the record select's label lookup, while the modal re-renders, so it surfaces wrapped in Twig's `RuntimeError` with the message intact.
 
 [`AssociateActionTest`](../../../packages/actions/tests/Unit/AssociateActionTest.php) covers the class alone; the end-to-end cases live in the tables suite's [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php), because only a table host supplies a relationship and the actions test kernel registers neither tables nor forms.
 

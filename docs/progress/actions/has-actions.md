@@ -209,7 +209,7 @@ The port therefore stores the resolved URL on the action ([`getPendingRedirectUr
 Two consequences are load-bearing.
 The component is **not** re-rendered on that path, so `unmountAction()` runs *before* the return rather than being skipped as unnecessary; and Filament's `navigate:`/SPA-mode argument has no analogue and is dropped — there is one navigation channel here, and it is the browser's.
 Storing it on the action rather than in a per-request bag costs one thing Filament never pays: the action outlives the run.
-`$cachedActions` holds the same instance for the life of the host object, so a URL resolved on one run would still be sitting there on the next, and the second run would navigate on the first run's answer even where the host now answers `null` — which is exactly what a create-another remount of the same cached action does.
+`$cachedActions` holds the same instance for the life of the host object, so a URL resolved on one run would still be sitting there on the next, and a second run on that object would navigate on the first run's answer even where the host now answers `null`; a live request hydrates a fresh host, so only a host object kept across two runs of one cached action meets it.
 `callMountedAction()` therefore calls `resetPendingRedirect()` the moment it has read the URL, before unmounting.
 
 ### Record resolution is a single host callback, not per-source

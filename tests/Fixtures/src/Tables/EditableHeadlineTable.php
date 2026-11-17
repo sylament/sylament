@@ -21,8 +21,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A table of `CappedHeadline`s whose rows carry edit actions over the title: `edit` titled
- * by the record's title, `editMutated` whose fill upper-cases the title, and `editListed` whose fill mutator
- * answers a list.
+ * by the record's title, `editMutated` whose fill upper-cases the title, and `editListed`
+ * whose fill mutator answers a list.
  */
 #[AsLiveComponent(name: 'Tables:EditableHeadlineTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class EditableHeadlineTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable

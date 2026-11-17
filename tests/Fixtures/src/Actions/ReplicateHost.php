@@ -34,8 +34,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `PropagatedCutting` variants named `…Cutting…` (the cutting named Rose, or Graft for the
  * one whose parent is left off), `Tally`, and the key-shaped records. The `OrderLine` and
  * `InvoiceLine` variants are named `replicate<Class><Variant>` and replicate the line
- * numbered 2. The hooks and `using()` closures record
- * into the `HookLog`.
+ * numbered 2. The hooks and `using()` closures record into the `HookLog`.
  */
 #[AsLiveComponent(name: 'Actions:ReplicateHost', template: '@Fixtures/actions/ReplicateHost.html.twig')]
 class ReplicateHost implements InteractsWithActions, InteractsWithSchemas

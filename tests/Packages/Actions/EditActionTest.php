@@ -25,8 +25,8 @@ describe('the trigger', function (): void {
         $grouped = $this->renderViewComponent(ActionGroup::make([EditAction::make()]));
 
         expect($bare)->toContainElement('button' . SupportSelectors::color('primary'), 'pencil-square-20-solidEdit')
-            ->and($bare)->toContainElement('button svg', 'pencil-square-20-solid')
-            ->and($grouped)->toContainElement('.sy-dropdown-item' . SupportSelectors::color('primary') . ' svg', 'pencil-square-20-solid');
+            ->and($bare)->toContainElement(SupportSelectors::ICON, 'pencil-square-20-solid')
+            ->and($grouped)->toContainElement(Selectors::DROPDOWN_ITEM . SupportSelectors::color('primary') . ' ' . SupportSelectors::ICON, 'pencil-square-20-solid');
     });
 
     it('links to the page its host routes it to', function (): void {

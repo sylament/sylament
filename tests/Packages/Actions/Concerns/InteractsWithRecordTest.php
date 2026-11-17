@@ -16,11 +16,11 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use function Symfony\Component\String\u;
 
 describe('the record', function (): void {
-    it("answers the record bound with record(), evaluated, and its group's when none is bound", function (): void {
+    it("answers the record bound with record(), and its group's when none is bound", function (): void {
         $lamp = new Product('Lamp');
         $vase = new Product('Vase');
 
-        ActionGroup::make([$inherits = Action::make('open'), $binds = Action::make('close')->record(fn (): Product => $vase)])->record($lamp);
+        ActionGroup::make([$inherits = Action::make('open'), $binds = Action::make('close')->record($vase)])->record($lamp);
 
         expect($inherits->getRecord())->toBe($lamp)
             ->and($inherits->hasRecord())->toBeFalse()

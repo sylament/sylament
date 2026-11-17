@@ -23,7 +23,8 @@ namespace Sylament\Tests\Fixtures\Actions;
  * actions and the submit among them.
  *
  * Selectors for the markup actions render: the open action modal's heading and its
- * footer's actions, read by the record actions' tests.
+ * footer's actions, and the dropdown item a grouped action renders as, read by the record
+ * actions' tests.
  */
 final class Selectors
 {
@@ -58,6 +59,8 @@ final class Selectors
     public const string MODAL_FOOTER_ACTIONS = self::MODAL . ' .sy-modal-footer-actions button';
 
     public const string MODAL_SUBMIT = self::MODAL_FOOTER_ACTIONS . '[type="submit"]';
+
+    public const string DROPDOWN_ITEM = '.sy-dropdown-item';
 
     /**
      * A parameter the live action binding sends, by its name and the value it carries.

@@ -24,6 +24,7 @@ use Sylament\Tests\Fixtures\Entity\SatchelCharm;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
 use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\LarderCrockTable;
 
 describe('the trigger', function (): void {
@@ -36,9 +37,9 @@ describe('the trigger', function (): void {
         $grouped = $this->renderViewComponent(ActionGroup::make([CreateAction::make()->recordClass(CappedHeadline::class)]));
         $bare = $this->renderViewComponent(CreateAction::make()->recordClass(CappedHeadline::class));
 
-        expect($grouped)->toContainElement('.sy-dropdown-item svg', 'plus-20-solid')
+        expect($grouped)->toContainElement(Selectors::DROPDOWN_ITEM . ' ' . SupportSelectors::ICON, 'plus-20-solid')
             ->and($bare)->toContainElement('button', 'New capped headline')
-            ->and($bare->filter('button svg'))->toHaveCount(0);
+            ->and($bare->filter(SupportSelectors::ICON))->toHaveCount(0);
     });
 
     it('links to the page its host routes it to, and opens a modal when forced to or when its class is not routed', function (): void {

@@ -13,8 +13,8 @@ it('reads "View" in gray, with an eye on its own and inside a dropdown', functio
     $bare = $this->renderViewComponent(ViewAction::make());
 
     expect($bare)->toContainElement('button' . SupportSelectors::GRAY, 'eye-20-solidView')
-        ->and($bare)->toContainElement('button svg', 'eye-20-solid')
-        ->and($this->renderViewComponent(ActionGroup::make([ViewAction::make()])))->toContainElement('.sy-dropdown-item' . SupportSelectors::GRAY . ' svg', 'eye-20-solid');
+        ->and($bare)->toContainElement(SupportSelectors::ICON, 'eye-20-solid')
+        ->and($this->renderViewComponent(ActionGroup::make([ViewAction::make()])))->toContainElement(Selectors::DROPDOWN_ITEM . SupportSelectors::GRAY . ' ' . SupportSelectors::ICON, 'eye-20-solid');
 });
 
 it("fills a disabled form from the bound record, headed \"View\" and the record's title, with one Close button", function (): void {

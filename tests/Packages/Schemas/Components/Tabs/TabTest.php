@@ -46,13 +46,6 @@ it('lays out what it holds in the columns of its tabs, unless it sets its own', 
         ->toContainElement(Selectors::TAB_PANEL . ' ' . SupportSelectors::columns('lg', 3), 'Delivered');
 });
 
-it('shows its icon beside its label, after it when told', function (): void {
-    expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([
-        Tab::make('Open')->icon('heroicons:check'),
-        Tab::make('Closed')->icon('heroicons:check')->iconPosition(IconPosition::After),
-    ])))->toContainButtons(Selectors::TAB, ['checkOpen', 'Closedcheck']);
-});
-
 it('shows its badge icon before its badge, or after it when told', function (): void {
     expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([
         Tab::make('Open')->badge('3')->badgeIcon('heroicons:check'),

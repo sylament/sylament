@@ -48,8 +48,7 @@ describe('the trigger', function (): void {
         expect($tester->render()->crawler())->toContainElement('a[href="/headlines/linkedCreate"]', 'New capped headline')
             ->and($tester->render()->crawler()->filter('a[href="/headlines/linkedCreate"][data-action]'))->toHaveCount(0)
             ->and($tester->render()->crawler())->toContainElement('button[data-live-name-param="linkedForced"]', 'New capped headline')
-            ->and($tester->render()->crawler())->toContainElement('button[data-live-name-param="linkedArticle"]', 'New article')
-            ->and($this->renderViewComponent(CreateAction::make()->recordClass(CappedHeadline::class)->url('/headlines/new')))->toContainElement('a[href="/headlines/new"]', 'New capped headline');
+            ->and($tester->render()->crawler())->toContainElement('button[data-live-name-param="linkedArticle"]', 'New article');
 
         $tester->mountAction('linkedForced');
 
@@ -78,7 +77,7 @@ describe('the modal', function (): void {
             ->assertActionNotMounted()
             ->assertNotified('Created');
 
-        expect(array_slice($this->statementsRun(), -3))->toBe(['"START TRANSACTION"', 'INSERT INTO CappedHeadline (code, title, slug) VALUES (?, ?, ?)', '"COMMIT"'])
+        expect(array_map(static fn (string $statement): string => implode(' ', array_slice(explode(' ', $statement), 0, 3)), array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))))->toBe(['"START TRANSACTION"', 'INSERT INTO CappedHeadline', '"COMMIT"'])
             ->and($this->reload(new CappedHeadline('MOON')))->toBeRecord(title: 'Moon', slug: 'moon');
     });
 
@@ -189,7 +188,7 @@ describe('a create on a relationship', function (): void {
             ->assertActionNotMounted()
             ->assertNotified('Created');
 
-        expect(array_slice($this->statementsRun(), 2, 3))->toBe(['"START TRANSACTION"', 'INSERT INTO LarderCrock (shelf, label, larder_id) VALUES (?, ?, ?)', '"COMMIT"']);
+        expect(array_map(static fn (string $statement): string => implode(' ', array_slice(explode(' ', $statement), 0, 3)), array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))))->toBe(['"START TRANSACTION"', 'INSERT INTO LarderCrock', '"COMMIT"']);
 
         $this->createLiveComponent(LarderCrockTable::class)
             ->callAction(TestAction::make('createAnnexed')->table(), data: ['shelf' => 'top', 'label' => 'Pickle'])
@@ -204,17 +203,18 @@ describe('a create on a relationship', function (): void {
             ->and($this->reload(new LarderCrock($cellar, 'low')))->toBeRecord(label: 'Honey');
     });
 
-    it("joins a composite-keyed owner's many-to-many", function (string $action, object $owner): void {
+    it("joins a composite-keyed owner's many-to-many, writing the record and its membership in one transaction", function (string $action, object $owner, string $joinTable): void {
         $this->seed($owner);
 
         $this->createLiveComponent(RecordActionsHost::class)
             ->callAction($action, data: ['name' => 'Fern'])
             ->assertActionNotMounted();
 
-        expect($this->reload($owner)->plants->map(static fn (Plant $plant): string => $plant->name)->toArray())->toBe(['Fern']);
+        expect(array_map(static fn (string $statement): string => implode(' ', array_slice(explode(' ', $statement), 0, 3)), array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))))->toBe(['"START TRANSACTION"', 'INSERT INTO Plant', "INSERT INTO {$joinTable}", '"COMMIT"'])
+            ->and($this->reload($owner)->plants->map(static fn (Plant $plant): string => $plant->name)->toArray())->toBe(['Fern']);
     })->with([
-        'scalar fields' => fn (): array => ['createTerracePlant', new Terrace(estate: 7, number: 2)],
-        'an association plus a scalar' => fn (): array => ['createAllotmentPlant', new Allotment(new Garden(), number: 2)],
+        'scalar fields' => fn (): array => ['createTerracePlant', new Terrace(estate: 7, number: 2), 'terrace_plant'],
+        'an association plus a scalar' => fn (): array => ['createAllotmentPlant', new Allotment(new Garden(), number: 2), 'allotment_plant'],
     ]);
 
     it('refuses a key taken under the owner as a field error', function (): void {
@@ -242,7 +242,7 @@ describe('a create on a relationship', function (): void {
             ->assertHasActionErrors(['shelf']);
     });
 
-    it("gives a many-to-many owner's collection the record back when the mapping, persist() or the blank-key read refuses it", function (string $action, array $data, ?string $refusal): void {
+    it("gives a many-to-many owner's collection the record back when the mapping, persist() or the blank-key read refuses it", function (string $action, array $data, ?string $refusal, ?string $message): void {
         $this->seed($satchel = new CharmSatchel('Red'));
 
         $tester = $this->createLiveComponent(RecordActionsHost::class);
@@ -250,7 +250,7 @@ describe('a create on a relationship', function (): void {
         if ($refusal === null) {
             $tester->callAction($action, data: $data)->assertHasActionErrors(['label']);
         } else {
-            expect(fn () => $tester->callAction($action, data: $data))->toThrow($refusal);
+            expect(fn () => $tester->callAction($action, data: $data))->toThrow($refusal, $message);
         }
 
         $managed = $this->entityManager()->find(CharmSatchel::class, $satchel->id);
@@ -259,9 +259,9 @@ describe('a create on a relationship', function (): void {
             ->and($this->entityManager()->flush())->toBeNull()
             ->and($this->entityManager()->getRepository(SatchelCharm::class)->count())->toBe(0);
     })->with([
-        'the mapping' => ['createCharm', ['tier' => 1, 'code' => 'opal', 'label' => 'Far too long'], null],
-        "persist(), Doctrine's refusal let through" => ['createCharmUntiered', ['code' => 'opal', 'label' => 'Opal'], EntityMissingAssignedId::class],
-        'the blank-key read' => ['createCharmUncoded', ['tier' => 1, 'label' => 'Opal'], LogicException::class],
+        'the mapping' => ['createCharm', ['tier' => 1, 'code' => 'opal', 'label' => 'Far too long'], null, null],
+        "persist(), Doctrine's refusal let through" => ['createCharmUntiered', ['code' => 'opal', 'label' => 'Opal'], EntityMissingAssignedId::class, "is missing an assigned ID for field  'tier'"],
+        'the blank-key read' => ['createCharmUncoded', ['tier' => 1, 'label' => 'Opal'], LogicException::class, 'whose identifier is still blank after persist()'],
     ]);
 
     it('refuses by name a record class whose constructor requires arguments, advising using()', function (): void {

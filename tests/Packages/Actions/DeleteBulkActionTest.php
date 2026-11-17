@@ -22,7 +22,6 @@ use Sylament\Tests\Fixtures\Tables\ByKeyDeletingProductTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingRawUuidCrateTable;
 use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
 use Sylament\Tests\Fixtures\Tables\RecordsLaneDeletingTable;
-use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 use Sylament\Tests\Infrastructure\Doctrine\FailingWrite;
 use Symfony\Component\Uid\Uuid;
 
@@ -52,7 +51,6 @@ describe('the fetching arm', function (): void {
         $this->seed($lamp = new Product('Lamp'), $vase = new Product('Vase'), $rug = new Product('Rug'));
 
         $tester = $this->createLiveComponent(DeletingProductTable::class)->selectTableRecords([$lamp, $vase]);
-        $selected = $tester->render()->crawler()->filter(TablesSelectors::SELECTED_RECORD)->count();
 
         $tester->callAction(TestAction::make('delete')->table()->bulk())
             ->assertNotified('Deleted')
@@ -60,9 +58,18 @@ describe('the fetching arm', function (): void {
             ->assertCanNotSeeTableRecords([$lamp, $vase]);
 
         expect(array_map(static fn (string $statement): string => implode(' ', array_slice(explode(' ', $statement), 0, 3)), array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))))->toBe(['"START TRANSACTION"', 'DELETE FROM Product', 'DELETE FROM Product', '"COMMIT"'])
-            ->and($selected)->toBe(2)
-            ->and($tester->render()->crawler()->filter(TablesSelectors::SELECTED_RECORD))->toHaveCount(0)
             ->and($tester->render()->crawler()->filter(Selectors::BULK_ONLY . '[hidden]'))->not->toHaveCount(0);
+    });
+
+    it('toasts "Deleted" and writes nothing for an empty selection', function (): void {
+        $this->seed(new Product('Lamp'));
+
+        $this->createLiveComponent(DeletingProductTable::class)
+            ->callAction(TestAction::make('delete')->table()->bulk())
+            ->assertNotified('Deleted');
+
+        expect(array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT'))))->toBe([])
+            ->and($this->entityManager()->getRepository(Product::class)->count())->toBe(1);
     });
 
     it('deletes none of the selection when one of its deletes fails, and toasts the failure instead of failing the request', function (): void {
@@ -183,20 +190,20 @@ describe('the by-key arm', function (): void {
         expect($this->entityManager()->getRepository(Product::class)->count())->toBe(1);
     });
 
-    it('toasts the failure when its override throws, and runs neither the override nor a statement for an empty selection', function (): void {
+    it('toasts the failure when its override throws, and runs no override for an empty selection', function (): void {
         $this->seed($lamp = new Product('Lamp'), $vase = new Product('Vase'));
 
         $tester = $this->createLiveComponent(ByKeyDeletingProductTable::class)
             ->callAction(TestAction::make('deleteRefused')->table()->bulk())
             ->assertNotified('Deleted');
-        $unselected = [$this::getContainer()->get(HookLog::class)->hooks, array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))];
+        $unselected = $this::getContainer()->get(HookLog::class)->hooks;
 
         $tester->selectTableRecords([$lamp, $vase])
             ->callAction(TestAction::make('deleteRefused')->table()->bulk())
             ->assertNotified(Notification::make()->danger()->title('Failed to delete 2 records')->persistent())
             ->assertCanSeeTableRecords([$lamp, $vase]);
 
-        expect($unselected)->toBe([[], []])
+        expect($unselected)->toBe([])
             ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(["refused {$lamp->id}, {$vase->id}"]);
     });
 

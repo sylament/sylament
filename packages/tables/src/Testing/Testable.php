@@ -10,5 +10,6 @@ class Testable extends BaseTestable
 {
     use TestsBulkActions;
     use TestsColumns;
+    use TestsFilters;
     use TestsRecords;
 }

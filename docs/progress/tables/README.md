@@ -47,6 +47,7 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 | [testable.md](testable.md) | done | — | — | Tables' tester, which adds tables' testing helpers to actions' tester, and the test-case trait that creates it. |
 | [tests-bulk-actions.md](tests-bulk-actions.md) | in progress | 1 todo · unaudited | `Testing/TestsBulkActions.php` | The testing helper that selects a live table host's records for a bulk action, on the tester a test drives. |
 | [tests-columns.md](tests-columns.md) | in progress | 1 in progress · 9 todo | `Testing/TestsColumns.php` | The testing helpers that sort, search, toggle and click a live table host's columns, and assert that a column exists, on the tester a test drives. |
+| [tests-filters.md](tests-filters.md) | in progress | 2 in progress · 1 todo | `Testing/TestsFilters.php` | The testing helpers that set, reset and remove a live table host's filters, and assert that a filter exists, on the tester a test drives. |
 | [tests-records.md](tests-records.md) | in progress | 1 in progress · 1 todo | `Testing/TestsRecords.php` | The testing helpers that assert which records a live table host renders, on the tester a test drives. |
 | [text-column.md](text-column.md) | in progress | 1 blocked · 2 todo | `Columns/TextColumn.php`, `Columns/Concerns/CanFormatState.php`, `Columns/Concerns/HasColor.php`, `Columns/Concerns/HasIcon.php`, `Columns/Concerns/HasIconColor.php`, `Columns/Concerns/HasDescription.php`, `View/Components/Columns/TextColumnComponent/ItemComponent.php`, `View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`, `resources/css/columns/text.css`, `vendor/filament/support/src/Concerns/CanConfigureCommonMark.php`, `vendor/filament/support/src/Concerns/HasLineClamp.php` | The text column and its state pipeline, from date, number, money and HTML formatting to badges, icons, colours, descriptions and lists. |
 | [text-input-column.md](text-input-column.md) | in progress | 1 blocked · 2 todo | `Columns/TextInputColumn.php`, `resources/css/columns/text-input.css` | The editable `TextInputColumn`, whose text-input cell writes the typed value back onto the record on `change`. |
@@ -82,7 +83,6 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 | [`TableComponent.php`](../../../vendor/filament/tables/src/TableComponent.php) | todo | — | — |
 | [`Commands/`](../../../vendor/filament/tables/src/Commands) | todo | — | — |
 | [`Testing/TestsActions.php`](../../../vendor/filament/tables/src/Testing/TestsActions.php) | todo | — | — |
-| [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | todo | — | — |
 | [`Testing/TestsSummaries.php`](../../../vendor/filament/tables/src/Testing/TestsSummaries.php) | todo | — | — |
 | [`View/TablesRenderHook.php`](../../../vendor/filament/tables/src/View/TablesRenderHook.php) | todo | — | — |
 | [`View/Components/Columns/Summarizers/CountComponent/`](../../../vendor/filament/tables/src/View/Components/Columns/Summarizers/CountComponent) | todo | — | [`Count::icons()`](summarizer.md#counticons-ships-as-api-and-refuses-to-summarize) |

@@ -454,6 +454,22 @@ describe('calling', function (): void {
     it('redirects from a modal-less action run at mount', function (): void {
         $this->createLiveComponent(ActionStackHost::class)->mountAction('leave')->assertRedirect('/left');
     });
+
+    it('redirects from an action that replaced the stack during its call', function (): void {
+        $this->createLiveComponent(SchemaModalHost::class)->callAction('relocate')->assertRedirect('/relocated');
+    });
+
+    it('skips the body of an action its call arguments disable, keeping it mounted until a call that leaves it enabled', function (): void {
+        $tester = $this->createLiveComponent(ActionStackHost::class)->mountAction('guarded')->callMountedAction(['locked' => true]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+
+        $tester->assertActionMounted('guarded')->callMountedAction();
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['guarded', 'afterActionCalled: guarded']);
+
+        $tester->assertActionNotMounted();
+    });
 });
 
 describe('records', function (): void {
@@ -595,7 +611,10 @@ describe('host defaults', function (): void {
     it('hands an action that declares none the record, title, form, record class and label its hooks answer', function (): void {
         $tester = $this->createLiveComponent(MemoDefaultsHost::class);
 
-        expect($tester->render()->crawler()->filter('button')->reduce(static fn ($button): bool => str_contains($button->text(), 'New memo entry'))->count())->toBe(1);
+        $triggers = $tester->render()->crawler()->filter('button');
+
+        expect($triggers->reduce(static fn ($button): bool => str_contains($button->text(), 'New memo entry'))->count())->toBe(1)
+            ->and($triggers->reduce(static fn ($button): bool => mb_trim($button->text()) === 'New memo')->count())->toBe(1);
 
         $tester->mountAction('view')->assertActionDataSet(['subject' => 'Ledger']);
 

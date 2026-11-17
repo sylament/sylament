@@ -20,7 +20,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A host with actions and no schemas, recording in the request's {@see HookLog} what ran:
  * `confirm` opens a chain of modals (`details` under it, three ways of closing above that,
  * a child overlaying it and a modal-less child that halts); others halt or cancel while
- * mounting, are disabled, run without a modal, redirect, write a {@see Tally} row and then
+ * mounting, are disabled (`guarded` only when its call's arguments lock it), run without a
+ * modal, redirect, write a {@see Tally} row and then
  * stop as their arguments say, or record each step of the call in order. Its methods give
  * the name lookup each shape to tell apart, and its `afterActionCalled()` records too.
  */
@@ -82,6 +83,16 @@ class ActionStackHost implements InteractsWithActions
             ->disabled()
             ->action(function (): void {
                 $this->hookLog->record('locked');
+            });
+    }
+
+    public function guardedAction(): Action
+    {
+        return Action::make('guarded')
+            ->modalHeading('Guarded')
+            ->disabled(fn (array $arguments): bool => (bool) ($arguments['locked'] ?? false))
+            ->action(function (): void {
+                $this->hookLog->record('guarded');
             });
     }
 

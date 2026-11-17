@@ -26,8 +26,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * resource page does: a URL for its `EditAction` (or for every action, when
  * `answersEveryAction` is on), a success redirect for `archive` and a failure redirect for
  * `restore`, and a {@see Memo} record, its title and a form for its `ViewAction`, and the
- * record class and label its `CreateAction` names. `review` opens a modal and `visit` has
- * a URL of its own.
+ * record class its `CreateAction`s name, with a label for `create` and none for `jot`.
+ * `review` opens a modal and `visit` has a URL of its own.
  */
 #[AsLiveComponent(name: 'Actions:MemoDefaultsHost', template: '@Fixtures/actions/MemoDefaultsHost.html.twig')]
 class MemoDefaultsHost implements InteractsWithActions, InteractsWithSchemas
@@ -76,6 +76,11 @@ class MemoDefaultsHost implements InteractsWithActions, InteractsWithSchemas
     public function createAction(): CreateAction
     {
         return CreateAction::make();
+    }
+
+    public function jotAction(): CreateAction
+    {
+        return CreateAction::make('jot');
     }
 
     public function archiveAction(): Action
@@ -140,6 +145,6 @@ class MemoDefaultsHost implements InteractsWithActions, InteractsWithSchemas
 
     public function getDefaultActionRecordLabel(Action $action): ?string
     {
-        return ($action instanceof CreateAction) ? 'memo entry' : null;
+        return ($action instanceof CreateAction && $action->getName() === 'create') ? 'memo entry' : null;
     }
 }

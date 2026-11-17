@@ -23,7 +23,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * ran: `edit` validates a required title, shows one field per operation, holds two actions
  * of its own (one asking for `$set`, one for its arguments and data) and opens `attachFile`
  * above it; `quickRename` runs its required form without a modal; `swap` and `bare` replace
- * each other, one with a form and one without. Its own
+ * each other, one with a form and one without, and `relocate` replaces itself with `bare`
+ * and redirects. Its own
  * form holds a required live `outside` field, an `annotate` action with a form of its own
  * and a modal-less `probe` action; `sidebar()` builds an undeclared schema holding `peek`,
  * `save()` is a host method no context may reach, and `broken()` a schema builder that
@@ -161,6 +162,16 @@ class SchemaModalHost implements InteractsWithActions, InteractsWithSchemas
             ->modalHeading('Bare')
             ->action(function (): void {
                 $this->replaceMountedAction('swap');
+            });
+    }
+
+    public function relocateAction(): Action
+    {
+        return Action::make('relocate')
+            ->modalHeading('Relocate')
+            ->successRedirectUrl('/relocated')
+            ->action(function (): void {
+                $this->replaceMountedAction('bare');
             });
     }
 }

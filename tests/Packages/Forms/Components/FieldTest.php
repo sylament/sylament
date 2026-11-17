@@ -93,8 +93,8 @@ describe('errors', function (): void {
         expect($render->filter(Selectors::ERROR_MESSAGE)->each(static fn ($message): string => $message->text()))
             ->toBe(['This value is too short. It should have 3 characters or more.', 'This value should be of type numeric.'])
             ->and($render)
-            ->toContainElement('.sy-input-wrp.sy-invalid input[name="code"][aria-invalid="true"]')
-            ->toContainElement('.sy-input-wrp:not(.sy-invalid) input[name="note"][aria-invalid="false"]');
+            ->toContainElement(SupportSelectors::INPUT_WRAPPER . SupportSelectors::INVALID . ' input[name="code"][aria-invalid="true"]')
+            ->toContainElement(SupportSelectors::INPUT_WRAPPER . ':not(' . SupportSelectors::INVALID . ') input[name="note"][aria-invalid="false"]');
     });
 });
 

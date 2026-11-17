@@ -9,14 +9,14 @@ use Twig\Markup;
 
 it('wraps its content, carrying every caller attribute whole and appending its class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:InputWrapper', ['class' => 'price', 'tabindex' => '0', 'data-field' => 'price'], content: '<input name="price">')->crawler())
-        ->toContainElement('div' . SupportSelectors::STANDALONE_ROOT . '.sy-input-wrp.price[tabindex="0"][data-field="price"] .sy-input-wrp-content-ctn input[name="price"]');
+        ->toContainElement('div' . SupportSelectors::STANDALONE_ROOT . SupportSelectors::INPUT_WRAPPER . '.price[tabindex="0"][data-field="price"] .sy-input-wrp-content-ctn input[name="price"]');
 });
 
 it('is disabled and invalid only when told', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:InputWrapper', ['disabled' => true, 'valid' => false], content: '<input name="price">')->crawler())
-        ->toContainElement('div.sy-input-wrp' . SupportSelectors::DISABLED . '.sy-invalid input[name="price"]')
+        ->toContainElement('div' . SupportSelectors::INPUT_WRAPPER . SupportSelectors::DISABLED . SupportSelectors::INVALID . ' input[name="price"]')
         ->and($this->renderTwigComponent('SylamentSupport:InputWrapper', content: '<input name="price">')->crawler())
-        ->toContainElement('div.sy-input-wrp:not(' . SupportSelectors::DISABLED . '):not(.sy-invalid) input[name="price"]');
+        ->toContainElement('div' . SupportSelectors::INPUT_WRAPPER . ':not(' . SupportSelectors::DISABLED . '):not(' . SupportSelectors::INVALID . ') input[name="price"]');
 });
 
 it('shows a prefix and a suffix label around its content, and no affix for a blank one', function (): void {
@@ -24,7 +24,7 @@ it('shows a prefix and a suffix label around its content, and no affix for a bla
         ->toContainElement(SupportSelectors::PREFIX . '.sy-input-wrp-prefix-has-label .sy-input-wrp-label', '€')
         ->toContainElement(SupportSelectors::SUFFIX . '.sy-input-wrp-suffix-has-label .sy-input-wrp-label', 'per kg')
         ->and($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '', 'suffix' => new Markup('', 'UTF-8')], content: '<input name="price">')->crawler())
-        ->toContainElement('.sy-input-wrp input[name="price"]')
+        ->toContainElement(SupportSelectors::INPUT_WRAPPER . ' input[name="price"]')
         ->not->toContainElement(SupportSelectors::PREFIX)
         ->not->toContainElement(SupportSelectors::SUFFIX);
 });
@@ -62,7 +62,7 @@ it('puts an affix inside the border only on the side told', function (): void {
         ->toContainElement(SupportSelectors::SUFFIX . ':not(.sy-inline)', 'per kg')
         ->and($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '€', 'suffix' => 'per kg', 'inlineSuffix' => true])->crawler())
         ->toContainElement(SupportSelectors::PREFIX . ':not(.sy-inline)', '€')
-        ->toContainElement(SupportSelectors::SUFFIX . '.sy-inline', 'per kg');
+        ->toContainElement(SupportSelectors::INLINE_SUFFIX, 'per kg');
 });
 
 it('shows its visible affix actions and skips hidden ones, opening no affix for hidden actions alone', function (): void {

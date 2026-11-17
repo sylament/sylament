@@ -7,10 +7,11 @@ use Sylament\Tests\Fixtures\Forms\BareViewField;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Forms\ViewFieldForm;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('renders the template it is given, with the data it is given', function (): void {
     expect($this->renderSchemaComponent(ViewField::make('bio')->template('@Fixtures/forms/WrappedViewField.html.twig')->templateData(['note' => 'Keep it short.'])))
-        ->toContainElement('.sy-input-wrp span', 'Keep it short.');
+        ->toContainElement(SupportSelectors::INPUT_WRAPPER . ' span', 'Keep it short.');
 });
 
 it('gives the template the field as component', function (): void {

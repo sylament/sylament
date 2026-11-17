@@ -32,7 +32,7 @@ describe('render', function (): void {
         $render = $this->renderSchemaComponent(FusedGroup::make([TextInput::make('first'), TextInput::make('second')])->key('contact')->label('Contact'));
 
         expect($render)
-            ->toContainElement(Selectors::LABEL_HEADING . '[id="schema.contact-label"]:not(.sy-sr-only)', 'Contact')
+            ->toContainElement(Selectors::LABEL_HEADING . '[id="schema.contact-label"]' . ':not(' . SupportSelectors::SCREEN_READER_ONLY . ')', 'Contact')
             ->toContainElement(Selectors::FIELD_WRAPPER . ' ' . Selectors::FUSED_GROUP . '[role="group"][id="schema.contact"][aria-labelledby="schema.contact-label"]:not([aria-invalid])')
             ->toContainElement(Selectors::FUSED_GROUP . ' ' . SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::GAP . ') input[name="second"]')
             ->and($render->filter(SchemasSelectors::GAP))->toHaveCount(1)
@@ -88,7 +88,7 @@ describe('slots', function (): void {
             ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Below content')
             ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')', 'Before content')
             ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN, 'Code')
-            ->toContainElement(Selectors::FIELD_WRAPPER . ' label.sy-sr-only[for="schema.code"]', 'Code')
+            ->toContainElement(Selectors::FIELD_WRAPPER . ' ' . Selectors::HIDDEN_LABEL . '[for="schema.code"]', 'Code')
             ->toContainElement(Selectors::FIELD_WRAPPER . ' input[name="code"]')
             ->and($render->filter(Selectors::LABEL_COLUMN))->toHaveCount(0);
     });
@@ -109,9 +109,9 @@ describe('slots', function (): void {
 describe('child schemas', function (): void {
     it('renders the fields of a schema it is handed already built with their full wrapper, as it renders fields it is handed as components plain', function (): void {
         expect($this->renderSchemaComponent(FusedGroup::make()->components(Schema::make()->components([TextInput::make('first')]))))
-            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::LABEL_COLUMN . ' label[for="schema.first"]:not(.sy-sr-only)', 'First')
+            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::LABEL_COLUMN . ' label[for="schema.first"]' . ':not(' . SupportSelectors::SCREEN_READER_ONLY . ')', 'First')
             ->and($this->renderSchemaComponent(FusedGroup::make([TextInput::make('first')])))
-            ->toContainElement(Selectors::FUSED_GROUP . ' label.sy-sr-only[for="schema.first"]', 'First')
+            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::HIDDEN_LABEL . '[for="schema.first"]', 'First')
             ->not->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::LABEL_COLUMN);
     });
 });
@@ -121,18 +121,18 @@ describe('plain wrapper', function (): void {
         $grouped = static fn (string $view): Group => Group::make(Schema::make()->fieldWrapperView($view)->components([TextInput::make('first')->required()]));
 
         expect($this->renderSchemaComponent($grouped(FusedGroup::PLAIN_FIELD_WRAPPER_VIEW)))
-            ->toContainElement('label.sy-sr-only[for="schema.first"]', 'First')
+            ->toContainElement(Selectors::HIDDEN_LABEL . '[for="schema.first"]', 'First')
             ->toContainElement('input[name="first"]')
             ->not->toContainElement(Selectors::LABEL_COLUMN)
             ->and($this->renderSchemaComponent($grouped('my-app::field-wrapper')))
-            ->toContainElement(Selectors::LABEL_COLUMN . ' label[for="schema.first"]:not(.sy-sr-only) ' . Selectors::REQUIRED_MARK, '*');
+            ->toContainElement(Selectors::LABEL_COLUMN . ' label[for="schema.first"]' . ':not(' . SupportSelectors::SCREEN_READER_ONLY . ')' . ' ' . Selectors::REQUIRED_MARK, '*');
     });
 
     it('renders an inline checkbox it holds as its label alone, and a checkbox told not to be inline as its control', function (): void {
         $render = $this->renderSchemaComponent(FusedGroup::make([Checkbox::make('agree')]));
 
         expect($render)
-            ->toContainElement(Selectors::FUSED_GROUP . ' label.sy-sr-only[for="schema.agree"]', 'Agree')
+            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::HIDDEN_LABEL . '[for="schema.agree"]', 'Agree')
             ->and($render->filter('input'))->toHaveCount(0)
             ->and($this->renderSchemaComponent(FusedGroup::make([Checkbox::make('agree')->inline(false)])))
             ->toContainElement(Selectors::FUSED_GROUP . ' input[type="checkbox"][name="agree"]');

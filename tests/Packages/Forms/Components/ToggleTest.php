@@ -26,7 +26,7 @@ describe('rendering', function (): void {
             ->and($stacked->filter('input[role="switch"]'))->toHaveCount(1)
             ->and($stacked)->toContainElement(Selectors::CONTENT_COLUMN . ' label' . Selectors::TOGGLE . '[for="schema.notify"] input[type="checkbox"][role="switch"]')
             ->and($stacked)->toContainElement(Selectors::TOGGLE . ' ' . Selectors::TOGGLE_TRACK)
-            ->and($stacked->filter('[data-field-wrapper] [data-controller]'))->toHaveCount(0);
+            ->and($stacked->filter(Selectors::FIELD_WRAPPER . ' [data-controller]'))->toHaveCount(0);
     });
 
     it('binds the switch to the state by its id and name, with autofocus and disabled when set', function (): void {

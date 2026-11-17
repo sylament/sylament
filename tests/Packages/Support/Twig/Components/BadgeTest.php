@@ -68,16 +68,16 @@ it('draws a small icon before or after its label, at the size it is given', func
 
 it('wraps its label in a container span', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Badge', content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . ' .sy-badge-label-ctn .sy-badge-label', 'Urgent');
+        ->toContainElement(SupportSelectors::BADGE . ' .sy-badge-label-ctn ' . SupportSelectors::BADGE_LABEL, 'Urgent');
 });
 
 it('is named by its label stripped of markup when the label is hidden, and by its text otherwise', function (): void {
     $hidden = $this->renderTwigComponent('SylamentSupport:Badge', ['labelSrOnly' => true], content: ' <b>Urgent</b> ')->crawler();
 
     expect($hidden)->toContainElement(SupportSelectors::BADGE . '[aria-label="Urgent"]')
-        ->and($hidden->filter('.sy-badge-label-ctn, .sy-badge-label'))->toHaveCount(0)
+        ->and($hidden->filter('.sy-badge-label-ctn, ' . SupportSelectors::BADGE_LABEL))->toHaveCount(0)
         ->and($this->renderTwigComponent('SylamentSupport:Badge', content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . ':not([aria-label]) .sy-badge-label', 'Urgent');
+        ->toContainElement(SupportSelectors::BADGE . ':not([aria-label]) ' . SupportSelectors::BADGE_LABEL, 'Urgent');
 });
 
 it('offers a button after its label that removes it, named Remove unless named otherwise, carrying the caller attributes', function (): void {

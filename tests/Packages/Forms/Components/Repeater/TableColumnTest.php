@@ -23,8 +23,8 @@ it("renders each column's header label, for screen readers only when hidden, wit
 
     expect($headers->each(static fn (Crawler $header): string => $header->text()))->toBe(['Name*', 'Code'])
         ->and($headers->eq(0)->filter('sup')->text())->toBe('*')
-        ->and($headers->eq(0)->filter('.sy-sr-only'))->toHaveCount(0)
-        ->and($headers->eq(1)->filter('.sy-sr-only')->text())->toBe('Code')
+        ->and($headers->eq(0)->filter(SupportSelectors::SCREEN_READER_ONLY))->toHaveCount(0)
+        ->and($headers->eq(1)->filter(SupportSelectors::SCREEN_READER_ONLY)->text())->toBe('Code')
         ->and($headers->eq(1)->filter('sup'))->toHaveCount(0);
 });
 

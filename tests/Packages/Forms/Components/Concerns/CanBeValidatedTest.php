@@ -26,6 +26,7 @@ use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\All;
@@ -94,7 +95,7 @@ describe('required()', function (): void {
             expect($exception->getErrors())->toBe(['data.name' => ['This value should not be blank.']]);
         })
             ->and($this->renderSchemaComponent(Section::make()->record(Product::class)->components([TextInput::make('name')->required(static fn (): bool => false)->required(null)])))
-            ->toContainElement('label .sy-fo-field-label-required-mark', '*')
+            ->toContainElement('label ' . Selectors::REQUIRED_MARK, '*')
             ->toContainElement('input[name="name"][required]');
     });
 });
@@ -118,12 +119,12 @@ describe('isRequiredByRecord()', function (): void {
 
     it('marks a field its record requires with the asterisk and the native required attribute, and one over a nullable target with neither', function (): void {
         expect($this->renderSchemaComponent(Section::make()->record(Product::class)->components([TextInput::make('name')])))
-            ->toContainElement('label .sy-fo-field-label-required-mark', '*')
+            ->toContainElement('label ' . Selectors::REQUIRED_MARK, '*')
             ->toContainElement('input[name="name"][required]')
             ->and($this->renderSchemaComponent(Section::make()->record(CappedHeadline::class)->components([TextInput::make('title')])))
             ->toContainElement('label', 'Title')
             ->toContainElement('input[name="title"]:not([required])')
-            ->not->toContainElement('.sy-fo-field-label-required-mark');
+            ->not->toContainElement(Selectors::REQUIRED_MARK);
     });
 
     it('gives up under a nullable branch while it is blank and derives again once it holds a value, and ignores a branch with no path of its own', function (): void {
@@ -445,7 +446,7 @@ describe('filled()', function (): void {
             ->and($this->renderSchemaComponent(TextInput::make('code')->filled()))
             ->toContainElement('label', 'Code')
             ->toContainElement('input[name="code"]:not([required])')
-            ->not->toContainElement('.sy-fo-field-label-required-mark');
+            ->not->toContainElement(Selectors::REQUIRED_MARK);
     });
 });
 
@@ -628,7 +629,7 @@ describe('conditional requirement', function (): void {
             ->and($this->renderSchemaComponent(TextInput::make('note')->requiredIf('plan', 'pro'), ['plan' => 'pro']))
             ->toContainElement('label', 'Note')
             ->toContainElement('input[name="note"]:not([required])')
-            ->not->toContainElement('.sy-fo-field-label-required-mark');
+            ->not->toContainElement(Selectors::REQUIRED_MARK);
     });
 
     it("requires with the field's own required constraint, so a Toggle left off passes and a Checkbox left unticked does not, under required(), a condition and filled() alike", function (): void {

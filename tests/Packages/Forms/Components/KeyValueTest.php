@@ -9,6 +9,7 @@ use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Tests\Fixtures\Forms\KeyValueRowsHost;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Count;
 
@@ -31,7 +32,7 @@ describe('rendering', function (): void {
         $crawler = $this->renderSchemaComponent($field(), ['pairs' => [['key' => 'colour', 'value' => 'red'], ['key' => 'size', 'value' => 'L']]]);
 
         expect($crawler->filter('thead th.sy-fo-key-value-action-col')->each(static fn (Crawler $heading): string => $heading->text()))->toBe($chromeHeadings)
-            ->and($crawler->filter('tbody button[data-sortable-handle]'))->toHaveCount($handles)
+            ->and($crawler->filter('tbody button' . SupportSelectors::SORTABLE_HANDLE))->toHaveCount($handles)
             ->and($crawler->filter('tbody button[aria-label="Delete row"]'))->toHaveCount($deleteButtons)
             ->and($crawler->filter('.sy-fo-key-value-add-action-ctn button')->each(static fn (Crawler $link): string => $link->text()))->toBe($addLinks);
     })->with([
@@ -83,8 +84,8 @@ describe('rendering', function (): void {
             ->and($container->filter('table.sy-fo-key-value-table'))->toHaveCount(1)
             ->and($container->filter('tbody')->attr('data-action'))->toBe('sylament--support--sortable:end->sylament--forms--key-value#reorder')
             ->and($container->filter('tbody tr')->each(static fn (Crawler $row): string => $row->attr('data-sortable-item') ?? ''))->toBe(['0', '1'])
-            ->and($container->filter('tbody button[data-sortable-handle]'))->toHaveCount(2)
-            ->and($container->filter('tbody button[data-sortable-handle][data-action]'))->toHaveCount(0);
+            ->and($container->filter('tbody button' . SupportSelectors::SORTABLE_HANDLE))->toHaveCount(2)
+            ->and($container->filter('tbody button' . SupportSelectors::SORTABLE_HANDLE . '[data-action]'))->toHaveCount(0);
     });
 });
 

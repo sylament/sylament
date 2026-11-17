@@ -83,7 +83,7 @@ describe('rendering', function (): void {
 
         expect($render->filter('input.sy-fo-toggle-buttons-input.pick[data-pick="yes"]:not([disabled])'))->toHaveCount(2)
             ->and($render->filter(Selectors::TOGGLE_BUTTONS_OPTION . ':not([data-pick])'))->toHaveCount(2)
-            ->and($render)->toContainElement('[data-field-wrapper][data-panel="levels"] .sy-fo-toggle-buttons:not([data-panel])');
+            ->and($render)->toContainElement(Selectors::FIELD_WRAPPER . '[data-panel="levels"] .sy-fo-toggle-buttons:not([data-panel])');
     })->with('variants');
 
     it('shows no label text and names each button by its label stripped of tags, keeping its icon', function (bool $grouped): void {
@@ -99,11 +99,11 @@ describe('rendering', function (): void {
 describe('layout', function (): void {
     it('lays its options out in a column-wise grid by default, in the columns and direction it is given, and in a wrapping row when inline', function (): void {
         expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])))
-            ->toContainElement('.sy-fo-toggle-buttons.sy-grid-direction-col[style*="--cols-default: 1"]:not(.sy-inline)')
+            ->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::GRID_DIRECTION_COLUMN . SupportSelectors::columnWiseColumns('default', 1) . ':not(' . SchemasSelectors::INLINE . ')')
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->columns(3)))
-            ->toContainElement('.sy-fo-toggle-buttons.sy-grid-direction-col[style*="--cols-lg: 3;"]')
+            ->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::GRID_DIRECTION_COLUMN . SupportSelectors::columnWiseColumns('lg', 3))
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->columns(3)->gridDirection(GridDirection::Row)))
-            ->toContainElement('.sy-fo-toggle-buttons:not(.sy-grid-direction-col)' . SupportSelectors::columns('lg', 3))
+            ->toContainElement('.sy-fo-toggle-buttons:not(' . SupportSelectors::GRID_DIRECTION_COLUMN . ')' . SupportSelectors::columns('lg', 3))
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->inline()))
             ->toContainElement('.sy-fo-toggle-buttons' . SchemasSelectors::INLINE . ':not(.sy-grid):not([style])');
     });

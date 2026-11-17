@@ -128,10 +128,10 @@ describe('layout', function (): void {
         $inline = $group(Radio::make('plan')->inline());
         $notInline = $group(Radio::make('plan')->inline(false));
 
-        expect([$default->matches('.sy-grid-direction-col'), $default->matches(SchemasSelectors::INLINE)])->toBe([true, false])
-            ->and([$rows->matches(SupportSelectors::columns('lg', 3)), $rows->matches('.sy-grid-direction-col')])->toBe([true, false])
+        expect([$default->matches(SupportSelectors::GRID_DIRECTION_COLUMN), $default->matches(SchemasSelectors::INLINE)])->toBe([true, false])
+            ->and([$rows->matches(SupportSelectors::columns('lg', 3)), $rows->matches(SupportSelectors::GRID_DIRECTION_COLUMN)])->toBe([true, false])
             ->and([$inline->matches(SchemasSelectors::INLINE), $inline->attr('style')])->toBe([true, null])
-            ->and([$notInline->matches(SchemasSelectors::INLINE), $notInline->matches('.sy-grid-direction-col')])->toBe([false, true]);
+            ->and([$notInline->matches(SchemasSelectors::INLINE), $notInline->matches(SupportSelectors::GRID_DIRECTION_COLUMN)])->toBe([false, true]);
     });
 });
 
@@ -206,7 +206,7 @@ describe('extra input attributes', function (): void {
         $group = $render->filter(Selectors::RADIO_GROUP);
 
         expect($group->filter(Selectors::RADIO)->each(static fn (Crawler $input): ?string => $input->attr('data-probe')))->toBe(['x', 'x', 'x'])
-            ->and($render->filter('[data-field-wrapper]')->each(static fn (Crawler $wrapper): array => [$wrapper->attr('data-wrapper'), $wrapper->attr('id')]))->toBe([['w', 'mine']])
+            ->and($render->filter(Selectors::FIELD_WRAPPER)->each(static fn (Crawler $wrapper): array => [$wrapper->attr('data-wrapper'), $wrapper->attr('id')]))->toBe([['w', 'mine']])
             ->and($render->filter('[id="mine"]'))->toHaveCount(1)
             ->and([$group->count(), $group->attr('data-probe'), $group->attr('data-wrapper'), $group->attr('id')])->toBe([1, null, null, null]);
     });

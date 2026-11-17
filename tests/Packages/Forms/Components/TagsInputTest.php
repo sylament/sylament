@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Forms\Components\TagsInput;
 use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Forms\TagFieldsForm;
 use Sylament\Tests\Fixtures\Schemas\Record\Manuscript;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
@@ -74,8 +75,8 @@ describe('rendering', function (): void {
     it('wraps each chip label in the prefix and suffix', function (): void {
         $crawler = $this->renderSchemaComponent(TagsInput::make('tags')->tagPrefix('#')->tagSuffix('!'), ['tags' => ['php']]);
 
-        expect($crawler->filter('#schema\.tags-tags ' . SupportSelectors::BADGE . ' .sy-badge-label')->text())->toBe('#php!')
-            ->and($crawler->filter('template ' . SupportSelectors::BADGE . ' .sy-badge-label')->text())->toBe('#!');
+        expect($crawler->filter('#schema\.tags-tags ' . SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_LABEL)->text())->toBe('#php!')
+            ->and($crawler->filter('template ' . SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_LABEL)->text())->toBe('#!');
     });
 
     it('makes the chips sortable only when reorderable and enabled', function (Closure $field, bool $sortable): void {
@@ -85,15 +86,14 @@ describe('rendering', function (): void {
 
         if (! $sortable) {
             expect($chips->attr('data-controller'))->toBeNull()
-                ->and($chips->filter('[data-sortable-item]'))->toHaveCount(0);
+                ->and($chips->filter(SupportSelectors::SORTABLE_ITEM))->toHaveCount(0);
 
             return;
         }
 
-        expect($chips->attr('data-controller'))->toContain('sylament--support--sortable')
-            ->and($chips->attr('data-sylament--support--sortable-animation-duration-value'))->toBe('100')
+        expect($chips->matches(SupportSelectors::SORTABLE_CONTROLLER . SupportSelectors::sortableAnimationDuration('100')))->toBeTrue()
             ->and($chips->attr('data-action'))->toBe('sylament--support--sortable:end->sylament--forms--tags-input#reorder')
-            ->and($chips->filter(SupportSelectors::BADGE . '[data-sortable-handle]')->each(static fn (Crawler $chip): string => $chip->attr('data-sortable-item') ?? ''))->toBe(['php', 'twig']);
+            ->and($chips->filter(SupportSelectors::BADGE . SupportSelectors::SORTABLE_HANDLE)->each(static fn (Crawler $chip): string => $chip->attr('data-sortable-item') ?? ''))->toBe(['php', 'twig']);
     })->with([
         'reorderable()' => [fn (): TagsInput => TagsInput::make('tags')->reorderable(), true],
         'reorderable() and disabled()' => [fn (): TagsInput => TagsInput::make('tags')->reorderable()->disabled(), false],
@@ -142,9 +142,9 @@ describe('rendering', function (): void {
 
     it('puts a failed validation on the wrapper and under it, never on the text box', function (): void {
         $tester = $this->createLiveComponent(TagFieldsForm::class)->call('save')->assertHasFormErrors(['tags' => 'This value should not be blank.']);
-        $field = $tester->render()->crawler()->filter('[data-field-wrapper]')->reduce(static fn (Crawler $wrapper): bool => $wrapper->filter('[data-sylament--forms--tags-input-state-path-value="data.tags"]')->count() === 1);
+        $field = $tester->render()->crawler()->filter(Selectors::FIELD_WRAPPER)->reduce(static fn (Crawler $wrapper): bool => $wrapper->filter('[data-sylament--forms--tags-input-state-path-value="data.tags"]')->count() === 1);
 
-        expect($field->filter('.sy-fo-tags-input.sy-invalid'))->toHaveCount(1)
+        expect($field->filter('.sy-fo-tags-input' . SupportSelectors::INVALID))->toHaveCount(1)
             ->and($field->text())->toContain('This value should not be blank.')
             ->and($field->filter('input[type="text"]'))->toHaveCount(1)
             ->and($field->filter('input[aria-invalid]'))->toHaveCount(0);

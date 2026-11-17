@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Fixtures\Forms;
 
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+
 /**
- * The field wrapper's root, by the `data-` hook a validation error scrolls to, its label
- * and content columns, its label row, the label it renders as a heading for a control
- * that is no labelable element, its required mark and its error messages, and a fused
- * group's root, named by the `sy-fo-` class the stylesheet lays each out by; a text
- * input's control and an affix button its Stimulus controller answers in the browser,
- * with no live click, by the controller's target and action;
- * a file field's controller element, by the state path its value map names, the pond
- * container FilePond builds inside, and the image editor's dialog; a toggle's control root and track, and a
- * toggle-buttons option's button label, which must follow its input, named by the `sy-fo-`
- * class the stylesheet lays out or paints each by.
- *
- * A repeater's item in its default and simple views, one by its key, and its add button.
- * A simple view's item, a table view's row (one by its key) and header cell, and the add row.
- *
- * A select's `<select>` by the `sy-fo-` class that marks it, the same element carrying the
- * JS control's Stimulus controller, the one with no controller, and the inline-prefix class
- * that strips its padding, the class being the behaviour; a checkbox list's options grid, and
- * the label and the description an option shows, by the `sy-fo-` class each carries; a
- * radio's group by its role, its option inputs by their type, and the label and the
- * description a radio option shows, by the `sy-fo-` class the description carries.
+ * The markup forms' templates give a test to find: the field wrapper's root by the `data-` hook
+ * a validation error scrolls to, and its label and content columns, label row, hidden label,
+ * the label it renders as a heading for a control that is no labelable element, required mark
+ * and error messages; a fused group's root; a toggle's control root and track; a toggle-buttons
+ * option's button label, which must follow its input; a repeater's item in its default and simple
+ * views, a table view's row and header cell, and the add row and its button; a select's
+ * `<select>`, the same element carrying the JS control's Stimulus controller, the one with no
+ * controller, and the inline-prefix class that strips its padding; a checkbox list's options
+ * grid and the label and description an option shows; and a radio's group by its role, its
+ * option inputs by their type, and the label and description a radio option shows. Each is named
+ * by the `sy-fo-` class the stylesheet lays out or paints it by, the class being the behaviour,
+ * unless a role, a type or a `data-` hook names it. A text input's control and an affix button its
+ * Stimulus controller answers in the browser, with no live click, are named by the controller's
+ * target and action, and a file field's controller element by the state path its value map names,
+ * beside the pond container FilePond builds inside and the image editor's dialog.
  */
 final class Selectors
 {
@@ -39,6 +36,8 @@ final class Selectors
     public const string CONTENT_COLUMN = '.sy-fo-field-content-col';
 
     public const string REQUIRED_MARK = '.sy-fo-field-label-required-mark';
+
+    public const string HIDDEN_LABEL = 'label' . SupportSelectors::SCREEN_READER_ONLY;
 
     public const string ERROR_MESSAGE = '[data-validation-error] .sy-fo-field-error-message';
 

@@ -6,15 +6,20 @@ namespace Sylament\Tests\Fixtures\Support;
 
 /**
  * The standalone-root marker, and the looks support's components give any area's markup:
- * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge,
- * breadcrumb separator, a fieldset with its hidden label and required mark, a section's container, variants and collapsibility, a tabs
- * layout, the active tab or step, and the cloak a persisted state hides behind until its controller connects, named by the `sy-` class or custom
- * property the stylesheet paints them by; the column counts, spans, starts and orders support's grid gives a schema, by
- * the custom property the stylesheet lays its grid out by; a section's Stimulus controller and the values it reads; a section's collapse button by its place and its state, whose name changes;
- * the modal's close, the badge's delete and the pagination's chevron buttons by their
- * names, and a dropdown's teleport by its Stimulus value. A side of the input wrapper is
- * named by its `sy-` class, because which side an affix sits on is the stylesheet's
- * contract; what sits there is asserted by its text, its role or its element.
+ * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge and
+ * its label, breadcrumb separator, a fieldset with its hidden label and required mark, a
+ * section's container, variants and collapsibility, a tabs layout, the active tab or step,
+ * the screen-reader-only text and the cloak a persisted state hides behind until its
+ * controller connects, named by the `sy-` class or custom property the stylesheet paints
+ * them by; the column counts, spans, starts and orders support's grid gives a schema, and
+ * the bare counts and direction class of a column-wise grid, by the custom property or class
+ * the stylesheet lays its grid out by; a section's Stimulus controller and the values it
+ * reads, and the sortable controller with its handles, items and animation duration, by the
+ * `data-` hooks it reads; a section's collapse button by its place and its state, whose name
+ * changes; the modal's close, the badge's delete and the pagination's chevron buttons by their
+ * names, and a dropdown's teleport by its Stimulus value. The input wrapper, its invalid state
+ * and each side of it are named by their `sy-` classes, because which side an affix sits on is
+ * the stylesheet's contract; what sits there is asserted by its text, its role or its element.
  */
 final class Selectors
 {
@@ -36,6 +41,10 @@ final class Selectors
     public const string UNSIZED = ':not([class*="sy-size-"])';
 
     public const string DISABLED = '.sy-disabled';
+
+    public const string INVALID = '.sy-invalid';
+
+    public const string SCREEN_READER_ONLY = '.sy-sr-only';
 
     /**
      * Neither a font weight nor a font family, which share the `sy-font-` prefix.
@@ -72,6 +81,12 @@ final class Selectors
 
     public const string SECTION_CONTROLLER = '[data-controller="sylament--support--section"]';
 
+    public const string SORTABLE_CONTROLLER = '[data-controller~="sylament--support--sortable"]';
+
+    public const string SORTABLE_HANDLE = '[data-sortable-handle]';
+
+    public const string SORTABLE_ITEM = '[data-sortable-item]';
+
     public const string FIELDSET = '.sy-fieldset';
 
     public const string FIELDSET_LABEL_HIDDEN = '.sy-fieldset-label-hidden';
@@ -88,6 +103,8 @@ final class Selectors
      */
     public const string ANY_COLUMN_SPAN = '[style*="--col-span-"]';
 
+    public const string GRID_DIRECTION_COLUMN = '.sy-grid-direction-col';
+
     public const string BUTTON = '.sy-btn';
 
     public const string ICON_BUTTON = '.sy-icon-btn';
@@ -101,6 +118,8 @@ final class Selectors
     public const string SMALL_LINK = '.sy-link.sy-size-sm';
 
     public const string BADGE = '.sy-badge';
+
+    public const string BADGE_LABEL = '.sy-badge-label';
 
     public const string BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-ltr';
 
@@ -124,11 +143,15 @@ final class Selectors
 
     public const string KEPT_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="false"]';
 
+    public const string INPUT_WRAPPER = '.sy-input-wrp';
+
     public const string PREFIX = '.sy-input-wrp-prefix';
 
     public const string SUFFIX = '.sy-input-wrp-suffix';
 
     public const string INLINE_PREFIX = '.sy-input-wrp-prefix.sy-inline';
+
+    public const string INLINE_SUFFIX = '.sy-input-wrp-suffix.sy-inline';
 
     public const string PREFIX_ICON = '.sy-input-wrp-prefix svg';
 
@@ -177,6 +200,14 @@ final class Selectors
     }
 
     /**
+     * A column-wise grid's count at a breakpoint, which it gives as a bare number rather than a track list.
+     */
+    public static function columnWiseColumns(string $breakpoint, int $count): string
+    {
+        return "[style*=\"--cols-{$breakpoint}: {$count}\"]";
+    }
+
+    /**
      * A cell spanning a number of columns at a breakpoint, the full row when told `full`, or any span there without a span.
      *
      * @param int|'full'|null $span
@@ -206,6 +237,11 @@ final class Selectors
     public static function sectionValue(string $name, ?string $value = null): string
     {
         return $value === null ? "[data-sylament--support--section-{$name}-value]" : "[data-sylament--support--section-{$name}-value=\"{$value}\"]";
+    }
+
+    public static function sortableAnimationDuration(string $milliseconds): string
+    {
+        return "[data-sylament--support--sortable-animation-duration-value=\"{$milliseconds}\"]";
     }
 
     public static function verticalAlign(string $value): string

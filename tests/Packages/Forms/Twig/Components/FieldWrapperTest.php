@@ -6,14 +6,15 @@ use Sylament\Forms\Components\FusedGroup;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Components\ViewField;
 use Sylament\Tests\Fixtures\Forms\Selectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 describe('label', function (): void {
     it('labels the control it wraps, out of view only when hidden, and renders no label for a field with none', function (): void {
         expect($this->renderSchemaComponent(TextInput::make('email')))
-            ->toContainElement(Selectors::LABEL_COLUMN . ' label[for="schema.email"]:not(.sy-sr-only)', 'Email')
+            ->toContainElement(Selectors::LABEL_COLUMN . ' label[for="schema.email"]' . ':not(' . SupportSelectors::SCREEN_READER_ONLY . ')', 'Email')
             ->toContainElement('input[id="schema.email"]')
             ->and($this->renderSchemaComponent(TextInput::make('email')->hiddenLabel()))
-            ->toContainElement('label.sy-sr-only[for="schema.email"]', 'Email')
+            ->toContainElement(Selectors::HIDDEN_LABEL . '[for="schema.email"]', 'Email')
             ->not->toContainElement(Selectors::LABEL_COLUMN)
             ->and($this->renderSchemaComponent(TextInput::make('email')->name(null)))
             ->toContainElement('input[id="schema.email"]')
@@ -39,10 +40,10 @@ describe('labelAsHeading', function (): void {
             ->templateData(['heading' => true, 'prefix' => '', 'suffix' => '']);
 
         expect($this->renderSchemaComponent($field()))
-            ->toContainElement(Selectors::LABEL_HEADING . '[id="schema.agree-label"]:not(.sy-sr-only)', 'Agree')
+            ->toContainElement(Selectors::LABEL_HEADING . '[id="schema.agree-label"]' . ':not(' . SupportSelectors::SCREEN_READER_ONLY . ')', 'Agree')
             ->not->toContainElement('label')
             ->and($this->renderSchemaComponent($field()->hiddenLabel()))
-            ->toContainElement(Selectors::LABEL_HEADING . '.sy-sr-only[id="schema.agree-label"]', 'Agree')
+            ->toContainElement(Selectors::LABEL_HEADING . SupportSelectors::SCREEN_READER_ONLY . '[id="schema.agree-label"]', 'Agree')
             ->not->toContainElement('label');
     });
 
@@ -60,7 +61,7 @@ describe('plain wrapper', function (): void {
         ])->key('name'));
 
         expect($render)
-            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::FIELD_WRAPPER . ' label.sy-sr-only', 'First')
+            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::FIELD_WRAPPER . ' ' . Selectors::HIDDEN_LABEL, 'First')
             ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::FIELD_WRAPPER . ' input[name="first"]')
             ->and($render->filter(Selectors::FUSED_GROUP . ' ' . Selectors::LABEL_COLUMN . ', ' . Selectors::FUSED_GROUP . ' ' . Selectors::REQUIRED_MARK))->toHaveCount(0)
             ->and($render->filter(Selectors::FUSED_GROUP)->text())->toBe('First');

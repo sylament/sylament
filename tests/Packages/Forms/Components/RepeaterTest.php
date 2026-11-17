@@ -418,10 +418,10 @@ describe('the reorder action', function (): void {
         $crawler = $this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
         $list = $crawler->filter('ul.sy-fo-repeater-items');
 
-        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[data-sortable-handle]')->each(static fn (Crawler $handle): string => $handle->attr('aria-label') ?? ''))->toBe(['Move', 'Move'])
-            ->and($crawler->filter('button[data-sortable-handle][data-live-action-param]'))->toHaveCount(0)
-            ->and($crawler->filter('li[data-sortable-item]')->each(static fn (Crawler $item): string => $item->attr('data-sortable-item') ?? ''))->toBe(['a', 'b'])
-            ->and($list->attr('data-controller'))->toBe('sylament--support--sortable')
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button' . SupportSelectors::SORTABLE_HANDLE)->each(static fn (Crawler $handle): string => $handle->attr('aria-label') ?? ''))->toBe(['Move', 'Move'])
+            ->and($crawler->filter('button' . SupportSelectors::SORTABLE_HANDLE . '[data-live-action-param]'))->toHaveCount(0)
+            ->and($crawler->filter('li' . SupportSelectors::SORTABLE_ITEM)->each(static fn (Crawler $item): string => $item->attr('data-sortable-item') ?? ''))->toBe(['a', 'b'])
+            ->and($list->matches(SupportSelectors::SORTABLE_CONTROLLER))->toBeTrue()
             ->and($list->attr('data-action'))->toBe('sylament--support--sortable:end->sylament--forms--repeater#reorder')
             ->and($crawler->filter('.sy-fo-repeater')->attr('data-controller'))->toBe('sylament--forms--repeater');
     });
@@ -429,14 +429,14 @@ describe('the reorder action', function (): void {
     it('hands the animation duration to the sortable controller', function (): void {
         $crawler = $this->renderSchemaComponent(Repeater::make('lines')->reorderAnimationDuration(150)->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada']]]);
 
-        expect($crawler->filter('ul.sy-fo-repeater-items')->attr('data-sylament--support--sortable-animation-duration-value'))->toBe('150');
+        expect($crawler)->toContainElement('ul.sy-fo-repeater-items' . SupportSelectors::sortableAnimationDuration('150'));
     });
 
     it('drops the handle, the control and the markers together', function (Closure $repeater): void {
         $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
 
         expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
-            ->and($crawler->filter('[data-sortable-handle], [data-sortable-item], [data-controller="sylament--support--sortable"]'))->toHaveCount(0)
+            ->and($crawler->filter(SupportSelectors::SORTABLE_HANDLE . ', ' . SupportSelectors::SORTABLE_ITEM . ', ' . SupportSelectors::SORTABLE_CONTROLLER))->toHaveCount(0)
             ->and($crawler->filter('.sy-fo-repeater[data-controller]'))->toHaveCount(0);
     })->with([
         'not reorderable' => [fn (): Repeater => Repeater::make('lines')->reorderable(false)],
@@ -483,7 +483,7 @@ describe('addBetween', function (): void {
 
         expect($crawler->filter('.sy-fo-repeater-add-between-items button')->each(static fn (Crawler $button): string => $button->text()))->toBe(['Insert between', 'Insert between'])
             ->and($crawler->filter(FormsSelectors::repeaterItem('c') . ' ~ li .sy-fo-repeater-add-between-items'))->toHaveCount(0)
-            ->and($crawler->filter('[data-sortable-item]'))->toHaveCount(3)
+            ->and($crawler->filter(SupportSelectors::SORTABLE_ITEM))->toHaveCount(3)
             ->and($this->renderSchemaComponent(Repeater::make('lines')->addBetweenActionLabel('Add here')->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), $items))
             ->toContainElement('.sy-fo-repeater-add-between-items button', 'Add here');
 
@@ -499,7 +499,7 @@ describe('addBetween', function (): void {
         $both = $this->renderSchemaComponent(Repeater::make('lines')->labelBetweenItems('or')->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), $items);
 
         expect($labelled->filter('.sy-fo-repeater-label-between-items')->each(static fn (Crawler $label): string => $label->text()))->toBe(['or'])
-            ->and($labelled->filter('[data-sortable-item]'))->toHaveCount(2)
+            ->and($labelled->filter(SupportSelectors::SORTABLE_ITEM))->toHaveCount(2)
             ->and($both->filter('.sy-fo-repeater-add-between-items button'))->toHaveCount(1)
             ->and($both->filter('.sy-fo-repeater-label-between-items'))->toHaveCount(0);
     });
@@ -760,7 +760,7 @@ describe('table()', function (): void {
             ->and($headers(Repeater::make('lines')->reorderable(false), $two))->toBe(['Name', 'Actions'])
             ->and($headers(Repeater::make('lines')->deletable(false), $two))->toBe(['Reorder', 'Name'])
             ->and($headers(Repeater::make('lines')->deletable(false)->cloneable(), $two))->toBe(['Reorder', 'Name', 'Actions'])
-            ->and($this->renderSchemaComponent(Repeater::make('lines')->table($columns)->components([TextInput::make('name')]), $two)->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL . '.sy-fo-table-repeater-empty-header-cell .sy-sr-only'))->toHaveCount(2);
+            ->and($this->renderSchemaComponent(Repeater::make('lines')->table($columns)->components([TextInput::make('name')]), $two)->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL . '.sy-fo-table-repeater-empty-header-cell ' . SupportSelectors::SCREEN_READER_ONLY))->toHaveCount(2);
     });
 });
 
@@ -1264,7 +1264,7 @@ describe('relationship()', function (): void {
             $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('label')]), ['jars' => ['a' => ['label' => 'Plums'], 'b' => ['label' => 'Figs']]]);
 
             expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
-                ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[data-sortable-handle]'))->toHaveCount($handles);
+                ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button' . SupportSelectors::SORTABLE_HANDLE))->toHaveCount($handles);
         })->with([
             'orderColumn() after relationship()' => [fn (): Repeater => Repeater::make('jars')->relationship()->orderColumn('position'), 2],
             'orderColumn() before relationship()' => [fn (): Repeater => Repeater::make('jars')->orderColumn('position')->relationship(), 0],

@@ -84,7 +84,7 @@ describe('rendering', function (): void {
 
     it('lays its options out down the columns it is given', function (): void {
         expect($this->renderSchemaComponent(CheckboxList::make('tags')->options(['fern' => 'Fern'])->columns(3)))
-            ->toContainElement(Selectors::CHECKBOX_LIST_OPTIONS . '[style*="--cols-lg: 3;"]');
+            ->toContainElement(Selectors::CHECKBOX_LIST_OPTIONS . SupportSelectors::columnWiseColumns('lg', 3));
     });
 
     it('renders an empty options grid for an empty options map', function (): void {

@@ -6,7 +6,7 @@ description: Use when creating a git worktree for a lane of parallel work, or st
 
 ## 1. Ask first
 
-Never create a worktree without asking Martin, every time, even when an approved plan mentions worktrees. Say what it buys (which lanes could then run at once) and what it costs (a `composer install` per worktree, a `pnpm install` when it touches assets, its own setup time). With no answer or a no, work in the main checkout, where each lane's test runs set the lane's own `SYLAMENT_TEST_RUN` (`SYLAMENT_TEST_RUN=lane_a composer test:pest`): two root-suite runs in one checkout otherwise share their worker directories and databases, and the later one stops before its first test. The variable covers the root suite only: a per-bundle suite (`composer test:<bundle>`, and so `composer test`) writes `packages/<pkg>/var/`, so one lane at a time runs those.
+Never create a worktree without asking Martin, every time, even when an approved plan mentions worktrees. Say what it buys (which lanes could then run at once) and what it costs (a copy-on-write `vendor/` per worktree, a `pnpm install` when it touches assets, its own setup time). With no answer or a no, work in the main checkout, where each lane's test runs set the lane's own `SYLAMENT_TEST_RUN` (`SYLAMENT_TEST_RUN=lane_a composer test:pest`): two root-suite runs in one checkout otherwise share their worker directories and databases, and the later one stops before its first test. The variable covers the root suite only: a per-bundle suite (`composer test:<bundle>`, and so `composer test`) writes `packages/<pkg>/var/`, so one lane at a time runs those.
 
 ## 2. Create it outside the repository
 
@@ -20,8 +20,9 @@ git worktree add ../sylament-worktrees/<lane> -b <lane> <sha>
 
 ## 3. Install
 
-1. Run `composer install` in the worktree. It has no `vendor/`, and the root `composer.lock` is not committed, so this is a fresh floating resolution that can pull newer dev tools than the main checkout has; a gate that fails only there may be a tool version, not your change.
-2. Run `pnpm install` too if the lane touches assets: the worktree has no `node_modules`, and `pnpm-lock.yaml` is committed, so the toolchain reproduces.
+1. Clone the main checkout's `vendor/` and `composer.lock` copy-on-write (`cp -cR vendor <wt>/vendor`, `cp -c composer.lock <wt>/composer.lock`), never `composer install`: the root `composer.lock` is not committed, so an install there is a fresh floating resolution that can pull newer dev tools than the main checkout runs, and a gate failing only in the lane is then a tool version, not the change.
+2. Give the lane its own caches: a `<wt>/phpstan.neon` (gitignored) that includes `phpstan.neon.dist` and sets `tmpDir: var/phpstan`, and `TMPDIR=<wt>/var/tmp` on every composer and `vendor/bin` command, because PHPStan, Rector and the other tools otherwise cache under the temp dir every checkout shares.
+3. Run `pnpm install` too if the lane touches assets: the worktree has no `node_modules`, and `pnpm-lock.yaml` is committed, so the toolchain reproduces.
 
 ## 4. Give the lane its rules
 

@@ -104,14 +104,14 @@ Event-driven opening cannot work for a dialog created by the response that asks 
 Filament's `modals.blade.php` reads `$this` because a Blade component inherits the Livewire component's scope.
 A Twig component gets a fresh context: ux-twig-component spreads the caller's context in and then **overwrites** `this` with the component being rendered ([`ComponentRenderer::preRender()`](../../../vendor/symfony/ux-twig-component/src/ComponentRenderer.php)), so inside `<twig:…>` `this` is that component, never the host.
 The two implicit Twig equivalents — `outerScope.this`, or staying an `{% include %}` — both bind to whatever render context encloses the tag, which is the host **only** when the tag sits directly in the host's own template; nest it in any other Twig component and they silently bind to that component's `AnonymousComponent`.
-(The [`NestedActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/NestedActionHost.html.twig) fixture keeps its trigger button outside the `Section` for exactly this reason — `this.deleteAction()` cannot resolve in there.)
+(A host template that nests the tag inside a `Section` keeps its own trigger buttons outside it for exactly this reason: `this.deleteAction()` cannot resolve in there.)
 
 So `Modals` is a **class-based** Twig component rather than an anonymous template: [`getLiveComponent()`](../../../packages/actions/src/Twig/Components/Modals.php) walks `Symfony\UX\TwigComponent\ComponentStack` innermost-first to the nearest `InteractsWithActions`, skipping frames that are not hosts.
 That keeps Filament's zero-argument call site — `<twig:SylamentActions:Modals />` against `<x-filament-actions::modals />` — and stays correct at any nesting depth.
 An optional `:liveComponent="this"` prop overrides the walk, named for the vocabulary `BelongsToLiveComponent` / `Action::getLiveComponent()` already use for this object.
 
 `ComponentStack` is marked `@internal` in ux-twig-component — a real maintenance liability, accepted deliberately because the two supported alternatives are silently position-dependent.
-It is contained: the walk is a single method, so a vendor change has a single repair site, and [`ModalsTest`](../../../packages/actions/tests/Unit/Twig/Components/ModalsTest.php) pins the contract against a hand-built stack so a break fails loudly in Unit rather than subtly in a render.
+It is contained: the walk is a single method, so a vendor change has a single repair site, and a tag nested inside another component is rendered against a live host, so a break fails loudly rather than binding the tag to the wrong component.
 
 ### The modal is opened by rendered state, not by the dispatched event
 

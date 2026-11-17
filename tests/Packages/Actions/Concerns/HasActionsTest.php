@@ -7,6 +7,7 @@ use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\ActionStackHost;
 use Sylament\Tests\Fixtures\Actions\AtelierResolvingHost;
 use Sylament\Tests\Fixtures\Actions\MemoDefaultsHost;
+use Sylament\Tests\Fixtures\Actions\SchemaDeclarationHost;
 use Sylament\Tests\Fixtures\Actions\SchemaModalHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Entity\Atelier;
@@ -619,5 +620,19 @@ describe('host defaults', function (): void {
         $tester->mountAction('view')->assertActionDataSet(['subject' => 'Ledger']);
 
         expect($tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN)->text())->toContain('View the ledger');
+    });
+});
+
+describe('modals', function (): void {
+    it('opens a modal for an action whose only content is its form, and answers that nothing opens while nothing is mounted', function (): void {
+        $tester = $this->createLiveComponent(SchemaDeclarationHost::class);
+
+        expect($tester->component()->mountedActionShouldOpenModal())->toBeFalse()
+            ->and($tester->render()->crawler()->filter(Selectors::MOUNTED_MODAL)->count())->toBe(0);
+
+        $tester->mountAction('listed')->assertActionMounted('listed');
+
+        expect($tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN . ' ' . SchemasSelectors::boundTo('mountedActionsData.0.title'))->count())->toBe(1)
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
     });
 });

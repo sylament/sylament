@@ -13,7 +13,9 @@ namespace Sylament\Tests\Fixtures\Actions;
  * bulk-only marker the table controller reads off a bulk group's dropdown.
  *
  * A mounted action's dialog, by the frame index its host-scoped id ends in, and an open
- * one, by the `open` attribute the host's modal renderer sets on the frames it shows.
+ * one, by the `open` attribute the host's modal renderer sets on the frames it shows; the
+ * window and the footer of support's modal an action opens, by the `sy-` classes the
+ * stylesheet lays them out by.
  */
 final class Selectors
 {
@@ -32,6 +34,10 @@ final class Selectors
     public const string MOUNTED_MODAL = 'dialog[id^="sy-"][id*="-action-"]';
 
     public const string OPEN = '[open]';
+
+    public const string MODAL_WINDOW = '.sy-modal-window';
+
+    public const string MODAL_FOOTER = '.sy-modal-footer';
 
     /**
      * A parameter the live action binding sends, by its name and the value it carries.

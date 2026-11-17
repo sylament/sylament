@@ -32,7 +32,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * declared before and after `relationship()`, a create closure declared before and after
  * it (the later one recording in the request's {@see HookLog}), and option actions whose
  * `mutateDataUsing()` adds an unmapped path, sets a `Hidden` one, or overwrites the
- * mapped name.
+ * mapped name on create and on edit.
  */
 #[AsLiveComponent(name: 'Forms:SelectRelationshipForm', template: '@Fixtures/forms/SelectRelationshipForm.html.twig')]
 class SelectRelationshipForm implements InteractsWithActions, InteractsWithSchemas
@@ -121,7 +121,9 @@ class SelectRelationshipForm implements InteractsWithActions, InteractsWithSchem
                 Select::make('overwritten')
                     ->relationship('garden', 'name')
                     ->createOptionForm($nameForm)
-                    ->createOptionAction(static fn (Action $action): Action => $action->mutateDataUsing(static fn (array $data): array => [...$data, 'name' => mb_strtoupper(is_string($data['name'] ?? null) ? $data['name'] : '')])),
+                    ->createOptionAction(static fn (Action $action): Action => $action->mutateDataUsing(static fn (array $data): array => [...$data, 'name' => mb_strtoupper(is_string($data['name'] ?? null) ? $data['name'] : '')]))
+                    ->editOptionForm($nameForm)
+                    ->editOptionAction(static fn (Action $action): Action => $action->mutateDataUsing(static fn (array $data): array => [...$data, 'name' => mb_strtoupper(is_string($data['name'] ?? null) ? $data['name'] : '')])),
             ]);
     }
 

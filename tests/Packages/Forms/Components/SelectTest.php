@@ -75,14 +75,16 @@ describe('native render', function (): void {
             ->and($plain->attr('autofocus'))->toBeNull();
     });
 
-    it('marks selected the option whose key loosely equals the state, and each member of a list', function (): void {
+    it('marks selected the option whose key loosely equals the state, one inside a group and each member of a list, and disables an option its condition disables', function (): void {
         $render = $this->createLiveComponent(SelectForm::class)
-            ->fillForm(['single' => '1', 'multiple' => ['b', 'a']])
+            ->fillForm(['single' => '1', 'grouped' => 'bracken', 'multiple' => ['b', 'a']])
             ->render()
             ->crawler();
 
         expect($render->filter('select[name="single"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['1'])
-            ->and($render->filter('select[name="multiple"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['a', 'b']);
+            ->and($render->filter('select[name="grouped"] optgroup option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['bracken'])
+            ->and($render->filter('select[name="multiple"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['a', 'b'])
+            ->and($render->filter('select[name="single"] option[disabled]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['3']);
     });
 
     it('marks the select invalid once the field has an error', function (): void {
@@ -116,7 +118,9 @@ describe('JS control render', function (): void {
 
         expect([$select->attr('id'), $select->attr('data-skip-morph'), $select->attr('data-model')])->toBe(['schema.plant', 'true', null])
             ->and($this->selectControllerValue($render, 'statePath'))->toBe('data.plant')
-            ->and($this->selectControllerValue($render, 'modelBinding'))->toBe('norender|data.plant');
+            ->and($this->selectControllerValue($render, 'modelBinding'))->toBe('norender|data.plant')
+            ->and($this->selectControllerValue($render, 'key'))->toBe('schema.plant')
+            ->and($this->selectControllerValue($render, 'placeholder'))->toBe('Select an option');
     });
 
     it('hands the controller the options as label, value and disabled flag, a group as its label and options', function (): void {
@@ -297,6 +301,7 @@ describe('getOptionLabel()', function (): void {
         'an unmatched state without a default' => ['single', '9', false, null],
         'a state the closure labels' => ['labelled', 'fern', true, 'Fern'],
         'a state the closure does not label' => ['labelled', 'yew', false, null],
+        'a state inside a group' => ['grouped', 'bracken', true, 'Bracken'],
     ]);
 });
 
@@ -366,6 +371,24 @@ describe('validation', function (): void {
         'null' => [null],
         'an empty string' => [''],
     ]);
+
+    it('lets an empty list through an optional multiple select, building it no membership constraint', function (): void {
+        $this->createLiveComponent(SelectForm::class)
+            ->fillForm(['multiple' => []])
+            ->call('save')
+            ->assertHasNoFormErrors(['multiple']);
+
+        $host = new RecordMappingHost();
+        [$select] = $host->mapping(Select::make('plants')->multiple()->options(['fern' => 'Fern']))->getComponents();
+        $constraints = static fn (): array => array_map(get_class(...), $select->getValidationConstraints());
+
+        $host->data['plants'] = [];
+        $blankConstraints = $constraints();
+        $host->data['plants'] = ['fern'];
+
+        expect($blankConstraints)->toBe([])
+            ->and($constraints())->toBe([Choice::class]);
+    });
 
     it('fails a required select left blank by the required constraint alone', function (): void {
         $this->createLiveComponent(SelectForm::class)
@@ -767,6 +790,22 @@ describe('option actions', function (): void {
         'a list' => [['1', '2']],
     ]);
 
+    it('answers no selected record for a key its relationship scope leaves out, and the record for one it keeps', function (): void {
+        $this->seed($fern = new Garden('Fern'), $moss = new Garden('Moss'));
+        $host = new RecordMappingHost();
+        [$select] = $host->mapping(
+            Select::make('garden')->relationship('garden', 'name', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.name <> 'Moss'"))->searchable(),
+        )->record(Seedling::class)->getComponents();
+
+        $host->data['garden'] = (string) $moss->id;
+        $outOfScope = $select->getSelectedRecord();
+        $host->data['garden'] = (string) $fern->id;
+
+        expect($outOfScope)->toBeNull()
+            ->and($select->getSelectedRecord())->toBeInstanceOf(Garden::class)
+            ->and($select->getSelectedRecord()?->name)->toBe('Fern');
+    });
+
     it('keeps the relationship defaults over a closure declared before relationship(), and a closure declared after it', function (): void {
         $this->seed($fern = new Garden('Fern'));
 
@@ -805,6 +844,16 @@ describe('option actions', function (): void {
         'a Hidden path set' => ['hiddenMapped', [], 'Hidden fern'],
         'a mapped path overwritten' => ['overwritten', ['name' => 'Rose'], 'ROSE'],
     ]);
+
+    it("writes what the edit action's mutateDataUsing() answers onto the selected record", function (): void {
+        $this->seed($fern = new Garden('Fern'));
+
+        $this->createLiveComponent(SelectRelationshipForm::class)
+            ->fillForm(['overwritten' => (string) $fern->id])
+            ->callAction(TestAction::make('editOption')->schemaComponent('overwritten'), data: ['name' => 'Fernery']);
+
+        expect($this->reload($fern)->name)->toBe('FERNERY');
+    });
 
     it("runs the manage-level modifier, then the action's own, each replacing the action only when it answers one, the edit action's as the create action's", function (): void {
         $select = static fn (): Select => Select::make('plant')->options(['fern' => 'Fern'])->createOptionForm([TextInput::make('name')])->createOptionUsing(static fn (): string => 'fern');

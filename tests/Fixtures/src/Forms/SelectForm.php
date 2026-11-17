@@ -19,7 +19,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * One select per way a select reads, casts and guards its state: a static map with a
- * disabled option, a list with and without item bounds, a backed enum single and
+ * disabled option, a grouped map, a list with and without item bounds, a backed enum single and
  * multiple, `boolean()`, a static map beside a label closure, labels by closure only
  * (single and multiple, each disabling one), none of either (single, and a multiple
  * carrying only the single closure), a required searchable one, a search closure that
@@ -62,6 +62,7 @@ class SelectForm implements InteractsWithSchemas
                 Select::make('single')
                     ->options([1 => 'One', 2 => 'Two', 3 => 'Three'])
                     ->disableOptionWhen(static fn (int|string $value): bool => (string) $value === '3'),
+                Select::make('grouped')->options(['Ferns' => ['fern' => 'Fern', 'bracken' => 'Bracken'], 'moss' => 'Moss']),
                 Select::make('multiple')->multiple()->reorderable()->options(['a' => 'Apple', 'b' => 'Banana', 'c' => 'Cherry']),
                 Select::make('bounded')->multiple()->minItems(1)->maxItems(2)->options(['a' => 'Apple', 'b' => 'Banana', 'c' => 'Cherry']),
                 Select::make('enum')->enum(StringBackedLetter::class),

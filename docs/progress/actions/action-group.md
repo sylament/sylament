@@ -234,7 +234,7 @@ The eager push overwrites a host a child was given explicitly; a child added aft
 
 ### `ActionGroup::getRecord()` restates the trait's group fallback to satisfy PHPStan
 
-[`InteractsWithRecord::getRecord()`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) falls back to `getGroup()?->getRecord()` when its own `$record` evaluates to `null`, guarded by `method_exists($this, 'getGroup')` so the trait stays safe for a class that composes it standalone (the `InteractsWithRecordFixture` test fixture).
+[`InteractsWithRecord::getRecord()`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) falls back to `getGroup()?->getRecord()` when its own `$record` evaluates to `null`, guarded by `method_exists($this, 'getGroup')` so the trait stays safe for a class that composes it standalone.
 `ActionGroup` composes `BelongsToGroup` alongside `InteractsWithRecord`, so PHPStan (level max) proves that guard always evaluates to `true` in its context, `function.alreadyNarrowedType`.
 Rather than suppress it, the group overrides `getRecord()` with what the guarded trait method reduces to: evaluate, return `ensureCorrectRecordType()` on an `is_object() || filled()` own record, otherwise `ensureCorrectRecordType($this->getGroup()?->getRecord())`.
 Both guard calls are part of the equivalence: the trait runs the same two, matching Filament, which guards its own record *and* its parent-group hop (`InteractsWithRecord.php:117-123`).

@@ -47,7 +47,7 @@ What is missing is a test: only the edit page's arm is pinned, by `EditRecordTes
 ### No test reaches the mounted-schema record override
 
 `getMountedActionSchemaRecord()` answers the resource's record class, which is what `getDefaultActionRecordClass()` would have answered, for a frame whose action a schema component owns and whose component carries neither a record nor a record class.
-No shipped page builds such a frame, so no test in `packages/panels/tests/` calls the override; only the actions fixture `ActionSchemaHost` overrides the host's hook, and it is no resource page.
+No shipped page builds such a frame, so no test calls this page's override; the hook's place at the end of the chain is pinned on a host that answers a record class for it, so a `unique()` field of an action naming no class checks against that class.
 
 ## Semantics
 

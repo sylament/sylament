@@ -17,6 +17,7 @@ use Sylament\Tests\Fixtures\Entity\Greenhouse;
 use Sylament\Tests\Fixtures\Entity\GreenhouseVent;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
+use Sylament\Tests\Fixtures\Entity\ListenedRegisterLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
@@ -358,6 +359,24 @@ describe('the key', function (): void {
         $saved->stamp = 'auto';
 
         expect($this->reload($saved))->toBeRecord(label: 'Weather');
+    });
+
+    it('saves a replica whose blank key half its entity listener fills', function (): void {
+        $line = new ListenedRegisterLine();
+        $line->register = 'north';
+        $line->line = 'first';
+        $line->label = 'Opening';
+        $this->seed($line);
+
+        $this->createLiveComponent(ReplicateHost::class)
+            ->callAction('replicateRegisterLine', data: ['register' => 'south'])
+            ->assertActionNotMounted();
+
+        $saved = new ListenedRegisterLine();
+        $saved->register = 'south';
+        $saved->line = 'auto';
+
+        expect($this->reload($saved))->toBeRecord(label: 'Opening');
     });
 
     it("refuses by name a single string key left blank, before persist() when no hook could fill it, and after it, still scheduled, when a callback leaves it blank", function (): void {

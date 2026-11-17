@@ -19,6 +19,7 @@ use Sylament\Tests\Fixtures\Entity\CallbackCodedReel;
 use Sylament\Tests\Fixtures\Entity\ConstructorCodedBadge;
 use Sylament\Tests\Fixtures\Entity\GreenhouseVent;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
+use Sylament\Tests\Fixtures\Entity\ListenedRegisterLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
@@ -253,6 +254,13 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
         return ReplicateAction::make('replicateBulletin')
             ->record(fn (): ?StampedBulletin => $this->original(StampedBulletin::class))
             ->schema([TextInput::make('scope'), TextInput::make('label')]);
+    }
+
+    public function replicateRegisterLineAction(): ReplicateAction
+    {
+        return ReplicateAction::make('replicateRegisterLine')
+            ->record(fn (): ?ListenedRegisterLine => $this->original(ListenedRegisterLine::class))
+            ->schema([TextInput::make('register')]);
     }
 
     public function replicateStockBareAction(): ReplicateAction

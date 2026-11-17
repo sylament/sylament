@@ -122,8 +122,16 @@ describe('over a garden', function (): void {
             expect($modal->filter(Selectors::MODAL . ' select[name="recordId"] option:not([value=""])')->each(static fn (Crawler $option): string => $option->text()))->toBe(['Spare']);
         });
 
-        it("titles the options through the table's recordTitle() closure, still in the title attribute's order", function (): void {
-            expect(array_values($this->recordSelectSearch(($this->mounted)(['tableTitleClosure']), '')))->toBe(['CLOVER', 'NETTLE', 'YARROW']);
+        it("titles the options through the table's recordTitle() closure, still in the title attribute's order, and projects the title attribute without loading a candidate otherwise", function (): void {
+            $titled = array_values($this->recordSelectSearch(($this->mounted)(['tableTitleClosure']), ''));
+            $hydratedClover = $this->entityManager()->getUnitOfWork()->tryGetById($this->clover->id, Seedling::class);
+
+            $projected = array_values($this->recordSelectSearch(($this->mounted)(), ''));
+
+            expect($titled)->toBe(['CLOVER', 'NETTLE', 'YARROW'])
+                ->and($hydratedClover)->toBeInstanceOf(Seedling::class)
+                ->and($projected)->toBe(['Clover', 'Nettle', 'Yarrow'])
+                ->and($this->entityManager()->getUnitOfWork()->tryGetById($this->clover->id, Seedling::class))->toBeFalse();
         });
 
         it('hands recordSelectOptionsQuery() the candidate query and the search, and offers only what the closure keeps', function (): void {

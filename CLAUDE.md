@@ -82,9 +82,10 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `test-database.md` | `/tests/Fixtures/src/Entity/**`, `/tests/Infrastructure/Doctrine/**`, `/tests/Fixtures/src/*/Doctrine/**`, `/tests/Fixtures/config/packages/*.php` | How the root suite prepares its database, where its entities and Doctrine fixtures live, and how it counts statements and cleans up after a server test. |
 | `test-infrastructure.md` | `/tests/Fixtures/**`, `/tests/Infrastructure/**`, `/tests/TestCase.php`, `/tests/TestCaseTest.php`, `/tests/Pest.php`, `/phpunit.dist.xml` | How the root suite's kernel, configuration, fixture areas, writable paths, database and base class are laid out and kept apart between concurrent runs. |
+| `test-renders.md` | `/tests/Packages/**`, `/tests/Fixtures/src/*/Selectors.php` | How a root-suite test queries a render, what it asserts first, and where a selector it shares is defined. |
 | `test-scope.md` | `/tests/Packages/**` | How much a package test covers, how a bug is pinned, and what never gets a test. |
 | `testing-api.md` | `packages/*/src/Testing/**` | When a testing-API helper is ported, what visibility and status it keeps, how it guards a suggested package, and what stays out of it. |
-| `tests.md` | `/tests/**` | Where a root-suite test lives, what kind it is and how it asserts a render. |
+| `tests.md` | `/tests/**` | Where a root-suite test lives and what kind it is. |
 | `trail.md` | `/docs/progress/**` | How a port-trail file is shaped, where status lives, what each file owns, and how its prose and tables are written. |
 | `twig.md` | `packages/*/templates/**` | Template layout, component invocation, props and attribute rendering in the bundles' Twig templates. |
 

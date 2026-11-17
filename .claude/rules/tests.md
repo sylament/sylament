@@ -1,7 +1,7 @@
 ---
 paths:
   - "/tests/**"
-description: Where a root-suite test lives, what kind it is and how it asserts a render.
+description: Where a root-suite test lives and what kind it is.
 ---
 # Test rules
 
@@ -28,7 +28,7 @@ description: Where a root-suite test lives, what kind it is and how it asserts a
 - **Assert a call that must not throw by what it returns** (`expect($host->validateSchema($schema))->toBeNull()`), never with `not->toThrow(SomeException::class)`, which passes when the call throws any other exception.
 - **Behaviour is the default kind:** drive a component as its user does, rendering it or calling it, and assert what comes out.
 - **Drive a live host through `$this->createLiveComponent()` and the testing API** (`fillForm()`, `callAction()`, `assertFormSet()`), never through UX's `TestLiveComponent` itself, because the tester answers a failed validation as a browser sees it and rethrows any other exception the host threw.
-- **Render a schema component through `$this->renderSchemaComponent()`,** which places it in a schema as a page renders it, so the markup asserted is the markup a page shows; render any other view component through `$this->renderViewComponent()` and a `<twig:>` component through UX's `$this->renderTwigComponent()`, so no area grows a render helper of its own.
+- **Render a schema component through `$this->renderSchemaComponent()`,** which places it in a schema as a page renders it, so the markup asserted is the markup a page shows; render any other view component through `$this->renderViewComponent()` and a `<twig:>` component through UX's `$this->renderTwigComponent()`, so no area grows a render helper of its own; how the markup is then asserted is in `test-renders.md`.
 - **Open a page through `$this->visit()`,** a GET through its route: any answer but a success rethrows the exception behind it, so a broken page fails with its cause, not an error page's markup, and a redirect, never followed, fails naming its `Location`.
 - **Follow a live action's redirect with the tester's own client** (`createLiveComponent(…, client: $client)`, then `$client->followRedirect()`): `test.client` is not shared, so `visit()` opens a session without the flash the action left.
 - **Read what a request did from a fixture service through `$this::getContainer()` after the call** (`HookLog`), never from a `LiveProp` kept for the test: the client reboots the kernel before every request after its first, so the container read after a call is the one that call ran in.
@@ -38,13 +38,5 @@ description: Where a root-suite test lives, what kind it is and how it asserts a
 - **A database test sits in the file of the class whose behaviour it pins,** beside that class's other cases, seeds with `$this->seed()`, reads back with `$this->reload()` and `$this->statementsRun()`, counted from the last `seed()` or request, so assert a count within one request; fetches `$this->entityManager()` on every use, never across a request; every test starts on an empty database with fresh ids; the platform comes from the run's environment (`composer test:mysql`), never from the test, save a premise that compares platforms (below).
 - **The platform rule.** A database test runs on SQLite, MySQL and PostgreSQL, or is skipped by premise with `->skip(<condition>, '<the platform fact>')`, and a differing expectation is written literally per platform with `match (TestPlatform::current())`, never computed by a helper that mirrors the product and would agree with it either way.
 - **Compare aggregates through `DriverValues::numeric()` and fail a write on purpose with `FailingWrite::afterDeletes()` (`afterUpdates()` for an update, `afterJoinTableDeletes()` for a many-to-many's join table),** since each covers the platform differences a hand-written version misses; a premise that compares platforms takes `$this->platformEntityManager()`, the one manager whose platform the test names (SQLite in memory, or MySQL or PostgreSQL for platform reads, its connection never opening), and a case that needs a second manager beside the world's takes its SQLite one, or, when a live request must write through it, a fixture service building it over the world's connection (`Actions\SecondManager`).
-
-## How a render is asserted
-
-- **Query the rendered HTML with DomCrawler and CSS selectors,** never by matching an HTML string, so the test survives markup changes around what it asserts.
-- **Assert what a user perceives,** in this order: text; a role or an accessible name (a button named "copy", `aria-invalid`, `input[type=email]`); a `data-` attribute or Stimulus controller when the behaviour is a JS hook; a semantic `sy-` class only when the class is the behaviour, since those classes are the stylesheet's contract.
-- **Tell icons apart by the fixture SVG's `<title>`,** in an area's icons and the shared `heroicons` alike, read as the icon's text, because a drawn shape names no icon.
-- **A selector more than one test file uses is defined once, in the lowest area whose package owns the markup, and higher areas import it** (`Support\Selectors` for support's colour, size and button looks), as a constant, or a static helper for a family of classes, of that area's `tests/Fixtures/src/<Area>/Selectors.php`, so a markup rename edits one line; a selector one file uses may stay inline in it.
-- **Never assert document structure** (`div > span:nth-child(2)`), a whole HTML string or a snapshot: each breaks on every markup change, and a snapshot is rewritten without anyone reading it.
 
 Background: `docs/internals/testing.md`.

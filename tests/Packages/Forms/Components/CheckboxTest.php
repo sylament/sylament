@@ -46,11 +46,6 @@ describe('rendering', function (): void {
             ->and($this->renderSchemaComponent(Section::make('Consent')->components([Checkbox::make('terms')->required()])))
             ->toContainElement('input[name="terms"][required]');
     });
-
-    it('lets its extra input attributes outrank the ones it computes, joining its classes', function (): void {
-        expect($this->renderSchemaComponent(Checkbox::make('terms')->disabled()->extraInputAttributes(['disabled' => false, 'class' => 'consent'])))
-            ->toContainElement('input.sy-fo-checkbox.consent[name="terms"]:not([disabled])');
-    });
 });
 
 describe('state', function (): void {

@@ -28,20 +28,27 @@ describe('extraInputAttributes()', function (): void {
     });
 });
 
-it('puts its extra input attributes on every control a field renders and on nothing else, where they outrank the ones it computes', function (string $field): void {
-    $component = $field::make('a')->disabled()->extraInputAttributes(['data-probe' => 'extra', 'disabled' => false]);
+it("puts its extra input attributes on every control a field renders and on nothing else, where they outrank the ones it computes and its classes join the control's own", function (string $field): void {
+    $make = static function () use ($field): Field {
+        $component = $field::make('a')->disabled();
 
-    if (method_exists($component, 'options')) {
-        $component->options(['x' => 'X', 'y' => 'Y']);
-    }
+        if (method_exists($component, 'options')) {
+            $component->options(['x' => 'X', 'y' => 'Y']);
+        }
 
-    $render = $this->renderSchemaComponent($component);
+        return $component;
+    };
+    $ownClasses = $this->renderSchemaComponent($make())->filter('input, select, textarea')
+        ->each(static fn (Crawler $control): string => mb_trim(($control->attr('class') ?? '') . ' probe'));
+
+    $render = $this->renderSchemaComponent($make()->extraInputAttributes(['data-probe' => 'extra', 'disabled' => false, 'class' => 'probe']));
     $controls = $render->filter('input, select, textarea');
 
     expect($controls->count())->toBeGreaterThan(0)
         ->and($controls->each(static fn (Crawler $control): ?string => $control->attr('data-probe')))->toBe(array_fill(0, $controls->count(), 'extra'))
         ->and($render->filter('[data-probe]'))->toHaveCount($controls->count())
-        ->and($controls->filter('[disabled]'))->toHaveCount(0);
+        ->and($controls->filter('[disabled]'))->toHaveCount(0)
+        ->and($controls->each(static fn (Crawler $control): ?string => $control->attr('class')))->toBe($ownClasses);
 })->with(fn (): array => array_filter(
     ComponentRegistry::componentsUsing(HasExtraInputAttributes::class),
     // A table column renders in a table's cell, which tables' own files drive.

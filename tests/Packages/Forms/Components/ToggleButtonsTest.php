@@ -78,11 +78,9 @@ describe('rendering', function (): void {
             ->toHaveCount(2);
     })->with('variants');
 
-    it('lets its extra input attributes outrank the ones it computes on every option input, and puts its extra attributes on the field wrapper', function (bool $grouped): void {
-        $render = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->disabled()->extraInputAttributes(['disabled' => false, 'class' => 'pick'])->extraAttributes(['data-panel' => 'levels'])->grouped($grouped));
-
-        expect($render->filter('input.sy-fo-toggle-buttons-input.pick:not([disabled])'))->toHaveCount(2)
-            ->and($render)->toContainElement(Selectors::FIELD_WRAPPER . '[data-panel="levels"] .sy-fo-toggle-buttons:not([data-panel])');
+    it('puts its extra attributes on the field wrapper, not on its options', function (bool $grouped): void {
+        expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->extraAttributes(['data-panel' => 'levels'])->grouped($grouped)))
+            ->toContainElement(Selectors::FIELD_WRAPPER . '[data-panel="levels"] .sy-fo-toggle-buttons:not([data-panel])');
     })->with('variants');
 
     it('shows no label text and names each button by its label stripped of tags, keeping its icon', function (bool $grouped): void {

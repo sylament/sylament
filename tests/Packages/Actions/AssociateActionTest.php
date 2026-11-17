@@ -72,12 +72,15 @@ describe('over a garden', function (): void {
             expect($modal->filter(Selectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Associate', 'Cancel']);
         });
 
-        it('renders a single select when multiple() answers false through a closure', function (): void {
-            $modal = ($this->mounted)(['singleByClosure'])->render()->crawler();
+        it('renders a multiple select under multiple(), and a single one when multiple() answers false through a closure', function (string $variant, int $multiple): void {
+            $modal = ($this->mounted)([$variant])->render()->crawler();
 
             expect($modal->filter(Selectors::MODAL . ' select[name="recordId"]')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL . ' select[name="recordId"][multiple]')->count())->toBe(0);
-        });
+                ->and($modal->filter(Selectors::MODAL . ' select[name="recordId"][multiple]')->count())->toBe($multiple);
+        })->with([
+            'multiple()' => ['multiple', 1],
+            'a closure answering false' => ['singleByClosure', 0],
+        ]);
 
         it('refuses a submit that picks no record', function (): void {
             ($this->table)()
@@ -134,7 +137,7 @@ describe('over a garden', function (): void {
                 ->and($this->entityManager()->getUnitOfWork()->tryGetById($this->clover->id, Seedling::class))->toBeFalse();
         });
 
-        it('hands recordSelectOptionsQuery() the candidate query and the search, and offers only what the closure keeps', function (): void {
+        it('hands recordSelectOptionsQuery() the candidate query and the search, null outside a search, and offers only what the closure keeps', function (): void {
             $tester = ($this->mounted)(['scoped']);
             $searched = $this->recordSelectSearch($tester, 'e');
             $searchLog = $this::getContainer()->get(HookLog::class)->hooks;
@@ -142,7 +145,8 @@ describe('over a garden', function (): void {
             $tester->setActionData(['recordId' => ($this->key)($this->nettle)])->callMountedAction();
 
             expect($searched)->toBe([($this->key)($this->clover) => 'Clover'])
-                ->and($searchLog)->toBe(['options query: e']);
+                ->and($searchLog)->toBe(['options query: e'])
+                ->and(array_unique($this::getContainer()->get(HookLog::class)->hooks))->toBe(['options query: null']);
 
             $tester->assertHasActionErrors(['recordId']);
 

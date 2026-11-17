@@ -54,7 +54,7 @@ And the whole diff runs inside the single `getData()` call, with no flush of its
 
 An added item keeps its uuid key until something reads the collection back, and the save does not.
 `EditRecord` does: it calls [`Schema::loadStateFromRelationships()`](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) after its flush — Filament's own post-save step — which runs this load hook again and keys every item `record-<key>` by the identifier the flush gave it, so the next save updates what this one created.
-Without it the next save constructs the item again: an `EntityIdentityCollisionException` for an assigned key, and a `DELETE` plus an `INSERT` of every added item, on every save, for a generated id.
+Without it the next save constructs the item again: for an assigned key, a host that validates refuses the item just saved under the taken-key rule (*"This value is already used."*) before anything is written, and one that does not hits an `EntityIdentityCollisionException`; for a generated id, a `DELETE` plus an `INSERT` of every added item, on every save.
 A host that flushes itself adds that one call after its flush.
 
 Reorderability is coupled to the order column, and the coupling is call-order-sensitive exactly as in Filament.

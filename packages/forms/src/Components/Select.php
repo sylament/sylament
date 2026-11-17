@@ -1479,9 +1479,10 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * A record that is not an instance of the association's target is refused
      * rather than excluded — its identifier means something else against this
      * query's root, and our `record` alias would make the mismatch valid DQL that
-     * silently drops an unrelated row. `null`, an array and a class-string record
-     * bind nothing, and neither does an unflushed one: a create page has no row to
-     * exclude.
+     * silently drops an unrelated row. `null` and a class-string record bind
+     * nothing, and neither does an unflushed one: a create page has no row to
+     * exclude. An array record never reaches here: it names no record class, so
+     * the relationship refuses it first.
      *
      * @throws LogicException when the bound record is an object of another class
      *                        than the association's target

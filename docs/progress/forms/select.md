@@ -352,7 +352,8 @@ The port is method-for-method vendor's except where `support/resources/js/utilit
 Filament's control reaches `getSearchResultsForJs()` through Livewire's `callSchemaComponentMethod`, which *returns* the value and is `#[Renderless]`.
 UX LiveComponent has no return channel, so the port's [`callSchemaComponentMethod()`](../schemas/interacts-with-schemas.md) is a live action that re-renders normally and hands the result back through `dispatchBrowserEvent()` — the same channel actions' `mountAction()` and notifications use.
 Every search round-trip therefore re-renders the host; the search debounce (`searchDebounce()`, Filament's default 1000 ms) bounds it, and it is the same cost every `live()` field already pays per keystroke.
-The three predicates — `hasDynamicOptions()`, `hasDynamicSearchResults()`, `hasInitialNoOptionsMessage()` — are ported verbatim for the control's contract; `hasDynamicSearchResults()` is the one that decides whether typing asks the server at all, and it is false for a relationship select with no search columns.
+The three predicates — `hasDynamicOptions()`, `hasDynamicSearchResults()`, `hasInitialNoOptionsMessage()` — are ported verbatim, and the template hands the control the last two: `hasDynamicSearchResults()` decides whether typing asks the server at all, and it is false for a relationship select with no search columns.
+`hasDynamicOptions()` reaches no template and no other class, so `dynamicOptions()` changes nothing a user sees: the control never fetches its options on open, since the [server render](#nativefalse-switches-to-the-js-control) already holds them.
 
 ### `loadingMessage()` has no render site
 

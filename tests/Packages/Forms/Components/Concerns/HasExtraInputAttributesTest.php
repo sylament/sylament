@@ -20,9 +20,9 @@ describe('extraInputAttributes()', function (): void {
             ->toContainElement('input[name="code"][data-first="a"][data-second="b"]');
     });
 
-    it('lets its attributes win over those the field computes, its classes appending, while the controller keeps its target', function (): void {
-        expect($this->renderSchemaComponent(TextInput::make('amount')->numeric()->disabled()->extraInputAttributes(['inputmode' => 'email', 'disabled' => false, 'class' => 'wide'])))
-            ->toContainElement('input' . Selectors::INPUT . '.wide[name="amount"][inputmode="email"]:not([disabled])')
+    it('lets its attributes win over those the field computes, its classes and style appending, while the controller keeps its target', function (): void {
+        expect($this->renderSchemaComponent(TextInput::make('amount')->numeric()->disabled()->extraInputAttributes(['inputmode' => 'email', 'disabled' => false, 'class' => 'wide', 'style' => 'width: 5rem'])))
+            ->toContainElement('input' . Selectors::INPUT . '.wide[name="amount"][inputmode="email"][style="width: 5rem"]:not([disabled])')
             ->and($this->renderSchemaComponent(TextInput::make('code')->copyable()->extraInputAttributes(['data-sylament--forms--text-input-target' => 'other'])))
             ->toContainElement('input[name="code"]' . Selectors::TEXT_INPUT_TARGET);
     });

@@ -67,7 +67,7 @@ describe('rendering', function (): void {
         'disabled()' => [fn (): KeyValue => KeyValue::make('pairs')->disabled(), [true, true]],
     ]);
 
-    it('names the delete and reorder buttons by their labels, and the delete button as a deleteAction() modifier makes it', function (): void {
+    it('names the delete and reorder buttons by their labels, and each as its deleteAction() or reorderAction() modifier makes it', function (): void {
         $crawler = $this->renderSchemaComponent(
             KeyValue::make('pairs')->reorderable()->deleteActionLabel('Remove pair')->reorderActionLabel('Move pair'),
             ['pairs' => [['key' => 'colour', 'value' => 'red']]],
@@ -75,9 +75,9 @@ describe('rendering', function (): void {
 
         expect($crawler)->toContainButtons('tbody button', ['Move pair', 'Remove pair'])
             ->and($this->renderSchemaComponent(
-                KeyValue::make('pairs')->deleteAction(static fn (Action $action): Action => $action->label('Drop pair')),
+                KeyValue::make('pairs')->reorderable()->deleteAction(static fn (Action $action): Action => $action->label('Drop pair'))->reorderAction(static fn (Action $action): Action => $action->label('Drag pair')),
                 ['pairs' => [['key' => 'colour', 'value' => 'red']]],
-            ))->toContainButtons('tbody button', ['Drop pair']);
+            ))->toContainButtons('tbody button', ['Drag pair', 'Drop pair']);
     });
 
     it('wires its controller and binds the end of a drag to its reorder action', function (): void {

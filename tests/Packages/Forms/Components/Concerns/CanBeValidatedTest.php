@@ -907,13 +907,14 @@ describe('date comparison', function (): void {
         expect($this->host->validateSchema($schema))->toBeNull();
     });
 
-    it("reads a sibling relative to its own container, a slash-led name from the root, and a field named like a date as a date", function (): void {
+    it("reads a sibling relative to its own container, a slash-led name or one it is told is absolute from the root, and a field named like a date as a date", function (): void {
         $schema = $this->host->mapping(
             Section::make('Period')->statePath('period')->components([
                 TextInput::make('startsAt'),
                 TextInput::make('endsAt')->after('startsAt'),
             ]),
             TextInput::make('closedAt')->after('/data.period.startsAt'),
+            TextInput::make('auditedAt')->after('data.period.startsAt', isStatePathAbsolute: true),
             TextInput::make('may'),
             TextInput::make('noted')->after('may'),
             TextInput::make('flagged')->after('2999-01-01', isStatePathAbsolute: true),
@@ -921,15 +922,17 @@ describe('date comparison', function (): void {
         $this->host->data = [
             'period' => ['startsAt' => '2026-06-01', 'endsAt' => '2026-03-01'],
             'closedAt' => '2026-03-01',
+            'auditedAt' => '2026-03-01',
             'may' => '1900-01-01',
             'noted' => '1950-01-01',
             'flagged' => '2000-01-01',
         ];
 
         expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toHaveKeys(['data.period.endsAt', 'data.closedAt', 'data.noted', 'data.flagged'])
+            expect($exception->getErrors())->toHaveKeys(['data.period.endsAt', 'data.closedAt', 'data.auditedAt', 'data.noted', 'data.flagged'])
                 ->and($exception->getErrors()['data.period.endsAt'])->toBe(['This value must be after 2026-06-01 00:00:00.'])
                 ->and($exception->getErrors()['data.closedAt'])->toBe(['This value must be after 2026-06-01 00:00:00.'])
+                ->and($exception->getErrors()['data.auditedAt'])->toBe(['This value must be after 2026-06-01 00:00:00.'])
                 ->and($exception->getErrors()['data.noted'][0])->toStartWith('This value must be after ')
                 ->and($exception->getErrors()['data.flagged'])->toBe(['This value must be after 2999-01-01 00:00:00.']);
         });

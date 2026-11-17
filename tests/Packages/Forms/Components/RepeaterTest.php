@@ -233,6 +233,7 @@ describe('defaultItems()', function (): void {
         'defaultItems()' => [fn (): Repeater => Repeater::make('lines')->defaultItems(1)->components([TextInput::make('name'), TextInput::make('unit')->default('kg')]), ['name' => null, 'unit' => 'kg']],
         'a declared default' => [fn (): Repeater => Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name'), TextInput::make('unit')->default('kg')]), ['name' => 'Ada', 'unit' => 'kg']],
         "a declared default over an item field's hydration hook" => [fn (): Repeater => Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name')->afterStateHydrated(static fn (TextInput $component): TextInput => $component->state('hooked')), TextInput::make('unit')->default('kg')]), ['name' => 'Ada', 'unit' => 'kg']],
+        "a declared default over an item field's own default" => [fn (): Repeater => Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name')->default('Grace'), TextInput::make('unit')->default('kg')]), ['name' => 'Ada', 'unit' => 'kg']],
     ]);
 
     it('replaces the items a populated repeater holds with exactly the default ones', function (): void {

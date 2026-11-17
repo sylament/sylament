@@ -147,7 +147,8 @@ describe('rendering', function (): void {
         expect($field->filter('.sy-fo-tags-input' . SupportSelectors::INVALID))->toHaveCount(1)
             ->and($field->text())->toContain('This value should not be blank.')
             ->and($field->filter('input[type="text"]'))->toHaveCount(1)
-            ->and($field->filter('input[aria-invalid]'))->toHaveCount(0);
+            ->and($field->filter('input[aria-invalid]'))->toHaveCount(0)
+            ->and($field->filter('input[required]'))->toHaveCount(0);
 
         $tester->set('data.tags', ['php'])->call('save')->assertHasNoFormErrors();
     });

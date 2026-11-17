@@ -50,21 +50,23 @@ describe('declaring', function (): void {
         'infolist' => [static fn (Schema $infolist): array => [TextInput::make((string) $infolist->getKey())]],
     ]);
 
-    it('disables the fields of its modal when told', function (): void {
-        $field = fn (string $name): Crawler => $this->createLiveComponent(SchemaDeclarationHost::class)->mountAction($name)->render()->crawler()->filter(Selectors::mountedModal(0) . ' input[name="title"]');
+    it('disables the fields of its modal when told, a wizard among them', function (): void {
+        $field = fn (string $host, string $name, string $field): Crawler => $this->createLiveComponent($host)->mountAction($name)->render()->crawler()->filter(Selectors::mountedModal(0) . " input[name=\"{$field}\"]");
 
-        expect($field('locked')->attr('disabled'))->not->toBeNull()
-            ->and($field('listed')->attr('disabled'))->toBeNull();
+        expect($field(SchemaDeclarationHost::class, 'locked', 'title')->attr('disabled'))->not->toBeNull()
+            ->and($field(StepwiseActionHost::class, 'sealed', 'name')->attr('disabled'))->not->toBeNull()
+            ->and($field(SchemaDeclarationHost::class, 'listed', 'title')->attr('disabled'))->toBeNull()
+            ->and($field(StepwiseActionHost::class, 'onboard', 'name')->attr('disabled'))->toBeNull();
     });
 
     it('wraps its modal in a form its Submit submits, or without one puts the call on Submit itself', function (): void {
         expect($this->createLiveComponent(SchemaDeclarationHost::class)->mountAction('listed')->render()->crawler()->filter(Selectors::mountedModal(0)))
-            ->toContainElement('form' . Selectors::MODAL_WINDOW . '[data-live-action-param="callMountedAction"] ' . Selectors::MODAL_FOOTER . ' button[type="submit"]:not([data-action])', 'Submit');
+            ->toContainElement('form' . Selectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . Selectors::MODAL_FOOTER . ' button[type="submit"]:not([data-action])', 'Submit');
 
         $tester = $this->createLiveComponent(SchemaDeclarationHost::class)->mountAction('unwrapped');
         $modal = $tester->render()->crawler()->filter(Selectors::mountedModal(0));
 
-        expect($modal)->toContainElement('div' . Selectors::MODAL_WINDOW . ' ' . Selectors::MODAL_FOOTER . ' button[type="button"][data-action="live#action"][data-live-action-param="callMountedAction"]', 'Submit')
+        expect($modal)->toContainElement('div' . Selectors::MODAL_WINDOW . ' ' . Selectors::MODAL_FOOTER . ' button[type="button"][data-action="live#action"]' . Selectors::liveParameter('action', 'callMountedAction'), 'Submit')
             ->and($modal->filter('form')->count())->toBe(0);
 
         $tester->setActionData(['title' => 'Lamp'])->callMountedAction();
@@ -110,8 +112,8 @@ describe('a wizard', function (): void {
         $modal = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN);
 
         expect($modal)->toContainElement(SchemasSelectors::WIZARD . ':not(' . SupportSelectors::CONTAINED . ')')
-            ->toContainElement('[data-sylament--schemas--wizard-target="cancelSlot"] ' . SupportSelectors::BUTTON . '[data-action="sylament--support--modal#dismiss"]', 'Cancel')
-            ->toContainElement('form' . Selectors::MODAL_WINDOW . '[data-live-action-param="callMountedAction"] [data-sylament--schemas--wizard-target="submitSlot"] button[type="submit"]', 'Submit')
+            ->toContainElement('[data-sylament--schemas--wizard-target="cancelSlot"] ' . SupportSelectors::BUTTON . Selectors::DISMISS, 'Cancel')
+            ->toContainElement('form' . Selectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' [data-sylament--schemas--wizard-target="submitSlot"] button[type="submit"]', 'Submit')
             ->and($modal->filter(Selectors::MODAL_FOOTER)->count())->toBe(0);
 
         $tester->setActionData(['name' => 'Ada', 'note' => 'Welcome'])->callMountedAction();
@@ -122,7 +124,7 @@ describe('a wizard', function (): void {
     it('keeps the wizard a modifyWizardUsing() closure only modifies, and renders the one it hands back instead', function (): void {
         $wizard = fn (string $name): Crawler => $this->createLiveComponent(StepwiseActionHost::class)->mountAction($name)->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . SchemasSelectors::WIZARD);
 
-        expect($wizard('retouched'))->toContainElement('[data-sylament--schemas--wizard-skippable-value="true"] ' . SchemasSelectors::WIZARD_STEP_BUTTON, 'check 01 Account')
+        expect($wizard('retouched'))->toContainElement('[data-tour="retouched"] ' . SchemasSelectors::WIZARD_STEP_BUTTON, 'check 01 Account')
             ->and($wizard('replaced')->filter(SchemasSelectors::WIZARD_STEP_BUTTON)->each(static fn (Crawler $step): string => $step->text()))->toBe(['check 01 Replacement']);
     });
 });

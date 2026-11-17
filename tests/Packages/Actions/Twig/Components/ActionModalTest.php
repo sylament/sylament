@@ -17,7 +17,7 @@ it('renders its content, its form and its content footer in that order', functio
 
 it('unmounts its frame when the browser dismisses its dialog, cancelling the parents its action names', function (): void {
     $wrapper = fn (Action $action): Crawler => $this->renderTwigComponent('SylamentActions:ActionModal', ['action' => $action, 'id' => 'archive-modal'])->crawler()->filter('[id="archive-modal-w-archive"]');
-    $dismissal = '[data-action="sylament--support--modal:dismissed->live#action"][data-live-action-param="unmountAction"]';
+    $dismissal = '[data-action="sylament--support--modal:dismissed->live#action"]' . Selectors::liveParameter('action', 'unmountAction');
 
     expect($wrapper(Action::make('archive')))->toContainElement($dismissal . '[data-live-cancel-parent-actions-param="false"] dialog#archive-modal')
         ->and($wrapper(Action::make('archive')->cancelParentActionsOnClose('details')))->toContainElement($dismissal . '[data-live-cancel-parent-actions-param="details"] dialog#archive-modal');

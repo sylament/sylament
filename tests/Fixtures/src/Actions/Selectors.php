@@ -15,7 +15,8 @@ namespace Sylament\Tests\Fixtures\Actions;
  * A mounted action's dialog, by the frame index its host-scoped id ends in, and an open
  * one, by the `open` attribute the host's modal renderer sets on the frames it shows; the
  * window and the footer of support's modal an action opens, by the `sy-` classes the
- * stylesheet lays them out by.
+ * stylesheet lays them out by; the modal's client-side dismiss, and a parameter the live
+ * action binding sends, by the `data-` hooks the controllers read.
  */
 final class Selectors
 {

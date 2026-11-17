@@ -19,9 +19,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A host whose actions open wizard modals over an Account and a Review step, recording their
  * data in the request's {@see HookLog} when they run: `onboard` declares the steps,
- * `resume` opens on the second and lets every step be skipped to, `retouched` declares its
- * steps through `schema()` and only modifies the wizard it is handed, and `replaced` hands
- * back a wizard of its own.
+ * `resume` opens on the second and lets every step be skipped to, `sealed` disables its
+ * schema, `retouched` declares its
+ * steps through `schema()` and only marks the wizard it is handed with a `data-tour`
+ * attribute, and `replaced` hands back a wizard of its own.
  */
 #[AsLiveComponent(name: 'Actions:StepwiseActionHost', template: '@Fixtures/actions/StepwiseActionHost.html.twig')]
 class StepwiseActionHost implements InteractsWithActions, InteractsWithSchemas
@@ -53,12 +54,19 @@ class StepwiseActionHost implements InteractsWithActions, InteractsWithSchemas
             ->skippableSteps();
     }
 
+    public function sealedAction(): Action
+    {
+        return $this->recording('sealed')
+            ->steps($this->steps())
+            ->disabledSchema();
+    }
+
     public function retouchedAction(): Action
     {
         return $this->recording('retouched')
             ->schema($this->steps())
             ->modifyWizardUsing(function (Wizard $wizard): void {
-                $wizard->skippable();
+                $wizard->extraAttributes(['data-tour' => 'retouched']);
             });
     }
 

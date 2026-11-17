@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Actions\Action;
+use Sylament\Schemas\Components\Text;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\SlideOverPosition;
 use Sylament\Tests\Fixtures\Actions\ModalChromeHost;
@@ -149,8 +150,8 @@ describe('footer', function (): void {
 
     it('submits the form from its Submit and dismisses the modal in the browser from its Cancel', function (): void {
         expect(($this->modal)(Action::make('archive')))
-            ->toContainElement('form' . Selectors::MODAL_WINDOW . '[data-live-action-param="callMountedAction"] ' . Selectors::MODAL_FOOTER . ' button[type="submit"]', 'Submit')
-            ->toContainElement(Selectors::MODAL_FOOTER . ' button[type="button"][data-action="sylament--support--modal#dismiss"]', 'Cancel');
+            ->toContainElement('form' . Selectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . Selectors::MODAL_FOOTER . ' button[type="submit"]', 'Submit')
+            ->toContainElement(Selectors::MODAL_FOOTER . ' button[type="button"]' . Selectors::DISMISS, 'Cancel');
     });
 
     it("paints Submit primary for a gray or uncoloured action and in the action's colour otherwise", function (?string $color, string $submit): void {
@@ -174,13 +175,21 @@ describe('footer', function (): void {
 });
 
 describe('extra footer actions', function (): void {
+    it('answers an extra footer action under its name below the action, from the component holding the action', function (): void {
+        $text = Text::make('Total')->registerActions([
+            Action::make('save')->extraModalFooterActions([$confirm = Action::make('confirm')]),
+        ]);
+
+        expect($text->getAction('save.confirm'))->toBe($confirm);
+    });
+
     it('runs a footer action, or one in a footer group, under the open modal, and the parent again from a create-another action', function (): void {
         $tester = $this->createLiveComponent(ModalChromeHost::class)->mountAction('compose');
         $footer = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . Selectors::MODAL_FOOTER);
 
         expect($footer)->toContainButtons(SupportSelectors::BUTTON, ['Submit', 'Compose another', 'Save draft', 'Cancel'])
-            ->toContainElement(SupportSelectors::BUTTON . '[data-live-action-param="callMountedAction"][data-live-arguments-param=\'{"another":true}\']', 'Compose another')
-            ->toContainElement('[data-controller="sylament--support--dropdown"] button[data-live-action-param="mountAction"][data-live-name-param="share"]', 'Share');
+            ->toContainElement(SupportSelectors::BUTTON . Selectors::liveParameter('action', 'callMountedAction') . Selectors::liveParameter('arguments', '{"another":true}'), 'Compose another')
+            ->toContainElement('[data-controller="sylament--support--dropdown"] button' . Selectors::liveParameter('action', 'mountAction') . Selectors::liveParameter('name', 'share'), 'Share');
 
         $tester->mountAction('saveDraft')->assertActionMounted('compose');
 

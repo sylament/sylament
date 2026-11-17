@@ -8,6 +8,7 @@ use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ManyToManyOwningSideMapping;
 use LogicException;
 
 /**
@@ -31,11 +32,36 @@ final class FailingWrite
      */
     public static function afterDeletes(EntityManagerInterface $entityManager, string $entityClass, int $allowed): void
     {
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $metadata = $entityManager->getClassMetadata($entityClass);
+
+        self::failDeletesFrom($entityManager, $entityManager->getConfiguration()->getQuoteStrategy()->getTableName($metadata, $platform), $metadata->getTableName(), $allowed);
+    }
+
+    /**
+     * {@see afterDeletes()} for the join table of a many-to-many the class owns, which no
+     * entity maps.
+     *
+     * @param class-string $ownerClass
+     */
+    public static function afterJoinTableDeletes(EntityManagerInterface $entityManager, string $ownerClass, string $association, int $allowed): void
+    {
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $metadata = $entityManager->getClassMetadata($ownerClass);
+        $mapping = $metadata->getAssociationMapping($association);
+
+        if (!$mapping instanceof ManyToManyOwningSideMapping) {
+            throw new LogicException(sprintf('[%s::$%s] is not the owning side of a many-to-many, so it has no join table of its own.', $ownerClass, $association));
+        }
+
+        self::failDeletesFrom($entityManager, $entityManager->getConfiguration()->getQuoteStrategy()->getJoinTableName($mapping, $metadata, $platform), $mapping->joinTable->name, $allowed);
+    }
+
+    private static function failDeletesFrom(EntityManagerInterface $entityManager, string $table, string $tableName, int $allowed): void
+    {
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
-        $metadata = $entityManager->getClassMetadata($entityClass);
-        $table = $entityManager->getConfiguration()->getQuoteStrategy()->getTableName($metadata, $platform);
-        $name = 'sy_failing_' . mb_strtolower((string) preg_replace('/\W+/', '_', $metadata->getTableName()));
+        $name = 'sy_failing_' . mb_strtolower((string) preg_replace('/\W+/', '_', $tableName));
         $message = self::MESSAGE;
 
         [$create, $cleanup] = match (true) {

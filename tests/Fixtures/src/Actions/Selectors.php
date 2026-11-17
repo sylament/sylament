@@ -17,6 +17,10 @@ namespace Sylament\Tests\Fixtures\Actions;
  * window and the footer of support's modal an action opens, by the `sy-` classes the
  * stylesheet lays them out by; the modal's client-side dismiss, and a parameter the live
  * action binding sends, by the `data-` hooks the controllers read.
+ *
+ * An action's trigger, by the action name its Stimulus parameters mount, and the parts of
+ * the open action modal a test reads: its heading, its icon, its footer actions and the
+ * submit among them.
  */
 final class Selectors
 {
@@ -40,6 +44,16 @@ final class Selectors
 
     public const string MODAL_FOOTER = '.sy-modal-footer';
 
+    public const string MODAL = 'dialog.sy-modal[open]';
+
+    public const string MODAL_HEADING = self::MODAL . ' .sy-modal-heading';
+
+    public const string MODAL_ICON = self::MODAL . ' .sy-modal-icon-ctn svg';
+
+    public const string MODAL_FOOTER_ACTIONS = self::MODAL . ' .sy-modal-footer-actions button';
+
+    public const string MODAL_SUBMIT = self::MODAL_FOOTER_ACTIONS . '[type="submit"]';
+
     /**
      * A parameter the live action binding sends, by its name and the value it carries.
      */
@@ -56,5 +70,10 @@ final class Selectors
     public static function mountedModal(int $index): string
     {
         return self::MOUNTED_MODAL . "[id\$=\"-action-{$index}\"]";
+    }
+
+    public static function trigger(string $name): string
+    {
+        return "button[data-live-action-param=\"mountAction\"][data-live-name-param=\"{$name}\"]";
     }
 }

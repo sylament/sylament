@@ -14,76 +14,49 @@ use Sylament\Tests\Fixtures\Forms\SavingUploadForm;
 use Sylament\Tests\Fixtures\Forms\UploadForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 beforeEach(function (): void {
     $registry = $this::getContainer()->get(FilesystemRegistry::class);
     $this->primary = $registry->get('primary.storage');
     $this->secondary = $registry->get('secondary.storage');
-
-    $this->upload = fn (Testable $tester, string $field, string $fileKey, UploadedFile $file): Testable => $tester->call(
-        'uploadSchemaComponentFile',
-        ['componentKey' => "form.{$field}", 'fileKey' => $fileKey],
-        ["sylament_upload_{$fileKey}" => $file],
-    );
-
-    $this->callMethod = fn (Testable $tester, string $field, string $method, array $arguments): Testable => $tester->call(
-        'callSchemaComponentMethod',
-        ['componentKey' => "form.{$field}", 'method' => $method, 'arguments' => $arguments],
-    );
-
-    $this->result = fn (Testable $tester): mixed => $this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result')[0]['result'];
-
-    $this->temporaryFiles = fn (): array => $this->primary->directoryExists('sylament-tmp')
-        ? $this->primary->listContents('sylament-tmp')->map(static fn ($item): string => $item->path())->toArray()
-        : [];
-
-    $this->storedFiles = fn ($disk): array => $disk->listContents('', deep: true)
-        ->filter(static fn ($item): bool => $item->isFile() && !str_starts_with($item->path(), 'sylament-tmp/'))
-        ->map(static fn ($item): string => $item->path())
-        ->toArray();
-
-    $this->hooks = fn (): array => $this::getContainer()->get(HookLog::class)->hooks;
-
-    $this->saved = fn (): array => FileUploadFixtures::savedState($this::getContainer()->get(HookLog::class));
 });
 
 describe('acceptUploadedFile()', function (): void {
     it('holds a good file in the temporary store, puts its token in state under the file key, runs the update hooks and answers what it took', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
 
         $token = $tester->component()->data['document']['k1'];
         $stored = $this::getContainer()->get(TemporaryUploads::class)->resolve($token, 'data.document');
 
-        expect(($this->result)($tester))->toBe(['ok' => true, 'fileKey' => 'k1', 'name' => 'Photo.png', 'size' => 90, 'type' => 'image/png'])
-            ->and(($this->hooks)())->toBe(['document updated'])
+        expect($this->fileUploadMethodResult($tester))->toBe(['ok' => true, 'fileKey' => 'k1', 'name' => 'Photo.png', 'size' => 90, 'type' => 'image/png'])
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(['document updated'])
             ->and($tester->component()->data['document'])->toBe(['k1' => $token])
-            ->and(($this->temporaryFiles)())->toEqualCanonicalizing([$stored->getPath(), $stored->getPath() . '.json'])
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toEqualCanonicalizing([$stored->getPath(), $stored->getPath() . '.json'])
             ->and($this->primary->read($stored->getPath()))->toBe(file_get_contents(FileUploadFixtures::path('pixel.png')));
     });
 
     it('takes nothing while it is disabled', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), 'locked', 'k1', FileUploadFixtures::file('pixel.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), 'locked', 'k1', FileUploadFixtures::file('pixel.png'));
 
-        expect(($this->result)($tester))->toBeNull()
+        expect($this->fileUploadMethodResult($tester))->toBeNull()
             ->and($tester->component()->data['locked'])->toBe([])
-            ->and(($this->temporaryFiles)())->toBe([]);
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('answers the error PHP gave for a file the browser could not deliver, writing nothing', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', error: UPLOAD_ERR_PARTIAL));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', error: UPLOAD_ERR_PARTIAL));
 
-        expect(($this->result)($tester))->toBe(['ok' => false, 'message' => 'The file "pixel.png" was only partially uploaded.'])
-            ->and(($this->temporaryFiles)())->toBe([]);
+        expect($this->fileUploadMethodResult($tester))->toBe(['ok' => false, 'message' => 'The file "pixel.png" was only partially uploaded.'])
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it("refuses a file one of the field's file constraints fails, with that constraint's message, before anything is written", function (string $field, string $fixture, string $clientName, string $message): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), $field, 'k1', FileUploadFixtures::file($fixture, $clientName, ''));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), $field, 'k1', FileUploadFixtures::file($fixture, $clientName, ''));
 
-        expect(($this->result)($tester))->toBe(['ok' => false, 'message' => $message])
+        expect($this->fileUploadMethodResult($tester))->toBe(['ok' => false, 'message' => $message])
             ->and($tester->component()->data[$field])->toBe([])
-            ->and(($this->hooks)())->toBe([])
-            ->and(($this->temporaryFiles)())->toBe([]);
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe([])
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     })->with([
         'a type outside the accepted list, though named and sent as one inside it' => ['document', 'note.txt', 'scan.png', 'The mime type of the file is invalid ("text/plain"). Allowed mime types are "image/png".'],
         'a file over the maximum size' => ['document', 'large.png', 'large.png', 'The file is too large (3.12 KiB). Allowed maximum size is 1 KiB.'],
@@ -96,9 +69,9 @@ describe('acceptUploadedFile()', function (): void {
     ]);
 
     it('takes an image of the ratio allowed, however the ratio is spelled', function (string $field): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), $field, 'k1', FileUploadFixtures::file('wide.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), $field, 'k1', FileUploadFixtures::file('wide.png'));
 
-        expect(($this->result)($tester))->toMatchArray(['ok' => true]);
+        expect($this->fileUploadMethodResult($tester))->toMatchArray(['ok' => true]);
     })->with([
         'a colon' => ['ratio'],
         'a slash' => ['slashedRatio'],
@@ -109,13 +82,13 @@ describe('acceptUploadedFile()', function (): void {
         $tester = $this->createLiveComponent(GalleryForm::class);
 
         foreach (['k1', 'k2', 'k2'] as $fileKey) {
-            ($this->upload)($tester, 'capped', $fileKey, FileUploadFixtures::file('pixel.png'));
+            FileUploadFixtures::upload($tester, 'capped', $fileKey, FileUploadFixtures::file('pixel.png'));
 
-            expect(($this->result)($tester))->toMatchArray(['ok' => true]);
+            expect($this->fileUploadMethodResult($tester))->toMatchArray(['ok' => true]);
         }
 
         expect(array_keys($tester->component()->data['capped']))->toBe(['k1', 'k2'])
-            ->and(($this->temporaryFiles)())->toHaveCount(6);
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toHaveCount(6);
     });
 });
 
@@ -143,36 +116,36 @@ describe('hydrateFiles()', function (): void {
 
 describe('saveUploadedFiles()', function (): void {
     it('stores each upload of the field on its storage, deleting the temporary file, and passes a stored path through', function (): void {
-        ($this->upload)($this->createLiveComponent(SavingUploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'))
+        FileUploadFixtures::upload($this->createLiveComponent(SavingUploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'))
             ->fillForm(['rooted' => 'kept/a.png'])
             ->call('save');
 
-        $saved = ($this->saved)();
+        $saved = $this->savedUploadState();
 
         expect($saved)->toMatchArray(['rooted' => 'kept/a.png', 'documentName' => 'Photo.png'])
             ->and($saved['document'])->toMatch('#^docs/[0-9A-Z]{26}\.png$#')
             ->and($this->primary->read($saved['document']))->toBe(file_get_contents(FileUploadFixtures::path('pixel.png')))
-            ->and(($this->temporaryFiles)())->toBe([]);
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('stores an upload inside a repeater item, which the renders before the save leave to it', function (): void {
         $tester = $this->createLiveComponent(RepeatedAttachmentForm::class);
         $item = array_key_first($tester->component()->data['items']);
 
-        ($this->upload)($tester, "items.{$item}.attachment", 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, "items.{$item}.attachment", 'k1', FileUploadFixtures::file('pixel.png'));
         $tester->refresh()->call('save');
 
-        $attachment = ($this->saved)()['items'][0]['attachment'];
+        $attachment = $this->savedUploadState()['items'][0]['attachment'];
 
         expect($attachment)->toMatch('#^[0-9A-Z]{26}\.png$#')
             ->and($this->primary->fileExists($attachment))->toBeTrue()
-            ->and(($this->temporaryFiles)())->toBe([]);
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('drops a token minted for another field and one whose bytes are gone', function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'held', 'k1', FileUploadFixtures::file('pixel.png'));
-        ($this->upload)($tester, 'preserved', 'k2', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'held', 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'preserved', 'k2', FileUploadFixtures::file('pixel.png'));
 
         $foreign = $tester->component()->data['held']['k1'];
         $vanished = $tester->component()->data['preserved']['k2'];
@@ -180,8 +153,8 @@ describe('saveUploadedFiles()', function (): void {
 
         $tester->fillForm(['rooted' => ['k1' => $foreign]])->call('save');
 
-        expect(($this->saved)())->toMatchArray(['rooted' => null, 'preserved' => null, 'held' => $foreign])
-            ->and(($this->storedFiles)($this->primary))->toBe([]);
+        expect($this->savedUploadState())->toMatchArray(['rooted' => null, 'preserved' => null, 'held' => $foreign])
+            ->and(FileUploadFixtures::storedFiles($this->primary))->toBe([]);
     });
 
     it('drops blank entries, keeps a stored path of "0", and saves an empty field as empty', function (): void {
@@ -189,7 +162,7 @@ describe('saveUploadedFiles()', function (): void {
             ->fillForm(['album' => ['0', '', 'kept/b.png']])
             ->call('save');
 
-        expect(($this->saved)())->toMatchArray([
+        expect($this->savedUploadState())->toMatchArray([
             'album' => ['0', 'kept/b.png'],
             'ordered' => [],
             'rooted' => null,
@@ -197,14 +170,14 @@ describe('saveUploadedFiles()', function (): void {
     });
 
     it('leaves the token in state and stores nothing while it stores no files', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(SavingUploadForm::class), 'held', 'k1', FileUploadFixtures::file('pixel.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(SavingUploadForm::class), 'held', 'k1', FileUploadFixtures::file('pixel.png'));
         $token = $tester->component()->data['held']['k1'];
 
         $tester->call('save');
 
-        expect(($this->saved)()['held'])->toBe($token)
-            ->and(($this->temporaryFiles)())->toHaveCount(2)
-            ->and(($this->storedFiles)($this->primary))->toBe([]);
+        expect($this->savedUploadState()['held'])->toBe($token)
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toHaveCount(2)
+            ->and(FileUploadFixtures::storedFiles($this->primary))->toBe([]);
     });
 
     it('hands the stored set to the reorder callback only while the field is reorderable, read through its closure', function (): void {
@@ -212,36 +185,36 @@ describe('saveUploadedFiles()', function (): void {
             ->fillForm(['ordered' => ['one.png', 'two.png'], 'unordered' => ['one.png', 'two.png']])
             ->call('save');
 
-        expect(($this->saved)())->toMatchArray([
+        expect($this->savedUploadState())->toMatchArray([
             'ordered' => ['two.png', 'one.png'],
             'unordered' => ['one.png', 'two.png'],
         ])
-            ->and(array_values(array_filter(($this->hooks)(), static fn (string $hook): bool => str_starts_with($hook, 'reordered'))))->toBe(['reordered']);
+            ->and(array_values(array_filter($this::getContainer()->get(HookLog::class)->hooks, static fn (string $hook): bool => str_starts_with($hook, 'reordered'))))->toBe(['reordered']);
     });
 
     it('stores what a store step of its own answers, deleting the temporary file', function (): void {
-        ($this->upload)($this->createLiveComponent(SavingUploadForm::class), 'replaced', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'))->call('save');
+        FileUploadFixtures::upload($this->createLiveComponent(SavingUploadForm::class), 'replaced', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'))->call('save');
 
-        expect(($this->saved)()['replaced'])->toBe('replaced/Photo.png')
-            ->and(($this->temporaryFiles)())->toBe([]);
+        expect($this->savedUploadState()['replaced'])->toBe('replaced/Photo.png')
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('drops an upload no store step takes, deleting its temporary file rather than saving its token', function (): void {
-        ($this->upload)($this->createLiveComponent(SavingUploadForm::class), 'discarded', 'k1', FileUploadFixtures::file('pixel.png'))->call('save');
+        FileUploadFixtures::upload($this->createLiveComponent(SavingUploadForm::class), 'discarded', 'k1', FileUploadFixtures::file('pixel.png'))->call('save');
 
-        expect(($this->saved)()['discarded'])->toBeNull()
-            ->and(($this->temporaryFiles)())->toBe([]);
+        expect($this->savedUploadState()['discarded'])->toBeNull()
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 });
 
 describe('saveUploadedFile()', function (): void {
     it('writes the bytes under the directory trimmed of slashes, or at the storage root, by a generated name, once', function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'document', 'k1', FileUploadFixtures::file('pixel.png'));
-        ($this->upload)($tester, 'rooted', 'k2', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'document', 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'rooted', 'k2', FileUploadFixtures::file('pixel.png'));
         $tester->call('save');
 
-        $saved = ($this->saved)();
+        $saved = $this->savedUploadState();
 
         expect($saved['document'])->toMatch('#^docs/[0-9A-Z]{26}\.png$#')
             ->and($saved['rooted'])->toMatch('#^[0-9A-Z]{26}\.png$#')
@@ -249,33 +222,33 @@ describe('saveUploadedFile()', function (): void {
 
         $tester->call('save');
 
-        expect(($this->saved)())->toMatchArray(['document' => $saved['document'], 'rooted' => $saved['rooted']])
-            ->and(($this->storedFiles)($this->primary))->toEqualCanonicalizing([$saved['document'], $saved['rooted']]);
+        expect($this->savedUploadState())->toMatchArray(['document' => $saved['document'], 'rooted' => $saved['rooted']])
+            ->and(FileUploadFixtures::storedFiles($this->primary))->toEqualCanonicalizing([$saved['document'], $saved['rooted']]);
     });
 
     it("stores under the client's own name when it preserves names, and under the name a generator of its own gives", function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'preserved', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
-        ($this->upload)($tester, 'named', 'k2', FileUploadFixtures::file('pixel.png', 'Photo.png'));
+        FileUploadFixtures::upload($tester, 'preserved', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
+        FileUploadFixtures::upload($tester, 'named', 'k2', FileUploadFixtures::file('pixel.png', 'Photo.png'));
         $tester->call('save');
 
-        expect(($this->saved)())->toMatchArray(['preserved' => 'Photo.png', 'named' => 'named-Photo.png'])
-            ->and(($this->storedFiles)($this->primary))->toEqualCanonicalizing(['Photo.png', 'named-Photo.png']);
+        expect($this->savedUploadState())->toMatchArray(['preserved' => 'Photo.png', 'named' => 'named-Photo.png'])
+            ->and(FileUploadFixtures::storedFiles($this->primary))->toEqualCanonicalizing(['Photo.png', 'named-Photo.png']);
     });
 
     it('refuses to store a file its name generator names nothing', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(SavingUploadForm::class), 'nameless', 'k1', FileUploadFixtures::file('pixel.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(SavingUploadForm::class), 'nameless', 'k1', FileUploadFixtures::file('pixel.png'));
 
         expect(fn (): Testable => $tester->call('save'))->toThrow(LogicException::class, 'The [nameless] field could not name the file to store');
     });
 
     it('writes a private file privately, and leaves an unset visibility to the storage', function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'private', 'k1', FileUploadFixtures::file('pixel.png'));
-        ($this->upload)($tester, 'rooted', 'k2', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'private', 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'rooted', 'k2', FileUploadFixtures::file('pixel.png'));
         $tester->call('save');
 
-        $saved = ($this->saved)();
+        $saved = $this->savedUploadState();
 
         expect($this->primary->visibility($saved['private']))->toBe('private')
             ->and($this->primary->visibility($saved['rooted']))->toBe('public');
@@ -283,30 +256,30 @@ describe('saveUploadedFile()', function (): void {
 
     it('moves the temporary file onto a path of the storage it shares, and streams one across to another storage though asked to move', function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'moved', 'k1', FileUploadFixtures::file('pixel.png'));
-        ($this->upload)($tester, 'elsewhere', 'k2', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'moved', 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'elsewhere', 'k2', FileUploadFixtures::file('pixel.png'));
         $tester->call('save');
 
-        $saved = ($this->saved)();
+        $saved = $this->savedUploadState();
 
         expect($this->primary->read($saved['moved']))->toBe(file_get_contents(FileUploadFixtures::path('pixel.png')))
             ->and($this->secondary->read($saved['elsewhere']))->toBe(file_get_contents(FileUploadFixtures::path('pixel.png')))
-            ->and(($this->temporaryFiles)())->toBe([]);
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 });
 
 describe('disk()', function (): void {
     it('stores onto the storage the field names and onto the default when it names none, and renders the stored file from it', function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'elsewhere', 'k1', FileUploadFixtures::file('pixel.png'));
-        ($this->upload)($tester, 'rooted', 'k2', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'elsewhere', 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'rooted', 'k2', FileUploadFixtures::file('pixel.png'));
         $tester->call('save');
 
-        $saved = ($this->saved)();
+        $saved = $this->savedUploadState();
         $crawler = $tester->render()->crawler();
 
-        expect(($this->storedFiles)($this->secondary))->toBe([$saved['elsewhere']])
-            ->and(($this->storedFiles)($this->primary))->toBe([$saved['rooted']])
+        expect(FileUploadFixtures::storedFiles($this->secondary))->toBe([$saved['elsewhere']])
+            ->and(FileUploadFixtures::storedFiles($this->primary))->toBe([$saved['rooted']])
             ->and(FileUploadFixtures::values($crawler, 'data.elsewhere')['uploadedFiles'])->toBe(['k1' => ['name' => $saved['elsewhere'], 'size' => 90, 'type' => 'image/png', 'url' => null]])
             ->and(FileUploadFixtures::values($crawler, 'data.rooted')['uploadedFiles'])->toBe(['k2' => ['name' => $saved['rooted'], 'size' => 90, 'type' => 'image/png', 'url' => '/files/' . $saved['rooted']]]);
     });
@@ -326,7 +299,7 @@ describe('getUploadedFiles()', function (): void {
             'closed' => ['a' => 'photos/a.png'],
             'downloads' => ['a' => 'photos/a.png'],
         ]]);
-        ($this->upload)($tester, 'gallery', 'k3', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'gallery', 'k3', FileUploadFixtures::file('pixel.png'));
 
         $crawler = $tester->render()->crawler();
         $single = $this->createLiveComponent(SavingUploadForm::class)
@@ -370,24 +343,24 @@ describe('getUploadedFiles()', function (): void {
     });
 
     it('is rendered rather than fetched, so the browser cannot call it', function (): void {
-        $tester = ($this->callMethod)($this->createLiveComponent(GalleryForm::class, ['record' => ['closed' => ['a' => 'photos/a.png']]]), 'closed', 'getUploadedFiles', []);
+        $tester = FileUploadFixtures::callMethod($this->createLiveComponent(GalleryForm::class, ['record' => ['closed' => ['a' => 'photos/a.png']]]), 'closed', 'getUploadedFiles', []);
 
-        expect(($this->result)($tester))->toBeNull()
+        expect($this->fileUploadMethodResult($tester))->toBeNull()
             ->and(FileUploadFixtures::values($tester->render()->crawler(), 'data.closed')['uploadedFiles'])->toHaveKey('a');
     });
 });
 
 describe('removeUploadedFile()', function (): void {
     it('removes an upload, deleting its temporary file, and answers its token', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png'));
         $token = $tester->component()->data['document']['k1'];
 
-        ($this->callMethod)($tester, 'document', 'removeUploadedFile', ['fileKey' => 'k1']);
+        FileUploadFixtures::callMethod($tester, 'document', 'removeUploadedFile', ['fileKey' => 'k1']);
 
-        expect(($this->result)($tester))->toBe($token)
+        expect($this->fileUploadMethodResult($tester))->toBe($token)
             ->and($tester->component()->data['document'])->toBe([])
-            ->and(($this->hooks)())->toBe(['document updated'])
-            ->and(($this->temporaryFiles)())->toBe([]);
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(['document updated'])
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('removes a stored path and its stored name, leaving the bytes, and answers the path', function (string $field, string $namesField, mixed $names, mixed $removedNames): void {
@@ -398,9 +371,9 @@ describe('removeUploadedFile()', function (): void {
             $namesField => $names,
         ]]);
 
-        ($this->callMethod)($tester, $field, 'removeUploadedFile', ['fileKey' => 'a']);
+        FileUploadFixtures::callMethod($tester, $field, 'removeUploadedFile', ['fileKey' => 'a']);
 
-        expect(($this->result)($tester))->toBe('photos/a.png')
+        expect($this->fileUploadMethodResult($tester))->toBe('photos/a.png')
             ->and($tester->component()->data)->toMatchArray([$field => [], $namesField => $removedNames])
             ->and($this->primary->fileExists('photos/a.png'))->toBeTrue();
     })->with([
@@ -411,14 +384,14 @@ describe('removeUploadedFile()', function (): void {
     it('removes nothing and answers null for a disabled or undeletable field, or a key it does not hold', function (string $field, string $fileKey): void {
         $this->primary->write('kept.png', 'x');
 
-        $tester = ($this->callMethod)(
+        $tester = FileUploadFixtures::callMethod(
             $this->createLiveComponent(UploadForm::class, ['record' => ['locked' => ['a' => 'kept.png'], 'kept' => ['a' => 'kept.png'], 'document' => ['a' => 'kept.png']]]),
             $field,
             'removeUploadedFile',
             ['fileKey' => $fileKey],
         );
 
-        expect(($this->result)($tester))->toBeNull()
+        expect($this->fileUploadMethodResult($tester))->toBeNull()
             ->and($tester->component()->data[$field])->toBe(['a' => 'kept.png']);
     })->with([
         'a disabled field' => ['locked', 'a'],
@@ -429,21 +402,21 @@ describe('removeUploadedFile()', function (): void {
 
 describe('deleteUploadedFile()', function (): void {
     it('hands the delete callback the upload it removed, and answers nothing', function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(UploadForm::class), 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
 
-        ($this->callMethod)($tester, 'document', 'deleteUploadedFile', ['fileKey' => 'k1']);
+        FileUploadFixtures::callMethod($tester, 'document', 'deleteUploadedFile', ['fileKey' => 'k1']);
 
-        expect(($this->result)($tester))->toBeNull()
-            ->and(($this->hooks)())->toBe(['document updated', 'deleted: upload Photo.png'])
-            ->and(($this->temporaryFiles)())->toBe([]);
+        expect($this->fileUploadMethodResult($tester))->toBeNull()
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(['document updated', 'deleted: upload Photo.png'])
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('hands the delete callback the stored path it removed, leaving the bytes to it', function (): void {
         $this->primary->write('kept.png', 'x');
 
-        $tester = ($this->callMethod)($this->createLiveComponent(UploadForm::class, ['record' => ['document' => ['a' => 'kept.png']]]), 'document', 'deleteUploadedFile', ['fileKey' => 'a']);
+        $tester = FileUploadFixtures::callMethod($this->createLiveComponent(UploadForm::class, ['record' => ['document' => ['a' => 'kept.png']]]), 'document', 'deleteUploadedFile', ['fileKey' => 'a']);
 
-        expect(($this->hooks)())->toBe(['document updated', 'deleted: kept.png'])
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['document updated', 'deleted: kept.png'])
             ->and($tester->component()->data['document'])->toBe([])
             ->and($this->primary->fileExists('kept.png'))->toBeTrue();
     });
@@ -451,16 +424,16 @@ describe('deleteUploadedFile()', function (): void {
     it('runs no delete callback when the removal is refused', function (): void {
         $this->primary->write('kept.png', 'x');
 
-        $tester = ($this->callMethod)($this->createLiveComponent(UploadForm::class, ['record' => ['document' => ['a' => 'kept.png']]]), 'document', 'deleteUploadedFile', ['fileKey' => 'b']);
+        $tester = FileUploadFixtures::callMethod($this->createLiveComponent(UploadForm::class, ['record' => ['document' => ['a' => 'kept.png']]]), 'document', 'deleteUploadedFile', ['fileKey' => 'b']);
 
-        expect(($this->hooks)())->toBe([])
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([])
             ->and($tester->component()->data['document'])->toBe(['a' => 'kept.png']);
     });
 });
 
 describe('reorderUploadedFiles()', function (): void {
     it('puts the files in the order the browser sends, a key it did not name first', function (): void {
-        $tester = ($this->callMethod)(
+        $tester = FileUploadFixtures::callMethod(
             $this->createLiveComponent(GalleryForm::class)->fillForm(['gallery' => ['a' => 'a.png', 'b' => 'b.png', 'c' => 'c.png']]),
             'gallery',
             'reorderUploadedFiles',
@@ -471,7 +444,7 @@ describe('reorderUploadedFiles()', function (): void {
     });
 
     it('keeps the order for a field that is not reorderable, or a key that is not a string', function (string $field, array $fileKeys): void {
-        $tester = ($this->callMethod)(
+        $tester = FileUploadFixtures::callMethod(
             $this->createLiveComponent(GalleryForm::class)->fillForm([$field => ['a' => 'a.png', 'b' => 'b.png']]),
             $field,
             'reorderUploadedFiles',
@@ -500,9 +473,9 @@ describe('collection constraints', function (): void {
     });
 
     it("runs a nested constraint over the stored set at save, never on the file at upload", function (): void {
-        $tester = ($this->upload)($this->createLiveComponent(GalleryForm::class), 'brief', 'k1', FileUploadFixtures::file('pixel.png'));
+        $tester = FileUploadFixtures::upload($this->createLiveComponent(GalleryForm::class), 'brief', 'k1', FileUploadFixtures::file('pixel.png'));
 
-        expect(($this->result)($tester))->toMatchArray(['ok' => true]);
+        expect($this->fileUploadMethodResult($tester))->toMatchArray(['ok' => true]);
 
         $tester->fillForm(['gallery' => ['a.png']])
             ->call('save')
@@ -551,15 +524,15 @@ describe('preventFilePathTampering()', function (): void {
 
     it("stores the field's own upload at save and lets the browser remove one, deleting its temporary file", function (): void {
         $tester = $this->createLiveComponent(GuardedUploadForm::class);
-        ($this->upload)($tester, 'document', 'k1', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'document', 'k1', FileUploadFixtures::file('pixel.png'));
         $tester->call('save')->assertHasNoFormErrors();
 
-        ($this->upload)($tester, 'shared', 'k2', FileUploadFixtures::file('pixel.png'));
+        FileUploadFixtures::upload($tester, 'shared', 'k2', FileUploadFixtures::file('pixel.png'));
         $token = $tester->component()->data['shared']['k2'];
-        ($this->callMethod)($tester, 'shared', 'removeUploadedFile', ['fileKey' => 'k2']);
+        FileUploadFixtures::callMethod($tester, 'shared', 'removeUploadedFile', ['fileKey' => 'k2']);
 
-        expect(($this->result)($tester))->toBe($token)
-            ->and(($this->temporaryFiles)())->toBe([]);
+        expect($this->fileUploadMethodResult($tester))->toBe($token)
+            ->and(FileUploadFixtures::temporaryFiles($this->primary))->toBe([]);
     });
 
     it('renders nothing for a path it refuses, and refuses the browser its removal', function (): void {
@@ -572,9 +545,9 @@ describe('preventFilePathTampering()', function (): void {
         expect($uploadedFiles[0])->toBeNull()
             ->and($uploadedFiles[1])->toMatchArray(['name' => 'owned.png']);
 
-        ($this->callMethod)($tester, 'document', 'removeUploadedFile', ['fileKey' => '0']);
+        FileUploadFixtures::callMethod($tester, 'document', 'removeUploadedFile', ['fileKey' => '0']);
 
-        expect(($this->result)($tester))->toBeNull()
+        expect($this->fileUploadMethodResult($tester))->toBeNull()
             ->and($tester->component()->data['document'])->toBe(['other.png', GuardedUploadForm::OWNED]);
     });
 });
@@ -582,12 +555,12 @@ describe('preventFilePathTampering()', function (): void {
 describe('storeFileNamesIn()', function (): void {
     it("keeps each upload's original name beside the field at save, one name for a single field and a map by stored path for a multiple one", function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
-        ($this->upload)($tester, 'album', 'k2', FileUploadFixtures::file('pixel.png', 'One.png'));
-        ($this->upload)($tester, 'album', 'k3', FileUploadFixtures::file('wide.png', 'Two.png'));
+        FileUploadFixtures::upload($tester, 'document', 'k1', FileUploadFixtures::file('pixel.png', 'Photo.png'));
+        FileUploadFixtures::upload($tester, 'album', 'k2', FileUploadFixtures::file('pixel.png', 'One.png'));
+        FileUploadFixtures::upload($tester, 'album', 'k3', FileUploadFixtures::file('wide.png', 'Two.png'));
         $tester->call('save');
 
-        $saved = ($this->saved)();
+        $saved = $this->savedUploadState();
 
         expect($saved['documentName'])->toBe('Photo.png')
             ->and($saved['album'])->toHaveCount(2)
@@ -600,11 +573,11 @@ describe('storeFileNamesIn()', function (): void {
 
     it('keeps the name beside a field nested under a state path, by a relative path or one a closure gives', function (): void {
         $tester = $this->createLiveComponent(SavingUploadForm::class);
-        ($this->upload)($tester, 'details.scan', 'k1', FileUploadFixtures::file('pixel.png', 'Scan.png'));
-        ($this->upload)($tester, 'details.snapshot', 'k2', FileUploadFixtures::file('pixel.png', 'Snap.png'));
+        FileUploadFixtures::upload($tester, 'details.scan', 'k1', FileUploadFixtures::file('pixel.png', 'Scan.png'));
+        FileUploadFixtures::upload($tester, 'details.snapshot', 'k2', FileUploadFixtures::file('pixel.png', 'Snap.png'));
         $tester->call('save');
 
-        expect(($this->saved)()['details'])->toMatchArray([
+        expect($this->savedUploadState()['details'])->toMatchArray([
             'scanName' => 'Scan.png',
             'snapshotName' => 'Snap.png',
         ]);

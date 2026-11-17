@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Forms;
 
 use LogicException;
+use Sylament\Actions\Testing\Testable;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\Component\DomCrawler\Crawler;
 
 trait FormsHelpers
@@ -43,5 +45,36 @@ trait FormsHelpers
             $option->filter(Selectors::RADIO)->attr('value'),
             $option->filter(Selectors::RADIO_OPTION_DESCRIPTION)->count() === 1 ? $option->filter(Selectors::RADIO_OPTION_DESCRIPTION)->text() : null,
         ]);
+    }
+
+    /**
+     * What the file field method the tester's last request called answered, as the browser
+     * event that carries it back hands it to the controller.
+     */
+    protected function fileUploadMethodResult(Testable $tester): mixed
+    {
+        $events = $this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result');
+
+        if (!is_array($events[0] ?? null) || !array_key_exists('result', $events[0])) {
+            throw new LogicException('The request dispatched no schema component method result.');
+        }
+
+        return $events[0]['result'];
+    }
+
+    /**
+     * The state the last save of the request recorded, read from the request's {@see HookLog}.
+     *
+     * @return array<string, mixed>
+     */
+    protected function savedUploadState(): array
+    {
+        $hookLog = static::getContainer()->get(HookLog::class);
+
+        if (!$hookLog instanceof HookLog) {
+            throw new LogicException("The kernel's hook log is not a HookLog.");
+        }
+
+        return FileUploadFixtures::savedState($hookLog);
     }
 }

@@ -7,7 +7,6 @@ use Sylament\Forms\Uploads\TemporaryUploadedFile;
 use Sylament\Forms\Uploads\TemporaryUploads;
 use Sylament\Support\Filesystem\FilesystemRegistry;
 use Sylament\Tests\Fixtures\Forms\FileUploadFixtures;
-use Sylament\Tests\Infrastructure\WorkerDirectory;
 
 beforeEach(function (): void {
     $this->registry = $this::getContainer()->get(FilesystemRegistry::class);
@@ -115,21 +114,15 @@ describe('isToken()', function (): void {
 });
 
 describe('prune()', function (): void {
-    beforeEach(function (): void {
-        $this->age = function (string $path, int $hours): void {
-            touch(WorkerDirectory::path() . '/storage/primary/' . $path, time() - $hours * 3600);
-        };
-    });
-
     it('deletes what under its directory is older than a day, answers how many went, and keeps the rest', function (): void {
         foreach (['sylament-tmp/a.bin', 'sylament-tmp/nested/b.bin', 'sylament-tmp/c.bin', 'outside.bin'] as $path) {
             $this->disk->write($path, 'x');
         }
 
-        ($this->age)('sylament-tmp/a.bin', 25);
-        ($this->age)('sylament-tmp/nested/b.bin', 25);
-        ($this->age)('sylament-tmp/c.bin', 23);
-        ($this->age)('outside.bin', 25);
+        FileUploadFixtures::age('sylament-tmp/a.bin', 25);
+        FileUploadFixtures::age('sylament-tmp/nested/b.bin', 25);
+        FileUploadFixtures::age('sylament-tmp/c.bin', 23);
+        FileUploadFixtures::age('outside.bin', 25);
 
         expect($this->store->prune())->toBe(2)
             ->and($this->disk->fileExists('sylament-tmp/a.bin'))->toBeFalse()
@@ -140,7 +133,7 @@ describe('prune()', function (): void {
 
     it('sweeps on every upload while cleanup is on, and never while it is off', function (bool $cleanup, bool $swept): void {
         $this->disk->write('sylament-tmp/stale.bin', 'x');
-        ($this->age)('sylament-tmp/stale.bin', 25);
+        FileUploadFixtures::age('sylament-tmp/stale.bin', 25);
 
         new TemporaryUploads($this->registry, 'test-secret', cleanup: $cleanup)->store(FileUploadFixtures::file('note.txt'), 'data.note');
 

@@ -6,16 +6,22 @@ namespace Sylament\Tests\Fixtures\Forms;
 
 use DOMElement;
 use JsonException;
+use League\Flysystem\FilesystemOperator;
+use League\Flysystem\StorageAttributes;
 use LogicException;
+use Sylament\Actions\Testing\Testable;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * The files a file-upload test sends, from `assets/uploads/` (`pixel.png` 1x1, `wide.png` 2x1,
- * `large.png` over 1 KiB, `note.txt`), the Stimulus values a rendered file field hands its
- * controller, decoded as the controller reads them, and the state a host's save recorded in
- * the request's {@see HookLog} under {@see self::SAVED}.
+ * `large.png` over 1 KiB, `note.txt`), the two requests a file field's controller makes (an
+ * upload and a call of one of the field's methods), the Stimulus values a rendered file field
+ * hands its controller, decoded as the controller reads them, the temporary and the stored
+ * files a disk holds, a file on the primary storage aged by hand, and the state a host's save
+ * recorded in the request's {@see HookLog} under {@see self::SAVED}.
  */
 final class FileUploadFixtures
 {
@@ -31,6 +37,57 @@ final class FileUploadFixtures
     public static function file(string $fixture, ?string $clientName = null, ?string $clientMimeType = null, ?int $error = null): UploadedFile
     {
         return new UploadedFile(self::path($fixture), $clientName ?? $fixture, $clientMimeType, $error, test: true);
+    }
+
+    public static function upload(Testable $tester, string $field, string $fileKey, UploadedFile $file): Testable
+    {
+        return $tester->call(
+            'uploadSchemaComponentFile',
+            ['componentKey' => "form.{$field}", 'fileKey' => $fileKey],
+            ["sylament_upload_{$fileKey}" => $file],
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     */
+    public static function callMethod(Testable $tester, string $field, string $method, array $arguments): Testable
+    {
+        return $tester->call(
+            'callSchemaComponentMethod',
+            ['componentKey' => "form.{$field}", 'method' => $method, 'arguments' => $arguments],
+        );
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function temporaryFiles(FilesystemOperator $disk): array
+    {
+        if (!$disk->directoryExists('sylament-tmp')) {
+            return [];
+        }
+
+        return $disk->listContents('sylament-tmp')->map(static fn (StorageAttributes $item): string => $item->path())->toArray();
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function storedFiles(FilesystemOperator $disk): array
+    {
+        return $disk->listContents('', deep: true)
+            ->filter(static fn (StorageAttributes $item): bool => $item->isFile() && !str_starts_with($item->path(), 'sylament-tmp/'))
+            ->map(static fn (StorageAttributes $item): string => $item->path())
+            ->toArray();
+    }
+
+    /**
+     * Set a file on the primary storage to have last changed `$hours` ago, as a sweep reads it.
+     */
+    public static function age(string $path, int $hours): void
+    {
+        touch(WorkerDirectory::path() . '/storage/primary/' . $path, time() - $hours * 3600);
     }
 
     /**

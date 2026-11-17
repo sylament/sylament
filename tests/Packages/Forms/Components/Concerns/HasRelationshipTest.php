@@ -136,7 +136,7 @@ describe('relationship()', function (): void {
 });
 
 describe('the three closures', function (): void {
-    it('hands each composing class to the closures as self, so the option map, the fill and the save run on either field', function (Closure $field): void {
+    it('lists, fills and saves the same association through either composing field', function (Closure $field): void {
         $garden = new Garden('North');
         $garden->addPlant($fern = new Plant('Fern'));
         $this->seed($fern, $moss = new Plant('Moss'), $garden);

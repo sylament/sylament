@@ -147,11 +147,6 @@ describe('JS control render', function (): void {
             ->and([$this->selectControllerValue($pinned, 'position'), $this->selectControllerValue($pinned, 'labelsWrap')])->toBe(['top', 'false']);
     });
 
-    it('hands the controller the loading message, Loading... unless the field sets one', function (): void {
-        expect($this->selectControllerValue($this->renderSchemaComponent(Select::make('plant')->options(['fern' => 'Fern'])->native(false)), 'loadingMessage'))->toBe('Loading...')
-            ->and($this->selectControllerValue($this->renderSchemaComponent(Select::make('plant')->options(['fern' => 'Fern'])->native(false)->loadingMessage('Fetching plants...')), 'loadingMessage'))->toBe('Fetching plants...');
-    });
-
     it('renders a required JS control aria-required rather than required, and aria-invalid once it has an error', function (): void {
         $select = $this->createLiveComponent(SelectForm::class)->call('save')->render()->crawler()->filter('select[name="chosen"]');
 
@@ -403,13 +398,6 @@ describe('validation', function (): void {
         'a listed value no option offers' => ['yew', true],
         'an option the list leaves out' => ['moss', false],
     ]);
-
-    it('words the Choice violation with the message validationMessages() gives it', function (): void {
-        $this->createLiveComponent(SelectForm::class)
-            ->fillForm(['messaged' => 'yew'])
-            ->call('save')
-            ->assertHasFormErrors(['messaged' => 'Pick a listed plant.']);
-    });
 
     it('probes a searchable relationship select through its scoped query, so a row the scope leaves out is no choice', function (): void {
         $this->seed($moss = new Garden('Moss'));

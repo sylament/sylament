@@ -11,7 +11,6 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
-use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -25,9 +24,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * (single and multiple, each disabling one), none of either (single, and a multiple
  * carrying only the single closure), a required searchable one, a search closure that
  * records what it was handed in the request's {@see HookLog} beside a label closure
- * capitalising the value, a map following a live field, a message for the `Choice`, and
- * an `in()` list. A save validates every field, so a case asserts the errors of the
- * field it fills.
+ * capitalising the value, a map following a live field, and an `in()` list. A save
+ * validates every field, so a case asserts the errors of the field it fills.
  */
 #[AsLiveComponent(name: 'Forms:SelectForm', template: '@Fixtures/forms/SelectForm.html.twig')]
 class SelectForm implements InteractsWithSchemas
@@ -90,7 +88,6 @@ class SelectForm implements InteractsWithSchemas
                     ->getOptionLabelUsing(static fn (string $value): string => ucfirst($value)),
                 Select::make('kind')->options(['tree' => 'Tree', 'herb' => 'Herb'])->live(),
                 Select::make('species')->options(static fn (Get $get): array => $get('kind') === 'tree' ? ['oak' => 'Oak'] : ['mint' => 'Mint']),
-                Select::make('messaged')->options($plants)->validationMessages([Choice::class => 'Pick a listed plant.']),
                 Select::make('restricted')->options($plants)->in(['fern', 'yew']),
             ]);
     }

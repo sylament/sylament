@@ -313,6 +313,6 @@ describe('relationship', function (): void {
         $garden = new Garden('North');
         $schema = new RecordMappingHost()->mapping(CheckboxList::make('supplier')->relationship('supplier', 'name'))->record($garden);
 
-        expect(fn (): mixed => $schema->fill($garden))->toThrow(LogicException::class, 'The [supplier] field declares relationship("supplier") alongside multiple(), but that association holds a single ' . Product::class . ' rather than a collection, so a list of selections could not map it.');
+        expect(fn (): mixed => $schema->fill($garden))->toThrow(LogicException::class, 'The [supplier] field declares relationship("supplier"), but that association holds a single ' . Product::class . ' rather than a collection, so the list of selections the field always speaks could not map it. Point relationship() at a to-many association.');
     });
 });

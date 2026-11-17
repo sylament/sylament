@@ -239,7 +239,8 @@ trait HasRelationship
      *
      * @throws LogicException when the association holds a collection the field
      *                        never declared `multiple()` for, or a single record
-     *                        it did
+     *                        it did, or one a field that always speaks a list
+     *                        (`CheckboxList`, which has no `multiple()`) points at
      */
     private function getMultiplicityMatchedRelationshipTarget(): AssociationTarget
     {
@@ -255,9 +256,18 @@ trait HasRelationship
             ));
         }
 
-        if (! $target->isToMany && $isMultiple) {
+        if (! $target->isToMany && $isMultiple && method_exists($this, 'multiple')) {
             throw new LogicException(sprintf(
                 'The [%s] field declares relationship("%s") alongside multiple(), but that association holds a single %s rather than a collection, so a list of selections could not map it. Drop multiple(), or point relationship() at a to-many association.',
+                (string) $this->getName(),
+                $this->getRelationshipNameOrFail(),
+                $target->targetClass,
+            ));
+        }
+
+        if (! $target->isToMany && $isMultiple) {
+            throw new LogicException(sprintf(
+                'The [%s] field declares relationship("%s"), but that association holds a single %s rather than a collection, so the list of selections the field always speaks could not map it. Point relationship() at a to-many association.',
                 (string) $this->getName(),
                 $this->getRelationshipNameOrFail(),
                 $target->targetClass,

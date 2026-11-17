@@ -65,7 +65,7 @@ The wrapper's `prefixIconAlias` prop takes [`FormsIconAlias::COMPONENTS_CHECKBOX
 
 The trait's three injected-component closures are typed **`self`**, which inside a trait resolves to the composing class, so a `CheckboxList` closure receives a `CheckboxList`; the [`Invoker`](../support/component.md#closure-resolution-lives-in-a-service) normalizes a `self` hint against the declaring class when it resolves the injection.
 The multiplicity match the trait runs on every read asks the field [`isMultiple()`](#ismultiple-is-port-plumbing-with-no-filament-counterpart).
-A `CheckboxList` answers a constant `true`, so pointing it at a to-one association fails with the trait's refusal ("holds a single …") and the to-many arm is the only one it can take.
+A `CheckboxList` answers a constant `true`, so pointing it at a to-one association fails with the trait's refusal ("holds a single …"), which tells it to point `relationship()` at a to-many association rather than to drop a `multiple()` it does not have, and the to-many arm is the only one it can take.
 Composite keys ride the same inheritance: the option keys, the state read and the desired-list write are all the trait's, so the [key spelling](has-relationship.md#relationship-is-three-lazy-closures-over-the-association-reader) the trait guarantees holds here unchanged.
 
 `getOptionsFromRelationship()` is overridden here only for [the record-shaped closures](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query); with neither declared it delegates straight back to the trait's build, aliased in as `getTitleAttributeOptionsFromRelationship()`.

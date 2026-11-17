@@ -13,6 +13,7 @@ use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Entity\Article;
+use Sylament\Tests\Fixtures\Entity\AtelierStock;
 use Sylament\Tests\Fixtures\Entity\BlankCodedReel;
 use Sylament\Tests\Fixtures\Entity\CallbackCodedReel;
 use Sylament\Tests\Fixtures\Entity\ConstructorCodedBadge;
@@ -32,7 +33,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `PropagatedCutting` variants named `…Cutting…` (the cutting named Rose, or Graft for the
  * one whose parent is left off), `Tally`, and the key-shaped records. The `OrderLine` and
  * `InvoiceLine` variants are named `replicate<Class><Variant>` and replicate the line
- * numbered 2.
+ * numbered 2. `replicateWatched` hands its schema the recording reader, and the hooks and
+ * `using()` closures record into the `HookLog`.
  */
 #[AsLiveComponent(name: 'Actions:ReplicateHost', template: '@Fixtures/actions/ReplicateHost.html.twig')]
 class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
@@ -75,6 +77,11 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
         return $this->articleAction('replicateMutated')
             ->mutateRecordDataUsing($this->markCopy(...))
             ->schema([TextInput::make('title')]);
+    }
+
+    public function replicateUniqueAction(): ReplicateAction
+    {
+        return $this->articleAction('replicateUnique')->schema([TextInput::make('title')->unique(ignoreRecord: true)]);
     }
 
     public function replicateDisabledOnEditAction(): ReplicateAction
@@ -243,14 +250,21 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
 
     public function replicateBulletinAction(): ReplicateAction
     {
-        return $this->replicateBulletinBareAction()
-            ->name('replicateBulletin')
+        return ReplicateAction::make('replicateBulletin')
+            ->record(fn (): ?StampedBulletin => $this->original(StampedBulletin::class))
             ->schema([TextInput::make('scope'), TextInput::make('label')]);
     }
 
-    public function replicateBulletinBareAction(): ReplicateAction
+    public function replicateStockBareAction(): ReplicateAction
     {
-        return ReplicateAction::make('replicateBulletinBare')->record(fn (): ?StampedBulletin => $this->original(StampedBulletin::class));
+        return ReplicateAction::make('replicateStockBare')->record(fn (): ?AtelierStock => $this->original(AtelierStock::class));
+    }
+
+    public function replicateStockTubesAction(): ReplicateAction
+    {
+        return $this->replicateStockBareAction()
+            ->name('replicateStockTubes')
+            ->schema([TextInput::make('tubes')->integer()]);
     }
 
     public function replicateBlankReelBareAction(): ReplicateAction

@@ -7,6 +7,9 @@ use Sylament\Actions\ReplicateAction;
 use Sylament\Tests\Fixtures\Actions\ReplicateHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Entity\Article;
+use Sylament\Tests\Fixtures\Entity\Atelier;
+use Sylament\Tests\Fixtures\Entity\AtelierPigment;
+use Sylament\Tests\Fixtures\Entity\AtelierStock;
 use Sylament\Tests\Fixtures\Entity\BlankCodedReel;
 use Sylament\Tests\Fixtures\Entity\CallbackCodedReel;
 use Sylament\Tests\Fixtures\Entity\ConstructorCodedBadge;
@@ -100,6 +103,18 @@ describe('the modal', function (): void {
         expect($replica?->origin->nursery)->toBe('Kew');
     });
 
+    it("checks a unique() field that ignores its record against the original too, since the modal's record is the class", function (): void {
+        $this->seed(new Article('Sun'));
+
+        $this->createLiveComponent(ReplicateHost::class)
+            ->mountAction('replicateUnique')
+            ->callMountedAction()
+            ->assertHasActionErrors(['title'])
+            ->assertActionMounted('replicateUnique');
+
+        expect($this->entityManager()->getRepository(Article::class)->count())->toBe(1);
+    });
+
     it("enables a field disabledOn('edit'), since the modal's operation is the action's name", function (): void {
         $this->seed(new Article('Sun'));
 
@@ -160,6 +175,7 @@ describe('the write', function (): void {
 
         $graft = new PropagatedCutting('Graft');
         $graft->parent = new PropagatedCutting('Rootstock');
+
         $rootstock = $graft->parent;
         $this->seed($tally, $rootstock, $graft);
 
@@ -294,6 +310,21 @@ describe('the key', function (): void {
         'an association plus a scalar' => ['replicateInvoiceLineBare', static fn (): array => [new InvoiceLine(new Invoice(7), line: 2, note: 'Bolts')], InvoiceLine::class],
         'a single derived identity' => ['replicateVentBare', static fn (): array => [$greenhouse = new Greenhouse(Uuid::v7()), new GreenhouseVent($greenhouse)], GreenhouseVent::class],
     ]);
+
+    it('refuses by name, with no modal, a copy that keeps a key made only of associations, and answers a modal mapping no key field as a record error', function (): void {
+        $this->seed($atelier = new Atelier('North'), $ochre = new AtelierPigment('Ochre'), $stock = new AtelierStock($atelier, $ochre, tubes: 4));
+
+        expect(fn () => $this->createLiveComponent(ReplicateHost::class)->callAction('replicateStockBare'))
+            ->toThrow(LogicException::class, 'The [replicateStockBare] action built a replica of [' . AtelierStock::class . '] whose key another record already holds, so it cannot be saved as a new record.');
+
+        $tester = $this->createLiveComponent(ReplicateHost::class)
+            ->callAction('replicateStockTubes', data: ['tubes' => 9])
+            ->assertActionMounted('replicateStockTubes');
+
+        expect($tester->render()->crawler())->toContainElement('dialog[open] [data-record-errors] li', 'This value is already used.')
+            ->and($this->entityManager()->getRepository(AtelierStock::class)->count())->toBe(1)
+            ->and($this->reload($stock))->toBeRecord(tubes: 4);
+    });
 
     it('saves the key a beforeReplicaSaved() hook gives a modal-less copy, and refuses it by name once another record holds it', function (string $class, object $line): void {
         $this->seed($line);

@@ -1204,6 +1204,17 @@ describe('relationship()', function (): void {
             ['bay' => 'south', 'slot' => '2', 'plant' => 'thyme'],
             ['record-north~1', 'record-south~2'],
         ],
+        'an assigned key of an association and a scalar' => [
+            function (): Larder {
+                $larder = new Larder('Cellar');
+                $larder->addCrock(new LarderCrock(shelf: 'top', label: 'Plums'));
+
+                return $larder;
+            },
+            'crocks',
+            ['shelf' => 'mid', 'label' => 'Pears'],
+            ['record-1~top', 'record-1~mid'],
+        ],
     ]);
 
     it("saves a new item on a blank single assigned key, which the host's reload then refuses to key", function (): void {

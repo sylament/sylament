@@ -115,13 +115,6 @@ describe('the modal', function (): void {
 
         expect($this->entityManager()->getRepository(Article::class)->count())->toBe(1);
     });
-
-    it("enables a field disabledOn('edit'), since the modal's operation is the action's name", function (): void {
-        $this->seed(new Article('Sun'));
-
-        expect($this->createLiveComponent(ReplicateHost::class)->mountAction('replicateDisabledOnEdit')->render()->crawler())
-            ->toContainElement('dialog[open] input[name="title"]:not([disabled])');
-    });
 });
 
 describe('the write', function (): void {

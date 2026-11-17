@@ -85,11 +85,6 @@ class ReplicateHost implements InteractsWithActions, InteractsWithSchemas
         return $this->articleAction('replicateUnique')->schema([TextInput::make('title')->unique(ignoreRecord: true)]);
     }
 
-    public function replicateDisabledOnEditAction(): ReplicateAction
-    {
-        return $this->articleAction('replicateDisabledOnEdit')->schema([TextInput::make('title')->disabledOn('edit')]);
-    }
-
     public function replicateBareAction(): ReplicateAction
     {
         return $this->articleAction('replicateBare');

@@ -6,7 +6,9 @@ use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\HydrationRefusingHost;
 use Sylament\Tests\Fixtures\Actions\ListeningHost;
+use Sylament\Tests\Fixtures\Actions\LocalisedHost;
 use Sylament\Tests\Fixtures\Actions\ToolbarHost;
+use Sylament\Tests\Fixtures\Actions\UnavailableHost;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Notifications\NotifyingHost;
@@ -50,6 +52,22 @@ it('rethrows what a host action throws, never an error page, while a failed vali
 it('rethrows a 422 raised before UX mounted the component, since only its re-render answers a failed validation', function (): void {
     expect(fn () => $this->createLiveComponent(HydrationRefusingHost::class, ['refusing' => true])->response())
         ->toThrow(UnprocessableEntityHttpException::class, 'Refused while hydrating.');
+});
+
+it('mounts the component again on the locale it sets, readable after a redirect, and sends every later request on that locale', function (): void {
+    $tester = $this->createLiveComponent(LocalisedHost::class);
+
+    expect($tester->render()->crawler())->toContainElement('[data-locale]', 'en');
+
+    $tester->call('leave')->assertRedirect('/')->setRouteLocale('sk');
+
+    expect($tester->render()->crawler())->toContainElement('[data-locale]', 'sk')
+        ->and($tester->refresh()->render()->crawler())->toContainElement('[data-locale]', 'sk');
+});
+
+it('throws naming the status when a host answers a failure without throwing', function (): void {
+    expect(fn () => $this->createLiveComponent(UnavailableHost::class)->call('pause'))
+        ->toThrow(LogicException::class, 'The live component answered [503] without an exception to rethrow.');
 });
 
 it('asserts the redirect an action answered and its toast, and reads nothing else of the component after it', function (): void {

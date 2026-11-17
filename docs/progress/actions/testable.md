@@ -21,18 +21,12 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 | [`call()` / `set()` / `refresh()`, fluent, and `component()` / `response()` / `render()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) · [semantics](#after-a-redirect-only-the-response-and-the-notifications-can-be-read) |
 | [`submitForm()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | — |
 | [`emit()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | — |
-| [`setRouteLocale()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | in progress | — | [detail](#setroutelocale-waits-for-a-localised-live-route) |
+| [`setRouteLocale()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) |
 | [`assertRedirect()` / `assertNoRedirect()`](../../../packages/actions/src/Testing/Testable.php) | — (Livewire's `TestsRedirects`) | done | — | [semantics](#a-redirect-is-a-3xx-response-and-its-location-is-compared-as-a-full-url) · [diverges](#assertnoredirect-names-the-location-it-failed-on) |
 | [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
 | [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), a public `kernel.exception` listener | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
 | [`getRespondingComponent()`](../../../packages/actions/src/Testing/Testable.php), the host that answered the last request | — (Livewire's `Testable::instance()`) | done | — | [semantics](#the-error-assertions-read-the-component-that-answered-the-last-request) |
-
-## Details
-
-### `setRouteLocale()` waits for a localised live route
-
-`setRouteLocale()` delegates to UX's tester and makes the mount request again, and no test uses it yet: the suite's live route takes no `{_locale}`, so a locale would reach a host only as a query parameter, which no request attribute reads.
 
 ## Semantics
 
@@ -43,7 +37,7 @@ The tester turns it back on, so a failed validation answers as the browser sees 
 Every other failure rethrows the exception the host threw, never an error page: after each request the tester takes what the [recorder](#the-recorder-exists-only-when-frameworktest-is-on) kept and throws it unless the response is a success, a redirect, or that 422.
 The 422 counts only when it is UX's re-render (`application/vnd.live-component+html`), because an `UnprocessableEntityHttpException` thrown before UX mounted the component reaches the framework's error page with the same status.
 A failing response with nothing recorded throws a `LogicException` naming the status.
-UX sends the mount request on the tester's first use, so the tester makes it before anything reads a response or builds the next request from its props, and `setRouteLocale()` makes it again.
+UX sends the mount request on the tester's first use, so the tester makes it before anything reads a response or builds the next request from its props, and `setRouteLocale()` makes it again on a host whose live route carries `{_locale}`, so the component can be read afresh even after a redirect.
 
 ### `createLiveComponent()` builds UX's tester through UX's own method
 

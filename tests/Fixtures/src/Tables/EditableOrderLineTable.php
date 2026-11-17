@@ -22,7 +22,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A table of `OrderLine`s whose rows carry two edit actions over the key's `line` half
  * and the note, the field locked with `disabledOn('edit')`: `edit`, and `editRenamed`,
- * whose operation that lock does not name.
+ * whose operation that lock does not name; and `editShifted`, over the note alone, whose
+ * `before()` hook moves the key's `line` half.
  */
 #[AsLiveComponent(name: 'Tables:EditableOrderLineTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class EditableOrderLineTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
@@ -52,6 +53,11 @@ class EditableOrderLineTable implements InteractsWithActions, InteractsWithSchem
             ->recordActions([
                 EditAction::make()->schema($this->fields()),
                 EditAction::make('editRenamed')->schema($this->fields()),
+                EditAction::make('editShifted')
+                    ->schema([TextInput::make('note')])
+                    ->before(function (OrderLine $record): void {
+                        $record->line = 99;
+                    }),
             ]);
     }
 

@@ -162,4 +162,15 @@ describe('a composite-keyed row', function (): void {
         'scalar fields' => fn (): array => [EditableOrderLineTable::class, new OrderLine(order: 7, line: 2, note: 'Old')],
         'an association plus a scalar' => fn (): array => [EditableInvoiceLineTable::class, new InvoiceLine(new Invoice(7), line: 2, note: 'Old')],
     ]);
+
+    it("refuses a key half its before() hook moved, which the modal does not declare, in the modal's record errors", function (): void {
+        $this->seed($line = new OrderLine(order: 7, line: 2, note: 'Old'));
+
+        $tester = $this->createLiveComponent(EditableOrderLineTable::class)
+            ->callAction(TestAction::make('editShifted')->table($line), data: ['note' => 'Edited'])
+            ->assertActionMounted(TestAction::make('editShifted')->table($line));
+
+        expect($tester->render()->crawler())->toContainElement('dialog[open] [data-record-errors] li', 'This value cannot be changed.')
+            ->and($this->reload($line))->toBeRecord(line: 2, note: 'Old');
+    });
 });

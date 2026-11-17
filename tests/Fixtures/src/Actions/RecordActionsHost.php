@@ -14,25 +14,34 @@ use Sylament\Actions\CreateAction;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
 use Sylament\Forms\Components\Hidden;
+use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
+use Sylament\Tests\Fixtures\Entity\Allotment;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
+use Sylament\Tests\Fixtures\Entity\CharmSatchel;
+use Sylament\Tests\Fixtures\Entity\ClaspedLocket;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderCrock;
+use Sylament\Tests\Fixtures\Entity\Lighthouse;
+use Sylament\Tests\Fixtures\Entity\Plant;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\QuayMooring;
+use Sylament\Tests\Fixtures\Entity\SatchelCharm;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
+use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A host with no table and no record of its own, carrying the record actions a test mounts
- * by name: creates over `CappedHeadline` and the key-shaped entities, an edit and a view
+ * by name: creates over `CappedHeadline` and the key-shaped entities, creates that join the
+ * first seeded owner's collection through their own `relationship()`, an edit and a view
  * bound by `recordKey` to a `Product`, and the variants each case needs. It routes the
  * `CappedHeadline` actions named `linked…` to a page, answers the `CappedHeadline` keyed
  * `PAGE` as the record of `createBesidePage`, the first `Larder`'s crocks as the
@@ -161,6 +170,13 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
                 ]));
     }
 
+    public function createLocketAction(): CreateAction
+    {
+        return CreateAction::make('createLocket')
+            ->recordClass(ClaspedLocket::class)
+            ->schema([TextInput::make('label')]);
+    }
+
     public function createBulletinAction(): CreateAction
     {
         return CreateAction::make('createBulletin')
@@ -195,6 +211,50 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
         return CreateAction::make('createCrockByHost')
             ->recordClass(LarderCrock::class)
             ->schema($this->crockFields());
+    }
+
+    public function createCrockPickedAction(): CreateAction
+    {
+        return CreateAction::make('createCrockPicked')
+            ->recordClass(LarderCrock::class)
+            ->relationship(fn (): Relationship => new Relationship($this->firstLarder(), 'crocks'))
+            ->schema([
+                Select::make('larder')->relationship(titleAttribute: 'name'),
+                ...$this->crockFields(),
+            ]);
+    }
+
+    public function createCharmAction(): CreateAction
+    {
+        return $this->charmAction('createCharm', [TextInput::make('tier')->integer(), TextInput::make('code'), TextInput::make('label')]);
+    }
+
+    public function createCharmUntieredAction(): CreateAction
+    {
+        return $this->charmAction('createCharmUntiered', [TextInput::make('code'), TextInput::make('label')]);
+    }
+
+    public function createCharmUncodedAction(): CreateAction
+    {
+        return $this->charmAction('createCharmUncoded', [TextInput::make('tier')->integer(), TextInput::make('label')]);
+    }
+
+    public function createSpareAction(): CreateAction
+    {
+        return CreateAction::make('createSpare')
+            ->recordClass(Product::class)
+            ->relationship(fn (): Relationship => new Relationship($this->first(Lighthouse::class), 'spares'))
+            ->schema([TextInput::make('name')]);
+    }
+
+    public function createTerracePlantAction(): CreateAction
+    {
+        return $this->plantAction('createTerracePlant', Terrace::class);
+    }
+
+    public function createAllotmentPlantAction(): CreateAction
+    {
+        return $this->plantAction('createAllotmentPlant', Allotment::class);
     }
 
     public function linkedCreateAction(): CreateAction
@@ -334,9 +394,43 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
         return $schema->components($this->headlineFields());
     }
 
+    /**
+     * @param list<TextInput> $fields
+     */
+    private function charmAction(string $name, array $fields): CreateAction
+    {
+        return CreateAction::make($name)
+            ->recordClass(SatchelCharm::class)
+            ->relationship(fn (): Relationship => new Relationship($this->first(CharmSatchel::class), 'charms'))
+            ->schema($fields);
+    }
+
+    /**
+     * @param class-string $ownerClass
+     */
+    private function plantAction(string $name, string $ownerClass): CreateAction
+    {
+        return CreateAction::make($name)
+            ->recordClass(Plant::class)
+            ->relationship(fn (): Relationship => new Relationship($this->first($ownerClass), 'plants'))
+            ->schema([TextInput::make('name')]);
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param class-string<T> $class
+     *
+     * @return T
+     */
+    private function first(string $class): object
+    {
+        return $this->entityManager->getRepository($class)->findOneBy([])
+            ?? throw new LogicException(sprintf('No %s was seeded.', $class));
+    }
+
     private function firstLarder(): Larder
     {
-        return $this->entityManager->getRepository(Larder::class)->findOneBy([])
-            ?? throw new LogicException('No larder was seeded.');
+        return $this->first(Larder::class);
     }
 }

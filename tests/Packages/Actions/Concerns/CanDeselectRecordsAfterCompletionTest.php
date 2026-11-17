@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\Testing\TestAction;
+use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Tables\SelectionReadingProductTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -21,6 +22,9 @@ it('clears the selection once it ran when told to, even after halting, and keeps
     'not told to' => ['archive', 2],
 ]);
 
-it('runs when told to clear a selection it has no table to clear', function (): void {
-    expect(BulkAction::make('tidy')->deselectRecordsAfterCompletion()->action(static fn (): string => 'tidied')->call())->toBe('tidied');
-});
+it('runs when told to clear a selection it has no table to clear', function (Closure $bind): void {
+    expect($bind(BulkAction::make('tidy')->deselectRecordsAfterCompletion()->action(static fn (): string => 'tidied'))->call())->toBe('tidied');
+})->with([
+    'no host' => [static fn (BulkAction $action): BulkAction => $action],
+    'a host that is no table' => [static fn (BulkAction $action): BulkAction => $action->liveComponent(new MountedActionsHost())],
+]);

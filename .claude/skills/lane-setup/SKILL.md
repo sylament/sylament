@@ -16,7 +16,7 @@ git worktree add ../sylament-worktrees/<lane> -b <lane> <sha>
 
 - **Outside the repo**, under `../sylament-worktrees/`: a worktree inside the repository loads every rule twice (once from the worktree, once from the main checkout) and has broken Biome for concurrent sessions.
 - **Pin the base** with an explicit `<sha>`, the integrated head of the epic: without one, git bases the branch on whatever `HEAD` is, which may be behind an in-flight epic.
-- **Not through tooling that picks the location for you.** A Workflow `agent()` takes no working-directory option (its options are `label`, `phase`, `schema`, `model`, `effort`, `isolation` and `agentType`), and its only worktree mode, `isolation: "worktree"`, creates the worktree under `.claude/worktrees/` inside the repository. Create lanes by hand with the command above.
+- **Not through tooling that picks the location for you.** A Workflow `agent()` takes no working-directory option (its options are `label`, `phase`, `schema`, `model`, `effort`, `isolation` and `agentType`), and its only worktree mode, `isolation: "worktree"`, creates the worktree inside the repository, in a `worktrees` folder under `.claude/`. Create lanes by hand with the command above.
 
 ## 3. Install
 

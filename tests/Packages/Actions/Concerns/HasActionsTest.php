@@ -557,8 +557,8 @@ describe('a table host', function (): void {
         $this->createLiveComponent(DeletingProductTable::class)
             ->call('mountAction', ['name' => 'nowhere', 'context' => ['table' => true, 'bulk' => true]])
             ->assertActionNotMounted()
-            ->mountAction(TestAction::make('delete')->table()->bulk())
-            ->assertActionMounted(TestAction::make('delete')->table()->bulk());
+            ->mountAction(TestAction::make('handBuilt')->table()->bulk())
+            ->assertActionMounted(TestAction::make('handBuilt')->table()->bulk());
     });
 
     it("shows a row a mounted action wrote, whatever way the run ends, though the run read the rows first", function (array $arguments): void {

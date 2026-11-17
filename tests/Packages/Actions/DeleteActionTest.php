@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\Testing\TestAction;
+use Sylament\Tests\Fixtures\Actions\Record\IdlessTicket;
 use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Actions\TablelessBulkHost;
 use Sylament\Tests\Fixtures\Entity\Invoice;
@@ -89,4 +90,9 @@ it('hands the record to the using() that replaces its delete, and toasts by its 
 it('refuses to delete from an instance the container did not build', function (): void {
     expect(fn (): mixed => new DeleteAction()->name('delete')->configure()->record(new Product('Lamp'))->call())
         ->toThrow(LogicException::class, 'DeleteAction needs the container-built instance — register it as a service so the manager registry is injected.');
+});
+
+it('refuses to delete a record no Doctrine manager handles', function (): void {
+    expect(fn (): mixed => DeleteAction::make()->record(new IdlessTicket('T-1'))->call())
+        ->toThrow(LogicException::class, 'No Doctrine manager handles ' . IdlessTicket::class . '.');
 });

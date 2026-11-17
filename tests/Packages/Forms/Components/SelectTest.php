@@ -12,13 +12,19 @@ use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Components\Group;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Schemas\State\AssociationReader;
+use Sylament\Tests\Fixtures\Entity\Allotment;
 use Sylament\Tests\Fixtures\Entity\BenchPot;
 use Sylament\Tests\Fixtures\Entity\Berth;
 use Sylament\Tests\Fixtures\Entity\BerthCleat;
 use Sylament\Tests\Fixtures\Entity\BerthMooring;
+use Sylament\Tests\Fixtures\Entity\CaselessHandle;
 use Sylament\Tests\Fixtures\Entity\Garden;
+use Sylament\Tests\Fixtures\Entity\Lighthouse;
+use Sylament\Tests\Fixtures\Entity\LighthouseLog;
 use Sylament\Tests\Fixtures\Entity\NurseryBench;
 use Sylament\Tests\Fixtures\Entity\Plant;
+use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\Quay;
 use Sylament\Tests\Fixtures\Entity\QuayMooring;
@@ -33,6 +39,7 @@ use Sylament\Tests\Fixtures\Schemas\Record\Memo;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Count;
@@ -438,6 +445,42 @@ describe('validation', function (): void {
         ]])
             ->and($this->statementsRun())->toBe([]);
     });
+
+    it('probes the submitted key of a searchable relationship select against the target table, a multiple one without preload() included', function (Closure $select, string $recordClass, Closure $states, string $message): void {
+        $this->seed($garden = new Garden('North'), $plant = new Plant('Fern'));
+        [$known, $unknown] = $states($garden, $plant);
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping($select())->record($recordClass);
+        [$component] = $schema->getComponents();
+        $errors = function (mixed $state) use ($host, $schema, $component): array {
+            $host->data[$component->getName()] = $state;
+
+            try {
+                $schema->validate();
+            } catch (ValidationException $validationException) {
+                return $validationException->getErrors();
+            }
+
+            return [];
+        };
+
+        expect($component->getOptions())->toBe([])
+            ->and($errors($known))->toBe([])
+            ->and($errors($unknown))->toBe(["data.{$component->getName()}" => [$message]]);
+    })->with([
+        'a single selection' => [
+            fn (): Select => Select::make('garden')->relationship('garden', 'name')->searchable(),
+            Seedling::class,
+            fn (Garden $garden): array => [(string) $garden->id, '999999'],
+            'The value you selected is not a valid choice.',
+        ],
+        'a multiple selection' => [
+            fn (): Select => Select::make('plants')->multiple()->relationship('plants', 'name'),
+            Garden::class,
+            fn (Garden $garden, Plant $plant): array => [[(string) $plant->id], [(string) $plant->id, '999999']],
+            'One or more of the given values is invalid.',
+        ],
+    ]);
 });
 
 describe('search', function (): void {
@@ -775,7 +818,201 @@ describe('option actions', function (): void {
     ]);
 });
 
+describe('relationship search and labels', function (): void {
+    it('searches every search column with a LIKE, ORed over the scoped query, matching a term typed in another case and ordering by the title attribute', function (): void {
+        $moorings = [];
+
+        foreach ([['North', 'S1', 'Quiet'], ['South', 'S2', 'North view'], ['East', 'S3', 'Calm'], ['North', 'S4', 'Hidden']] as [$pier, $slot, $label]) {
+            $mooring = new BerthMooring();
+            [$mooring->pier, $mooring->slot, $mooring->label] = [$pier, $slot, $label];
+            $moorings[] = $mooring;
+        }
+
+        $this->seed(...$moorings);
+        [$select] = new RecordMappingHost()->mapping(
+            Select::make('mooring')->relationship('mooring', 'label', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.label <> 'Hidden'"))->searchable(['pier', 'label']),
+        )->record(Berth::class)->getComponents();
+
+        expect(array_values($select->getSearchResults('north')))->toBe(['North view', 'Quiet']);
+
+        $searches = array_values(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, ' LIKE ')));
+
+        expect($searches)->toHaveCount(1)
+            ->and(str_contains($searches[0], 'LOWER('))->toBe(match (TestPlatform::current()) {
+                TestPlatform::PostgreSql => true,
+                TestPlatform::Sqlite, TestPlatform::MySql => false,
+            });
+    });
+
+    it('answers no search result, without a statement, for a relationship with no column to search', function (): void {
+        [$select] = new RecordMappingHost()->mapping(
+            Select::make('garden')->relationship('garden')->getOptionLabelFromRecordUsing(static fn (Garden $garden): string => $garden->name)->searchable(),
+        )->record(Seedling::class)->getComponents();
+        $this->seed(new Garden('Fern'));
+
+        expect($select->getSearchResults('fern'))->toBe([])
+            ->and($this->statementsRun())->toBe([]);
+    });
+
+    it('caps the search results at optionsLimit(), or at the limit the scope set, which the control then speaks, and lists the map of a select with no search column in full', function (): void {
+        $this->seed(new Garden('Fern'), new Garden('Fernando'), new Garden('Ferret'));
+        $limitedToOne = static fn (QueryBuilder $query): QueryBuilder => $query->setMaxResults(1);
+        [$limited, $scoped, $untitled] = new RecordMappingHost()->mapping(
+            Select::make('limited')->relationship('garden', 'name')->searchable()->optionsLimit(2),
+            Select::make('scoped')->relationship('garden', 'name', modifyQueryUsing: $limitedToOne)->searchable()->optionsLimit(2),
+            Select::make('untitled')->relationship('garden')->getOptionLabelFromRecordUsing(static fn (Garden $garden): string => $garden->name)->searchable()->preload()->optionsLimit(1),
+        )->record(Seedling::class)->getComponents();
+
+        expect(array_values($limited->getSearchResults('fer')))->toBe(['Fern', 'Fernando'])
+            ->and(array_values($scoped->getSearchResults('fer')))->toBe(['Fern'])
+            ->and($untitled->getOptions())->toHaveCount(3);
+
+        $render = $this->renderSchemaComponent(Group::make([
+            Select::make('garden')->relationship('garden', 'name', modifyQueryUsing: $limitedToOne)->searchable()->preload()->optionsLimit(2),
+        ])->record(Seedling::class));
+
+        expect($render->filter(Selectors::JS_CONTROL . ' option:not([value=""])')->each(static fn (Crawler $option): string => $option->text()))->toBe(['Fern'])
+            ->and($this->selectControllerValue($render, 'optionsLimit'))->toBe('1');
+    });
+
+    it('orders by the title attribute unless the scope ordered, and leaves the rows a record-label callback labels, in the map and the search results alike, in the order the database returns them', function (): void {
+        $this->seed(new Garden('Moss'), new Garden('Fern'));
+        [$titled, $ordered, $labelled] = new RecordMappingHost()->mapping(
+            Select::make('titled')->relationship('garden', 'name')->searchable(),
+            Select::make('ordered')->relationship('garden', 'name', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query->orderBy('record.name', SortDirection::Descending))->searchable(),
+            Select::make('labelled')->relationship('garden', 'name')->getOptionLabelFromRecordUsing(static fn (Garden $garden): string => "{$garden->name} garden")->searchable()->preload(),
+        )->record(Seedling::class)->getComponents();
+
+        expect(array_values($titled->getSearchResults('')))->toBe(['Fern', 'Moss'])
+            ->and(array_values($ordered->getSearchResults('')))->toBe(['Moss', 'Fern']);
+
+        $read = count($this->statementsRun());
+
+        expect(array_values($labelled->getSearchResults('')))->toEqualCanonicalizing(['Moss garden', 'Fern garden'])
+            ->and(array_values($labelled->getOptions()))->toEqualCanonicalizing(['Moss garden', 'Fern garden'])
+            ->and(array_filter(array_slice($this->statementsRun(), $read), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toBe([]);
+    });
+
+    it('hands the scope the typed term as $search, and null outside a search', function (): void {
+        $log = $this::getContainer()->get(HookLog::class);
+        [$select] = new RecordMappingHost()->mapping(
+            Select::make('garden')->relationship('garden', 'name', modifyQueryUsing: static function (QueryBuilder $query, ?string $search) use ($log): void {
+                $log->record('search: ' . ($search ?? 'null'));
+            })->searchable()->preload(),
+        )->record(Seedling::class)->getComponents();
+
+        $select->getSearchResults('fe');
+        $select->getOptions();
+        $select->getOptionLabelsFromRelationship(['1']);
+
+        expect($log->hooks)->toBe(['search: fe', 'search: null', 'search: null']);
+    });
+
+    it('labels the selected record by the record-label callback or else the title attribute, and answers no label for a selection the scope hides', function (Closure $select, ?string $label): void {
+        $this->seed($fern = new Garden('Fern'));
+        $host = new RecordMappingHost();
+        [$component] = $host->mapping($select())->record(Seedling::class)->getComponents();
+        $host->data['garden'] = (string) $fern->id;
+
+        expect($component->getOptionLabelFromRelationship())->toBe($label);
+    })->with([
+        'the title attribute' => [fn (): Select => Select::make('garden')->relationship('garden', 'name'), 'Fern'],
+        'the record-label callback' => [fn (): Select => Select::make('garden')->relationship('garden', 'name')->getOptionLabelFromRecordUsing(static fn (Garden $garden): string => "{$garden->name} garden"), 'Fern garden'],
+        'a scope that hides it' => [fn (): Select => Select::make('garden')->relationship('garden', 'name', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.name <> 'Fern'")), null],
+    ]);
+
+    it('labels only the scoped rows of a list in no particular order, drops a nested array or an object from it, and runs no statement when nothing scalar is left', function (): void {
+        $this->seed($fern = new Garden('Fern'), $moss = new Garden('Moss'));
+        [$select] = new RecordMappingHost()->mapping(
+            Select::make('garden')->relationship('garden', 'name', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.name <> 'Moss'")),
+        )->record(Seedling::class)->getComponents();
+
+        expect($select->getOptionLabelsFromRelationship([(string) $fern->id, (string) $moss->id, ['nested'], new stdClass()]))->toBe([$fern->id => 'Fern'])
+            ->and(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toBe([]);
+
+        $this->seed();
+
+        expect($select->getOptionLabelsFromRelationship([['nested'], new stdClass()]))->toBe([])
+            ->and($this->statementsRun())->toBe([]);
+    });
+});
+
+describe('search columns', function (): void {
+    it('refuses by name a search column that is not a mapped field of the target, and searches a field of an embeddable', function (): void {
+        $this->seed(new PropagatedCutting('Rose', 'Kew'), new PropagatedCutting('Bud', 'Wisley'));
+        [$hop, $embedded] = new RecordMappingHost()->mapping(
+            Select::make('hop')->relationship('parent', 'name')->searchable(['parent.name']),
+            Select::make('embedded')->relationship('parent', 'name')->searchable(['origin.nursery']),
+        )->record(PropagatedCutting::class)->getComponents();
+
+        expect(fn (): array => $hop->getSearchResults('rose'))->toThrow(LogicException::class, 'The [hop] field searches relationship("parent") by [parent.name], which is not a mapped field of ' . PropagatedCutting::class . ". A search column must be a field the target entity maps (or an embeddable's, as address.city) — searching through an association or a virtual property is not supported.")
+            ->and(array_values($embedded->getSearchResults('kew')))->toBe(['Rose']);
+    });
+
+    it('leaves the database order alone for a title attribute read through an association', function (): void {
+        $fastnet = new Lighthouse();
+        $fastnet->lamp = new Product('Zeta');
+
+        $skerry = new Lighthouse();
+        $skerry->lamp = new Product('Alpha');
+        $this->seed($fastnet->lamp, $skerry->lamp, $fastnet, $skerry);
+        [$select] = new RecordMappingHost()->mapping(Select::make('lighthouse')->relationship('lighthouse', 'lamp.name'))->record(LighthouseLog::class)->getComponents();
+
+        expect(array_values($select->getOptions()))->toEqualCanonicalizing(['Zeta', 'Alpha'])
+            ->and(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toBe([]);
+    });
+});
+
 describe('ignoreRecord', function (): void {
+    it('leaves the bound record out of the option map and the search results while both label arms still name it, and excludes nothing by default', function (): void {
+        $bud = new PropagatedCutting('Bud');
+        $bud->parent = $bud;
+        $this->seed($rose = new PropagatedCutting('Rose'), $bud);
+        $bud = $this->entityManager()->find(PropagatedCutting::class, $bud->id);
+        $host = new RecordMappingHost();
+        [$ignoring, $default] = $host->mapping(
+            Select::make('parent')->relationship('parent', 'name', ignoreRecord: true)->searchable()->preload(),
+            Select::make('kept')->relationship('parent', 'name')->searchable()->preload(),
+        )->record($bud)->getComponents();
+        $host->data['parent'] = (string) $bud->id;
+
+        expect($ignoring->getOptions())->toBe([$rose->id => 'Rose'])
+            ->and($ignoring->getSearchResults(''))->toBe([$rose->id => 'Rose'])
+            ->and($ignoring->getOptionLabelFromRelationship())->toBe('Bud')
+            ->and($ignoring->getOptionLabelsFromRelationship([(string) $bud->id]))->toBe([$bud->id => 'Bud'])
+            ->and($default->getOptions())->toBe([$bud->id => 'Bud', $rose->id => 'Rose']);
+    });
+
+    it('serves a clone bound to another record the option map of its own record', function (): void {
+        $this->seed($rose = new PropagatedCutting('Rose'), $bud = new PropagatedCutting('Bud'));
+        $rose = $this->entityManager()->find(PropagatedCutting::class, $rose->id);
+        $bud = $this->entityManager()->find(PropagatedCutting::class, $bud->id);
+        [$select] = new RecordMappingHost()->mapping(Select::make('parent')->relationship('parent', 'name', ignoreRecord: true))->record($rose)->getComponents();
+
+        expect(array_values($select->getOptions()))->toBe(['Bud']);
+
+        [$clone] = new RecordMappingHost()->mapping($select->getClone())->record($bud)->getComponents();
+
+        expect(array_values($clone->getOptions()))->toBe(['Rose']);
+    });
+
+    it('excludes nothing on a create form, or for a record whose identifier is not complete yet', function (Closure $record, string $field, string $titleAttribute, Closure $targets, array $labels): void {
+        $this->seed(...$targets());
+        [$select] = new RecordMappingHost()->mapping(Select::make($field)->relationship($field, $titleAttribute, ignoreRecord: true))->record($record())->getComponents();
+
+        expect(array_values($select->getOptions()))->toBe($labels);
+    })->with([
+        'a create form bound to the class' => [fn (): string => PropagatedCutting::class, 'parent', 'name', fn (): array => [new PropagatedCutting('Rose'), new PropagatedCutting('Bud')], ['Bud', 'Rose']],
+        'a record whose generated id is pending' => [fn (): PropagatedCutting => new PropagatedCutting('Sprig'), 'parent', 'name', fn (): array => [new PropagatedCutting('Rose'), new PropagatedCutting('Bud')], ['Bud', 'Rose']],
+        'a record whose assigned key is still blank' => [fn (): CaselessHandle => new CaselessHandle(''), 'alias', 'handle', fn (): array => [new CaselessHandle('north'), new CaselessHandle('south')], ['north', 'south']],
+    ]);
+
+    it('refuses by name a bound record of another class than the target', function (): void {
+        [$select] = new RecordMappingHost()->mapping(Select::make('garden')->relationship('garden', 'name', ignoreRecord: true))->record(new Seedling('Sprout'))->getComponents();
+
+        expect(fn (): array => $select->getOptions())->toThrow(LogicException::class, 'The [garden] field declares relationship("garden", ignoreRecord: true), which needs a self-referential association: the bound record is a ' . Seedling::class . ' while the options are ' . Garden::class . ', so its identifier names no row this query could exclude.');
+    });
+
     it('validates an untouched selection naming the bound record, as a stored self-parent does, and refuses a key no row holds, searchable or not', function (bool $isSearchable): void {
         $bud = new PropagatedCutting('Bud');
         $bud->parent = $bud;
@@ -794,5 +1031,63 @@ describe('ignoreRecord', function (): void {
     })->with([
         'a select listing every option' => [false],
         'a searchable select' => [true],
+    ]);
+});
+
+describe('composite relationship targets', function (): void {
+    it('reads the labels of a long list in one statement for a single identifier, and in one per 500 keys for an association plus a scalar', function (Closure $select, string $recordClass, Closure $targets, Closure $keys, int $statements): void {
+        $entities = $targets();
+        $this->seed(...$entities);
+        [$component] = new RecordMappingHost()->mapping($select())->record($recordClass)->getComponents();
+
+        expect($component->getOptionLabelsFromRelationship($keys($entities)))->toHaveCount(1)
+            ->and($this->statementsRun())->toHaveCount($statements);
+    })->with([
+        'a single identifier' => [
+            fn (): Select => Select::make('plants')->multiple()->relationship('plants', 'name'),
+            Garden::class,
+            fn (): array => [new Plant('Fern')],
+            fn (array $entities): array => [(string) $entities[0]->id, ...array_map(static fn (int $index): string => (string) (1_000_000 + $index), range(1, 500))],
+            1,
+        ],
+        'an association plus a scalar' => [
+            fn (): Select => Select::make('allotment')->relationship('allotment', 'number'),
+            Seedling::class,
+            fn (): array => [new Allotment(new Garden('Plot'), 1)],
+            fn (array $entities): array => ["{$entities[0]->garden->id}~1", ...array_map(static fn (int $index): string => "999999~{$index}", range(1, 500))],
+            2,
+        ],
+    ]);
+
+    it('resolves a selected composite key whose string half differs from the stored one only in case as the platform collation compares them, in one statement', function (string $field, Closure $berth): void {
+        $berth = $berth();
+        $this->seed($berth);
+        $stored = ($field === 'mooring') ? $berth->mooring : $berth->getCleat();
+        $host = new RecordMappingHost();
+        [$select] = $host->mapping(Select::make($field)->relationship($field, 'label'))->record(Berth::class)->getComponents();
+        $host->data[$field] = mb_strtolower($this::getContainer()->get(AssociationReader::class)->getRecordKey($stored));
+
+        expect($select->getOptionLabelFromRelationship())->toBe(match (TestPlatform::current()) {
+            TestPlatform::MySql => 'Moored',
+            TestPlatform::Sqlite, TestPlatform::PostgreSql => null,
+        })
+            ->and($this->statementsRun())->toHaveCount(1);
+    })->with([
+        'two scalars' => ['mooring', function (): Berth {
+            $mooring = new BerthMooring();
+            [$mooring->pier, $mooring->slot, $mooring->label] = ['North', 'zh Hans', 'Moored'];
+            $berth = new Berth();
+            $berth->mooring = $mooring;
+
+            return $berth;
+        }],
+        'an association plus a scalar' => ['cleat', function (): Berth {
+            $cleat = new BerthCleat();
+            [$cleat->slot, $cleat->label] = ['zh Hans', 'Moored'];
+            $berth = new Berth();
+            $berth->setCleat($cleat);
+
+            return $berth;
+        }],
     ]);
 });

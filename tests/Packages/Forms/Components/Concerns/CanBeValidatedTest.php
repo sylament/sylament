@@ -607,6 +607,7 @@ describe('conditional requirement', function (): void {
         'a text sibling spelling true' => ['true', true, true],
         'a text sibling against a listed true' => ['1', [true], true],
         'a boolean sibling against true' => [true, true, true],
+        'a boolean sibling against a listed true' => [true, [true], true],
         'a null sibling against null' => [null, null, true],
     ]);
 

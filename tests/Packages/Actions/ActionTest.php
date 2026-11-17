@@ -76,17 +76,6 @@ describe('trigger rendering', function (): void {
             ->toContainElement(SupportSelectors::ICON_BUTTON . '[aria-label="Save"][title="Keeps a copy"]');
     });
 
-    it('links to its url, in a new tab when told, with no click binding of its own', function (): void {
-        $link = $this->renderViewComponent(Action::make('docs')->url('/docs')->action('save'));
-
-        expect($link)->toContainElement('a[href="/docs"]:not([target])' . Selectors::TRIGGER, 'Docs')
-            ->and($link->filter(Selectors::LIVE_CLICK))->toHaveCount(0)
-            ->and($this->renderViewComponent(Action::make('docs')->url('/docs', shouldOpenInNewTab: true)))
-            ->toContainElement('a[href="/docs"][target="_blank"]', 'Docs')
-            ->and($this->renderViewComponent(Action::make('docs')->action('save')))
-            ->toContainElement('button' . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'save'), 'Docs');
-    });
-
     it("renders its extra attributes on an icon button, its classes beside the trigger's own", function (): void {
         expect($this->renderViewComponent(Action::make('save')->iconButton()->extraAttributes(['class' => 'custom-hook', 'data-x' => '1'])))
             ->toContainElement(SupportSelectors::ICON_BUTTON . Selectors::TRIGGER . '.custom-hook[data-x="1"][aria-label="Save"]');

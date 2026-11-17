@@ -284,6 +284,22 @@ describe('record chain', function (): void {
         },
     ]);
 
+    it('reaches the record class its group, its schema or its component names before any record exists', function (Action $action): void {
+        expect($action->evaluate(static fn (mixed $record, ?string $recordClass): array => [$record, $recordClass]))->toBe([null, Product::class]);
+    })->with([
+        "its group's" => function (): Action {
+            ActionGroup::make([$action = Action::make('create')])->recordClass(Product::class);
+
+            return $action;
+        },
+        "its schema's" => fn (): Action => Action::make('create')->schemaContainer(new MountedActionsHost()->makeSchema()->record(Product::class)),
+        "its component's" => function (): Action {
+            [$component] = new MountedActionsHost()->makeSchema()->record(Product::class)->components([TextInput::make('name')])->getComponents();
+
+            return Action::make('create')->schemaComponent($component);
+        },
+    ]);
+
     it('stops at its own record even when it is an empty object or a key, and answers none for one that is not of its record class', function (): void {
         ActionGroup::make([
             $empty = Action::make('edit')->record(new ArrayObject()),

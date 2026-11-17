@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use Sylament\Actions\Action;
+use Sylament\Actions\ReplicateAction;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Actions\ProductWriterHost;
+use Sylament\Tests\Fixtures\Actions\Record\IdlessTicket;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
@@ -48,4 +50,11 @@ it("opens its transaction on its table's manager over the default one", function
 it('refuses a transaction to an action built without the container', function (): void {
     expect(fn (): null => new Action()->databaseTransaction()->beginDatabaseTransaction())
         ->toThrow(LogicException::class, 'databaseTransaction() needs the container-built action');
+});
+
+it('refuses to write a record from an instance the container did not build, or one no Doctrine manager handles', function (): void {
+    expect(fn (): mixed => new ReplicateAction()->name('replicate')->configure()->record(new Product('Lamp'))->call())
+        ->toThrow(LogicException::class, 'The action [replicate] persists a record, which needs the container-built instance — register it as a service so the manager registry is injected.')
+        ->and(fn (): mixed => ReplicateAction::make()->record(new IdlessTicket('T-1'))->call())
+        ->toThrow(LogicException::class, 'No Doctrine manager handles ' . IdlessTicket::class . '.');
 });

@@ -127,6 +127,11 @@ describe('the modal', function (): void {
         expect($this->entityManager()->getRepository(Product::class)->count())->toBe(0);
     });
 
+    it('refuses by name a create that nothing names a record class for, advising where one comes from', function (): void {
+        expect(fn () => $this->createLiveComponent(RecordActionsHost::class)->callAction('createClassless', data: ['title' => 'Moon']))
+            ->toThrow(LogicException::class, 'The action [createClassless] creates a record but nothing names its class — call recordClass(), host it on a query() table or a resource page, or bind the schema with record().');
+    });
+
     it('asks the record check of the reader its schema holds, rebound to the manager it writes through', function (): void {
         $this->createLiveComponent(RecordActionsHost::class)
             ->callAction('createWatched', data: ['code' => 'MOON', 'title' => 'Moon', 'slug' => 'moon'])

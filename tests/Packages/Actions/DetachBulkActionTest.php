@@ -181,3 +181,11 @@ it('refuses a selection of neither entities nor keys as the developer error it i
         ->toThrow(LogicException::class, 'DetachBulkAction can only detach entities or their keys, got array.')
         ->and(($this->plantsOf)($this->kew))->toBe(['Fern', 'Moss', 'Rock']);
 });
+
+it('refuses a table that declares no relationship', function (): void {
+    expect(fn (): Testable => ($this->table)(['queryOnly'])
+        ->selectTableRecords([$this->rock])
+        ->callAction(TestAction::make('detach')->table()->bulk()))
+        ->toThrow(LogicException::class, 'The action [detach] detaches selected records from a relationship, which only a table declaring relationship() can supply.')
+        ->and(($this->plantsOf)($this->kew))->toBe(['Fern', 'Moss', 'Rock']);
+});

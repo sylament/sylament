@@ -8,6 +8,7 @@ use Sylament\Actions\BulkActionGroup;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Fieldset;
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Support\Enums\IconSize;
@@ -146,6 +147,14 @@ describe('context', function (): void {
             'get' => 'Main',
             'lookup' => 'Main',
         ], JSON_THROW_ON_ERROR));
+    });
+
+    it("hands a group among the actions of a component with no state path of its own that component's state", function (): void {
+        $render = $this->renderSchemaComponent(Section::make('Address')->headerActions([
+            ActionGroup::make([Action::make('edit')])->button()->label(static fn (mixed $state): string => json_encode($state, JSON_THROW_ON_ERROR)),
+        ])->components([TextInput::make('street')]), ['street' => 'Main']);
+
+        expect($render)->toContainElement(SupportSelectors::BUTTON, json_encode(['street' => 'Main'], JSON_THROW_ON_ERROR));
     });
 });
 

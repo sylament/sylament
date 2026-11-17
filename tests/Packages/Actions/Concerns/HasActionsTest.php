@@ -80,6 +80,15 @@ describe('mounting', function (): void {
         'a disabled action' => ['locked'],
     ]);
 
+    it('unmounts an action that fails validation while mounting, answering the failed validation', function (): void {
+        $tester = $this->createLiveComponent(ActionStackHost::class)->mountAction('refuseOnMount');
+
+        expect($tester->response()->getStatusCode())->toBe(422)
+            ->and($tester->render()->crawler()->filter(Selectors::MOUNTED_MODAL)->count())->toBe(0);
+
+        $tester->assertActionNotMounted();
+    });
+
     it('drops only the frame it pushed when the name resolves nothing, leaving its parents mounted', function (string $name): void {
         $this->createLiveComponent(ActionStackHost::class)
             ->mountAction('confirm')
@@ -142,7 +151,7 @@ describe('resolving', function (): void {
             ->and($empty->getMountedActions())->toBe([]);
     });
 
-    it('finds an action by its factory before a bare method, by a bare method alone, by its own name when it ends in Action, and once per request', function (): void {
+    it('finds an action by its factory before a bare method, by a bare method alone, by its own name when it ends in Action, by a factory declaring a union with an action, and once per request', function (): void {
         $host = $this->createLiveComponent(ActionStackHost::class)->component();
         $archive = $host->getAction('archive');
 
@@ -151,6 +160,7 @@ describe('resolving', function (): void {
             ->and($archive->getLiveComponent())->toBe($host)
             ->and($host->getAction('purge')->getLabel())->toBe('Purge')
             ->and($host->getAction('stampAction')->getLabel())->toBe('Stamp by its own name')
+            ->and($host->getAction('draft')->getLabel())->toBe('Draft')
             ->and($host->getAction('nowhere'))->toBeNull();
     });
 
@@ -162,6 +172,7 @@ describe('resolving', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe($hooks);
     })->with([
         'a method answering a string' => ['status', []],
+        'a method declaring no return type' => ['untyped', []],
     ]);
 
     it('throws for a factory that answers no action at run time, and mounts nothing through it', function (): void {
@@ -436,6 +447,15 @@ describe('calling', function (): void {
         expect(fn () => $tester->callMountedAction())->toThrow(RuntimeException::class, 'The tally failed.')
             ->and($this->statementsRun())->toContain('"START TRANSACTION"', '"ROLLBACK"')
             ->and($this->entityManager()->getRepository(Tally::class)->count([]))->toBe(0);
+    });
+
+    it('runs nothing for a call while no action is mounted', function (): void {
+        $tester = $this->createLiveComponent(ActionStackHost::class)->call('callMountedAction');
+
+        expect($tester->response()->getStatusCode())->toBe(200)
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+
+        $tester->assertActionNotMounted();
     });
 
     it('redirects from a modal-less action run at mount', function (): void {

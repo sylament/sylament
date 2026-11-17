@@ -67,6 +67,13 @@ it('detaches a plant from the side Doctrine persists when the table lists the in
         ->and(($this->plantsOf)($this->wisley))->toBe(['Rock']);
 });
 
+it('refuses a table that declares no relationship', function (): void {
+    expect(fn (): Testable => $this->createLiveComponent(AttachableRelationTable::class, AttachableRelationTable::props($this->entityManager(), $this->kew, 'plants', variants: ['queryOnly']))
+        ->callAction(TestAction::make('detach')->table($this->rock)))
+        ->toThrow(LogicException::class, 'The action [detach] detaches a record from a relationship, which only a table declaring relationship() can supply.')
+        ->and(($this->plantsOf)($this->kew))->toEqualCanonicalizing(['Moss', 'Rock']);
+});
+
 it('detaches a composite-keyed row, and only that row', function (Closure $scene, string $relation, string $titleAttribute): void {
     [$owner, $gone, $kept] = $scene();
     $this->seed($owner, $gone, ...$kept);

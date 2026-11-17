@@ -42,8 +42,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * search they were handed in the {@see HookLog}), the titles (`tableTitleClosure` upper-cases
  * a plant's name, `actionTitleAttribute` gives the attach its own), the persistence steps
  * instead of writing (`recordingAttach` and `recordingBulk` record what they were handed,
- * `partialBulk` reports all but one record done), the bulk read (`noFetch`) and the rows
- * (`arrayRecords` lists plain arrays).
+ * `partialBulk` reports all but one record done), the bulk read (`noFetch`), the rows
+ * (`arrayRecords` lists plain arrays) and the relationship itself (`queryOnly` lists every
+ * target through `query()` and declares none).
  */
 #[AsLiveComponent(name: 'Tables:AttachableRelationTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class AttachableRelationTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
@@ -118,11 +119,17 @@ class AttachableRelationTable implements InteractsWithActions, InteractsWithSche
 
     public function table(Table $table): Table
     {
-        $table
-            ->relationship(fn (): Relationship => new Relationship(
+        if ($this->has('queryOnly')) {
+            $target = $this->entityManager->getClassMetadata($this->ownerClass)->getAssociationTargetClass($this->relation);
+            $table->query(fn (): QueryBuilder => $this->entityManager->createQueryBuilder()->select('record')->from($target, 'record'));
+        } else {
+            $table->relationship(fn (): Relationship => new Relationship(
                 $this->entityManager->find($this->ownerClass, $this->ownerId) ?? throw new LogicException('The owner is not in the database.'),
                 $this->relation,
-            ))
+            ));
+        }
+
+        $table
             ->recordTitleAttribute($this->titleAttribute)
             ->columns([
                 TextColumn::make($this->titleAttribute ?? 'id'),

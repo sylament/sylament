@@ -10,6 +10,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Forms\Components\TextInput;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Entity\Tally;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
@@ -19,11 +20,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A host with actions and no schemas, recording in the request's {@see HookLog} what ran:
  * `confirm` opens a chain of modals (`details` under it, three ways of closing above that,
- * a child overlaying it and a modal-less child that halts); others halt or cancel while
- * mounting, are disabled (`guarded` only when its call's arguments lock it), run without a
- * modal, redirect, write a {@see Tally} row and then
- * stop as their arguments say, or record each step of the call in order. Its methods give
- * the name lookup each shape to tell apart, and its `afterActionCalled()` records too.
+ * a child overlaying it and a modal-less child that halts); others halt, cancel or fail
+ * validation while mounting, are disabled (`guarded` only when its call's arguments lock
+ * it), run without a modal, redirect, write a {@see Tally} row and then stop as their
+ * arguments say, or record each step of the call in order. Its methods give the name
+ * lookup each shape to tell apart, and its `afterActionCalled()` records too.
  */
 #[AsLiveComponent(name: 'Actions:ActionStackHost', template: '@Fixtures/actions/ActionStackHost.html.twig')]
 class ActionStackHost implements InteractsWithActions
@@ -74,6 +75,15 @@ class ActionStackHost implements InteractsWithActions
             ->modalHeading('Cancelled on mount')
             ->mountUsing(function (Action $action): void {
                 $action->cancel();
+            });
+    }
+
+    public function refuseOnMountAction(): Action
+    {
+        return Action::make('refuseOnMount')
+            ->modalHeading('Refused on mount')
+            ->mountUsing(function (): never {
+                throw new ValidationException(['guard' => ['Blocked at mount.']]);
             });
     }
 
@@ -199,6 +209,23 @@ class ActionStackHost implements InteractsWithActions
     public function stampActionAction(): Action
     {
         return Action::make('stampAction')->label('Stamp by the suffixed name');
+    }
+
+    public function draftAction(): Action|string
+    {
+        return Action::make('draft')->label('Draft');
+    }
+
+    /**
+     * @phpstan-ignore missingType.return (the name lookup must refuse a method that declares no return type; the dynamic call keeps Rector from declaring one)
+     */
+    public function untyped()
+    {
+        $this->hookLog->record('untyped()');
+
+        $factory = 'make';
+
+        return Action::$factory('untyped');
     }
 
     public function status(): string

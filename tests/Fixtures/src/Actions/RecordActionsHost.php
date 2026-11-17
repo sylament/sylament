@@ -42,10 +42,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A host with no table and no record of its own, carrying the record actions a test mounts
  * by name: creates over `CappedHeadline` and the key-shaped entities, creates that join the
  * first seeded owner's collection through their own `relationship()`, an edit and a view
- * bound by `recordKey` to a `Product`, and the variants each case needs. It routes the
- * `CappedHeadline` actions named `linked…` to a page, answers the `CappedHeadline` keyed
- * `PAGE` as the record of `createBesidePage`, the first `Larder`'s crocks as the
- * relationship of `createCrockByHost`, and a schema for `viewResolved`.
+ * bound by `recordKey` to a `Product`, a create naming no record class, and the variants
+ * each case needs. It routes the `CappedHeadline` actions named `linked…` to a page,
+ * answers the `CappedHeadline` keyed `PAGE` as the record of `createBesidePage`, the first
+ * `Larder`'s crocks as the relationship of `createCrockByHost`, and a schema for
+ * `viewResolved`.
  */
 #[AsLiveComponent(name: 'Actions:RecordActionsHost', template: '@Fixtures/actions/RecordActionsHost.html.twig')]
 class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
@@ -141,6 +142,11 @@ class RecordActionsHost implements InteractsWithActions, InteractsWithSchemas
         return CreateAction::make('createWatched')
             ->recordClass(CappedHeadline::class)
             ->schema($this->watchedSchema(...));
+    }
+
+    public function createClasslessAction(): CreateAction
+    {
+        return CreateAction::make('createClassless')->schema([TextInput::make('title')]);
     }
 
     public function createProductAction(): CreateAction

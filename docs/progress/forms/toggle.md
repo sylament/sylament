@@ -68,7 +68,7 @@ The control's root element therefore changes with the layout: a `<span>` in the 
 Without that swap a non-inline toggle is keyboard-only, and a non-inline toggle with no visible label has nothing associated with it at all.
 
 One implementation constraint the template must respect: Twig hoists `{% block %}` definitions at parse time, so a `<twig:block>` nested inside an `{% if %}` is still registered and the wrapper's `block('labelPrefix')` returns its content regardless of the condition.
-The template therefore declares **both** the `labelPrefix` and `content` blocks unconditionally and puts the `component.isInline` test *inside* each, and `ToggleTest` asserts the control renders once in each layout.
+The template therefore declares **both** the `labelPrefix` and `content` blocks unconditionally and puts the `component.isInline` test *inside* each, and a case asserts the control renders once in each layout.
 
 ### The icon rules select by name where Filament selects by position
 
@@ -80,7 +80,7 @@ That substitution is what keeps a **single-icon** toggle correct, not a readabil
 Filament's [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Toggle.php) emits both `<div aria-hidden="true">` wrappers unconditionally and lets the icon HTML inside either one be empty, so its thumb always has exactly two children and the two positional selectors always pick different elements.
 The port's [template](../../../packages/forms/templates/partials/Toggle/index.html.twig) gates each `<span>` on `hasOffIcon` / `hasOnIcon`, so a toggle given one icon renders one child — and a lone child is both `:first-child` and `:last-child`.
 Ported positionally, both rules would match it at the same specificity and the later one, `:last-child`, would win in each state: an `offIcon()`-only switch would then hide its icon while off and reveal it while on, exactly inverted, and an `onIcon()`-only one would be right by accident.
-A named class cannot pick the wrong element whichever of the two is present, and [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php) renders each icon alone for that reason.
+A named class cannot pick the wrong element whichever of the two is present, and a case renders each icon alone for that reason.
 
 The other way to keep vendor's selectors would be to emit both spans always, as Filament does.
 That buys nothing back: it puts an empty element in every toggle's DOM and gives up two names [`docs/internals/styling.md`](../../internals/styling.md#why-are-the-emitted-classes-public) counts as public hook surface, in exchange for a selector that has to be reasoned about each time it is read.

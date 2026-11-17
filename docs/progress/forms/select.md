@@ -232,13 +232,13 @@ The callback parameter is typed `?Closure` and the narrowing happens on the **re
 Both write defaults read that data off the option action, which the action's closure hands them by name as `action`, beside Filament's `data`, `form` and `schema`.
 Both first refuse, by name, a path the action's `mutateDataUsing()` added that no component of the option form maps ([why](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused)).
 Calling `getData()` with no state would re-read the modal's own state and discard a `mutateDataUsing()` on either option action whole; Filament's defaults write `$data`.
-Pinned by [`SelectOptionDataTest`](../../../packages/forms/tests/Integration/Components/SelectOptionDataTest.php).
+A case pins that the create default writes what the mutation answers.
 Because the defaults do not re-run `getState()`, the option form validates once per submit, and so does every `unique()`/`exists()` probe it declares.
 
 Both write defaults run `getData()`, so both end in the record check and in its two key rules.
 A created option on a key a record already holds is *"This value is already used."* under the option form's own field, with nothing written ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)); an edit-option save that changes the selected record's key is *"This value cannot be changed."*, the key put back and the select still naming the same record ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)) — and the field's to-one relationship arm, writing a different reference onto an identifier association of an existing record, is refused the same way.
 The key `createOptionUsing` hands back is minted after the flush as the new row would read it back ([why](../schemas/record-key.md#a-key-is-minted-from-the-value-its-row-would-read-back)); minted from what was typed, a key type that rewrites it — `new-1` read back as `NEW-1` — would answer a key the option list does not hold, so the created option would not be selected and the parent's save would refuse it.
-Pinned by [`SelectKeyWritesTest`](../../../packages/forms/tests/Integration/Components/SelectKeyWritesTest.php).
+Pinned for the taken key, the changed key and the key read back.
 
 All three are installed **unconditionally**, exactly as Filament does it, so a `createOptionUsing()` of your own has to be declared **after** `relationship()` to survive.
 That is a real ordering trap and it is pinned in both directions rather than smoothed over — a conditional install would silently change which closure wins for anyone carrying the Filament habit.
@@ -291,7 +291,7 @@ So the default asks [`AssociationReader::hasIncompleteAssignedIdentifier()`](../
 When the option form's schema turns the key rules off with [`validateRecordKey(false)`](../schemas/can-be-validated.md), a blank key field the form maps is not refused under that field and reaches this check instead.
 The bare advice would then be false for a field already in the form, so the message gains one sentence after it when the rules are off: *The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.*
 With the rules on, the message is the one above, byte for byte.
-`SelectOptionDataTest` pins both forms.
+A case pins both forms.
 The switch lifts the key pass alone: a key field over a non-nullable property is still [required by the record](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types), so it reaches this check blank only when it is not required — it declares `required(false)` (over a non-nullable property its blank must also survive dehydration as a string, as the test's whitespace does, since a null cannot be written there), or its property is nullable.
 What reaches it then depends on what the blank reaches the record as.
 A blank that reaches it as a **string** — whitespace — meets this check and the message above whatever the class declares, since the check after `persist()` reads it too.
@@ -305,7 +305,7 @@ A callback or listener that fills **no** key half exempts the class from the fir
 And so does a **plain single scalar** identifier, always: the member answers `false` for one before it reads anything, because the relation layer keys such a class with no check, and a create option over one needs none.
 Validating a key that is *taken*, as opposed to one that is incomplete, is the record check's, which this default reaches through `getData()` ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
 An assigned single scalar key left blank still passes both: the taken-key rule treats a blank component as incomplete and looks nothing up, so it reaches Doctrine unchecked.
-Pinned by [`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php), the after-`persist()` arm over a `Planter` whose callback fills neither key half.
+The after-`persist()` arm is pinned over a class keyed by two strings whose `prePersist` callback fills neither half.
 
 ## Divergences
 

@@ -82,7 +82,7 @@ class Kernel extends BaseKernel
             'defaults' => [],
         ]);
 
-        // Two local storages under the cache directory, mirroring forms' fixture kernel:
+        // Two local storages under the cache directory:
         // `test.storage` is the column's default and the only one that can mint a URL, since
         // `public_url` is what gives a local adapter one at all; `other.storage` is the no-URL arm.
         $container->extension('flysystem', [

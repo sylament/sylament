@@ -68,7 +68,7 @@ A radio sits outside that argument because its resting state is `null`, not `fal
 The case worth checking rather than assuming is the `boolean()` arm's **No** option, whose key is `0`.
 `RequiredValue` is one call to [`filled()`](../support/helpers.md), which counts `null` and `''` blank but **accepts** `int 0` and the string `'0'` a browser submits.
 A required `boolean()` radio therefore accepts either answer and rejects only *no answer*, which is what `required()` should mean.
-`RadioTest` pins the **No** case so a change to the cast cannot quietly turn `required()` into [`accepted()`](can-be-accepted.md).
+A case pins the **No** answer so a change to the cast cannot quietly turn `required()` into [`accepted()`](can-be-accepted.md).
 
 ### The group name is the field id, not the field name
 
@@ -98,7 +98,7 @@ It reads like a double-binding and is not, because a radio group only ever fires
 The unchecked siblings fire nothing.
 
 The alternative shapes — one binding on the group, or a `change`-only listener — are rejected: the group element is a `<div>`, which the controller reads through `element.value` / `data-value` and would find empty, and a bespoke listener would give up the repaint the plugin above performs for free.
-[`LiveRadioTest`](../../../packages/forms/tests/Integration/LiveRadioTest.php) drives a selection through the live host and asserts both the prop and which input the re-render checked.
+A case drives a selection through the live host and asserts both the prop and which input the re-render checked.
 
 ### The boolean labels are untranslated literals
 

@@ -52,7 +52,7 @@ The caller's `modifyQueryUsing` closure runs after both are bound, so it can rea
 
 `createProbeQuery()` admits `getFieldNames()` only, so an identifier **association** is refused by name as the unmapped field it is, never probed by key, and a scalar identifier half is an ordinary column whose `=` and `IN` compare as any column's do, at every identifier width.
 That is why `ExistingValueValidator`, `ProbesRecords` and `UniqueValueValidator`'s value arm have no key arm.
-The case `refuses an identifier association as the unmapped field it is, rather than probing by key` in [`ExistingValueValidatorTest`](../../../packages/forms/tests/Unit/Validation/ExistingValueValidatorTest.php) pins it, so a sweep over the by-key sites does not turn this one into a key probe.
+A case refusing an identifier association as the unmapped field it is, rather than probing by key, pins it, so a sweep over the by-key sites does not turn this one into a key probe.
 Only `unique(ignoreRecord:)` reads a key, and only for its exclusion.
 
 A taken assigned identifier does not change that: the key probe it needs is schemas' own, inside the record check `getData()` ends in ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)), so no key field needs a `unique()`.

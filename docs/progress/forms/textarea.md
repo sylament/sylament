@@ -77,7 +77,7 @@ The height the controller writes is an inline style, which survives a live re-re
 Filament renders the sizer unconditionally and mounts its Alpine component either way: with `autosize()` the component grows the sizer, and **without** it a `ResizeObserver` mirrors whatever height the user dragged the control to onto the sizer, because the sizer is the element the wrapper's `overflow-hidden` clips.
 Neither half of that branch is ported.
 Without `autosize()` there is no sizer, no controller and no `sy-autosizable` class — the rendered markup is the bare control inside the input wrapper, and `textarea.sy-fo-input`'s own `resize-y` hands the grip back to the platform with nothing to mirror it onto.
-[`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php) pins that off arm as an exact string, so the branch cannot grow an element by accident.
+A case asserts the sizer, the controller and `sy-autosizable` absent beside the rendered control, so the off arm cannot grow one of them by accident.
 
 It reverses by rendering the sizer unconditionally and giving the controller the mirroring arm, which is worth doing only if the sizer ever carries chrome of its own; it carries only a height.
 

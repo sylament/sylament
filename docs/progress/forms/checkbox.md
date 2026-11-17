@@ -38,7 +38,7 @@ No state cast runs on that path.
 
 So the constraint is a live guard, not a formality.
 Anything that writes the state bag without going through `state()` — a tampered live payload, or server code assigning a string into `$data` — reaches the validator as it was written, and `Type('bool')` is what rejects it.
-Deleting it would remove real protection; `CheckboxTest`'s _validates the raw state rather than the cast one_ case pins exactly that, asserting a raw `'yes'` violates the constraint even though `getState()` reports `true`.
+Deleting it would remove real protection; a case pins exactly that, asserting a raw `'yes'` violates the constraint even though `getState()` reports `true`.
 
 One shape of raw value is carved out of that guard, and it costs nothing: `Type('bool')` is not implicit, so schemas' [presence gate](../schemas/presence-gate.md) filters it out when the raw value is a blank string, and a tampered `''` is accepted where `'yes'` is rejected.
 Laravel's `boolean` rule is not implicit either, so this is the faithful behaviour, and the value it lets through is one the cast already normalizes — `BooleanStateCast(isNullable: false)` reads `''` as `false`, so what the mapper writes to a `bool` target is a `bool`.

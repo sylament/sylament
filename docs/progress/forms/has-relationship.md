@@ -158,7 +158,7 @@ The membership check behind it is skipped: for a searchable select it is a batch
 The submission is refused either way ([why](#a-composite-label-read-runs-one-statement-per-batch-and-a-composite-submission-past-maxitems-reads-no-label)).
 Single-identifier relationship, static-options and enum selects report both the `Count` and the membership `Choice` violation, as Filament does.
 Reversible if the composite label read ever costs what the single-identifier one does.
-Pinned by [`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php), with [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php) pinning the static-options pair.
+Pinned for a single-identifier and a composite relationship select.
 
 ### The save arm writes a desired list, not attach/detach
 
@@ -188,7 +188,7 @@ The to-many arm therefore asks the mapping which side persists.
 On the inverse side of a many-to-many it first reconciles the desired list onto the owning side through the [association reader](../schemas/relationship.md#a-write-lands-on-the-side-doctrine-persists) — every current member missing from the desired list is `detach()`ed and every new one `attach()`ed, both of which flip to the related record's own collection — and **then** writes the record's own collection as the owning side does.
 Kept members are touched by neither, so dropping one member and adding another costs one join-row `DELETE` and one `INSERT`, for a single-identifier record and a composite one alike.
 The second write is not redundant: it is what the form re-fills from when it re-renders in the same request, and reconciling the owning side alone would re-render the **old** selection; it costs no statement, the reconcile's own read having loaded that collection already.
-A field on the owning side never reaches the reconcile, and neither does a one-to-many — the guard names a many-to-many, since a one-to-many is always inverse and routing it through `detach()` would refuse an `orphanRemoval` mapping by name, which the composite-owner one-to-many saves of [`CompositeOwnerRelationshipTest`](../../../packages/forms/tests/Integration/Components/CompositeOwnerRelationshipTest.php) would meet at once.
+A field on the owning side never reaches the reconcile, and neither does a one-to-many — the guard names a many-to-many, since a one-to-many is always inverse and routing it through `detach()` would refuse an `orphanRemoval` mapping by name, which a composite owner's one-to-many save would meet at once.
 
 One save is refused rather than written.
 Reaching the owning side means `detach()`, which takes **this** record out of the target's collection; where that collection declares `orphanRemoval` Doctrine treats its members as privately owned and deletes the one taken out rather than unlinking it — here the record the form is saving, with every join row it had.
@@ -206,7 +206,7 @@ The adder-and-remover contract reaches the **related** records' collections too,
 And each added member is read before it is written: `N + 1` reads for `N` added members in a real form, whose options are already loaded, and `2N + 1` cold.
 Adding to each related record's `PersistentCollection` directly would skip those reads, but it bypasses the entity's own adder, which is what this whole arm rests on, so it is not taken.
 
-Pinned by [`InverseSideRelationshipTest`](../../../packages/forms/tests/Integration/Components/InverseSideRelationshipTest.php), over fixtures whose inverse adders deliberately heal nothing, since a healing adder would make the save pass without the reconcile too.
+Pinned over fixtures whose inverse adders deliberately heal nothing, since a healing adder would make the save pass without the reconcile too.
 
 ### A record of another class than the association target is refused
 

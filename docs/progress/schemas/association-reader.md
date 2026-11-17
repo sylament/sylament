@@ -269,7 +269,7 @@ The cost is one primary-key `SELECT` per new assigned-key record, none when the 
 Batching it per class through [`IdentifierConstraint::in()`](record-key-contract.md#the-operations-and-their-dql) is the known remedy, and is not built for a cost nobody has met.
 
 Pinned: a stored, a managed and a persisted-unflushed holder, a free key after one `SELECT`, the sibling claim under a stored and a new owner, a spelling its column stores alike, a holder a SQL filter hides, a detached record read as a new one, the generated id, blank and `null` components, a key half that prints blank, a hierarchy through its root, and the placement of a key with no scalar field.
-The host's half — keeping the mapped fields, else the first — is pinned on the host and by forms' [`TakenKeyPlacementTest`](../../../packages/forms/tests/Integration/Components/TakenKeyPlacementTest.php): both halves, one, neither, a derived identity's scalar half, two of three, a hidden half that carries the message while only the visible one shows it, and a relationship repeater's items each under their own halves.
+The host's half — keeping the mapped fields, else the first — is pinned on the host: both halves, neither, a derived identity's scalar half, and a relationship repeater's item under the one half it maps.
 
 ### What the taken-key probe cannot see
 

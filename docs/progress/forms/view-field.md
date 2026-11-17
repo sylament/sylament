@@ -54,7 +54,7 @@ The fixture is the shape to copy:
 ```
 
 The [input wrapper](../support/input-wrapper.md) is the template's to open too, and for the same reason — it is what paints the ring, background and focus state a text control does not carry itself, so a `sy-fo-input` outside one renders as bare text on the page background.
-The second fixture, [`Unwrapped`](../../../packages/forms/tests/Fixtures/Twig/templates/partials/ViewFieldFixture/Unwrapped.html.twig), opens neither wrapper on purpose: a custom field that wants no chrome at all is a valid thing to want, and it is the case that proves nothing is inherited.
+The second fixture, [`UnwrappedViewField`](../../../tests/Fixtures/templates/forms/UnwrappedViewField.html.twig), opens neither wrapper on purpose: a custom field that wants no chrome at all is a valid thing to want, and it is the case that proves nothing is inherited.
 
 The tag names the wrapper directly where Filament's example resolves it through `$getFieldWrapperView()`.
 Schemas' [`HasFieldWrapper`](../schemas/schema.md) ships as an opaque marker forms reads for exactly one value — the plain branch a [`FusedGroup`](fused-group.md#only-the-plain-wrapper-view-is-honored) puts on its children — not as a template name a custom field could point anywhere.

@@ -38,10 +38,5 @@
         "files": [
             "src/helpers.php"
         ]
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Sylament\\Forms\\Tests\\": "tests/"
-        }
     }
 }

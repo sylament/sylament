@@ -208,7 +208,7 @@ The component is the home because the answer is its casts, and because it is the
 Each walk asks the field that reads the leaf — the last declared, where two share a path, as the record path map keeps it.
 The object enters the bag only where a hydration pass runs right behind the read and converts it — `fill()`, the array fill after `getStateFromRecord()`, and the host's [reload](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter), whose child-schema hydration is load-bearing for that reason — and a fill hook (`mutateFormDataBeforeFill()`, `mutateRecordDataUsing()`) receives it at its path inside a relationship as it does at the root.
 An association, a collection and an object no cast flattens still skip.
-Pinned for a singular relationship, and for a relationship repeater by forms' [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
+Pinned for a singular relationship and for a relationship repeater.
 
 One hole is inherited rather than introduced, and is worth naming because the gate does not cover it: an **array** leaf is not object-valued, so a `list<MyEnum>` property enters the bag whole and relies on the component's cast (`EnumArrayStateCast`) to scalarize its elements.
 A cast-less component bound to one can leave instances nested in the bag; the exemption neither widens nor narrows that.

@@ -64,7 +64,6 @@
     "autoload-dev": {
         "psr-4": {
             "Sylament\\Actions\\Tests\\": "packages/actions/tests/",
-            "Sylament\\Forms\\Tests\\": "packages/forms/tests/",
             "Sylament\\Infolists\\Tests\\": "packages/infolists/tests/",
             "Sylament\\Panels\\Tests\\": "packages/panels/tests/",
             "Sylament\\Tables\\Tests\\": "packages/tables/tests/",
@@ -97,7 +96,6 @@
         ],
         "test:suites": [
             "@test:actions",
-            "@test:forms",
             "@test:infolists",
             "@test:panels",
             "@test:tables",
@@ -105,7 +103,6 @@
             "@test:pest"
         ],
         "test:actions": "pest -c packages/actions/phpunit.dist.xml --test-directory=packages/actions/tests",
-        "test:forms": "pest -c packages/forms/phpunit.dist.xml --test-directory=packages/forms/tests",
         "test:infolists": "pest -c packages/infolists/phpunit.dist.xml --test-directory=packages/infolists/tests",
         "test:panels": "pest -c packages/panels/phpunit.dist.xml --test-directory=packages/panels/tests",
         "test:tables": "pest -c packages/tables/phpunit.dist.xml --test-directory=packages/tables/tests",

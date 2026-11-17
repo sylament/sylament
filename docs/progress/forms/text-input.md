@@ -87,14 +87,14 @@ Two consequences a reader re-deriving them from the code would plausibly get bac
 **The call order is load-bearing.**
 `numeric()` seeds `step('any')`, so `integer()` has to call it *first* and overwrite that seed with `step(1)` afterwards.
 Written the other way round the `'any'` wins and an integer input silently accepts decimals — with a green suite, because nothing else about the field changes.
-`TextInputTest`'s _makes an integer input numeric with a step of one_ is what holds the order.
+A render of an integer input with `step="1"` is what holds the order.
 
 **An integer field carries both type arms.**
 The delegation flips `isNumeric` too, so `buildValidationConstraints()` appends `Type('numeric')` *and* the integer [`Regex`](#integer-validates-with-a-regex-not-a-type-constraint), and `getType()` reports `number` off the same flag.
 That is Filament: its `integer()` likewise leaves `numeric()`'s `numeric` rule in place and adds `integer` beside it.
 The pair is not two independent checks, though — the regex accepts a strict subset of `is_numeric()`, so the `Type` arm rejects nothing the regex would accept; what it adds is a second violation on the same value, and [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) [lists every message](field.md#error-display-shows-every-message-for-the-path), so `abc` in an integer field renders two.
 Dropping the `Type` arm would mean not calling `numeric()`, which is where the step, the `number` type and the input mode all come from.
-`TextInputTest`'s _validates an integer with the numeric arm plus a regex that accepts a numeric string_ holds both arms and their order.
+A case refusing prose in an integer field under both the numeric check and the pattern holds both arms.
 
 ### Both reveal buttons render, and CSS hides the inapplicable one
 
@@ -116,7 +116,7 @@ So `copyMessage(fn ($state) => "Copied {$state}")` describes the value the serve
 Inside a [`Repeater`](repeater.md) item it is still the **field's own** value, not the repeater's array.
 `Action::getSchemaComponentState()` walks up to the nearest ancestor with a state path only while it has a schema *container*, and `prepareAction()` sets `schemaComponent()` alone — an affix action never gets a container, so `getSchemaContainer()` is null, the walk does not run, and the field's `getState()` is what comes back.
 The walk is there for the modal and group actions that do carry one.
-`TextInputTest`'s _sees the field own state in a copy message closure inside a repeater item_ pins it.
+A case pins it: a copy message closure inside a repeater item reads its own field's state.
 
 On the client the message survives one more step: Stimulus JSON-parses every action param, so a message of `'2024'` or `'null'` reaches `copy()` as a number or as `null`.
 The controller coerces whatever arrives back to a string, and only an absent param falls back to 'Copied'.
@@ -125,7 +125,7 @@ The controller coerces whatever arrives back to a string, and only an absent par
 
 Each of the three actions carries a `#[Required] setIconManager(IconManager)` and resolves its `FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_*` override itself, falling back to the shipped heroicon.
 That is the shape [`Repeater`](repeater.md) uses on the **field**, moved onto the action, and it works only because [the bundle's](forms-bundle.md) component glob `{*,Repeater/*,TextInput/Actions/*}` makes the classes container-built.
-An action built outside DI falls back to a bare `IconManager` and resolves no user override — which is why `TextInputTest`'s alias case reaches the container before it builds anything.
+An action built outside DI falls back to a bare `IconManager` and resolves no user override — which is why the alias override is pinned on an action the container builds.
 
 ### `currentPassword()` names security-core while the validator is SecurityBundle's
 
@@ -145,7 +145,7 @@ Same observable API and same laziness.
 `tel()` is the one arm not in the override: it [writes the shared `regex()` slot](#tel-writes-the-shared-regex-slot), as Filament's does, rather than appending a second `Regex` beside it.
 
 The reason is **composition order**.
-These arms must land last — the order is `RequiredValue` → length → the `in` and `regex()` slots → escape hatch → type arms, pinned by `TextInputTest` — and a `constraint()` call from `setUp()` would file them among the escape-hatch pairs instead, ahead of anything the user registers later.
+These arms must land last — the order is `RequiredValue` → length → the `in` and `regex()` slots → escape hatch → type arms, pinned by the rendered message order — and a `constraint()` call from `setUp()` would file them among the escape-hatch pairs instead, ahead of anything the user registers later.
 The override is what keeps them at the tail, and it keeps the type arms in one block, ordered the way `getType()` checks the flags they share — the integer arm slotting in beside the `numeric()` it [delegates to](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters), since `getType()` has no branch of its own for it.
 Messages are keyed `Email::class` / `Type::class` / `Regex::class` / `Url::class` and applied by the [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built), so no arm passes a `message:` argument.
 
@@ -154,12 +154,12 @@ The cost is that a subclass overriding `buildValidationConstraints()` must call 
 `Url` is constructed bare, and that is not a style choice: Symfony's `Url::__construct()` takes `?array $options` first and **throws** `InvalidArgumentException` on any non-null value, so a positional argument is never correct there.
 `requireTld` already defaults to `true`, so the arm needs no argument for it either.
 `Regex` is the opposite — its first parameter *is* the pattern — so the tel arm passes `getTelRegex()` positionally, and `telRegex()` overrides that default, evaluated lazily like every other sugar value.
-Pinned by `TextInputTest`'s `honours a custom tel regex`, `resolves a closure tel regex through evaluate` and `drops the tel and url arms when a closure condition resolves false`, the last of which also holds `getType()` to `text` on a false condition, the way `numeric()`'s [step seed](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) is held.
+Pinned for a custom tel regex and for tel and url arms whose closure condition resolves false, which also render the `text` type, the way `numeric()`'s [step seed](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) is held.
 
 The default pattern is Filament's, one token apart: the leading `[0-9]{1,4}` is spelled `\d{1,4}`, so a diff against Filament shows a difference that is not one.
 PHP's PCRE leaves `\d` ASCII-only without the `u` modifier, which the pattern does not carry, so the match set is identical — including that neither form accepts Eastern Arabic digits.
 
-What guards that claim is a **behavioural** test, not a string comparison: `TextInputTest`'s `adds a Regex constraint whose default pattern accepts phone numbers and rejects prose` runs the built constraint's pattern over samples (`+420 123 456 789`, `(123)456-7890`, `1234567890` accepted; `abc` and the empty string rejected), so it survives a respelling of the pattern while failing if anyone changes what the default *means*.
+What guards that claim is a **behavioural** test, not a string comparison: a case validates samples through the field (`+420 123 456 789`, `(123)456-7890`, `1234567890` accepted; `abc` rejected), so it survives a respelling of the pattern while failing if anyone changes what the default *means*.
 Asserting the literal against `getTelRegex()` would be a tautology, because both sides read the same getter.
 
 ### `tel()` writes the shared regex slot
@@ -168,7 +168,7 @@ Asserting the literal against `getTelRegex()` would be a tautology, because both
 It writes the same single `$regexPattern` slot [`regex()`](can-be-validated.md) writes, as a closure answering the tel pattern while `isTel()` holds — so `->tel()->regex('/…/')` keeps the later call and `->regex('/…/')->tel()` keeps the tel pattern, yielding exactly **one** `Regex` either way.
 That is Filament's own behaviour.
 
-So the tel pattern lands where the regex slot sits, after the `in` `Choice` and before the escape-hatch pairs, rather than among the type arms at the tail of the override, and `TextInputTest`'s pinned emission order holds it there.
+So the tel pattern lands where the regex slot sits, after the `in` `Choice` and before the escape-hatch pairs, rather than among the type arms at the tail of the override, and the pinned message order holds it there.
 Message order is the only thing a consumer can see of that position.
 
 The class-key collision sits one arm over.
@@ -183,7 +183,7 @@ Filament seeds the interval by capturing the argument — `step(static fn (): ?s
 A `Closure` is an object, so it is truthy: passing one there yields `step="any"` unconditionally, even where `getType()` evaluates the same flag and falls back to `text`.
 The port's seed takes the component and reads the flag back, `static fn (TextInput $component): ?string => $component->isNumeric() ? 'any' : null`, so a closure condition is evaluated in one place — [`isNumeric()`](../../../packages/forms/src/Components/TextInput.php) — and every consequence of `numeric()` agrees with it.
 `integer()`'s `step(1)` seed reads `isInteger()` back the same way, where Filament's captures its condition too.
-Identical to Filament for a `bool` condition, which is every call that does not pass a closure; pinned by `TextInputTest`'s `seeds step any from numeric so the browser accepts decimals` and `seeds no step when a closure numeric condition resolves false`.
+Identical to Filament for a `bool` condition, which is every call that does not pass a closure; pinned by the renders of a numeric input, with `step="any"`, and of one whose closure condition resolves false, with no step.
 The divergence is the whole reason the seed is a component-reading closure rather than the shorter capture; `getInputMode()` below reads the flag back the same way, and gains the same correction for free.
 
 ### `integer()` validates with a regex, not a `Type` constraint
@@ -215,7 +215,7 @@ Each arm is appended only when [`filled()`](../support/helpers.md) accepts its *
 `filled()` rather than `!== null` because Filament guards its rule with `filled()` too, and the case is real: `maxValue(fn () => $settings->get('max_qty'))` resolving to `''` — an unset setting, an empty admin field — would otherwise build `LessThanOrEqual('')`, which every non-empty submission fails with the message *"This value should be less than or equal to ."*.
 Zero is a value and not a blank, so `maxValue(0)` and `minValue('0')` both build their arm: [`blank()`](../../../packages/support/src/helpers.php) answers `false` for an `is_numeric()` value, and a numeric *string* never reaches that arm because the `mb_trim` string arm above it already answers.
 That is the opposite of [`CanBeLengthConstrained`](can-be-length-constrained.md), which drops a zero bound with `> 0`, and deliberately: `Length(max: 0)` forbids all input and is never what a caller meant, while `maxValue(0)` ("at most zero") is an ordinary constraint on a signed field.
-Pinned by `TextInputTest`'s `adds a comparison constraint for each bound that is set`, `drops a bound whose closure resolves null`, `drops a bound that resolves blank rather than building an empty comparison` and `keeps a zero bound, which is a value rather than a blank`.
+Pinned for both bounds, a bound that resolves blank and a zero bound.
 
 The setters narrow Filament's `scalar | Closure | null` to `int|float|string|Closure|null`, so `maxValue(true)` is a `TypeError` here where Filament interpolated it as `max:1`.
 `scalar` is a PHPDoc pseudo-type with no native equivalent, so a port that types its setters natively ([convention](../../../.claude/rules/php.md)) has to enumerate the arms — and `bool` is the one left out, having no meaning as a numeric bound.
@@ -223,13 +223,13 @@ The enumerated union is also what lets `getMaxValue()` carry a native return typ
 
 **The bounds compare the raw submitted string.**
 Validation reads the raw host property ([semantics](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)), so a browser sends `"7"` and the constraint receives a string, never an `int`.
-The port adds no cast and needs none for the numeric case: PHP compares a numeric string against an `int` or `float` bound numerically, so `"7" <= 10` holds and `"70" <= 10` does not — pinned by `TextInputTest`'s `compares a submitted numeric string by magnitude`.
+The port adds no cast and needs none for the numeric case: PHP compares a numeric string against an `int` or `float` bound numerically, so `"7" <= 10` holds and `"70" <= 10` does not — pinned by a case comparing a submitted numeric string by magnitude.
 A **non-numeric** string is the case that parts from Laravel, and `getSize()` is why: it measures such a string's *length* (3 for `"abc"`, which clears `max:10`) where PHP compares its *characters*, stringifying the bound — so `"abc" <= 10` becomes `"abc" <= "10"` → false, and a junk value picks up a bounds violation beside whatever the `numeric()` `Type` arm reports, if the field carries one.
 Revisit if a state cast ever converts the field's state to a real number before validation runs — the same condition the [integer regex](#integer-validates-with-a-regex-not-a-type-constraint) waits on.
 
 The **empty** string is not this divergence's doing and is not confined to these arms: Laravel never runs `min:` / `max:` on a blank string at all, because `presentOrRuleIsImplicit()` gates every non-implicit rule on presence, and the port does the same one layer up — schemas' [presence gate](../schemas/presence-gate.md) filters both comparison arms out before the runner sees them, so a cleared input reports neither bound.
 The arms themselves are unguarded, so an asymmetry is latent in them: reached with `''`, `GreaterThanOrEqual` violates for any bound while `LessThanOrEqual` passes for any bound, and only the gate in front stands between that and a user's screen.
-`TextInputTest`'s `reports neither bound against the empty string a cleared input submits` pins the outcome, holding a `null` state skipping both arms beside it, and `still reports both bounds on a required field, whose RequiredValue survives the gate` pins that `required()` is untouched.
+A case pins the outcome, and that `required()` is untouched: a cleared input reports neither bound, and a cleared required one reports only that it is required.
 
 ### Input mode is a bespoke getter, not the `HasInputMode` concern
 

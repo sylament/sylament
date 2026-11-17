@@ -37,7 +37,7 @@ So the keys are *identity* rather than per-request uuids, and three places follo
 
 An item leaf is read as the root fill reads one ([the rule](../schemas/belongs-to-record.md#reads-are-lenient-writes-are-strict)): an object-valued leaf enters the item only where the item field's own state casts flatten it, so a `DateTimePicker` or an enum-backed field fills from the child, as does a `Uuid` under a cast that flattens it, and a fill hook receives the object at its item path, while an association, and an object no cast flattens, still skip.
 Skipping **every** object leaf would lose data: such a field would fill empty, and the next save — one that never touched it — would write NULL over the stored value.
-Pinned by [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
+Pinned for a date and an enum leaf, through a save that touches neither.
 
 `getData()` hands the whole keyed map to the save hook, which builds the **desired list** in state order: a `record-` key resolves to the very instance the collection holds (never a fresh reference by key — strict identity is what makes an update an update, and it would hold on [either of `getReference()`'s routes](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route) anyway, since each answers the identity map's own instance), an un-prefixed key constructs the association's target class through [`PropertyAccessor::constructRecord()`](../schemas/property-accessor.md#the-mappers-construct-or-refuse-is-one-method-its-callers-borrow) — the mapper's shared construct-or-refuse, so an item class needing constructor arguments is refused in the same words everywhere — and a loaded child no item names is simply left out.
 The list goes to [`setAssociationOnRecord()`](../schemas/property-accessor.md#the-association-write-is-the-collection-refusals-counterpart), whose adder/remover diffing keeps the collection instance, calls `addSection()` for the new children (so the owning side is set by the record's own code) and `removeSection()` for the departed — which `orphanRemoval` turns into a DELETE at flush.
@@ -164,7 +164,6 @@ The mapping short-circuit exempts every class declaring a `prePersist` callback 
 `CreateAction`, the resource create page and `Select`'s `createOption` default read the key again after `persist()`, once the callback has run; the repeater has no such moment, since it never persists an item itself — the owner's cascade inserts it at the application's flush.
 So for such a class a key half no component maps reaches the table blank.
 Closing it needs a check at the owner's flush, which the repeater does not run.
-Pinned as behaviour by [`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php)'s *writes a new item whose unmapped key half stays blank past a prePersist callback that fills neither half*.
 
 **A pending owner is not incomplete.**
 A derived-identity child under an owner that has not been flushed yet — a repeater on a **create** form — carries an identifier association whose target's generated id is still pending, and Doctrine writes both in one flush, deferring the child's identifier to the parent's insert.
@@ -180,7 +179,7 @@ Validating a key that is *taken*, or a key half edited on an existing item, is t
 A new item on a key a stored row, an existing item or another new item claims is *"This value is already used."* under every identifier field of the new item that is no association and that the item's schema maps — a join entity's, whose identifier is associations only, under the one that does not point back at the owner ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)) — and an existing item's key half edited is *"This value cannot be changed."*, put back, with nothing written ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)).
 Two new items claiming one key are compared in memory, so under an owner that has no identifier yet the second is refused without a statement.
 A new item on the key of an item the **same** save removes is refused too, and the message blames the key the user just removed: Doctrine inserts before it deletes, so that save could not succeed either way — recorded rather than closed.
-Pinned by [`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php), beside [`RepeaterCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/RepeaterCompositeRelationshipTest.php).
+Pinned through a relationship repeater for a new item on a stored row's key and for an existing item's edited key half; two new records claiming one key are pinned on the [reader](../schemas/association-reader.md).
 
 ### A mutate callback can rewrite what a nested hook consumes
 

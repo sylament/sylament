@@ -156,7 +156,7 @@ A status in this table reads the **vendor stylesheet**: how much of its rule set
 That is a different question from a component file's template-and-stylesheet row, which reads the port's built surface, so `repeater.css` is **in progress** here while [repeater.md](repeater.md) marks its template row **done**, and neither is wrong.
 
 No test exercises CSS.
-The render tests (`FieldWrapperTest`, `SelectTest`, `CheckboxTest`, `RadioTest`, `ToggleTest`, `RepeaterRenderTest` and their siblings) assert that the class hooks these rules attach to are emitted, but the styling itself never runs, so a row's **done** rests on the faithfulness of the port.
+The render tests assert that the class hooks these rules attach to are emitted, but the styling itself never runs, so a row's **done** rests on the faithfulness of the port.
 One stylesheet is under an automated check of a variable contract rather than a rendered pixel: the colour-policy scan reads `toggle.css` and fails if the slot variables its checked and unchecked rules read are not exactly the ones [`ToggleComponent`](../../../packages/support/src/Colors/Components/ToggleComponent.php) resolves.
 Everything else is guarded only by the CI check that support's committed `assets/dist` matches a fresh build.
 

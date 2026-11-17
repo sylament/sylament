@@ -19,8 +19,8 @@ uses(InteractsWithLiveComponents::class);
  * The AC2 spike: an argument-carrying #[LiveAction] mounts an Action descriptor
  * into the #[LiveProp], opens the AC1 modal, and a second #[LiveAction] runs the
  * Action's closure — the mount -> modal -> call round-trip on a synthetic host.
- * Mirrors forms' LiveFieldTest (InteractsWithLiveComponents; ->call() runs the
- * LiveAction server-side, so the client click is not simulated).
+ * Driven through InteractsWithLiveComponents: ->call() runs the LiveAction
+ * server-side, so the client click is not simulated.
  */
 
 it('mounts an action into the live prop and renders its modal', function (): void {

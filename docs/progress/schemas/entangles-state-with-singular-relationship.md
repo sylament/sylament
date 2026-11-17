@@ -117,7 +117,7 @@ Without the refusal that `getData()` would pass, the single scalar root key bein
 A required key field — which forms derives for a non-nullable property — never reaches it.
 Telling the two causes apart needs the reader's private walk behind [`hasIncompleteAssignedIdentifier()`](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask), which answers one boolean, so the message names both instead: its advice points at the record the relationship hangs off as well as at the components inside it, since naming the group alone would send the developer past the owner's key field.
 
-Pinned — a whitespace half, an unmapped half, a shared-key child refused over its owner's blank optional key, a filled pair that saves, a blank single scalar key left alone, an existing record left alone and the syncing setter that saves — and, through real `TextInput`s, by forms' [`EntangledIncompleteKeyTest`](../../../packages/forms/tests/Integration/Components/EntangledIncompleteKeyTest.php).
+Pinned — a whitespace half, an unmapped half, a shared-key child refused over its owner's blank optional key, a filled pair that saves, a blank single scalar key left alone, an existing record left alone and the syncing setter that saves — through real `TextInput`s.
 
 ## Divergences
 
@@ -142,7 +142,7 @@ The port iterates the **declared leaf paths** of the component's child schemas i
 An unreadable leaf is skipped on the way in, and so is an object-valued one unless the field's own state casts flatten it — the root fill's rule, asked of the same component ([the predicate](belongs-to-record.md#reads-are-lenient-writes-are-strict)) — so a date or an enum fills from the related record, as does a `Uuid` under a cast that flattens it, and a fill hook receives the object at its path, while an association, and an object no cast flattens, still skip.
 A leaf the dehydrated state does not carry is skipped on the way out.
 Skipping every object-valued leaf here would fill such a field empty, and the next save — one that never touched it — would write NULL over the stored value.
-Pinned, and through a real `DateTimePicker` inside a `Group::relationship()`, by forms' [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
+Pinned through a date and an enum cast, and through a real `DateTimePicker` inside a relationship repeater's item.
 
 *Leaf* is meant in the record walk's sense, so the collection filters exactly as [`getRecordPathMap()`](belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths) does: a nested container carrying path-bearing components contributes its leaves, never its own path, unless it [owns its subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree).
 Without that filter a plain `Section` at `post` around a field at `post.title` would yield both, and the save's first write would hand the whole subtree array to the object property — the write [the mapper refuses](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused).

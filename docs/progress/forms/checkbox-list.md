@@ -95,7 +95,7 @@ Declaring either closure clears the option memo, so the two setters compose in a
 
 It is worth pinning because the resting shape is what makes the binding work at all.
 `live_controller`'s `getValueFromElement()` reads the model's **current** value first and only treats a checkbox as add-or-remove-against-a-list when it finds an array there; a path resting at `null` would take the clicked option's bare `value` and collapse the whole list to a scalar.
-`isNullable: false` writes `[]` rather than null, which the first case in [`LiveCheckboxListTest`](../../../packages/forms/tests/Integration/LiveCheckboxListTest.php) asserts on the wire before it asserts anything about checking.
+`isNullable: false` writes `[]` rather than null, which a live case asserts across a request before it reads a selection.
 
 ### The three server-side guards are ordered so they never collide
 
@@ -191,7 +191,7 @@ Vendor compares `visible.length === satisfied.length`, which is vacuously true f
 Ours requires a non-empty set, resting on "Select all" instead.
 Both links are inert there — there is nothing visible to write — so this is a label choice, and the one that does not offer to deselect nothing wins.
 
-There is no JS test rig — no jsdom, no browser driver, nothing that instantiates a Stimulus controller — so the [render tests](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php) assert the controller's *contract* (identifier, targets, the debounce value, the click actions) and nothing asserts its *behaviour*.
+There is no JS test rig — no jsdom, no browser driver, nothing that instantiates a Stimulus controller — so the render tests assert the controller's *contract* (identifier, targets, the debounce value, the click actions) and nothing asserts its *behaviour*.
 The filter, the bulk toggle, the observer and the delegated listener are verified by reasoning against the installed vendor sources and by driving the demo in a browser, never by execution here.
 
 ### The bulk-toggle labels are untranslated literals
@@ -227,7 +227,7 @@ The derivation itself is vendor's, spelled in Symfony's `u()`: `->before('.')->k
 
 Filament's `relationship()` ends with `dehydrated(false)`.
 This field's does not, and neither does `Select`'s or `Repeater`'s: the port's dehydration walk is what **routes** a value to its save hook, so pruning the path would switch the feature off rather than protect it.
-The state stays in the bag and the hook takes it — the port-wide reading recorded in [renames.md](../renames.md#renames) and [repeater-relationship.md](repeater-relationship.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope), pinned for this field by [`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php).
+The state stays in the bag and the hook takes it — the port-wide reading recorded in [renames.md](../renames.md#renames) and [repeater-relationship.md](repeater-relationship.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope), pinned for this field by a relationship selection saved through `getData()`.
 
 ### The relationship option map is unordered
 

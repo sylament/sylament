@@ -125,7 +125,7 @@ The joined look is support's rule, not this field's.
 This template emits the tree vendor emits — `div.sy-fo-toggle-buttons.sy-btn-group` with `label.sy-btn.sy-btn-group-btn` children — and everything that makes it read as one control (the `grid grid-flow-col`, the shared ring, the first/last corner rounding and the `me-px` seam) comes from [`.sy-btn-group` in support's `button.css`](../support/button.md), which this field's [`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) only adds `w-max` to.
 
 That rule keys off `:nth-child(1 of .sy-btn)` / `:nth-last-child(1 of .sy-btn)` for the end caps and the seams, so **both** halves of the tree are load-bearing: the labels carry `sy-btn`, and they are direct children of the container with only the option `<input>`s between them (which the `of .sy-btn` argument skips).
-Wrapping each option in a `div` the way the default variant does would leave every corner square and every seam missing, with nothing failing anywhere — so `ToggleButtonsTest` asserts the direct-child relation, not just the classes.
+Wrapping each option in a `div` the way the default variant does would leave every corner square and every seam missing, with nothing failing anywhere — so a case asserts the direct-child relation, not just the classes.
 The unstyled `sy-btn-group-btn` is vendor's own hook and carries no rule in either codebase.
 
 ### The `multiple()` arm needs a model that rests at an array
@@ -138,7 +138,7 @@ That function's checkbox branch reads the model's **current** value first and on
 So a multiple field whose state path rests at `null` would collapse its list to a single scalar on the first click and never recover.
 
 It cannot, because `getDefaultStateCasts()` answers `OptionsArrayStateCast()` for a multiple field and that cast's `set()` writes `[]` rather than `null` for blank input (`isNullable` defaults to `false`, which is also why the call needs no argument where [`Select::multiple()`](select.md) passes one explicitly).
-[`LiveToggleButtonsTest`](../../../packages/forms/tests/Integration/LiveToggleButtonsTest.php) asserts that resting shape on the freshly mounted host before it asserts anything about checking.
+A case asserts that resting shape on a freshly mounted live host.
 The repaint half agrees for free: `setValueOnElement()`'s checkbox arm is `value.some(val => val == element.value)` for an array, the same membership test the template renders `checked` from.
 
 ### `inline()` is this field's own property, not the `CanBeInline` trait
@@ -179,7 +179,7 @@ The *only* thing that can tell a chosen option from an unchosen one is CSS readi
 
 Both templates emit the tree that needs — `<input>` immediately followed by `<label class="sy-btn">`, inside a `div.sy-fo-toggle-buttons-btn-ctn` by default and directly under the group when [`grouped()`](#the-grouped-labels-must-stay-direct-children-of-the-group).
 The **adjacency** is what is load-bearing and it is invisible: putting anything between the two, or moving the input after the label the way a plain checkbox row does, leaves every option painted identically with nothing failing anywhere.
-`ToggleButtonsTest` pins `input.sy-fo-toggle-buttons-input + label.sy-btn` in both variants for exactly that reason, beside the direct-child assertion the group arm needs.
+A case pins the input directly followed by its label in both variants for exactly that reason, beside the direct-child assertion the group arm needs.
 
 ## Divergences
 
@@ -208,7 +208,7 @@ The port has no tooltip primitive anywhere — support ships none, and actions' 
 
 The API is unchanged — `tooltips([…])` takes the same map and the same closures — and the behaviour is the browser's: no theming, no HTML, a delay the user's OS picks.
 A `Markup` tooltip is the visible cost: an attribute value is text, so its tags reach the reader as literal `<b>…</b>` characters where Filament's `allowHTML` arm would render them.
-Nothing strips or rewrites them — silently discarding the caller's content would hide the gap rather than show it — and `ToggleButtonsTest` characterizes the literal output so a tooltip primitive has something to change against.
+Nothing strips or rewrites them — silently discarding the caller's content would hide the gap rather than show it — and a case characterizes the literal output so a tooltip primitive has something to change against.
 **Reversible** as a whole: when that primitive lands, this field and actions' button trigger switch together, and neither public surface moves.
 
 ### The variants keep vendor's autofocus and inline asymmetries
@@ -238,7 +238,7 @@ Its `merge()`-based siblings (`TextInput`, `Textarea`, `Select`, `Radio`) give t
 
 The port's templates put `component.getExtraInputAttributes` as the final `attrs()` source, which is later-source-wins, so the **extras win** here as they do on every other field.
 That is the same override [`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose) makes, for the same reason: `extraInputAttributes()` is an escape hatch, and an escape hatch a field can silently outrank is not one.
-The order is the port-wide contract recorded in [`has-extra-input-attributes.md`](has-extra-input-attributes.md#the-extras-beat-the-attributes-the-field-computes), pinned here by `ToggleButtonsTest`'s extra-attributes case, whose `['disabled' => false]` un-disables a `disabled()` field — the assertion that would fail against vendor's order.
+The order is the port-wide contract recorded in [`has-extra-input-attributes.md`](has-extra-input-attributes.md#the-extras-beat-the-attributes-the-field-computes), pinned here by a case whose `['disabled' => false]` un-disables a `disabled()` field — the assertion that would fail against vendor's order.
 
 Nothing about the *rendered* markup differs otherwise: an extra attribute the field does not compute lands identically either way.
 Only a **collision** on an attribute an input computes for itself parts the two.

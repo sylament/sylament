@@ -306,7 +306,7 @@ And `array_flip()` is only a positional trick for producing keys in the sent ord
 
 Ours states that directly: the argument must be a **list** (`array_is_list()`, so a JSON object rather than an array is refused with a `LogicException` naming the argument), each sent key is kept only when `array_key_exists()` finds it in the current state, and the result is `$reordered + $items` — the array union, which keeps the reordered keys in the sent order and appends whatever the client did not mention, in the state's own order.
 An unknown key is dropped rather than invented; an item the client omitted survives rather than vanishing.
-Both arms are pinned by [`RepeaterActionsTest`](../../../packages/forms/tests/Integration/Components/RepeaterActionsTest.php).
+Both arms are pinned.
 The key coercion is PHP's own: a numeric string from the client finds the integer key a positionally keyed map carries, which is what keeps [`fake()`](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) repeaters reorderable.
 
 ### Uuid generation is a mode flag, and `generateUuidUsing(true)` mints a real uuid

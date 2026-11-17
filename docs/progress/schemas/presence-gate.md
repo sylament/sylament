@@ -57,7 +57,7 @@ A marker interface is also the codebase's shape for exactly this (`Contracts\Sta
 They are not.
 [Validation reads the raw host value](../forms/checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live), not `getState()`, and no state cast stands on that path; `IsTrueValidator` and `IsFalseValidator` return early only on `null` and on their own accepted values, never on `''`, so a bag holding `''` for a checkbox path — a tampered live payload, or server code assigning into `$data` — reaches them as `''` and violates.
 
-Leaving them out would make `accepted()` quietly pass on exactly the input it exists to reject, which is why `CheckboxTest`'s `keeps accepted() biting on a raw blank state the presence gate would otherwise skip` pins it.
+Leaving them out would make `accepted()` quietly pass on exactly the input it exists to reject, which is why a case pins `accepted()` refusing a blank string.
 The general rule stands on its own regardless — matching Laravel's `$implicitRules` is the criterion, and per-constraint reachability is not — but here the two agree.
 
 ### null is deliberately not gated, and neither is anything blank that is not a string
@@ -75,7 +75,7 @@ A `Select` with a placeholder submits `''`, and `Choice` is not implicit, so the
 It does **neither**, and the reason is upstream: [`Select::buildValidationConstraints()`](../../../packages/forms/src/Components/Select.php) returns before building any `Choice` when `blank($this->getRawState())`, so a blank select never emits a `Choice` for the gate to filter.
 The guard reads the raw state, so no state cast changes the answer: `''` is blank whatever the select casts it to.
 If that guard is ever relaxed, the gate is what keeps an optional select from failing its own placeholder.
-Pinned by `SelectTest`'s `builds no Choice constraint for the empty string a placeholder submits, so the presence gate finds nothing to skip`, which asserts the empty constraint list rather than just the absent violation — the two are indistinguishable from the error bag alone.
+Pinned by a case that asserts the empty constraint list rather than just the absent violation — the two are indistinguishable from the error bag alone.
 
 ### What each Symfony validator does with the empty string, and why the gate is not defensive
 

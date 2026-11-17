@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
+use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Tests\Fixtures\Forms\RedirectingForm;
+use Sylament\Tests\Fixtures\Forms\SelectBerthForm;
 use Sylament\Tests\Fixtures\Forms\TagListForm;
 use Sylament\Tests\Fixtures\Forms\WithdrawnCardForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
@@ -107,6 +109,14 @@ describe('fillForm()', function (): void {
         $this->createLiveComponent(TagListForm::class)
             ->fillForm(['tags' => [1 => 'twig']])
             ->assertFormSet(['tags' => [1 => 'twig']]);
+    });
+
+    it("writes into a mounted action's form under its own path and leaves the keys it omits alone", function (): void {
+        $this->createLiveComponent(SelectBerthForm::class)
+            ->mountAction(TestAction::make('createOption')->schemaComponent('mooring'))
+            ->fillForm(['pier' => 'North'])
+            ->fillForm(['slot' => 'S1', 'label' => 'Quiet'])
+            ->assertFormSet(['pier' => 'North', 'slot' => 'S1', 'label' => 'Quiet'], 'mountedActionSchema0');
     });
 
     it('empties the form when given no state', function (): void {

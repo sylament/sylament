@@ -46,17 +46,15 @@ trait TestsForms
 
         $state = $this->undotFormState($state, $propertyAccessor);
 
-        if (filled($schemaStatePath)) {
-            $state = $this->undotFormState([(string) $schemaStatePath => $state], $propertyAccessor);
-        }
-
-        foreach ($this->getFormStateWrites($state) as $path => $value) {
+        foreach ($this->getFormStateWrites($state, (string) $schemaStatePath) as $path => $value) {
             $this->set((string) $path, $value);
         }
 
         if (!filled($schemaStatePath)) {
             return $this;
         }
+
+        $state = $this->undotFormState([(string) $schemaStatePath => $state], $propertyAccessor);
 
         $host = $this->getTestedSchemasHost();
 
@@ -242,13 +240,18 @@ trait TestsForms
     /**
      * A non-empty associative array is written key by key, so the keys it leaves out
      * keep their state; anything else is one write, so a list replaces the list it
-     * lands on, an empty one included.
+     * lands on, an empty one included. The prefix is only a path, so a state path
+     * ending at a list index never turns the state it holds into one list write.
      *
      * @param array<mixed> $state
      * @return array<string, mixed>
      */
     private function getFormStateWrites(array $state, string $pathPrefix = ''): array
     {
+        if (($state === []) && ($pathPrefix !== '')) {
+            return [$pathPrefix => $state];
+        }
+
         $writes = [];
 
         foreach ($state as $key => $value) {

@@ -6,7 +6,7 @@ use Sylament\Actions\Testing\TestAction;
 use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Actions\TablelessBulkHost;
-use Sylament\Tests\Fixtures\Entity\CachedBookmark;
+use Sylament\Tests\Fixtures\Entity\CachedLantern;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
@@ -14,7 +14,7 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\RawUuidCrate;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
-use Sylament\Tests\Fixtures\Tables\ByKeyDeletingCachedBookmarkTable;
+use Sylament\Tests\Fixtures\Tables\ByKeyDeletingCachedLanternTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingInvoiceLineTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingInvoiceTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingOrderLineTable;
@@ -147,19 +147,19 @@ describe('the by-key arm', function (): void {
     });
 
     it('evicts what it deletes from the second-level cache', function (): void {
-        $this->seed($gone = new CachedBookmark('Gone'), $kept = new CachedBookmark('Kept'));
+        $this->seed($gone = new CachedLantern('Gone'), $kept = new CachedLantern('Kept'));
 
         $warm = $this->entityManager();
-        $warm->find(CachedBookmark::class, $gone->id);
+        $warm->find(CachedLantern::class, $gone->id);
 
-        $warmed = $warm->getCache()?->containsEntity(CachedBookmark::class, $gone->id);
+        $warmed = $warm->getCache()?->containsEntity(CachedLantern::class, $gone->id);
         $warm->clear();
 
         // One kernel serves every request, so the cache warmed here is the one the delete writes past.
         $client = $this::getContainer()->get('test.client');
         $client->disableReboot();
 
-        $this->createLiveComponent(ByKeyDeletingCachedBookmarkTable::class, client: $client)
+        $this->createLiveComponent(ByKeyDeletingCachedLanternTable::class, client: $client)
             ->selectTableRecords([$gone])
             ->callAction(TestAction::make('delete')->table()->bulk())
             ->assertNotified('Deleted');
@@ -168,8 +168,8 @@ describe('the by-key arm', function (): void {
         $read->clear();
 
         expect($warmed)->toBeTrue()
-            ->and($read->find(CachedBookmark::class, $gone->id))->toBeNull()
-            ->and($read->find(CachedBookmark::class, $kept->id)?->name)->toBe('Kept');
+            ->and($read->find(CachedLantern::class, $gone->id))->toBeNull()
+            ->and($read->find(CachedLantern::class, $kept->id)?->name)->toBe('Kept');
     });
 
     it('reports the rows its override deleted as the successful count', function (): void {

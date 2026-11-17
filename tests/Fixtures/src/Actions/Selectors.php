@@ -7,10 +7,10 @@ namespace Sylament\Tests\Fixtures\Actions;
 /**
  * The bare marker every action trigger carries beside its support primitive's look, and
  * the click wiring the trigger templates emit: the live action binding with the live
- * action and parameters it sends, the modal's client-side dismiss, and the browser event
- * a dispatching trigger names, by the `data-` hooks the controllers read; a group's inline
- * row by its layout class, and the bulk-only marker the table controller reads off a bulk
- * group's dropdown.
+ * action and parameters it sends, the modal's client-side dismiss and the marker of a
+ * closing trigger, and the browser event a dispatching trigger names, by the `data-`
+ * hooks the controllers read; a group's inline row by its layout class, and the
+ * bulk-only marker the table controller reads off a bulk group's dropdown.
  */
 final class Selectors
 {
@@ -19,6 +19,8 @@ final class Selectors
     public const string LIVE_CLICK = '[data-action~="live#action"]';
 
     public const string DISMISS = '[data-action~="sylament--support--modal#dismiss"]';
+
+    public const string CLOSE_MARKER = '[data-sylament-action-close]';
 
     public const string INLINE_GROUP = '.sy-ac-group';
 

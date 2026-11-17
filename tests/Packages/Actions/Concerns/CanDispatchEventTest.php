@@ -18,13 +18,7 @@ describe('payload attributes', function (): void {
             ->and($bare)->toContainElement($selector . Selectors::dispatchedEvent('refreshed') . ':not([data-sylament-action-event-data])')
             ->and($closing)->toContainElement($selector . Selectors::dispatchedEvent('refreshed') . Selectors::CLOSE_MARKER)
             ->and($closing->filter(Selectors::DISMISS))->toHaveCount(0);
-    })->with([
-        'a badge' => [static fn (Action $action): Action => $action->badge(), SupportSelectors::BADGE],
-        'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],
-        'a dropdown item' => [static fn (Action $action): Action => $action->grouped(), SupportSelectors::DROPDOWN_ITEM],
-        'an icon button' => [static fn (Action $action): Action => $action->iconButton(), SupportSelectors::ICON_BUTTON],
-        'a link' => [static fn (Action $action): Action => $action->link(), SupportSelectors::LINK],
-    ]);
+    })->with('trigger looks');
 
     it('dispatches to itself or to the component it names, as its last dispatch call says', function (Closure $look, string $selector): void {
         $event = $selector . Selectors::dispatchedEvent('refreshed');
@@ -35,13 +29,7 @@ describe('payload attributes', function (): void {
             ->toContainElement($event . '[data-sylament-action-dispatch-to="Cart"]:not([data-sylament-action-dispatch-self])')
             ->and($this->renderViewComponent($look(Action::make('refresh')->dispatchTo('Cart', 'refreshed')->dispatch('refreshed'))))
             ->toContainElement($event . ':not([data-sylament-action-dispatch-to]):not([data-sylament-action-dispatch-self])');
-    })->with([
-        'a badge' => [static fn (Action $action): Action => $action->badge(), SupportSelectors::BADGE],
-        'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],
-        'a dropdown item' => [static fn (Action $action): Action => $action->grouped(), SupportSelectors::DROPDOWN_ITEM],
-        'an icon button' => [static fn (Action $action): Action => $action->iconButton(), SupportSelectors::ICON_BUTTON],
-        'a link' => [static fn (Action $action): Action => $action->link(), SupportSelectors::LINK],
-    ]);
+    })->with('trigger looks');
 
     it('dispatches nothing from a disabled icon button', function (): void {
         $render = $this->renderViewComponent(Action::make('refresh')->iconButton()->dispatch('refreshed')->disabled());

@@ -23,13 +23,7 @@ it('binds its click to the live action a string names, and a closure action to m
         ->toContainElement($selector . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'callMountedAction'))
         ->and($this->renderViewComponent($look(Action::make('save')->action(static fn (): null => null))))
         ->toContainElement($selector . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'mountAction') . Selectors::liveParameter('name', 'save'));
-})->with([
-    'a badge' => [static fn (Action $action): Action => $action->badge(), SupportSelectors::BADGE],
-    'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],
-    'a dropdown item' => [static fn (Action $action): Action => $action->grouped(), SupportSelectors::DROPDOWN_ITEM],
-    'an icon button' => [static fn (Action $action): Action => $action->iconButton(), SupportSelectors::ICON_BUTTON],
-    'a link' => [static fn (Action $action): Action => $action->link(), SupportSelectors::LINK],
-]);
+})->with('trigger looks');
 
 it('wires no live click or dispatch when its click handler is switched off or it submits a form, and wires either even for a form submit when switched on', function (Closure $look, string $selector): void {
     $off = $this->renderViewComponent($look(Action::make('save')->liveComponentClickHandlerEnabled(false)));
@@ -46,13 +40,7 @@ it('wires no live click or dispatch when its click handler is switched off or it
         ->toContainElement($selector . '[type="submit"]' . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'mountAction'))
         ->and($this->renderViewComponent($look(Action::make('save')->submit('order-form')->dispatch('saved')->liveComponentClickHandlerEnabled(true))))
         ->toContainElement($selector . '[type="submit"]' . Selectors::dispatchedEvent('saved'));
-})->with([
-    'a badge' => [static fn (Action $action): Action => $action->badge(), SupportSelectors::BADGE],
-    'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],
-    'a dropdown item' => [static fn (Action $action): Action => $action->grouped(), SupportSelectors::DROPDOWN_ITEM],
-    'an icon button' => [static fn (Action $action): Action => $action->iconButton(), SupportSelectors::ICON_BUTTON],
-    'a link' => [static fn (Action $action): Action => $action->link(), SupportSelectors::LINK],
-]);
+})->with('trigger looks');
 
 describe('click precedence', function (): void {
     it('calls the live action a string names over dispatching its event', function (Closure $look, string $selector): void {

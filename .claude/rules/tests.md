@@ -18,6 +18,7 @@ description: Where a root-suite test lives, what kind it is and how it asserts a
 - **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it, and exists only for a rule no tool checks, keeping one case that proves it can fail.
 - **Declare no function in a test file:** a run of one file loads no other test file, so a scan's helper is a static method of a class under `tests/Architecture/` and a test's helper a `TestCase` method, or a static method when it needs no container.
 - **Define an expectation more than one test file uses once, in `tests/Expectations/`** (`toBeRecord()` in `Records.php`), never in a test file: Pest loads that folder in every run before any test, while a test file's `expect()->extend()` exists only in a run that loaded that file.
+- **Define a dataset more than one test file uses once, in its area's `tests/Datasets/<Area>.php`** (`'trigger looks'` in `Actions.php`), for the same reason: Pest loads that folder in every run, and a dataset's name is global.
 
 ## Kinds of test
 

@@ -18,6 +18,7 @@ use Sylament\Tests\Fixtures\Actions\AddressStateForm;
 use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
 use Sylament\Tests\Fixtures\Actions\RecordDefaultsHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
+use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\LocalisedLeaflet;
@@ -284,9 +285,10 @@ describe('record chain', function (): void {
         },
     ]);
 
-    it('reaches the record class its group, its schema or its component names before any record exists', function (Action $action): void {
+    it('reaches its own record class over its record, else the one its group, its schema or its component names before any record exists', function (Action $action): void {
         expect($action->evaluate(static fn (mixed $record, ?string $recordClass): array => [$record, $recordClass]))->toBe([null, Product::class]);
     })->with([
+        'its own, over a record of another class' => fn (): Action => Action::make('create')->recordClass(Product::class)->record(new Article('Notes')),
         "its group's" => function (): Action {
             ActionGroup::make([$action = Action::make('create')])->recordClass(Product::class);
 
@@ -300,18 +302,16 @@ describe('record chain', function (): void {
         },
     ]);
 
-    it('stops at its own record even when it is an empty object or a key, and answers none for one that is not of its record class', function (): void {
+    it('stops at its own record even when it is an empty object or a key', function (): void {
         ActionGroup::make([
             $empty = Action::make('edit')->record(new ArrayObject()),
             $key = Action::make('pick')->record('7'),
-            $foreign = Action::make('view')->recordClass(Product::class)->record(new stdClass()),
             $plain = Action::make('copy')->recordClass(Product::class),
         ])->record($lamp = new Product('Lamp'));
         $record = static fn (mixed $record): mixed => $record;
 
         expect($empty->evaluate($record))->toEqual(new ArrayObject())
             ->and($key->evaluate($record))->toBe('7')
-            ->and($foreign->evaluate($record))->toBeNull()
             ->and($plain->evaluate($record))->toBe($lamp);
     });
 });

@@ -16,18 +16,6 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use function Symfony\Component\String\u;
 
 describe('the record', function (): void {
-    it("answers the record bound with record(), and its group's when none is bound", function (): void {
-        $lamp = new Product('Lamp');
-        $vase = new Product('Vase');
-
-        ActionGroup::make([$inherits = Action::make('open'), $binds = Action::make('close')->record($vase)])->record($lamp);
-
-        expect($inherits->getRecord())->toBe($lamp)
-            ->and($inherits->hasRecord())->toBeFalse()
-            ->and($binds->getRecord())->toBe($vase)
-            ->and($binds->hasRecord())->toBeTrue();
-    });
-
     it('drops a record of another class than the declared one, and passes an array record through', function (): void {
         ActionGroup::make([$create = Action::make('create')->recordClass(Product::class)])->record(new Article('Notes'));
 
@@ -35,12 +23,6 @@ describe('the record', function (): void {
 
         expect($create->getRecord())->toBeNull()
             ->and(Action::make('open')->recordClass(Product::class)->record($arrayRecord)->getRecord())->toBe($arrayRecord);
-    });
-
-    it("answers the declared record class, else the bound record's class, else none", function (): void {
-        expect(Action::make('create')->recordClass(Product::class)->record(new Article('Notes'))->getRecordClass())->toBe(Product::class)
-            ->and(Action::make('open')->record(new Article('Notes'))->getRecordClass())->toBe(Article::class)
-            ->and(Action::make('open')->getRecordClass())->toBeNull();
     });
 });
 

@@ -7,7 +7,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 
 describe('get()', function (): void {
-    it('reads the rows as a map, dropping a blank key and keeping the last of a duplicate', function (): void {
+    it('reads the rows as a map, dropping a blank key and keeping the last of a duplicate, and a state already held as a map as it is', function (): void {
         $host = new RecordMappingHost();
         $schema = $host->mapping(KeyValue::make('pairs'));
         $host->data = ['pairs' => [
@@ -18,6 +18,10 @@ describe('get()', function (): void {
         ]];
 
         expect($schema->getState())->toBe(['pairs' => ['colour' => 'blue', 'size' => 'L']]);
+
+        $host->data = ['pairs' => ['colour' => 'red']];
+
+        expect($schema->getState())->toBe(['pairs' => ['colour' => 'red']]);
     });
 });
 

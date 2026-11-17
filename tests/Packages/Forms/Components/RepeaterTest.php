@@ -1050,6 +1050,23 @@ describe('relationship() decoration and hooks', function (): void {
         'a dotted path whose remainder names an item hook' => ['meta.heading'],
     ]);
 
+    it('refuses a hooked field beneath a repeater without relationship(), in its decoration as it fills and in an item as it saves', function (): void {
+        $manuscript = new Manuscript();
+        $manuscript->setMeta([['heading' => 'One']]);
+
+        $refusal = sprintf('%s declares a relationship hook, but the record path map does not carry it, so the hook could never fire', TextInput::class);
+        $decorated = new RecordMappingHost()->mapping(
+            Repeater::make('meta')->belowContent([TextInput::make('note')->loadStateFromRelationshipsUsing(static fn (): string => 'decoration')])->components([TextInput::make('heading')]),
+        )->record($manuscript);
+        $hooked = new RecordMappingHost()->mapping(
+            Repeater::make('meta')->components([TextInput::make('heading')->saveRelationshipsUsing(static function (): void {
+            })]),
+        )->record($manuscript)->fill($manuscript);
+
+        expect(fn (): Schema => $decorated->fill($manuscript))->toThrow(LogicException::class, $refusal)
+            ->and(fn (): mixed => $hooked->getData())->toThrow(LogicException::class, $refusal);
+    });
+
     it('routes the save hooks of an item a caller hands getData() as it routes a rendered one', function (): void {
         $host = new RecordMappingHost();
         $schema = $host->mapping(
@@ -1367,6 +1384,17 @@ describe('relationship()', function (): void {
     });
 
     describe('the fill and save arms', function (): void {
+        it('fills an item past a field its child does not declare, leaving that field empty', function (): void {
+            $larder = new Larder('Cellar');
+            $larder->addJar(new LarderJar('Plums'));
+            $this->seed($larder);
+            $larder = $this->reload($larder);
+            $host = new RecordMappingHost();
+            $host->mapping(Repeater::make('jars')->relationship()->components([TextInput::make('label'), TextInput::make('confirm')->dehydrated(false)]))->record($larder)->fill($larder);
+
+            expect(array_values($host->data['jars']))->toBe([['label' => 'Plums', 'confirm' => null]]);
+        });
+
         it('fills a date and an enum the item fields cast from the child, so a save that touches neither keeps them', function (): void {
             $larder = new Larder('Cellar');
             $larder->addJar(new LarderJar('Plums', new DateTimeImmutable('2026-05-01'), JarSeal::Wax));

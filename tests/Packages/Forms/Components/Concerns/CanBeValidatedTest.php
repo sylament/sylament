@@ -378,6 +378,7 @@ describe('in()', function (): void {
         'a value a comma string lists' => [fn (): TextInput => TextInput::make('value')->in('a, b'), 'b', true],
         'a value the list leaves out' => [fn (): TextInput => TextInput::make('value')->in([1, StringBackedLetter::B]), '2', false],
         'a list switched off by its condition' => [fn (): TextInput => TextInput::make('value')->in([1], static fn (): bool => false), '2', true],
+        'a list switched off by a false condition' => [fn (): TextInput => TextInput::make('value')->in([1], false), '2', true],
     ]);
 
     it('keeps a null member and the text form of every scalar in the list it builds, once each', function (): void {

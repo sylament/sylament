@@ -4,13 +4,35 @@ declare(strict_types=1);
 
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Actions\Testing\TestAction;
+use Sylament\Forms\Components\TextInput;
+use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\State\Get;
+use Sylament\Schemas\State\Set;
+use Sylament\Support\ArrayRecord;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Enums\Size;
+use Sylament\Tables\Table;
+use Sylament\Tests\Fixtures\Actions\AddressStateForm;
 use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
+use Sylament\Tests\Fixtures\Actions\RecordDefaultsHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
+use Sylament\Tests\Fixtures\Entity\Invoice;
+use Sylament\Tests\Fixtures\Entity\InvoiceLine;
+use Sylament\Tests\Fixtures\Entity\LocalisedLeaflet;
+use Sylament\Tests\Fixtures\Entity\OrderLine;
+use Sylament\Tests\Fixtures\Entity\ParcelWaybill;
+use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Entity\SkuParcel;
+use Sylament\Tests\Fixtures\Forms\RepeaterHost;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Icons\SizedIcon;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Sylament\Tests\Fixtures\Tables\InjectingProductTable;
+use Sylament\Tests\Fixtures\Tables\InvoiceLineTable;
+use Sylament\Tests\Fixtures\Tables\OrderLineTable;
+use Symfony\Component\DomCrawler\Crawler;
 
 describe('trigger rendering', function (): void {
     it('renders each look through its support primitive, a button unless told otherwise, marked as an action', function (Closure $action, string $look): void {
@@ -157,6 +179,219 @@ describe('call()', function (): void {
     it('runs its action with the parameters it is called with and answers what it returns', function (): void {
         expect(Action::make('greet')->action(static fn (string $tone): string => "said {$tone}")->call(['tone' => 'loudly']))->toBe('said loudly');
     });
+
+    it("deselects its table's rows once it ran, when told to", function (): void {
+        $this->seed($lamp = new Product('Lamp'), $vase = new Product('Vase'), new Product('Rug'));
+        $checked = 'input[type="checkbox"][aria-label^="Select/deselect record"][checked]';
+
+        $tester = $this->createLiveComponent(InjectingProductTable::class)->selectTableRecords([$lamp, $vase]);
+
+        expect($tester->render()->crawler()->filter($checked))->toHaveCount(2)
+            ->and($tester->callAction(TestAction::make('tally')->table()->bulk())->render()->crawler()->filter($checked))->toHaveCount(0);
+    });
+});
+
+describe('closure injection', function (): void {
+    it('hands a table row action its table by name and by type, its record and its host', function (): void {
+        $this->seed($lamp = new Product('Lamp'), new Product('Vase'));
+
+        $this->createLiveComponent(InjectingProductTable::class)->callAction(TestAction::make('inspect')->table($lamp));
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['inspect Lamp, its table bound, its host bound']);
+    });
+
+    it('hands an action outside a table no table, by name or by type', function (): void {
+        expect(Action::make('save')->evaluate(static fn (?Table $table, ?Table $grid): array => [$table, $grid]))->toBe([null, null]);
+    });
+
+    it("hands a table's header action the table's record class before any record exists", function (): void {
+        $this->createLiveComponent(InjectingProductTable::class)->callAction(TestAction::make('stock')->table());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['stock ' . Product::class . ' null']);
+    });
+
+    it('hands a bulk action the selected records by name and their query by name and by type', function (): void {
+        $this->seed($lamp = new Product('Lamp'), $vase = new Product('Vase'), new Product('Rug'));
+
+        $this->createLiveComponent(InjectingProductTable::class)
+            ->selectTableRecords([$lamp, $vase])
+            ->callAction(TestAction::make('tally')->table()->bulk());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['tally Lamp and Vase, queried as 2 and 2']);
+    });
+
+    it('resolves the selected-record names as any other parameter unless the action reads the selection, a flag given as a closure included', function (): void {
+        expect(Action::make('save')->evaluate(static fn (?array $records = ['own']): ?array => $records))->toBe(['own'])
+            ->and(fn (): mixed => Action::make('save')->accessSelectedRecords(static fn (): bool => false)->evaluate(static fn (?array $records): ?array => $records))
+            ->toThrow(LogicException::class);
+    });
+
+    it("hands a schema action its state, its schema's state, its schema, and a field it reads and writes by name", function (): void {
+        $tester = $this->createLiveComponent(AddressStateForm::class, ['data' => ['address' => ['street' => 'Main'], 'note' => 'hi']])
+            ->callAction(TestAction::make('peek')->schemaComponent('address'));
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([json_encode([
+            'state' => ['street' => 'Main'],
+            'schemaState' => ['address' => ['street' => 'Main'], 'note' => 'hi first:get'],
+            'schema' => 'form.address',
+            'get' => 'Main',
+        ], JSON_THROW_ON_ERROR)]);
+
+        expect($tester->component()->data['address'])->toBe(['street' => 'Side Street']);
+    });
+
+    it("hands a component's action the component, its own state, and its fields through their casts by type, whatever the parameters are called", function (): void {
+        $tester = $this->createLiveComponent(AddressStateForm::class, ['data' => ['address' => ['street' => 'Main'], 'note' => 'hi']])
+            ->callAction(TestAction::make('stamp')->schemaComponent());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([json_encode([
+            'state' => ['address' => ['street' => 'Main'], 'note' => 'hi'],
+            'schemaComponent' => Section::class,
+            'read' => 'hi first:get',
+        ], JSON_THROW_ON_ERROR)]);
+
+        expect($tester->component()->data['note'])->toBe('stamped first:set');
+    });
+
+    it("hands an extra item action the state of the item it was mounted on, an item keyed by a number included", function (): void {
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('inspect')->schemaComponent('lines'), arguments: ['item' => 1]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['inspect {"name":"Grace"} on lines']);
+    });
+
+    it('refuses $get and $set, by name or by type, to an action outside a schema', function (Closure $closure): void {
+        expect(fn (): mixed => Action::make('save')->evaluate($closure))
+            ->toThrow(LogicException::class, Action::class);
+    })->with([
+        '$get' => [static fn ($get): mixed => $get],
+        '$set' => [static fn ($set): mixed => $set],
+        'a Get' => [static fn (Get $lookup): Get => $lookup],
+        'a Set' => [static fn (Set $write): Set => $write],
+    ]);
+});
+
+describe('record chain', function (): void {
+    it('reaches its own record, else the first its group, its schema, its component or its host has', function (Action $action, Product $record): void {
+        expect($action->evaluate(static fn (mixed $record, ?string $recordClass): array => [$record, $recordClass]))->toEqual([$record, Product::class]);
+    })->with([
+        'its own' => fn (): array => [Action::make('edit')->record($lamp = new Product('Own lamp')), $lamp],
+        "its group's" => function (): array {
+            ActionGroup::make([$action = Action::make('edit')])->record($lamp = new Product('Group lamp'));
+
+            return [$action, $lamp];
+        },
+        "its schema's" => fn (): array => [Action::make('edit')->schemaContainer(new MountedActionsHost()->makeSchema()->record($lamp = new Product('Schema lamp'))), $lamp],
+        "its component's" => function (): array {
+            [$component] = new MountedActionsHost()->makeSchema()->record($lamp = new Product('Component lamp'))->components([TextInput::make('name')])->getComponents();
+
+            return [Action::make('edit')->schemaComponent($component), $lamp];
+        },
+        "its host's" => function (): array {
+            $action = new RecordDefaultsHost()->getAction('defaulted') ?? throw new LogicException('The host has no [defaulted] action.');
+
+            return [$action, $action->getLiveComponent()->getDefaultActionRecord($action)];
+        },
+    ]);
+
+    it('stops at its own record even when it is an empty object, and answers none for one that is not of its record class', function (): void {
+        ActionGroup::make([
+            $empty = Action::make('edit')->record(new ArrayObject()),
+            $foreign = Action::make('view')->recordClass(Product::class)->record(new stdClass()),
+            $plain = Action::make('copy')->recordClass(Product::class),
+        ])->record($lamp = new Product('Lamp'));
+        $record = static fn (mixed $record): mixed => $record;
+
+        expect($empty->evaluate($record))->toEqual(new ArrayObject())
+            ->and($foreign->evaluate($record))->toBeNull()
+            ->and($plain->evaluate($record))->toBe($lamp);
+    });
+});
+
+describe('record labels', function (): void {
+    it("titles a table row's record through its table", function (): void {
+        $this->seed($lamp = new Product('Lamp'), new Product('Vase'));
+
+        expect($this->createLiveComponent(InjectingProductTable::class)->mountAction(TestAction::make('delete')->table($lamp))->render()->crawler())
+            ->toContainElement('.sy-modal-heading', 'Delete Lamp');
+    });
+
+    it("titles a record outside a table by its host's title, else by its host's label for the host's own record class, else by the class", function (string $action, string $heading): void {
+        expect($this->createLiveComponent(RecordDefaultsHost::class)->mountAction($action)->render()->crawler())
+            ->toContainElement('.sy-modal-heading', $heading);
+    })->with([
+        "the host's title" => ['titled', 'Delete The lamp'],
+        "the host's label" => ['labelled', 'Delete stock item'],
+        "the class's label, the host answering none" => ['unlabelled', 'Delete product'],
+        "no title, the host answering an empty one" => ['untitled', 'Delete'],
+    ]);
+});
+
+describe('context', function (): void {
+    it('puts its record key on the wire only where one scalar field is the whole identity, whatever it is called', function (Closure $record, ?array $context): void {
+        $trigger = $this->renderViewComponent(Action::make('edit')->record($record()))->filter(Selectors::TRIGGER);
+
+        expect($trigger->attr('data-live-context-param'))->toBe($context === null ? null : json_encode($context, JSON_THROW_ON_ERROR))
+            ->and($trigger->attr('data-live-name-param'))->toBe('edit');
+    })->with([
+        'a generated id' => [fn (): Closure => static function (): Product {
+            $lamp = new Product('Lamp');
+            $lamp->id = 5;
+
+            return $lamp;
+        }, ['recordKey' => '5']],
+        'a key not called id' => [fn (): Closure => static fn (): SkuParcel => new SkuParcel('AB-1'), ['recordKey' => 'AB-1']],
+        'a key of two scalars, one called id' => [fn (): Closure => static fn (): LocalisedLeaflet => new LocalisedLeaflet(5, 'en'), null],
+        'a key that is an association' => [fn (): Closure => static fn (): ParcelWaybill => new ParcelWaybill(new SkuParcel('AB-1')), null],
+        'an unmapped class' => [fn (): Closure => static fn (): object => new class {
+            public int $id = 7;
+        }, ['recordKey' => '7']],
+        'an array record' => [fn (): Closure => static fn (): array => [ArrayRecord::getKeyName() => 'k1'], ['recordKey' => 'k1']],
+    ]);
+
+    it('puts its schema key on the wire beside its record key, where a modal action it declares carries only the record key', function (): void {
+        $lamp = new Product('Lamp');
+        $lamp->id = 5;
+        [$component] = new MountedActionsHost()->makeSchema()->key('form')->components([TextInput::make('code')])->getComponents();
+        $outer = Action::make('outer')->schemaComponent($component)->record($lamp)->registerModalActions([Action::make('inner')]);
+        $context = fn (Action $action): ?string => $this->renderViewComponent($action)->filter(Selectors::TRIGGER)->attr('data-live-context-param');
+
+        expect($context($outer))->toBe('{"recordKey":"5","schemaComponent":"form.code"}')
+            ->and($context($outer->getModalAction('inner') ?? throw new LogicException('The outer action declares no [inner] action.')))->toBe('{"recordKey":"5"}');
+    });
+
+    it('never puts a record its host supplied by default on the wire', function (): void {
+        $action = new RecordDefaultsHost()->getAction('defaulted') ?? throw new LogicException('The host has no [defaulted] action.');
+
+        expect($action->evaluate(static fn (?Product $record): ?string => $record?->name))->toBe('Lamp')
+            ->and($this->renderViewComponent($action)->filter(Selectors::TRIGGER)->attr('data-live-context-param'))->toBeNull();
+    });
+
+    it('flags a bulk action as one only on a table', function (): void {
+        $this->seed(new Product('Lamp'));
+
+        expect($this->createLiveComponent(InjectingProductTable::class)->render()->crawler()->filter(Selectors::liveParameter('name', 'tally'))->attr('data-live-context-param'))
+            ->toBe('{"table":true,"bulk":true}')
+            ->and($this->renderViewComponent(Action::make('tally')->bulk())->filter(Selectors::TRIGGER)->attr('data-live-context-param'))->toBeNull();
+    });
+
+    it("mounts a table row's action from the key its trigger carries, the table's own for a composite key", function (string $table, object $line, object $sameHead): void {
+        $this->seed($line, $sameHead);
+        $tester = $this->createLiveComponent($table);
+        $key = $tester->component()->getTableRecordKey($line);
+
+        $contexts = $tester->render()->crawler()->filter(Selectors::liveParameter('name', 'delete'))->each(static fn (Crawler $trigger): ?string => $trigger->attr('data-live-context-param'));
+
+        expect($contexts)->toContain(json_encode(['recordKey' => $key, 'table' => true], JSON_THROW_ON_ERROR));
+
+        $tester->call('mountAction', ['name' => 'delete', 'context' => ['recordKey' => $key, 'table' => true]])
+            ->callMountedAction()
+            ->assertCanSeeTableRecords([$sameHead])
+            ->assertCanNotSeeTableRecords([$line]);
+    })->with([
+        'scalar fields' => fn (): array => [OrderLineTable::class, new OrderLine(order: 7, line: 2), new OrderLine(order: 7, line: 3)],
+        'an association plus a scalar' => fn (): array => [InvoiceLineTable::class, new InvoiceLine($seven = new Invoice(7), line: 2), new InvoiceLine($seven, line: 3)],
+    ]);
 });
 
 describe('the mounted modal', function (): void {

@@ -54,7 +54,7 @@ All five trigger templates share one click precedence, the port of `getLivewireC
 `shouldClose()` emits `data-action="sylament--support--modal#dismiss"`, a client-side close, matching Filament's `getAlpineClickHandler()` `close()` arm: the dialog closes in the browser, and the controller's `dismissed` event carries the [`cancelParentActions` round-trip](modals.md#the-stack-is-choreographed-declaratively-not-by-client-events) back to `unmountAction`.
 Dispatching `unmountAction` directly would be correct for a single slot, but it could not express "close this frame *and* cancel back to a named parent", which is per-action state the close chain has to carry.
 
-Pinned by `HasActionTest`'s string cases across the five trigger looks, its click-precedence cases on the button and icon-button looks, and `CanCloseTest`'s close across all five.
+Pinned by the string-action cases across the five trigger looks, the click-precedence cases on the button and icon-button looks, and the close case across all five.
 
 One shape delta among the five templates is deliberate: `Action/IconButton.html.twig` suppresses click wiring for a disabled action as well as a URL-bearing one, where its four siblings emit the binding and lean on the rendered `disabled` attribute.
 That template also expresses the whole precedence as guard expressions rather than the four siblings' `{% if %}` chain, so its three attribute sets (mount, close, dispatch) each restate the arms above them; they read one hoisted `clickWiringSuppressed` flag, and the close and mount sets both read the hoisted `hasEventBinding` flag, so no pair can drift apart.

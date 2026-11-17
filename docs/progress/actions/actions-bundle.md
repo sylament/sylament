@@ -61,7 +61,7 @@ It does not wait on the Exports/Imports subsystem, because the confirmation-moda
 
 `configureComponents()` registers `Action`, `ActionGroup` and every prebuilt action with `->set()`, autowired and autoconfigured.
 A class the bundle does not name falls back to `new $class()` in [`ComponentResolver::instantiate()`](../../../packages/support/src/DependencyInjection/ComponentResolver.php), where every `#[Required]` setter on it (the manager registry a write body persists through, the event dispatcher) silently never runs and nothing errors.
-`SylamentActionsBundleTest` derives the classes from the package root, `Action`, `ActionGroup` and every concrete subclass of either there, and requires the container to hold each one.
+A bundle case derives the classes from the package root, `Action`, `ActionGroup` and every concrete subclass of either there, and requires the container to hold each one.
 A new prebuilt action therefore lands with a line in `configureComponents()`, and that case fails until it does.
 The root suite's kernel registers DoctrineBundle, `SylamentNotificationsBundle` and a session beside the bundle, because a record action's write body persists through the manager registry and sends a titled toast, and `Notification::send()` throws on an instance the container did not build.
 
@@ -73,7 +73,7 @@ Filament calls `->hasViews()` to register its Blade namespace.
 The bundle registers no view namespace: `AbstractBundle::getPath()` returns `packages/actions`, and TwigBundle maps `packages/actions/templates` to `@SylamentActions` by convention.
 That is why [`Action`](../../../packages/actions/src/Action.php) can default `$defaultTemplate` to `self::BUTTON_TEMPLATE` (`'@SylamentActions/partials/Action/Button.html.twig'`) with no explicit Twig path config.
 Same divergence as [forms-bundle.md](../forms/forms-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) and [schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call).
-`SylamentActionsBundleTest` pins it: `@SylamentActions` maps to `packages/actions/templates` with no Twig path configured, and an action renders its trigger partial.
+A bundle case pins it: `@SylamentActions` maps to `packages/actions/templates` with no Twig path configured, and an action renders its trigger partial.
 
 ### The bundle registers a Twig component service, which Filament has no counterpart for
 
@@ -82,7 +82,7 @@ Sylament's [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php) 
 [`configureTwigComponents()`](../../../packages/actions/src/SylamentActionsBundle.php) loads the `Twig/Components/` directory with `->autowire()->autoconfigure()`, and autoconfiguration lets the `#[AsTwigComponent]` attribute supply the tag (ux-twig-component registers it for autoconfiguration), so the attribute is the single source of truth for the component's name and template.
 `Modals` takes the component stack by **service id**, through `#[Autowire(service: 'ux.twig_component.component_stack')]` on its constructor, not by type: ux-twig-component registers no class alias for it, so autowiring by type would fail.
 Registration is unconditional, unlike [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php)'s optional-dependency guard, because `symfony/ux-twig-component` is a hard `require` of this package.
-`ModalsTest` covers it: `<twig:SylamentActions:Modals />` only resolves if the service was registered and tagged.
+A render case covers it: `<twig:SylamentActions:Modals />` only resolves if the service was registered and tagged.
 
 ### The bundle registers a `renderAction()` Twig extension, which Filament has no counterpart for
 

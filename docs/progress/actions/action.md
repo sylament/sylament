@@ -254,7 +254,7 @@ It returns with a custom template surface.
 Filament restores the dispatch trio with `dispatchTo($data['dispatchToComponent'] ?? null, …)`, passing a possible `null` straight into a non-nullable `string $component` parameter, which Laravel tolerates and `declare(strict_types=1)` does not.
 The port guards the arm instead (`$direction === 'to' && is_string($to)`), so a payload claiming direction `to` without a usable component falls through to the `default` arm and dispatches the event **plainly** rather than throwing a `TypeError` mid-render.
 The event and its data still travel; only the targeting is lost.
-Pinned by `ActionTest`'s serialization cases, over a restored payload that names no component.
+Pinned by a serialization case, over a restored payload that names no component.
 
 ### An uncolored badge or link action renders primary, not gray
 
@@ -313,7 +313,7 @@ Filament calls `Event::dispatch(ActionCalling::class, $this)`: Laravel's `parseE
 Symfony's `EventDispatcherInterface::dispatch(object $event, ?string $eventName = null)` requires a real object, so the port constructs one, and its listeners receive what Filament's own class shape implies: [`ActionCalling`](../../../packages/actions/src/Events/ActionCalling.php) / [`ActionCalled`](../../../packages/actions/src/Events/ActionCalled.php), final readonly, one promoted `Action`, one `getAction()`.
 Neither is stoppable or cancellable, as in Filament, and `halt()` / `cancel()` remain the control channel.
 The dispatcher is a nullable `Symfony\Contracts\EventDispatcher\EventDispatcherInterface` on a `#[Required]` setter, the [`EvaluatesClosures` pattern](../support/component.md): an action built with `new` rather than through the container dispatches nothing, and the nullsafe call skips constructing the event at all.
-Covered by `HasLifecycleHooksTest`, an action built with `new` dispatching nothing included.
+Covered by the lifecycle-hook cases, an action built with `new` dispatching nothing included.
 
 The other four hooks (`beforeFormFilled`/`afterFormFilled`, `beforeFormValidated`/`afterFormValidated`) are Filament's, each a stored closure evaluated through `EvaluatesClosures` and a `null` no-op when unset; where the host fires them is [`callMountedAction()`](has-actions.md#callmountedaction-runs-filaments-pipeline-in-filaments-order)'s business.
 
@@ -358,7 +358,7 @@ The default is `BUTTON_TEMPLATE` via `$defaultTemplate`, so `ActionGroup` can pu
 Each shape has its own template under [`partials/Action/`](../../../packages/actions/templates/partials/Action), and each is a thin composition over the support primitive Filament's corresponding `*_VIEW` constant points at: [`Badge`](../support/badge.md), [`Button`](../support/button.md), [`DropdownItem`](../support/dropdown-item.md), [`IconButton`](../support/icon-button.md) and [`Link`](../support/link.md), invoked as `<twig:>` tags.
 Each builds its mount wiring with `stimulus_action('live', 'action', …)` and spreads it into the tag with `{{ ...map }}`, which is byte-equivalent to what `live_action()` emits inline.
 `actions` owns no trigger CSS: the class list on every trigger root is the primitive's, plus the bare `sy-ac` marker the template contributes.
-All five are rendered by `ActionTest`'s trigger cases, one row per look.
+All five are rendered by a trigger case, one row per look.
 `ActionGroup`'s [`GroupedTrigger`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig) composes the same `DropdownItem` primitive, and `->color()` reaches a grouped action and a grouped group, as [`toGroupedHtml()`](../../../vendor/filament/actions/src/Action.php) and [`toGroupedTriggerHtml()`](../../../vendor/filament/actions/src/ActionGroup.php) pass it.
 
 What stays divergent:
@@ -383,7 +383,7 @@ So the divergence is one of wire format, not of what renders.
 Filament resolves a scalable icon *at serialization time*: `$icon instanceof ScalableIcon` takes `getIconForSize($this->getIconSize() ?? IconSize::Medium)`, a size chosen before anyone knows how the action will render, and only a plain `BackedEnum` falls through to `->value`.
 The port inverts those two arms: a `BackedEnum` implementing [`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) is kept **as the enum** (the session PHP-serializes enums, and `fromArray()` admits a `BackedEnum` back through `icon()`), and only a plain enum flattens to its value.
 Resolution then happens where every other icon resolves, in `generateIconHtml()`'s `ScalableIcon` → `BackedEnum` cascade, at the size the trigger template passes, so a scalable icon is size-correct on the serialized path where Filament's is pinned to whatever `iconSize()` said at `toArray()` time.
-Pinned by `ActionTest`'s serialization cases, over a scalable icon.
+Pinned by a serialization case, over a scalable icon.
 
 ### The live-component chain narrows inline instead of through a second getter
 

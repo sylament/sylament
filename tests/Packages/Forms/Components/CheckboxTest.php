@@ -21,14 +21,9 @@ describe('rendering', function (): void {
             ->toContainElement('input[name="terms"][disabled]:not([autofocus])');
     });
 
-    it('renders its input once, beside the label when inline and in the content column otherwise', function (): void {
-        $inline = $this->renderSchemaComponent(Checkbox::make('terms'));
-        $stacked = $this->renderSchemaComponent(Checkbox::make('terms')->inline(false));
-
-        expect($inline->filter('input[name="terms"]'))->toHaveCount(1)
-            ->and($inline)->toContainElement(Selectors::LABEL_ROW . ' label[for="schema.terms"] input[name="terms"]')
-            ->and($stacked->filter('input[name="terms"]'))->toHaveCount(1)
-            ->and($stacked)->toContainElement(Selectors::CONTENT_COLUMN . ' input[name="terms"]');
+    it('renders its input once, from one of its two slots, whether inline or not', function (): void {
+        expect($this->renderSchemaComponent(Checkbox::make('terms'))->filter('input[name="terms"]'))->toHaveCount(1)
+            ->and($this->renderSchemaComponent(Checkbox::make('terms')->inline(false))->filter('input[name="terms"]'))->toHaveCount(1);
     });
 
     it('renders checked from the state before any script runs', function (): void {

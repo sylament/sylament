@@ -73,6 +73,18 @@ class TestAction
     }
 
     /**
+     * @param array<string, mixed> $actualArguments
+     */
+    public function checkArguments(array $actualArguments): bool
+    {
+        if (!($this->arguments instanceof Closure)) {
+            return true;
+        }
+
+        return (bool) ($this->arguments)($actualArguments);
+    }
+
+    /**
      * An object record stays in `recordKey`: its key is minted by the table host,
      * which the tester asks when it sends the action.
      *

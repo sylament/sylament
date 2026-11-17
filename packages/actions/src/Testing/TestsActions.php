@@ -23,8 +23,35 @@ trait TestsActions
     public function mountAction(string|TestAction|array $actions, array $arguments = []): static
     {
         foreach ($this->parseNestedActions($actions, $arguments) as $action) {
-            $this->call('mountAction', $action);
+            $this->call('mountAction', [...$action, 'arguments' => $action['arguments'] ?? []]);
         }
+
+        return $this;
+    }
+
+    public function unmountAction(bool|string|null $cancelParentActions = null): static
+    {
+        $this->call('unmountAction', ['cancelParentActions' => $cancelParentActions]);
+
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function setActionData(array $data): static
+    {
+        $this->fillForm($data);
+
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed>|Closure $data
+     */
+    public function assertActionDataSet(array|Closure $data): static
+    {
+        $this->assertSchemaStateSet($data);
 
         return $this;
     }
@@ -131,12 +158,131 @@ trait TestsActions
     }
 
     /**
+     * With no actions it asserts that any action is mounted. Otherwise the parsed levels
+     * are compared with the end of the mounted stack: each level's name and context, and
+     * its arguments only when the call gave some.
+     *
+     * @param string|TestAction|array<mixed> $actions
+     */
+    public function assertActionMounted(string|TestAction|array $actions = []): static
+    {
+        $mountedActions = $this->getTestedMountedActionFrames();
+
+        if ($actions === []) {
+            Assert::assertNotEquals([], $mountedActions, 'Failed asserting that an action is mounted.');
+
+            return $this;
+        }
+
+        $originalActions = is_array($actions) ? $actions : [$actions];
+        $parsedActions = $this->parseNestedActions($actions, areRelativeToMountedActions: false);
+        $actionNestingIndexOffset = count($mountedActions) - count($parsedActions);
+
+        foreach ($parsedActions as $actionNestingIndex => $action) {
+            $mountedAction = $mountedActions[$actionNestingIndex + $actionNestingIndexOffset] ?? [];
+
+            Assert::assertEquals($action['name'], $mountedAction['name'] ?? null, "Failed asserting that the action [{$action['name']}] is mounted.");
+
+            if (array_key_exists('arguments', $action)) {
+                Assert::assertEquals($action['arguments'], $mountedAction['arguments'] ?? null, "Failed asserting that the action [{$action['name']}] is mounted with the expected arguments.");
+            }
+
+            if (($originalAction = array_shift($originalActions)) instanceof TestAction) {
+                Assert::assertTrue(
+                    $originalAction->checkArguments($this->getTestedMountedActionArguments($mountedAction)),
+                    "Failed asserting that the mounted arguments for the action [{$action['name']}] match the expected arguments.",
+                );
+            }
+
+            Assert::assertEquals($action['context'], $mountedAction['context'] ?? null, "Failed asserting that the action [{$action['name']}] is mounted in the expected context.");
+        }
+
+        return $this;
+    }
+
+    /**
+     * With no actions it asserts that no action is mounted. Otherwise it fails only when
+     * every parsed level matches the end of the mounted stack exactly, as
+     * {@see assertActionMounted()} compares it.
+     *
+     * @param string|TestAction|array<mixed> $actions
+     */
+    public function assertActionNotMounted(string|TestAction|array $actions = []): static
+    {
+        $mountedActions = $this->getTestedMountedActionFrames();
+
+        if ($actions === []) {
+            Assert::assertEquals([], $mountedActions, 'Failed asserting that no action is mounted.');
+
+            return $this;
+        }
+
+        $originalActions = is_array($actions) ? $actions : [$actions];
+        $parsedActions = $this->parseNestedActions($actions, areRelativeToMountedActions: false);
+        $actionNestingIndexOffset = count($mountedActions) - count($parsedActions);
+
+        foreach ($parsedActions as $actionNestingIndex => $action) {
+            $mountedAction = $mountedActions[$actionNestingIndex + $actionNestingIndexOffset] ?? [];
+
+            if (($mountedAction['name'] ?? null) !== $action['name']) {
+                return $this;
+            }
+
+            if (array_key_exists('arguments', $action) && (($mountedAction['arguments'] ?? null) !== $action['arguments'])) {
+                return $this;
+            }
+
+            if (
+                (($originalAction = array_shift($originalActions)) instanceof TestAction)
+                && !$originalAction->checkArguments($this->getTestedMountedActionArguments($mountedAction))
+            ) {
+                return $this;
+            }
+
+            if (($mountedAction['context'] ?? null) !== $action['context']) {
+                return $this;
+            }
+        }
+
+        Assert::fail('Failed asserting that the action is not mounted.');
+    }
+
+    /**
+     * @param string|TestAction|array<mixed> $actions
+     */
+    public function assertActionHalted(string|TestAction|array $actions = []): static
+    {
+        return $this->assertActionMounted($actions);
+    }
+
+    /**
+     * @param array<int|string, string> $keys
+     */
+    public function assertHasActionErrors(array $keys = []): static
+    {
+        $this->assertHasFormErrors($keys);
+
+        return $this;
+    }
+
+    /**
+     * @param array<int|string, string> $keys
+     */
+    public function assertHasNoActionErrors(array $keys = []): static
+    {
+        $this->assertHasNoFormErrors($keys);
+
+        return $this;
+    }
+
+    /**
      * Turns a name, a dotted path, a `TestAction` or a list of either into the
-     * descriptors the host's `mountAction()` takes, one per nesting level.
+     * descriptors the host's `mountAction()` takes, one per nesting level; a level is
+     * given `arguments` only when the call names some, as Filament's is.
      *
      * @param string|TestAction|array<mixed> $actions
      * @param array<string, mixed> $arguments
-     * @return list<array{name: string, arguments: array<mixed>, context: array<mixed>}>
+     * @return list<array{name: string, arguments?: array<mixed>, context: array<mixed>}>
      */
     public function parseNestedActions(string|TestAction|array $actions, array $arguments = [], bool $areRelativeToMountedActions = true): array
     {
@@ -187,7 +333,7 @@ trait TestsActions
 
             $context = $action['context'] ?? [];
 
-            if (!is_array($actionArguments ?? []) || !is_array($context)) {
+            if ((($actionArguments !== null) && !is_array($actionArguments)) || !is_array($context)) {
                 throw new LogicException("The arguments and context of action [{$actionName}] must be arrays.");
             }
 
@@ -197,7 +343,7 @@ trait TestsActions
 
             $parsedActions[] = [
                 'name' => $actionName,
-                'arguments' => $actionArguments ?? [],
+                ...(($actionArguments !== null) ? ['arguments' => $actionArguments] : []),
                 'context' => $context,
             ];
         }
@@ -233,7 +379,7 @@ trait TestsActions
      * hydrated for this read: the descriptors join its mounted stack, and the action
      * exists only when every level resolves.
      *
-     * @param list<array{name: string, arguments: array<mixed>, context: array<mixed>}> $parsedActions
+     * @param list<array{name: string, arguments?: array<mixed>, context: array<mixed>}> $parsedActions
      */
     private function resolveTestedAction(InteractsWithActions $host, array $parsedActions): ?Action
     {
@@ -241,12 +387,66 @@ trait TestsActions
             throw new LogicException(sprintf('The [%s] component keeps no mounted-action stack.', $host::class));
         }
 
-        $path = [...array_values($host->mountedActions), ...$parsedActions];
+        $path = [
+            ...array_values($host->mountedActions),
+            ...array_map(static fn (array $action): array => [...$action, 'arguments' => $action['arguments'] ?? []], $parsedActions),
+        ];
         $host->mountedActions = $path;
 
         $resolvedActions = $host->getMountedActions();
 
         return (count($resolvedActions) === count($path)) ? array_last($resolvedActions) : null;
+    }
+
+    /**
+     * The frames the re-hydrated host keeps, `{name, arguments, context}` each, read raw:
+     * an action's own context is rebuilt on resolution and can differ from the frame.
+     *
+     * @return list<array<mixed>>
+     */
+    private function getTestedMountedActionFrames(): array
+    {
+        $host = $this->getTestedActionsHost();
+
+        if (!property_exists($host, 'mountedActions') || !is_array($host->mountedActions)) {
+            throw new LogicException(sprintf('The [%s] component keeps no mounted-action stack.', $host::class));
+        }
+
+        $frames = [];
+
+        foreach ($host->mountedActions as $frame) {
+            if (!is_array($frame)) {
+                throw new LogicException(sprintf('The [%s] component keeps a mounted-action frame that is not an array.', $host::class));
+            }
+
+            $frames[] = $frame;
+        }
+
+        return $frames;
+    }
+
+    /**
+     * @param array<mixed> $mountedAction
+     * @return array<string, mixed>
+     */
+    private function getTestedMountedActionArguments(array $mountedAction): array
+    {
+        $arguments = $mountedAction['arguments'] ?? [];
+        $namedArguments = [];
+
+        if (!is_array($arguments)) {
+            throw new LogicException('A mounted action frame keeps arguments that are not an array.');
+        }
+
+        foreach ($arguments as $name => $value) {
+            if (!is_string($name)) {
+                throw new LogicException('A mounted action frame keeps arguments that are not named.');
+            }
+
+            $namedArguments[$name] = $value;
+        }
+
+        return $namedArguments;
     }
 
     private function getTestedTableRecordKey(InteractsWithActions $host, object $record): string

@@ -9,7 +9,7 @@ owns:
 
 [`Sylament\Actions\Testing\TestsActions`](../../../packages/actions/src/Testing/TestsActions.php) is a trait on the [`Testable`](testable.md) tester, where Filament's is a Livewire `Testable` mixin.
 An action is named by a string, a dotted path (`'archive.confirm'` nests), a [`TestAction`](test-action.md) or a list of either, and its arguments by name or for every level, as in Filament.
-The sending helpers send the host's own `mountAction()` and `callMountedAction()` live actions; the assertions read the re-hydrated host, the state after the last response.
+The sending helpers send the host's own `mountAction()`, `callMountedAction()` and `unmountAction()` live actions, and the data and error helpers delegate to forms' and schemas' helpers on the mounted action's schema; the assertions read the re-hydrated host, the state after the last response.
 
 ## Surface
 
@@ -19,20 +19,25 @@ The sending helpers send the host's own `mountAction()` and `callMountedAction()
 | [`assertActionExists()` / `assertActionVisible()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-missing-action-is-always-an-assertion-failure) |
 | [`parseNestedActions()` with a name, a `TestAction` or a list of them, and its refusal of a table record on a host that is not a table](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
 | [`callMountedAction()`, and `parseNestedActions()`'s action class-string and table record key](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
-| [`parseNestedActions()`'s dotted path, and the helpers' `$arguments`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#a-dotted-path-and-arguments-wait-for-a-test-that-needs-them) |
-| `unmountAction()` / `setActionData()` / `assertActionDataSet()` / `assertHasActionErrors()` / `assertHasNoActionErrors()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
+| [`parseNestedActions()`'s `$arguments` for every level, and a level given none](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#a-level-carries-arguments-only-when-the-call-gives-some) |
+| [`parseNestedActions()`'s dotted path, and the helpers' `$arguments` keyed by action name](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#a-dotted-path-and-arguments-keyed-by-action-name-wait-for-a-test-that-needs-them) |
+| [`unmountAction()` / `setActionData()` / `assertActionDataSet()` / `assertHasActionErrors()` / `assertHasNoActionErrors()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#unmountactions-cancelparentactions-waits-for-a-test-that-needs-it) |
 | `assertActionDoesNotExist()` / `assertActionHidden()` / `assertActionEnabled()` / `assertActionDisabled()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionHas…()` / `assertActionDoesNotHave…()` (icon, label, colour, URL) / `assertActionShouldOpenUrlInNewTab()` / `assertActionShouldNotOpenUrlInNewTab()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
-| `assertActionMounted()` / `assertActionNotMounted()` / `assertActionHalted()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
+| [`assertActionMounted()` / `assertActionNotMounted()` / `assertActionHalted()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#the-mounted-assertions-compare-the-hosts-raw-frames-from-the-stacks-end) · [diverges](#the-mounted-assertions-name-the-action-they-failed-on) |
 | `assertMountedActionModalSee()` / `assertMountedActionModalDontSee()` / their `…Html` variants / `getMountedActionModalHtml()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionListInOrder()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionHeld()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertActionHalted()`](../README.md#statuses) |
 
 ## Details
 
-### A dotted path and arguments wait for a test that needs them
+### A dotted path and arguments keyed by action name wait for a test that needs them
 
-A dotted path (`'archive.confirm'`) and `$arguments`, keyed by action name or applied to every level, are ported, and no test passes either yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
+A dotted path (`'archive.confirm'`) and `$arguments` keyed by action name are ported, and no test passes either yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
+
+### `unmountAction()`'s `$cancelParentActions` waits for a test that needs it
+
+`unmountAction()` sends `$cancelParentActions` to the host's own `unmountAction()`, and only its default is driven, on a stack of one action; `true`, `false` and a parent action's name differ only on a nested stack, which no test mounts yet.
 
 ## Semantics
 
@@ -41,7 +46,27 @@ A dotted path (`'archive.confirm'`) and `$arguments`, keyed by action name or ap
 `callAction()` asserts the action visible, mounts it, fills its form when given data, and calls it, as Filament's does.
 It stops after mounting, without a failure, when the response redirected, when the mounted stack did not grow by the levels it mounted, or when the last mounted action is not the one named: an action with no modal runs inside `mountAction()` and is unmounted again, so there is nothing left to call.
 
+### A level carries arguments only when the call gives some
+
+`parseNestedActions()` leaves `arguments` out of a level's descriptor when neither the level nor `$arguments` names any, as Filament's does, and `TestAction` leaves them out when its `arguments()` is a closure or unset.
+The sending helpers send a missing key as `[]`, the host's own default, and the assertions resolve it as `[]`.
+So `assertActionMounted('rename')` passes on an action mounted with arguments, and only a call that names arguments compares them.
+
+### The mounted assertions compare the host's raw frames, from the stack's end
+
+`assertActionMounted()`, `assertActionNotMounted()` and `assertActionHalted()`, its alias as in Filament, read the re-hydrated host's `mountedActions` frames, `{name, arguments, context}` each, where Filament's `assertSet('mountedActions.…')` reads Livewire's state.
+They read the frame as the host keeps it, never an action's `getContext()`, which rebuilds a context that can differ from the kept frame.
+With no actions, `assertActionMounted()` asserts that the stack is not empty and `assertActionNotMounted()` that it is.
+Otherwise the parsed levels, never relative to the mounted stack, are lined up with its last frames, and each level's name and context are compared, its arguments when the call gives some, and a `TestAction`'s closure `arguments()` through `checkArguments()` on the frame's arguments.
+`assertActionMounted()` compares loosely, as Livewire's `assertSet()` does, and `assertActionNotMounted()` strictly, failing only when every level matches, as Filament's two do.
+Only an empty array means "no actions", where Filament's `empty()` also reads `''` and `'0'` so.
+
 ## Divergences
+
+### The mounted assertions name the action they failed on
+
+Filament's `assertActionMounted()` fails with Livewire's `assertSet()` message, PHPUnit's bare comparison; here each comparison names the action: `Failed asserting that the action [<name>] is mounted.`, `… is mounted with the expected arguments.`, `… is mounted in the expected context.`, and with no actions `Failed asserting that an action is mounted.` or `Failed asserting that no action is mounted.`
+The closure check and `assertActionNotMounted()` keep Filament's messages.
 
 ### `callAction()` counts the levels it parsed
 

@@ -1243,9 +1243,11 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     /**
      * Whether `getOptions()` enumerates every value the field accepts — the map
-     * of a static `options()` or an enum, or a relationship select that is not
-     * searchable. A searchable relationship select's map is empty or limited by
-     * design, so it is never the truth about a submitted value.
+     * of a static `options()` or an enum, or a relationship select that neither
+     * searches nor ignores its record. A searchable relationship select's map is
+     * empty or limited by design, and an `ignoreRecord:` one leaves out the
+     * bound record a stored self-reference still names, so neither is the truth
+     * about a submitted value.
      */
     protected function hasFullOptionMap(): bool
     {
@@ -1253,7 +1255,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             return false;
         }
 
-        return !$this->hasRelationship() || !$this->isSearchable();
+        return !$this->hasRelationship() || (!$this->isSearchable() && !$this->shouldIgnoreRelationshipRecord);
     }
 
     /**

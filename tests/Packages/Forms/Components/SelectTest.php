@@ -19,6 +19,7 @@ use Sylament\Tests\Fixtures\Entity\BerthMooring;
 use Sylament\Tests\Fixtures\Entity\Garden;
 use Sylament\Tests\Fixtures\Entity\NurseryBench;
 use Sylament\Tests\Fixtures\Entity\Plant;
+use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\Quay;
 use Sylament\Tests\Fixtures\Entity\QuayMooring;
 use Sylament\Tests\Fixtures\Entity\Seedling;
@@ -771,5 +772,27 @@ describe('option actions', function (): void {
         'the owner and a string, the owner no field maps' => [Berth::class, 'cleat', ['slot' => 'S1', 'label' => 'Quiet'], BerthCleat::class, ''],
         'two strings a prePersist callback leaves blank' => [Quay::class, 'mooring', ['pier' => 'North', 'label' => 'Quiet'], QuayMooring::class, ''],
         'a blank key field under validateRecordKey(false)' => [Berth::class, 'unguardedMooring', ['pier' => 'North', 'slot' => '', 'label' => 'Quiet'], BerthMooring::class, ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.'],
+    ]);
+});
+
+describe('ignoreRecord', function (): void {
+    it('validates an untouched selection naming the bound record, as a stored self-parent does, and refuses a key no row holds, searchable or not', function (bool $isSearchable): void {
+        $bud = new PropagatedCutting('Bud');
+        $bud->parent = $bud;
+        $this->seed(new PropagatedCutting('Rose'), $bud);
+        $bud = $this->entityManager()->find(PropagatedCutting::class, $bud->id);
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Select::make('parent')->relationship('parent', 'name', ignoreRecord: true)->searchable($isSearchable))->record($bud);
+        $schema->fill($bud);
+
+        expect($host->data)->toBe(['parent' => (string) $bud->id])
+            ->and($schema->getData()->parent)->toBe($bud);
+
+        $host->data['parent'] = '999999';
+
+        expect(fn (): object => $schema->getData())->toThrow(ValidationException::class);
+    })->with([
+        'a select listing every option' => [false],
+        'a searchable select' => [true],
     ]);
 });

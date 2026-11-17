@@ -67,6 +67,7 @@ One empty-map arm is **not** an accident: `Select::getOptionsFromRelationship()`
 Neither is the truth about a submitted value, and neither reaches the `Choice`: `hasFullOptionMap()` is false for every searchable relationship select, and the [label probe](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) — which fetches the submitted key through the same scoped query — guards it instead.
 So the invariant holds where it matters: a full map is validated as a full map, and a partial one is never validated as if it were full.
 Because `isSearchable()` [defaults to `isMultiple()`](select.md#multiple-forces-the-js-control-and-is-searchable-by-default), a `multiple()` relationship select is on this arm unless it says `preload()`.
+An `ignoreRecord:` select is on the probe arm too, searchable or not, because its map leaves out the bound record that a stored self-reference still names ([why](#ignorerecord-narrows-the-two-option-arms-and-neither-label-arm)).
 
 One consequence worth stating: on either arm the save hook receives an identifier that has already been checked against the target table — through the map or through the probe — by the time it runs.
 Its own "not an identifier" throw is therefore a belt-and-braces guard for a state that reached `getData()` without validation, not the primary defence.
@@ -102,6 +103,8 @@ It is applied at exactly two sites — `getOptionsFromRelationship()` and `getSe
 The asymmetry is load-bearing rather than an oversight of Filament's.
 The two label arms (`getSelectedRecordUsing` and `getOptionLabelsFromRelationship()`) must keep resolving a value that already names the excluded row — legacy data, or a row written before the flag was added — or the control renders no label at all *and* the [`Choice` guard](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) rejects an untouched submission, so a self-parented row could not be saved at all.
 Narrowing the choke point instead would be one line shorter and corrupting.
+For the same reason the flag sends the field to the label probe even when it does not search: a `Choice` over the narrowed map would reject the untouched value too, so `hasFullOptionMap()` is false whenever the flag is on.
+The probe accepts any row the scoped query admits, so a submitted value naming the bound record itself validates as well, exactly as on Filament, whose select always probes; the flag narrows what the control offers, not what validation accepts.
 
 The option memo is bypassed whenever the flag is on, for the same reason a `modifyQueryUsing()` one is: the map is record-dependent, and [`getClone()`](../schemas/component.md) is a shallow clone, so a memoised map would be served to every repeater item that cloned the field.
 

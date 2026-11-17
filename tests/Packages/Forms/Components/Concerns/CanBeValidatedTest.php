@@ -23,6 +23,7 @@ use Sylament\Tests\Fixtures\Entity\Berth;
 use Sylament\Tests\Fixtures\Entity\BerthMooring;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
+use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Trellis;
@@ -143,6 +144,15 @@ describe('isRequiredByRecord()', function (): void {
                 'data.mooring.label' => ['This value should not be blank.'],
                 'data.name' => ['This value should not be blank.'],
             ]);
+        });
+    });
+
+    it('derives against the child a relationship repeater item maps, not against its owner', function (): void {
+        $schema = $this->host->mapping(Repeater::make('jars')->relationship()->components([TextInput::make('label'), TextInput::make('sealedOn')]))->record(new Larder('Pantry'));
+        $this->host->data = ['jars' => ['added' => ['label' => '', 'sealedOn' => '']]];
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.jars.added.label' => ['This value should not be blank.']]);
         });
     });
 

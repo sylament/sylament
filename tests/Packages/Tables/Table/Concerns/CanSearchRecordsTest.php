@@ -90,7 +90,7 @@ describe('the global search', function (): void {
             ->assertCanNotSeeTableRecords([$redLamp, $blueLamp]);
     });
 
-    it("searches the extra columns beside the columns: a name across an association, a closure's expression among a word's matches and a closure's own constraint beside them, skipping a blank member", function (): void {
+    it("searches the extra columns beside the columns: a name across an association, a closure's expression among a word's matches and a closure's own constraint beside them, skipping a blank member, and none once searchable(false) follows", function (): void {
         $acme = new Product('Acme');
         $redLamp = new Larder('Red Lamp');
         $redLamp->supplier = $acme;
@@ -109,6 +109,10 @@ describe('the global search', function (): void {
             ->searchTable('Jug')
             ->assertCanSeeTableRecords([$greenJug])
             ->assertCanNotSeeTableRecords([$blueChair]);
+
+        $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['extras', 'notSearchable']])
+            ->searchTable('Acme')
+            ->assertCanNotSeeTableRecords([$redLamp]);
     });
 });
 

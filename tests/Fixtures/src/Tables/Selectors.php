@@ -180,6 +180,11 @@ final class Selectors
     public const string RECORD_ACTIONS = '.sy-ta-actions';
 
     /**
+     * One value of a text column's cell, a `span` or, in a list, an `li`; its class is its one hook.
+     */
+    public const string TEXT_ITEM = '.sy-ta-text-item';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string

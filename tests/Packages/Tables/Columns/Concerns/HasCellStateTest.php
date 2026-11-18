@@ -88,13 +88,12 @@ describe('its cache', function (): void {
 });
 
 describe('on entities', function (): void {
-    /**
-     * @return array{Larder, Larder, Larder}
-     */
-    $larders = function (): array {
-        $bare = new Larder('Bare');
+    beforeEach(function (): void {
+        $this->bare = new Larder('Bare');
+        $bare = $this->bare;
 
-        $pantry = new Larder('Pantry');
+        $this->pantry = new Larder('Pantry');
+        $pantry = $this->pantry;
         $pantry->supplier = new Product('');
 
         foreach (['a', '', 'b', 'a'] as $position => $label) {
@@ -103,8 +102,8 @@ describe('on entities', function (): void {
 
         $pantry->addBin($pantryBin = new LarderBin('P1'));
         $pantryBin->addNote(new LarderBinNote('dry'));
-
-        $cellar = new Larder('Cellar');
+        $this->cellar = new Larder('Cellar');
+        $cellar = $this->cellar;
         $cellar->supplier = new Product('Acme');
         $cellar->addJar(new LarderJar('cider'));
         $cellar->addBin($cellarBin = new LarderBin('C1'));
@@ -113,12 +112,10 @@ describe('on entities', function (): void {
         $cellarBin->addNote(new LarderBinNote('dark'));
 
         $this->seed($pantry->supplier, $cellar->supplier, $bare, $pantry, $cellar);
+    });
 
-        return [$bare, $pantry, $cellar];
-    };
-
-    it("reads along an entity's associations, a to-one chain as one value, a blank one meeting the default, and a to-many path as its items without blanks", function () use ($larders): void {
-        [$bare, $pantry, $cellar] = $larders->call($this);
+    it("reads along an entity's associations, a to-one chain as one value, a blank one meeting the default, and a to-many path as its items without blanks", function (): void {
+        [$bare, $pantry, $cellar] = [$this->bare, $this->pantry, $this->cellar];
         $crawler = $this->createLiveComponent(LarderStateTable::class)->render()->crawler();
         $jars = static fn (Larder $larder): array => $crawler->filter(Selectors::cell((string) $larder->id, 'jars.label') . ' li')->each(static fn (Crawler $item): string => $item->text());
 
@@ -130,8 +127,8 @@ describe('on entities', function (): void {
             ->and($crawler->filter(Selectors::cell((string) $pantry->id, 'bins.notes.text'))->text())->toBe('dry');
     });
 
-    it('reads a name the entity cannot answer, at any hop, as an empty cell', function () use ($larders): void {
-        [, $pantry] = $larders->call($this);
+    it('reads a name the entity cannot answer, at any hop, as an empty cell', function (): void {
+        $pantry = $this->pantry;
         $crawler = $this->createLiveComponent(LarderStateTable::class)->render()->crawler();
 
         expect($crawler->filter(Selectors::cell((string) $pantry->id, 'name'))->text())->toBe('Pantry')
@@ -139,8 +136,8 @@ describe('on entities', function (): void {
             ->and($crawler->filter(Selectors::cell((string) $pantry->id, 'jars.nonexistent'))->text())->toBe('');
     });
 
-    it('hands a to-many path to its closures as a list on every row that reaches an item, one item included', function () use ($larders): void {
-        [$bare, $pantry, $cellar] = $larders->call($this);
+    it('hands a to-many path to its closures as a list on every row that reaches an item, one item included', function (): void {
+        [$bare, $pantry, $cellar] = [$this->bare, $this->pantry, $this->cellar];
         $crawler = $this->createLiveComponent(LarderStateTable::class)->render()->crawler();
         $shape = static fn (Larder $larder): ?string => $crawler->filter(Selectors::cell((string) $larder->id, 'bins.notes.text'))->attr('data-shape');
 
@@ -149,8 +146,8 @@ describe('on entities', function (): void {
             ->and($shape($bare))->toBe('null');
     });
 
-    it('drops a repeated value from a to-many list when told to', function () use ($larders): void {
-        [, $pantry] = $larders->call($this);
+    it('drops a repeated value from a to-many list when told to', function (): void {
+        $pantry = $this->pantry;
         $jars = fn (bool $distinct): array => $this->createLiveComponent(LarderStateTable::class, ['distinct' => $distinct])->render()->crawler()
             ->filter(Selectors::cell((string) $pantry->id, 'jars.label') . ' li')
             ->each(static fn (Crawler $item): string => $item->text());

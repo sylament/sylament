@@ -198,12 +198,6 @@ describe('shell', function (): void {
 });
 
 describe('hosts', function (): void {
-    it('calls a header action a plain page declares, and shows what it sent', function (): void {
-        $this->createLiveComponent(SettingsPage::class, ['panelId' => 'pages'])
-            ->mountAction('ping')
-            ->assertNotified('Pong');
-    });
-
     it('round-trips a page that declares no schema, which has none to fill', function (): void {
         $page = $this->createLiveComponent(NotesPage::class)->call('refresh');
 

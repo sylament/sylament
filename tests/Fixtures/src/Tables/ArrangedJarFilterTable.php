@@ -44,11 +44,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * case.
  * Each variant configures one thing: `live` filters on each field write, `resetInFooter`
  * moves the reset beside the apply button, `sized` makes the filters panel `30rem` wide and
- * at most `20rem` high, `twoColumns` lays the filters form out in two columns, `customized` relabels
- * the apply and remove-all buttons and gives the trigger and remove-all attributes of their own,
- * `indicatorsHidden` hides the chips, `keepsSelection` keeps the selection through a filter
- * change, `paged` shows two jars a page, and `refiltered` declares a lone `sealed` filter in
- * place of every other.
+ * at most `20rem` high, `wide` gives it the `lg` width token, `twoColumns` lays the filters
+ * form out in two columns, `customized` relabels the apply and remove-all buttons and gives
+ * the trigger and remove-all attributes of their own, `indicatorsHidden` hides the chips,
+ * `keepsSelection` keeps the selection through a filter change, `paged` shows two jars a
+ * page, and `refiltered` declares a lone `sealed` filter in place of every other.
  */
 #[AsLiveComponent(name: 'Tables:ArrangedJarFilterTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class ArrangedJarFilterTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
@@ -119,6 +119,10 @@ class ArrangedJarFilterTable implements InteractsWithActions, InteractsWithSchem
 
         if ($this->has('sized')) {
             $table->filtersFormWidth('30rem')->filtersFormMaxHeight('20rem');
+        }
+
+        if ($this->has('wide')) {
+            $table->filtersFormWidth('lg');
         }
 
         if ($this->has('twoColumns')) {

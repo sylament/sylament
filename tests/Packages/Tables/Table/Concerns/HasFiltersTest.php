@@ -82,6 +82,16 @@ describe('the layouts', function (): void {
             ->and($modal)->toContainElement(Selectors::FILTERS_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('md'));
     });
 
+    it('sizes the filters modal by the width token it is given, and caps it at a CSS length instead', function (string $variant, string $window): void {
+        $crawler = $this->createLiveComponent(ArrangedJarFilterTable::class, ['layout' => 'Modal', 'variants' => [$variant]])->render()->crawler();
+
+        expect($crawler)->toContainElement(Selectors::FILTERS_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . $window . ' h2', 'Filters')
+            ->and($crawler->filter(Selectors::FILTERS_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . '[style*="max-width"]'))->toHaveCount($variant === 'sized' ? 1 : 0);
+    })->with([
+        'a width token' => ['wide', SupportSelectors::modalWidth('lg')],
+        'a CSS length' => ['sized', '[style*="max-width: 30rem"]'],
+    ]);
+
     it('seeds the collapsible panel open only while a filter is active, under a summary whose funnel is no button and carries the count', function (): void {
         $tester = $this->createLiveComponent(ArrangedJarFilterTable::class, ['layout' => 'AboveContentCollapsible']);
         $inactive = $tester->render()->crawler();

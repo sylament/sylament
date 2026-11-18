@@ -63,6 +63,7 @@ The match runs over `getFiltersLayout()` rather than the consumable probe, so a 
 `getFiltersFormWidth()` lacks the match that follows it.
 Filament's falls back to a `Width` case derived from the column count — `2` to `TwoExtraLarge`, `3` to `FourExtraLarge`, `4` to `SixExtraLarge` — and `filtersFormWidth()` takes a `Width` or a string.
 Ours is the plain evaluated string with a `null` default, a width the caller states or does not, so the dropdown falls back to its `20rem` stylesheet width and the modal to `'md'` in the template.
+The string reaches each layout as [the column manager's width does](column-manager.md#the-width-is-a-css-length-or-a-width-value-and-the-columns-to-width-match-is-not-ported): the dropdown takes it as its panel's width, and the modal takes a `Width` value as its size token and caps its window with any other string, a CSS length, as an inline `max-width`.
 [`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php) exists, so nothing blocks the back-fill: it is retyping the property and the setter and porting the column-count match.
 The same deferral is recorded on [the modal's own ladder](../support/modal.md#the-default-width-is-md-not-sm).
 

@@ -194,6 +194,13 @@ describe('the urls it mints', function (): void {
         ]);
     });
 
+    it('fills its own record and parent keys into a URL of its resource, with nothing left to guess', function (): void {
+        $page = ($this->editSeedling)($this->fern)->component();
+
+        expect($page->getResourceUrl('edit', isAbsolute: false, panel: 'nested', shouldGuessMissingParameters: false))->toBe(($this->seedlingUrl)($this->rose, $this->fern))
+            ->and($page->getResourceUrl(isAbsolute: false, panel: 'nested', shouldGuessMissingParameters: false))->toBe("/nested/gardens/{$this->rose->id}/edit");
+    });
+
     it("lands a delete on the parent's page and a create on the new record's nested edit page, its parent keys threaded", function (): void {
         ($this->editSeedling)($this->fern)
             ->mountAction('delete')

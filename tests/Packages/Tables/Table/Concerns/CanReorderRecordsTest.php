@@ -23,7 +23,7 @@ it('opens a reordering mode from its toolbar trigger, where rows drag by a handl
         ->and($browsing->filter(Selectors::reorderHandle($keys[0])))->toHaveCount(0)
         ->and($browsing)->toContainButtons('button.sy-ac', ['Restock', 'Reorder records', 'Rename', 'Rename'])
         ->and($browsing->filter(Selectors::sortTrigger('label')))->toHaveCount(1)
-        ->and($browsing->filter('a' . Selectors::CELL_WRAPPER))->toHaveCount(2)
+        ->and($browsing->filter(Selectors::LINKED_CELL_WRAPPER))->toHaveCount(2)
         ->and($reordering->filter(Selectors::FINISH_REORDERING_TRIGGER . '[data-opens="browsing"] title')->text())->toBe('check')
         ->and($reordering)->toContainElement('[role="status"]', 'Drag and drop the records into order.')
         ->and($reordering)->toContainElement(SupportSelectors::SORTABLE_CONTROLLER . SupportSelectors::sortableAnimationDuration('300') . '[data-action="sylament--support--sortable:end->sylament--tables--table#reorder"]')
@@ -32,7 +32,7 @@ it('opens a reordering mode from its toolbar trigger, where rows drag by a handl
         ->and($reordering->filter(Selectors::reorderHandle($keys[1])))->toHaveCount(1)
         ->and($reordering)->toContainButtons('button.sy-ac', ['Finish reordering records'])
         ->and($reordering->filter(Selectors::sortTrigger('label')))->toHaveCount(0)
-        ->and($reordering->filter('div' . Selectors::CELL_WRAPPER))->toHaveCount(2)
+        ->and($reordering->filter(Selectors::PLAIN_CELL_WRAPPER))->toHaveCount(2)
         ->and($closed->filter(SupportSelectors::SORTABLE_CONTROLLER))->toHaveCount(0)
         ->and($closed->filter(Selectors::REORDER_TRIGGER))->toHaveCount(1);
 });

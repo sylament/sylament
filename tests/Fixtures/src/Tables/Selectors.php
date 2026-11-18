@@ -8,17 +8,17 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 /**
  * The markup tables render, for a test to find: the live host's root carrying its props, the
- * records table, its rows, cells and header cells, a column's root and its content wrapper, the
- * header and toolbar bands with their actions, the search fields and the per-column search row,
- * the selection checkboxes, banner and cells, the filters' trigger, panel, modal, form fields
- * and indicators, the column manager's trigger, dialog, items and controls, the length either
- * modal caps its window at, the grouping settings and a group's header, checkbox and summary
- * row, the summary band and a summarizer's body, the reorder triggers and handles, the editable
- * cells and their errors, and the empty, loading, striped, bulleted and responsive looks; each
- * named by the `sy-ta-` class that is its one hook, by the id the table template gives it under
- * its host id, by its accessible name, or by the Stimulus controller, target, value or live
- * action that wires it or the inline style that sizes it, with a static helper for a family
- * keyed by a record, a column or a value.
+ * records table, its rows, cells and header cells, a column's root and its content wrapper as a
+ * link, a click target or neither, the header and toolbar bands with their actions, the search
+ * fields and the per-column search row, the selection checkboxes, banner and cells, the
+ * filters' trigger, panel, modal, form fields and indicators, the column manager's trigger,
+ * dialog, items and controls, the length either modal caps its window at, the grouping settings
+ * and a group's header, checkbox and summary row, the summary band and a summarizer's body, the
+ * reorder triggers and handles, the editable cells and their errors, and the empty, loading,
+ * striped, bulleted and responsive looks; each named by the `sy-ta-` class that is its one
+ * hook, by the id the table template gives it under its host id, by its accessible name, or by
+ * the Stimulus controller, target, value or live action that wires it or the inline style that
+ * sizes it, with a static helper for a family keyed by a record, a column or a value.
  */
 final class Selectors
 {
@@ -60,6 +60,21 @@ final class Selectors
      * The `<a>`, `<button>` or `<div>` wrapping a column's content inside its cell (inside `cell()`); its class is its one hook.
      */
     public const string CELL_WRAPPER = '.sy-ta-col';
+
+    /**
+     * The wrapper of a cell a URL makes a link, the row's record URL or the column's own.
+     */
+    public const string LINKED_CELL_WRAPPER = 'a' . self::CELL_WRAPPER;
+
+    /**
+     * The wrapper of a cell an action makes a click target, the row's record action or the column's own.
+     */
+    public const string BUTTON_CELL_WRAPPER = 'button' . self::CELL_WRAPPER;
+
+    /**
+     * The wrapper of a cell neither a URL nor an action makes clickable.
+     */
+    public const string PLAIN_CELL_WRAPPER = 'div' . self::CELL_WRAPPER;
 
     /**
      * The table's global search input.

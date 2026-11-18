@@ -160,8 +160,8 @@ describe('the cell', function (): void {
     it('keeps its cell out of the record link a clickable row wraps its other cells in', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'label') . ' a' . Selectors::CELL_WRAPPER . '[href="/larder/north"]')
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' div' . Selectors::CELL_WRAPPER)
-            ->and($crawler->filter(Selectors::cell('north', 'shape') . ' a' . Selectors::CELL_WRAPPER))->toHaveCount(0);
+        expect($crawler)->toContainElement(Selectors::cell('north', 'label') . ' ' . Selectors::LINKED_CELL_WRAPPER . '[href="/larder/north"]')
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::PLAIN_CELL_WRAPPER)
+            ->and($crawler->filter(Selectors::cell('north', 'shape') . ' ' . Selectors::LINKED_CELL_WRAPPER))->toHaveCount(0);
     });
 });

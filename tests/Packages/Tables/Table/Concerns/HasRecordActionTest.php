@@ -14,7 +14,7 @@ it("makes each cell of a record's row a button sending the record action with th
     $button = $this->createLiveComponent(LinkedLarderJarTable::class, ['clickAction' => $recordAction])
         ->render()
         ->crawler()
-        ->filter(Selectors::cell($key, 'label') . ' button' . Selectors::CELL_WRAPPER);
+        ->filter(Selectors::cell($key, 'label') . ' ' . Selectors::BUTTON_CELL_WRAPPER);
 
     expect($button)->toHaveCount(1);
 
@@ -36,5 +36,5 @@ it('makes no button of a cell without a record action or a URL', function (): vo
         ->filter(Selectors::cell((string) $jar->id, 'label'));
 
     expect($cell->filter(Selectors::CELL_WRAPPER))->toHaveCount(1)
-        ->and($cell->filter('button' . Selectors::CELL_WRAPPER . ', a' . Selectors::CELL_WRAPPER))->toHaveCount(0);
+        ->and($cell->filter(Selectors::BUTTON_CELL_WRAPPER . ', ' . Selectors::LINKED_CELL_WRAPPER))->toHaveCount(0);
 });

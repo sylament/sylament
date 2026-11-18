@@ -90,7 +90,7 @@ describe('the row click', function (): void {
     it("links each row to the record's edit page, by its route key, when neither the table nor a row action gives a URL", function (string $uri, Closure $record, string $href): void {
         $this->seed($record());
 
-        expect($this->visit($uri)->filter(TablesSelectors::ROW . ' a' . TablesSelectors::CELL_WRAPPER)->attr('href'))->toBe($href);
+        expect($this->visit($uri)->filter(TablesSelectors::ROW . ' ' . TablesSelectors::LINKED_CELL_WRAPPER)->attr('href'))->toBe($href);
     })->with([
         'a generated id' => ['/admin/articles', static fn (): Article => new Article('Apple'), 'http://localhost/admin/articles/1/edit'],
         'scalar fields' => ['/admin/order-lines', static fn (): OrderLine => new OrderLine(order: 7, line: 2, note: 'First'), 'http://localhost/admin/order-lines/7~2/edit'],
@@ -100,7 +100,7 @@ describe('the row click', function (): void {
     it("links each row to the URL the resource's own table() sets, over the seeded one", function (): void {
         $this->seed($apple = new Article('Apple'));
 
-        expect($this->visit('/list-pages/restamped-articles')->filter(TablesSelectors::ROW . ' a' . TablesSelectors::CELL_WRAPPER)->attr('href'))->toBe("/list-pages/clippings/{$apple->id}");
+        expect($this->visit('/list-pages/restamped-articles')->filter(TablesSelectors::ROW . ' ' . TablesSelectors::LINKED_CELL_WRAPPER)->attr('href'))->toBe("/list-pages/clippings/{$apple->id}");
     });
 
     it('seeds no row URL over one a table configuration sets before the page seeds its own', function (): void {
@@ -108,24 +108,24 @@ describe('the row click', function (): void {
 
         Table::configureUsing(static fn (Table $table): Table => $table->recordUrl(static fn (Article $record): string => "/configured/{$record->id}"));
 
-        expect($this->createLiveComponent(ListArticles::class)->render()->crawler()->filter(TablesSelectors::ROW . ' a' . TablesSelectors::CELL_WRAPPER)->attr('href'))->toBe("/configured/{$apple->id}");
+        expect($this->createLiveComponent(ListArticles::class)->render()->crawler()->filter(TablesSelectors::ROW . ' ' . TablesSelectors::LINKED_CELL_WRAPPER)->attr('href'))->toBe("/configured/{$apple->id}");
     });
 
     it('links each row to the URL of its first visible view or edit action, skipping a hidden one', function (): void {
         $this->seed($apple = new Article('Apple'));
 
-        expect($this->visit('/list-pages/shelf/articles')->filter(TablesSelectors::ROW . ' a' . TablesSelectors::CELL_WRAPPER)->attr('href'))->toBe("/list-pages/edit-elsewhere/{$apple->id}");
+        expect($this->visit('/list-pages/shelf/articles')->filter(TablesSelectors::ROW . ' ' . TablesSelectors::LINKED_CELL_WRAPPER)->attr('href'))->toBe("/list-pages/edit-elsewhere/{$apple->id}");
     });
 
     it('makes each row a button mounting its first visible view or edit action carrying no URL, skipping a hidden one', function (): void {
         $this->seed($apple = new Article('Apple'), $sealed = new Article('Sealed'));
 
         $page = $this->visit('/list-pages/modal-articles');
-        $clickTarget = static fn (Article $article): ?string => $page->filter(TablesSelectors::row((string) $article->id) . ' button' . TablesSelectors::CELL_WRAPPER . ActionsSelectors::LIVE_CLICK)->attr('data-live-name-param');
+        $clickTarget = static fn (Article $article): ?string => $page->filter(TablesSelectors::row((string) $article->id) . ' ' . TablesSelectors::BUTTON_CELL_WRAPPER . ActionsSelectors::LIVE_CLICK)->attr('data-live-name-param');
 
         expect($clickTarget($apple))->toBe('view')
             ->and($clickTarget($sealed))->toBe('edit')
-            ->and($page->filter(TablesSelectors::ROW . ' a' . TablesSelectors::CELL_WRAPPER))->toHaveCount(0);
+            ->and($page->filter(TablesSelectors::ROW . ' ' . TablesSelectors::LINKED_CELL_WRAPPER))->toHaveCount(0);
     });
 });
 

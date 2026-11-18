@@ -82,9 +82,9 @@ describe('the input', function (): void {
     it('keeps its cell out of the record link a clickable row wraps its other cells in', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'label') . ' a' . Selectors::CELL_WRAPPER . '[href="/larder/north"]')
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'name') . ' div' . Selectors::CELL_WRAPPER)
-            ->and($crawler->filter(Selectors::cell('north', 'name') . ' a' . Selectors::CELL_WRAPPER))->toHaveCount(0);
+        expect($crawler)->toContainElement(Selectors::cell('north', 'label') . ' ' . Selectors::LINKED_CELL_WRAPPER . '[href="/larder/north"]')
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::PLAIN_CELL_WRAPPER)
+            ->and($crawler->filter(Selectors::cell('north', 'name') . ' ' . Selectors::LINKED_CELL_WRAPPER))->toHaveCount(0);
     });
 });
 

@@ -15,7 +15,7 @@ it("links every cell of a record's row to the record's URL", function (): void {
     $links = $this->createLiveComponent(LinkedLarderJarTable::class)
         ->render()
         ->crawler()
-        ->filter(Selectors::row((string) $jar->id) . ' a' . Selectors::CELL_WRAPPER);
+        ->filter(Selectors::row((string) $jar->id) . ' ' . Selectors::LINKED_CELL_WRAPPER);
 
     expect($links->each(static fn (Crawler $link): ?string => $link->attr('href')))->toBe(["/jars/{$jar->id}", "/jars/{$jar->id}"]);
 });
@@ -25,9 +25,9 @@ it('links nowhere from a record whose URL is unsafe', function (): void {
 
     $crawler = $this->createLiveComponent(LinkedLarderJarTable::class)->render()->crawler();
 
-    expect($crawler->filter(Selectors::row((string) $safe->id) . ' a' . Selectors::CELL_WRAPPER))->toHaveCount(2)
+    expect($crawler->filter(Selectors::row((string) $safe->id) . ' ' . Selectors::LINKED_CELL_WRAPPER))->toHaveCount(2)
         ->and($crawler->filter(Selectors::row((string) $hazard->id) . ' ' . Selectors::CELL_WRAPPER))->toHaveCount(2)
-        ->and($crawler->filter(Selectors::row((string) $hazard->id) . ' a' . Selectors::CELL_WRAPPER))->toHaveCount(0);
+        ->and($crawler->filter(Selectors::row((string) $hazard->id) . ' ' . Selectors::LINKED_CELL_WRAPPER))->toHaveCount(0);
 });
 
 describe('extra link attributes', function (): void {

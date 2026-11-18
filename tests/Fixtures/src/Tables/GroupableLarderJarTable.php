@@ -25,12 +25,12 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A table of larder jars a user groups by their seal (collapsible), the day they were sealed
- * on, their supplier's name (its heading unprefixed) or their label, sorted by label by
- * default. Each variant configures one thing: the groups (`closureGroups` adds `initial`,
+ * on, their supplier's name (its heading unprefixed), their larder's name, which no column
+ * reads, or their label, sorted by label by default. Each variant configures one thing: the groups (`closureGroups` adds `initial`,
  * keyed by a label's first letter, `titled`, keyed so and titled per record, and two ordered
  * by position, `reordered` through a builder its closure returns and `orderedInPlace` through
  * the one it is handed, each closure recording what it is handed in the {@see HookLog};
- * `described` describes the supplier's group), the default group (`defaultSeal`, one the user
+ * `described` describes the supplier's group from its injections), the default group (`defaultSeal`, one the user
  * can select; `defaultPosition`, one by position the user cannot; `defaultInstance`, a
  * declared one by position labelled `Shelf position`), the settings (`settingsHidden`,
  * `directionHidden`, `dropdownOnDesktop`, `collapsed`, `relabelledTrigger`), the mode
@@ -64,7 +64,8 @@ class GroupableLarderJarTable implements InteractsWithActions, InteractsWithTabl
             Group::make('sealedOn')->date(),
             Group::make('supplier.name')
                 ->titlePrefixedWithLabel(false)
-                ->getDescriptionFromRecordUsing($this->has('described') ? static fn (string $title, LarderJar $record, string $column): string => "{$title} by {$column}, first {$record->label}" : null),
+                ->getDescriptionFromRecordUsing($this->has('described') ? static fn (string $title, LarderJar $record, string $column, InteractsWithTable $liveComponent): string => "{$title} by {$column}, first {$record->label}, grouped by {$liveComponent->getTableGroupingColumn()}" : null),
+            Group::make('larder.name'),
             'label',
         ];
 
@@ -105,7 +106,7 @@ class GroupableLarderJarTable implements InteractsWithActions, InteractsWithTabl
             ->columns([
                 TextColumn::make('label')->sortable()->summarize($this->has('summarized') ? Count::make() : []),
                 TextColumn::make('seal'),
-                TextColumn::make('sealedOn'),
+                TextColumn::make('sealedOn')->date('Y-m-d'),
                 TextColumn::make('supplier.name'),
                 TextColumn::make('position'),
             ])

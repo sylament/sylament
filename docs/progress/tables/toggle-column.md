@@ -24,20 +24,12 @@ It ports Filament's [`Filament\Tables\Columns\ToggleColumn`](../../../vendor/fil
 | [`onIcon()` / `offIcon()` / `getOnIcon()` / `getOffIcon()` / `hasOnIcon()` / `hasOffIcon()`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Forms\Concerns\HasToggleIcons`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | — |
 | [`$template`](../../../packages/tables/src/Columns/ToggleColumn.php) + [the partial it names](../../../packages/tables/templates/partials/ToggleColumn/index.html.twig) | [`ToggleColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | done | — | [diverges](#the-switch-is-a-native-checkbox-so-nothing-binds-a-tabindex) |
 | [`getClientState()` on the root + the `sylament--tables--editable-cell` controller](../../../packages/tables/templates/partials/ToggleColumn/index.html.twig) | [`toggle.js`](../../../vendor/filament/tables/resources/js/components/columns/toggle.js) | done | — | [has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
-| [The refusal chrome — `aria-invalid` and `<p class="sy-ta-cell-error">`](../../../packages/tables/templates/partials/ToggleColumn/index.html.twig) | [`toggle.js`](../../../vendor/filament/tables/resources/js/components/columns/toggle.js) `error` | in progress | — | [detail](#no-test-renders-a-refused-toggle) · [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
+| [The refusal chrome — `aria-invalid` and `<p class="sy-ta-cell-error">`](../../../packages/tables/templates/partials/ToggleColumn/index.html.twig) | [`toggle.js`](../../../vendor/filament/tables/resources/js/components/columns/toggle.js) `error` | done | — | [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | [`sy-inline` and the alignment arms on the root](../../../packages/tables/assets/src/styles/components/toggle-column.css) | [`columns/toggle.css`](../../../vendor/filament/tables/resources/css/columns/toggle.css) | done | — | [color-column.md](color-column.md#the-stacked-on-mobile-rule-has-nothing-to-select) |
 | `wire:loading.attr` / `wire:target` on the control | [`ToggleColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | done | — | [diverges](#the-in-flight-affordance-is-the-controllers-not-a-loading-attribute) |
 | `x-tooltip` for the error bubble | [`ToggleColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | skipped | — | [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | `wire:ignore.self` on the root | [`ToggleColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | skipped | — | [diverges](#the-cell-root-morphs-and-carries-the-state-so-filaments-alpine-plumbing-around-it-has-no-counterpart) |
 | The `x-ref="serverState"` hidden input and the `x-cloak` duplicate switch | [`ToggleColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | skipped | — | [diverges](#the-cell-root-morphs-and-carries-the-state-so-filaments-alpine-plumbing-around-it-has-no-counterpart) |
-
-## Details
-
-### No test renders a refused toggle
-
-The partial renders `aria-invalid="true"` on the control and `<p class="sy-ta-cell-error">` under it whenever `getUpdateStateError()` answers.
-[`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php) renders that branch only through a `TextInputColumn`, and the Integration [`ToggleColumnTest`](../../../packages/tables/tests/Integration/Columns/ToggleColumnTest.php) asserts only that a clean cell carries no `aria-invalid`.
-A test that renders a refused write through this partial is what is missing.
 
 ## Semantics
 

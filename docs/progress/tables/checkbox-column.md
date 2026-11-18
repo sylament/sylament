@@ -23,19 +23,11 @@ It ports Filament's [`Filament\Tables\Columns\CheckboxColumn`](../../../vendor/f
 | [`extraInputAttributes()`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Forms\Concerns\HasExtraInputAttributes`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
 | [`$template`](../../../packages/tables/src/Columns/CheckboxColumn.php) + [the partial it names](../../../packages/tables/templates/partials/CheckboxColumn/index.html.twig) | [`CheckboxColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | done | — | [semantics](#the-skin-is-supports-sy-checkbox-the-one-selection-already-uses) |
 | [`getClientState()` on the root + the `sylament--tables--editable-cell` controller](../../../packages/tables/templates/partials/CheckboxColumn/index.html.twig) | [`checkbox.js`](../../../vendor/filament/tables/resources/js/components/columns/checkbox.js) | done | — | [has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
-| [The refusal chrome — `aria-invalid` and `<p class="sy-ta-cell-error">`](../../../packages/tables/templates/partials/CheckboxColumn/index.html.twig) | [`checkbox.js`](../../../vendor/filament/tables/resources/js/components/columns/checkbox.js) `error` | in progress | — | [detail](#no-test-renders-a-refused-checkbox) · [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
+| [The refusal chrome — `aria-invalid` and `<p class="sy-ta-cell-error">`](../../../packages/tables/templates/partials/CheckboxColumn/index.html.twig) | [`checkbox.js`](../../../vendor/filament/tables/resources/js/components/columns/checkbox.js) `error` | done | — | [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | [`sy-inline` and the alignment arms on the root](../../../packages/tables/assets/src/styles/components/checkbox-column.css) | [`columns/checkbox.css`](../../../vendor/filament/tables/resources/css/columns/checkbox.css) | done | — | [color-column.md](color-column.md#the-stacked-on-mobile-rule-has-nothing-to-select) |
 | `wire:loading.attr` / `wire:target` / `x-bind:disabled` on the control | [`CheckboxColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | done | — | [toggle-column.md](toggle-column.md#the-in-flight-affordance-is-the-controllers-not-a-loading-attribute) |
 | `x-tooltip` for the error bubble | [`CheckboxColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | skipped | — | [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | `wire:ignore.self` on the root and the `x-ref="serverState"` hidden input | [`CheckboxColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | skipped | — | [toggle-column.md](toggle-column.md#the-cell-root-morphs-and-carries-the-state-so-filaments-alpine-plumbing-around-it-has-no-counterpart) |
-
-## Details
-
-### No test renders a refused checkbox
-
-The partial renders `aria-invalid="true"` on the control and `<p class="sy-ta-cell-error">` under it whenever `getUpdateStateError()` answers.
-[`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php) renders that branch only through a `TextInputColumn`, and the Integration [`CheckboxColumnTest`](../../../packages/tables/tests/Integration/Columns/CheckboxColumnTest.php) renders only clean cells.
-A test that renders a refused write through this partial is what is missing.
 
 ## Semantics
 

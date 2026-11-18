@@ -41,7 +41,7 @@ The resource half is `BelongsToParent`, the page half `InteractsWithParentRecord
 | The two route guards — a parameter colliding with `record` or with an ancestor | — | done | — | [diverges](#the-recursion-lives-in-the-loader-and-the-child-must-be-registered-on-the-panel) |
 | [`getUrl()`](../../../packages/panels/src/Resources/Resource.php) — ancestor objects keyed | [`CanGenerateUrls.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php) | done | — | [semantics](#an-ancestor-travels-under-the-name-the-route-spells-and-a-page-already-holds-that-shape) |
 | [`getUrl(shouldGuessMissingParameters:)`](../../../packages/panels/src/Resources/Resource.php) | [`CanGenerateUrls.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php) | done | — | [diverges](#guessing-walks-the-records-own-associations-never-the-request) |
-| [`getIndexUrl()`](../../../packages/panels/src/Resources/Resource.php)'s parent arms | [`CanGenerateUrls.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php) | done | — | [diverges](#the-parent-arms-carry-no-relation-parameter) |
+| [`getIndexUrl()`](../../../packages/panels/src/Resources/Resource.php)'s parent arms | [`CanGenerateUrls.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php) | done | — | [diverges](#the-parent-arms-carry-no-relation-parameter) · [diverges](#a-nested-resources-own-index-keeps-its-parents-key) |
 | [`resolveRecordRouteBinding($key, ?Closure $modifyQuery)`](../../../packages/panels/src/Resources/Resource.php) | [`HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) | done | — | [resource.md](resource.md#the-modifier-may-answer-with-a-different-query-and-refuses-anything-else) |
 | [`$parentRecords`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) — the ancestor keys on the wire | `#[Locked] public ?Model $parentRecord` | done | — | [diverges](#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount) |
 | [`getParentRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) + the stepwise chain resolution | [`InteractsWithParentRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) `resolveParentRecord()` | done | — | [semantics](#the-chain-is-resolved-once-per-request-and-each-step-is-scoped-to-the-one-above-it) |
@@ -250,13 +250,17 @@ Starting from the nearest record object the caller passed, each missing level is
 ### The parent arms carry no `relation` parameter
 
 `getIndexUrl()` on a nested resource answers with the **parent's** page, in Filament's arm order: a page the parent registers under the kebab-cased relationship key (the [`ManageRelatedRecords`](manage-related-records.md) page), else the parent's `view`, else its `edit`, all three carrying the parent record as `record`, else the parent's `index`, which takes no parent key.
-Only a resource no parent lists falls through to an index page of its own, which is why [a nested resource with no index page does not throw](resource.md#a-parentless-resource-with-no-index-page-throws-from-its-first-breadcrumb).
-That fall-through keeps the parent's key, where Filament has already unset it: the resource's own index is mounted under its parent like every page of a nested resource, so without the key no URL can be minted for it.
+Only a resource no parent lists falls through to an index page of its own, which is why [a nested resource with no index page does not throw](resource.md#a-parentless-resource-with-no-index-page-throws-from-its-first-breadcrumb), and that fall-through [keeps the parent's key](#a-nested-resources-own-index-keeps-its-parents-key).
 The three record-carrying arms pass the parent key **only when it is non-null**, where Filament always spreads `'record' => $record`: passing null makes the generator refuse a null parameter, while omitting it makes the generator name `record` as the missing one, which tells a caller what it forgot.
 
 Filament's `view` and `edit` arms also append `'relation' => $relationshipName` to preselect the relation-manager tab through its `#[Url(as: 'relation')]` property.
 Ours omits it although the property **is** [URL-bound](has-relation-managers.md#the-relation-binding-is-the-toolkits-only-static-url-mapping), so the parameter would preselect the tab exactly as Filament's does: it is noise in a URL a user copies, and it pins a tab the reader did not ask for.
 The [unlinked crumb below](#a-crumb-whose-url-the-trail-already-spends-renders-unlinked) is a consequence of that omission.
+
+### A nested resource's own index keeps its parent's key
+
+When the parent resource registers none of the [four parent arms](#the-parent-arms-carry-no-relation-parameter), `getIndexUrl()` falls through to the resource's own index page with the parent's key still among its parameters, where Filament has already unset it.
+The resource's own index is mounted under its parent like every page of a nested resource, so without the key no URL can be minted for it.
 
 ### The chain rides one `LiveProp` of keys, assigned inside `mount()`
 

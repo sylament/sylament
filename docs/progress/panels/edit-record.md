@@ -148,11 +148,11 @@ Filament's record-page concern has no such arm — its `getDefaultActionRecord()
 
 That is coherent in Filament because a create modal on a record page is nearly always a *relationship* create, where the page record is the parent the new row hangs off, and Eloquent's relationship arm reads it as exactly that.
 Our relationship arm exists — `CreateAction::relationship()` ships and a relation manager answers `getDefaultActionRelationship()` — but it hangs off the *table* and the manager, never off an ambient page record, so on the page itself the same default would still be read the only other way it can be: as the record the create is *about*.
-A `CreateAction` seeded with an existing record fills its modal from that record and, on submit, maps state onto it.
-The create modal would silently become an edit of the page's record.
+A `CreateAction` fills its modal blank and builds a new record on submit whatever it is handed, but its modal's schema is bound to the record it is handed.
+Handed the page's record, a `unique()` field would skip it as its own, and the create modal would accept the value the page's record already holds.
 
 Filament's own `ManageRelatedRecords` is the shape borrowed here, and ours ([manage-related-records.md](manage-related-records.md)) and the [relation manager](relation-manager.md) are that shape: each hands a create action the *parent*, deliberately and explicitly, through `getDefaultActionRelationship()`, rather than letting the ambient record stand in.
-On the record page itself `null` stays the honest answer — a create modal there belongs to no record, and the resource's record class (which `getMountedActionSchemaRecord()` still answers) is all the schema needs to build a blank form.
+On the record page itself `null` stays the honest answer — a create modal there belongs to no record, and the resource's record class (the page's default record class, or `getMountedActionSchemaRecord()` for a form-row frame nothing else names) is all the schema needs to build a blank form.
 
 ### `handleRecordUpdate()` takes the mapped record, not the record and an array
 

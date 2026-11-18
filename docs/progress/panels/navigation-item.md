@@ -99,5 +99,5 @@ Those are exactly the three types sylament's own closures hint ([`Page::getNavig
 
 Two things the design deliberately leaves alone.
 A `new`-built item keeps its three properties `null`, the hook returns `null` and the container arm is consulted, so nothing that works outside the container depends on the setter.
-And `NavigationGroup` gets **no** override: its closures have no shipped service-hinting examples, and leaving it bare is what keeps the container arm under test ([`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php) evaluates a `RequestStack` closure on a group, which passes only because the panels test kernel republishes that one alias).
-A consumer hinting a fourth service type still republishes its alias, and that is the case the group test stands in for.
+And `NavigationGroup` gets **no** override: its closures have no shipped service-hinting examples, so a group closure reaches only what the container arm reaches, and one hinting `RequestStack` stays unresolvable until the application publishes that alias.
+A consumer hinting a fourth service type in an item's closure publishes its alias the same way, since the item hands its closures only the three types above.

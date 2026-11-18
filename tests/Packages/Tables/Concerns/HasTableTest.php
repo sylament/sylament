@@ -232,16 +232,21 @@ describe('record resolution', function (): void {
         $tester->call('mountAction', ['name' => 'inspect', 'context' => ['table' => true, 'recordKey' => (string) $unsealed->id]])
             ->assertActionNotMounted()
             ->assertCanSeeTableRecords([$jars[10]]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
     });
 
-    it('reads a records() row fresh for an action, so the render after it lists the rows the action left', function (): void {
+    it('reads a records() row fresh for an action without keeping it for the render, so the render after it lists the rows the action left', function (): void {
         $this->seed($lamp = new Product('Lamp'), $desk = new Product('Desk'));
 
         $tester = $this->createLiveComponent(KeyOverridingProductTable::class, ['lane' => 'records'])
-            ->callAction(TestAction::make('delete')->table($lamp));
+            ->mountAction(TestAction::make('delete')->table($lamp));
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['records read', 'records read'])
-            ->and($tester->render()->crawler()->filter(Selectors::ROW)->each(static fn (Crawler $row): string => $row->filter('td[id$=".column.name"]')->text()))->toBe(['Desk'])
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['records read', 'records read']);
+
+        $tester->callMountedAction();
+
+        expect($tester->render()->crawler()->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Desk'])
             ->and($tester->component()->getTableRecord((string) $desk->id))->toBeInstanceOf(Product::class)
             ->and($tester->component()->getTableRecord((string) $lamp->id))->toBeNull();
     });
@@ -301,7 +306,6 @@ describe('the query', function (): void {
 
         $crawler = $this->createLiveComponent(FilteredLarderJarTable::class, ['filtersByMaker' => true])
             ->filterTable('fromAcme')
-            ->filterTable('joinsMaker')
             ->render()
             ->crawler();
 

@@ -49,7 +49,7 @@ The one thing the narrow shape fixes in place is placement: the managers render 
 
 ### The group arms are not browser-tested for child preservation
 
-The `RelationGroup` arms are covered by the render rig, which renders every child in full; whether a group's embeds keep their state across a parent re-render is only observable in a browser.
+The `RelationGroup` arms are covered through the rendered page, which renders every child in full; whether a group's embeds keep their state across a parent re-render is only observable in a browser.
 The demo registers the single-manager and tabs arms, so those are what a browser pass covers, and the group arms are not.
 
 ## Semantics

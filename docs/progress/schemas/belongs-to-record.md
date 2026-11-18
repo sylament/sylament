@@ -322,7 +322,7 @@ Over the map alone, under an entangled owner a nested field's record-level viola
 So `getRecordPathMap()` is a wrapper over a private `collectRecordPaths()`, which answers the map beside the paths it dropped beneath a subtree owner, computed by the one walk that always computed them, and `getRecordViolationPathTranslator()` builds the translator over both.
 So `plaque.title` lands as `data.plaque.title`, under its field, with no contract member added.
 A class-level violation on the related record names no path inside it and still folds at the owner, which renders nothing, so the host files it at the schema's own path instead, where the page and the modal render it ([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
-The field case is pinned, and, rendered, by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
+The field case is pinned.
 
 ### `loadStateFromRelationships()` is the host's reload after its flush, and takes no parameter
 
@@ -346,7 +346,7 @@ A relationship repeater item keyed by a single natural string key that no `prePe
 The reload then keys the item through `RecordKey::of()`, which refuses the blank component with a `LogicException` after the commit — so the save's own response is the 500, where without the reload it would answer *Saved* and the next request's fill would be the 500, the row written either way.
 `required()` on the key field is the application's guard.
 `EditAction`, `CreateAction` and the option modals unmount on success or refill for create-another, so none needs the reload.
-Pinned, and through the page by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php), a repeater item's and a singular relationship's reset included.
+Pinned, a singular relationship's reset included; a repeater item's reset is unpinned.
 
 ### A missing singular intermediate is constructed from its declared type
 

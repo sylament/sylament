@@ -1,12 +1,12 @@
 # Test infrastructure
 
-The reasoning behind the test rules in `.claude/rules/test-infrastructure.md`, `.claude/rules/test-database.md`, `.claude/rules/legacy-tests.md` and `.claude/rules/doctrine-tests.md`; the rules for writing a test, `.claude/rules/tests.md`, `.claude/rules/test-renders.md` and `.claude/rules/test-scope.md`, are explained in [testing.md](testing.md). `test-database.md` holds the lines that govern only the Doctrine side of the fixture world, its entities, its Doctrine fixtures and the rig, so they load with those files rather than with every fixture. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
+The reasoning behind the test rules in `.claude/rules/test-infrastructure.md`, `.claude/rules/test-database.md` and `.claude/rules/legacy-tests.md`; the rules for writing a test, `.claude/rules/tests.md`, `.claude/rules/test-renders.md` and `.claude/rules/test-scope.md`, are explained in [testing.md](testing.md). `test-database.md` holds the lines that govern only the Doctrine side of the fixture world, its entities, its Doctrine fixtures and the rig, so they load with those files rather than with every fixture. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
 
-Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the per-package suites under `packages/<pkg>/tests/`, each with its own kernel. The first sections describe the root suite, the middle ones the Doctrine rig both kinds share, and the last, under [The per-package suites](#the-per-package-suites), what only those suites need.
+Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the placeholder suites of `infolists` and `widgets` under `packages/<pkg>/tests/`, each with its own kernel and one example test. The first sections describe the root suite and the Doctrine rig it builds on, and the last, under [The hand-built managers](#the-hand-built-managers), the part of the rig only a manager built by hand uses.
 
 ## Why does the root suite have one kernel and one base class?
 
-The per-package suites grew a fixture kernel each, and they disagree: different default disks, a session in some and not others, asset mapper in one, icon directories whose same-named icons differ, live routes prefixed in one kernel only. A test passing on its own package's kernel says nothing about the others. The root suite resolves each conflict once, in `Sylament\Tests\Fixtures\Kernel`, and every test runs against that one world:
+A fixture kernel per package lets the kernels disagree: different default disks, a session in some and not others, asset mapper in one, icon directories whose same-named icons differ, live routes prefixed in one kernel only. A test passing on its own package's kernel says nothing about the others. The root suite resolves each conflict once, in `Sylament\Tests\Fixtures\Kernel`, and every test runs against that one world:
 
 - a `mock_file` session, because a toast is a session flash;
 - asset mapper with an importmap declaring the `app` entrypoint the panels' document layout imports, plus `@TwigBundle/Resources/config/importmap.php`, because TwigBundle registers `importmap()` behind a `willBeAvailable()` check that refuses `symfony/asset-mapper` as a dev-only package beside a production `symfony/twig-bundle`, which is this monorepo's shape and no application's;
@@ -83,7 +83,7 @@ Everything under `tests/` except every `*Test.php` file in it, `tests/Pest.php` 
 
 ## How does the root suite give every test one database?
 
-Every manager the kernel's `doctrine` registry holds, in the test itself or in any request it sends, works on one database, and that database starts each test empty, identity counters included, on SQLite, MySQL and PostgreSQL. The per-package suites give each manager a database of its own, which suits a manager built by hand; the root suite's managers come from DoctrineBundle and a request runs on its own container, so a request has to see what the test seeded.
+Every manager the kernel's `doctrine` registry holds, in the test itself or in any request it sends, works on one database, and that database starts each test empty, identity counters included, on SQLite, MySQL and PostgreSQL. `TestEntityManagers` gives each manager it builds a database of its own, which suits a manager built by hand; the root suite's managers come from DoctrineBundle and a request runs on its own container, so a request has to see what the test seeded.
 
 ### Configuration
 
@@ -142,30 +142,28 @@ A recorder of the suite's own is not needed: DoctrineBundle's profiling already 
 
 ## Why does the Doctrine rig live in the root suite's infrastructure?
 
-One per-package suite runs against Doctrine (`panels`), on a rig that sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suite imports it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed. The per-package base class, `LegacyTestCase`, sits in `tests/Infrastructure/PHPUnit/` for the same reason: panels' `TestCase` extends it, so the legacy suite depends on no other package's tests.
+The Doctrine rig sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, which builds on it; no per-package suite runs against Doctrine. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed. The per-package base class, `LegacyTestCase`, sits in `tests/Infrastructure/PHPUnit/` for the same reason: `infolists`' and `widgets`' `TestCase` extend it, so neither placeholder suite depends on another package's tests.
 
 It is dev-only. The root `tests/` belongs to no package, so none of it ships in a split package, and nothing under any `src/` imports it. Two consequences follow:
 
 - PHPStan analyses them at level max like shipped code, because they sit under `tests/`, whose infrastructure it covers. No file under `packages/*/tests/` is analysed.
 - The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
-The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastructure/Doctrine/<Class>Test.php`), against the world's database, each only for the behaviour the root suite relies on; `TestEntityManagers`, `RecordingMiddleware` and the pool's per-manager databases get no root pin, since only the per-package suites use them.
+The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastructure/Doctrine/<Class>Test.php`), against the world's database, each only for the behaviour the root suite relies on; `TestEntityManagers`, `RecordingMiddleware` and the pool's per-manager databases get no root pin, since the root suite does not use them.
 
 ## What is in the rig?
 
 | Piece | Job |
 |---|---|
-| `TestPlatform` | Reads `SYLAMENT_TEST_DATABASE_URL`: unset or empty means SQLite (in memory for the per-package suites, a file for the root suite), `mysql://` or `postgresql://` (or `pgsql://`) names a server, any other scheme throws. |
+| `TestPlatform` | Reads `SYLAMENT_TEST_DATABASE_URL`: unset or empty means SQLite (in memory for a manager `TestEntityManagers` builds, a file for the root suite), `mysql://` or `postgresql://` (or `pgsql://`) names a server, any other scheme throws. |
 | `TestEntityManagers` | Builds a package's manager. On SQLite it creates the schema in memory; on a server it asks the pool. `createSqlite()` always answers SQLite. It registers custom types once per process and takes an optional configuration callback. |
 | `DatabasePool` | Hands a server test the databases SQLite would give it (below), and the root suite its one database per worker (`prepareWorld()`, `worldName()`). `cleanUpBeforeNextWipe()` queues statements to drop a test's own trigger or helper table. |
 | `DatabasePoolExtension`, `DatabasePoolTestStarted` | The PHPUnit extension and the subscriber it registers, telling the pool where each test starts. Both are inert on SQLite. |
 | `TestDatabase`, `TestDatabaseMiddleware`, `TestDatabaseExtension`, `TestDatabaseTestStarted` | The root suite's one database per test, its preparation on connect, and the extension that publishes its URL and tells it where each test starts (above). |
-| `RecordingMiddleware` (with `RecordingDriver`, `RecordingConnection`, `RecordingStatement`) | Records every statement's SQL for a per-package suite's hand-built manager, so a test can assert what a read costs. `withoutRecording()` suspends it. The root suite counts through DoctrineBundle's profiling instead (above). |
+| `RecordingMiddleware` (with `RecordingDriver`, `RecordingConnection`, `RecordingStatement`) | Records every statement's SQL for a manager `TestEntityManagers` builds by hand, so a test can assert what a read costs. `withoutRecording()` suspends it. The root suite counts through DoctrineBundle's profiling instead (above). |
 | `SqlNormalizer` | Renumbers Doctrine's minted aliases (`s0_` → `a0_`, `t0` → `p0`, result aliases by stem), so a pinned statement survives a Doctrine release that renumbers them. |
 | `DriverValues` | Canonicalises driver values: MySQL and PostgreSQL return `SUM` and `AVG` as decimal strings where SQLite returns numbers. |
 | `FailingWrite` | Makes the (n+1)-th row deleted from an entity's table or a many-to-many's join table, or updated in an entity's table, fail on every platform, through a counter and a trigger, so a test can watch a transaction roll back; a join table has no entity class to name, so it is reached through its owner and association, and an update counts in a table of its own. |
-
-Panels' `tests/Fixtures/Doctrine/EntityManagerFactory` is a thin shim over `TestEntityManagers`: its entity path, its custom types and a `seed()` helper.
 
 ## How does a server run give every test an empty, isolated database?
 
@@ -183,7 +181,7 @@ The pool runs all of this on connections of its own, so none of it reaches a tes
 
 The root suite's database is one more name, `<base>[_<run>]_suite_<TEST_TOKEN or 0>`, built the same way on its first use in a process and wiped before every later test.
 
-The housekeeping connections stay open for the life of the process, one per pool slot. That is why a per-package server run holds many connections at once, why those runs are serial, and why `TEST_TOKEN` and `SYLAMENT_TEST_RUN` keep two processes' databases apart without keeping them inside the server's connection limit.
+The housekeeping connections stay open for the life of the process, one per pool slot. That is why a process whose tests build managers through `TestEntityManagers` holds many connections at once, why server runs are serial, and why `TEST_TOKEN` and `SYLAMENT_TEST_RUN` keep two processes' databases apart without keeping them inside the server's connection limit.
 
 ## How is a database wiped?
 
@@ -206,9 +204,39 @@ A helper that computes the expected value for each platform tends to mirror the 
 
 A skipped test states its platform fact in the skip message, so the skip says why the premise cannot exist there rather than just that it was turned off.
 
-## The per-package suites
+## Which tests render a support Twig component?
 
-What follows describes the suites under `packages/<pkg>/tests/`, each on its own kernel; the root suite's counterparts are in the sections above.
+The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. Each package's tests under `tests/Packages/` render the support components its own templates use, so a change to a support component also runs against those packages' tests.
+
+Which packages reach a component follows whichever package needed it. Derive the current map rather than trusting a written list:
+
+```bash
+for c in packages/support/templates/components/*/; do
+  n=$(basename "$c")
+  echo "$n: $(grep -rlE "SylamentSupport:${n}([ />]|\$)" packages/*/templates tests/Packages \
+    | sed -E 's#packages/([a-z]+)/templates/.*#\1:templates#; s#tests/Packages/([A-Za-z]+)/.*#\1:tests#' | sort -u | tr '\n' ' ')"
+done
+```
+
+A hit under a package's `templates/` means that package's tests render the component. So do the tests of every package that renders that package's templates in turn: `panels` renders tables' `Table` partial and forms' controls.
+
+`InputWrapper` is the case to remember: tables' `TextInputColumn` and `SelectColumn` cells render it directly, and `panels` renders the forms controls that compose it, so a change to it runs against the forms, tables and panels tests alike.
+
+## Why does a test that asserts a toast run as a live request?
+
+A notification is a session flash: `Notification::send()` reads the session off the `RequestStack`, and an in-process call on a host object has no request carrying one, so `callMountedAction()` throws `SessionNotFoundException` before it can toast. A test that asserts a toast, or anything the toast's re-render paints, therefore drives the host through `InteractsWithLiveComponents` (`createLiveComponent()` and `call()`). A case that only checks state stays in-process, which is cheaper.
+
+## Which fixtures carry a composite identifier?
+
+Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `OrderLine` (two scalar fields) and `InvoiceLine` (an association plus a scalar) sit in the shared `tests/Fixtures/src/Entity/`. A new by-key site is tested over both.
+
+Panels' composite cases run over the `admin` panel's `OrderLineResource` and `InvoiceLineResource` where those serve, and otherwise over resources of a non-default panel of their own in `tests/Fixtures/src/Panels/`, because `PanelRegistry::getDefault()` answers the first default panel registered, so a second `default()` would change the panel every page built outside a route answers for.
+
+The codec's own shape battery, with a fixture per supported identifier shape, is described in [record-key.md](../progress/schemas/record-key.md#the-shapes-the-fixtures-pin).
+
+## The hand-built managers
+
+What follows describes the managers `TestEntityManagers` builds by hand and the recorder they carry, which the root suite does not use; its counterparts are in the sections above.
 
 ### Why does a recorder never see a wipe, a schema build or a `PRAGMA`?
 
@@ -217,33 +245,3 @@ What follows describes the suites under `packages/<pkg>/tests/`, each on its own
 - SQLite's `PRAGMA foreign_keys=ON` comes from DBAL's `EnableForeignKeys` middleware. The middleware list is `[EnableForeignKeys, recorder]`, and DBAL wraps the driver in list order, so the recorder is the outer layer. The `PRAGMA` runs on the inner connection during connect, below the recorder.
 
 Keep that order if the list changes: putting the recorder first would record the `PRAGMA` on every SQLite connection.
-
-### Which suites render a support Twig component?
-
-The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. The per-package suite whose kernel registers TwigComponentBundle (`panels`) renders them too, through its own templates and tests, so a change to a support component also runs against that suite.
-
-Which per-package suites reach a component follows whichever package needed it. Derive the current map rather than trusting a written list:
-
-```bash
-for c in packages/support/templates/components/*/; do
-  n=$(basename "$c")
-  echo "$n: $(grep -rlE "SylamentSupport:${n}([ />]|\$)" packages/*/templates packages/*/tests \
-    | sed -E 's#packages/([a-z]+)/(templates|tests)/.*#\1:\2#' | sort -u | tr '\n' ' ')"
-done
-```
-
-A hit under a package's `templates/` means that package's suite renders the component. So does every suite that renders that package's templates in turn: `panels` renders tables' `Table` partial and forms' controls.
-
-`InputWrapper` is the case to remember: tables' `TextInputColumn` and `SelectColumn` cells render it directly, and `panels` renders the forms controls that compose it, so a change to it runs against the root suite and panels' alike.
-
-### Why does a test that asserts a toast run as a live request?
-
-A notification is a session flash: `Notification::send()` reads the session off the `RequestStack`, and an in-process call on a host object has no request carrying one, so `callMountedAction()` throws `SessionNotFoundException` before it can toast. A test that asserts a toast, or anything the toast's re-render paints, therefore drives the host through `InteractsWithLiveComponents` (`createLiveComponent()` and `call()`). A case that only checks state stays in-process, which is cheaper. The live cases disable the kernel reboot between requests, because the fixture database lives in memory on a container service and a reboot would hand the next request a freshly migrated, empty one.
-
-### Which fixtures carry a composite identifier?
-
-Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `OrderLine` (two scalar fields) and `InvoiceLine` (an association plus a scalar) sit in the shared `tests/Fixtures/src/Entity/`. A new by-key site is tested over both.
-
-Panels has a family of its own: `Catalogue`, the single-identifier parent and owner; `Stamp`, that parent association plus a converting `string` code; `Colophon`, one identifier association alone — a single derived identity, the flavour an `isIdentifierComposite` check misses; `Imprint`, two strings seeded with `.`, `/`, a space, `~`, `=` and non-ASCII; and `Edition`, an `id` plus a `locale`. Their resources mount on a non-default `key` panel of their own (`tests/Fixtures/KeyPanelProvider.php`), because the navigation and global-search suites' enumerating assertions name the `admin` and `nest` panels, and a second default panel would reorder the one they resolve.
-
-The codec's own shape battery, with a fixture per supported identifier shape, is described in [record-key.md](../progress/schemas/record-key.md#the-shapes-the-fixtures-pin).

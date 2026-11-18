@@ -104,8 +104,8 @@ Typing the prop to the entity and letting `DoctrineEntityHydrationExtension` car
 The port does not, because a resource page must serve **any** record class, and a `LiveProp`'s type is read off the property at compile time, so there is no type to write on a generic base.
 The key is the one thing every resource can put on the wire, and `Resource::resolveRecordRouteBinding()` already exists to turn it back into a record through the resource's own query — which is also stricter than a `find()`: a record the query scopes out 404s instead of loading.
 
-`packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php` reads the rendered `data-live-props-value` and asserts `record` is the key string, and `CompositeRecordPagesTest` asserts the same of a two-component one.
-Removing the bridge does not fail those two alone: the prop then dehydrates as the resolved **entity**, which the hydrator refuses, so every case that renders a record page goes red with it.
+The rendered `data-live-props-value` is pinned carrying `record` as the key string, over a single identifier and both composite flavours, on the page's GET and after a live request.
+Removing the bridge does not fail that case alone: the prop then dehydrates as the resolved **entity**, which the hydrator refuses, so every case that renders a record page goes red with it.
 
 ### `afterActionCalled()` is not ported, because the delete redirect ends the request first
 

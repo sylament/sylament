@@ -10,10 +10,10 @@ use Doctrine\DBAL\Driver\Middleware;
 
 /**
  * Records the SQL of every statement the connection runs, so a test can assert
- * what a read costs in queries. A per-package suite passes it to its
- * `EntityManagerFactory::create()`; the root suite reads the one DoctrineBundle
- * built for the connection, as `InteractsWithDatabase` does. {@see reset()} it
- * after seeding, so only the statements under test count.
+ * what a read costs in queries. A manager `TestEntityManagers::create()` builds
+ * takes it; the root suite reads the one DoctrineBundle built for the
+ * connection, as `InteractsWithDatabase` does. {@see reset()} it after seeding,
+ * so only the statements under test count.
  */
 final class RecordingMiddleware implements Middleware
 {

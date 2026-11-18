@@ -116,7 +116,7 @@ The tree is invisible to the planner on every platform measured and costs nothin
 Two conversions per component per mint, none for a blank component, which is handed back as it is, and no statement.
 
 Printing the value the record holds in memory is not enough, because for a record the request has just written that is not always the value its row holds.
-Under a type whose writer rewrites what was typed — the panels fixture's `Stamp` code type hands `new/1` back as `NEW/1` — a freshly created record would be keyed `1~new=2F1`, a key [`toIdentifier()`](#a-malformed-key-never-reaches-the-database) refuses, since `new/1` does not print back to itself through that type.
+Under a type whose writer rewrites what was typed — a code type that upper-cases what it stores hands `new/1` back as `NEW/1` — a freshly created record would be keyed `1~new=2F1`, a key [`toIdentifier()`](#a-malformed-key-never-reaches-the-database) refuses, since `new/1` does not print back to itself through that type.
 Two defects follow, and neither depends on the key's width — a **single** assigned identifier under such a type meets both: `CreateRecord`'s redirect lands on a 404 for a record that exists under `1~NEW=2F1`, and a relationship `Select`'s created option is named by a key its option list does not hold, so nothing is selected and the parent's save refuses *"The value you selected is not a valid choice."*.
 Both remedies at the call site were measured and lost: `refresh()` registers a **second** managed instance and leaves the key where it was, and `detach()` plus `find()` costs a `SELECT` and detaches the record the page just created.
 

@@ -85,12 +85,6 @@ Panel pages are safe by construction and not by care: [the shell is not live](#t
 The arrangement that would break it is the mirror image: embedding `Layout` **inside** a live component, which is what the demo's `PanelShellCard` does to show the shell as a showcase card.
 It works there because the card does not re-render; a card that did would watch its switcher's aria state go stale.
 
-### The shell templates' render tests live under `tests/Integration/Twig/`
-
-The repo convention is to mirror `src/` inside each test bucket, but the anonymous shell templates have no `src/` counterpart — they live in `packages/panels/templates/` and are rendered by name.
-The other packages settled it differently: `actions` puts component render tests in `tests/Integration/Components/`.
-Panels renders its templates from `tests/Integration/Twig/`, and the one class-backed component, `Twig\Components\GlobalSearch`, is tested from `tests/Integration/Twig/Components/`, which mirrors its `src/` path.
-
 ## Divergences
 
 ### The shell is Turbo-indifferent and worker-safe

@@ -65,7 +65,7 @@ Closing it needs the component that declared the in-item path, which `HasKeyedIt
 
 Only the filing follows `translateToErrorPath()`.
 The record check asks `translate()` whether a component maps a blank or taken key candidate, so a group entangling the related record still counts as mapping it and the refusal is still raised; it is shown above the form rather than nowhere.
-Pinned, and rendered by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
+Pinned.
 
 ### An unowned violation returns null so the caller folds it at the schema root
 

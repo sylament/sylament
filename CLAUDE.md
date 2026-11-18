@@ -9,13 +9,13 @@ A component's status is its row in the port trail; what to build next is decided
 | Path | Holds |
 | --- | --- |
 | `packages/<pkg>/src/` | `Sylament\<Pkg>\` (PSR-4) |
-| `packages/<pkg>/tests/` | Pest: `Unit/` and `Integration/` mirror `src/` |
+| `packages/<pkg>/tests/` | `infolists`' and `widgets`' placeholder Pest suites, each on its own kernel |
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
 | `tests/Packages/` | each package's tests: `tests/Packages/<Pkg>/` mirrors `packages/<pkg>/src/` |
 | `tests/Fixtures/` | its kernel and per-area fixtures, laid out as a Symfony app: `src/`, `config/`, `templates/`, `assets/` |
-| `tests/Infrastructure/` | the machinery every test shares, and in `{Doctrine,PHPUnit}/` the Doctrine rig the root suite and the old suites share (dev-only) |
+| `tests/Infrastructure/` | the machinery every test shares, and in `{Doctrine,PHPUnit}/` the Doctrine rig and the placeholder suites' base class (dev-only) |
 | `tests/Architecture/` | the scans of the repository's files, the rule hook (`Rules/`) and the port-trail tools (`Trail/`) |
 | `vendor/filament/` | Filament's source: read it before designing anything |
 | `docs/progress/` | the port trail: status and reasoning per component (rules: `.claude/rules/trail.md`) |
@@ -74,10 +74,9 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `colors.md` | `packages/*/src/Colors/**`, `packages/support/src/Twig/Extension/ColorExtension.php` | How a colour is named, how a contrast policy picks its shade, and how policies are registered. |
 | `css.md` | `packages/*/assets/src/styles/**` | How component stylesheets are written, scoped and coloured, and what support's CSS build generates. |
 | `docs.md` | `/docs/progress/**`, `/docs/internals/**` | Where documentation lives, and the rules every docs file follows. |
-| `doctrine-tests.md` | `packages/panels/tests/**` | The database contract and the shim, helpers and fixtures the Doctrine suite builds on the shared rig. |
 | `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
-| `legacy-tests.md` | `packages/*/tests/**` | What a mechanical edit to a per-package Pest suite needs, from its hooks to its kernel registration and fixture wiring. |
+| `legacy-tests.md` | `packages/*/tests/**` | What a mechanical edit to a placeholder per-package Pest suite needs, from its hooks to its base class. |
 | `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `test-database.md` | `/tests/Fixtures/src/Entity/**`, `/tests/Infrastructure/Doctrine/**`, `/tests/Fixtures/src/*/Doctrine/**`, `/tests/Fixtures/config/packages/*.php` | How the root suite prepares its database, where its entities and Doctrine fixtures live, and how it counts statements and cleans up after a server test. |

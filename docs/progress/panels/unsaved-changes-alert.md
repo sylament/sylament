@@ -44,7 +44,7 @@ The trait overrides it with `$this->hasUnsavedDataChangesAlert ?? $this->getPane
 
 The `?bool $hasUnsavedDataChangesAlert` property is for **subclasses of a page that already composes the trait**, Filament's own shape, where `CreateRecord` composes and a user's page sets the property.
 A class that composes the trait *and* redeclares the property with a different default is a PHP fatal at class load ("definition differs and is considered incompatible"), which the test kernel's recursive fixture load turns into a red suite rather than a readable error.
-So a composing page that wants the alert unconditionally overrides the **method**, as [`GuardedSettingsPage`](../../../packages/panels/tests/Fixtures/Pages/GuardedSettingsPage.php) does with a docblock saying why.
+So a composing page that wants the alert unconditionally overrides the **method**, with a docblock saying why.
 
 ### The alert is armed by explicit `rememberData()` calls, because UX has no `mount<Trait>()` hook
 
@@ -59,7 +59,7 @@ The hash is Filament's expression with `str_replace()` in place of the `Str` cha
 
 Both page partials emit `<div class="sy-pa-unsaved-changes" {{ stimulus_controller('sylament--panels--unsaved-changes', {…}) }}></div>` as the last child of the page root, rendered when `this.hasUnsavedDataChangesAlert or this.getPanel.hasUnsavedChangesAlerts`, so the actions-only arm still arms on a page that hosts no `data` at all.
 It is never put on the live root, for the reason [`GlobalSearch` records](global-search.md#the-stimulus-controller-rides-the-inner-element-not-the-live-root): `attrs()` resolves a repeated attribute later-source-wins, so a second `data-controller` there replaces `live` and the whole component stops working with no error.
-`PageRenderTest` pins the sentinel's values **and** the negative: the root's `data-controller` is exactly `live`.
+The sentinel's values are pinned, **and** the negative: the root's `data-controller` is exactly `live`.
 
 The controller reads three values: `savedHash` (the marker, or `''`), `dataModel` (`'data'` when the page arms the data half, `''` otherwise) and `guardActions` (the panel knob).
 
@@ -91,7 +91,7 @@ It re-takes its own baseline when the value **changes**: a live morph re-stamps 
 So a save that returns no redirect, the ordinary `EditRecord::save()`, re-arms the guard against the state it just wrote, and navigating away afterwards prompts nothing.
 
 That is why the marker's *value* never has to be reproducible in the browser, and why the prop can be an opaque md5 that no JavaScript hashes.
-It also means the server must change the hash whenever it saves, which is what `rememberData()`'s position after the write guarantees and what `PageRenderTest`'s *"re-marks the saved data across a save"* case pins.
+It also means the server must change the hash whenever it saves, which is what `rememberData()`'s position after the write guarantees, and which is pinned.
 
 ### The disarm is a `Location` header on the render response
 

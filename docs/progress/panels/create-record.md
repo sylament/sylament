@@ -73,7 +73,7 @@ A key the constructor of a [`makeRecord()`](#the-create-page-builds-its-record-i
 Two consequences are easy to miss.
 **Never `hiddenOn('create')` such a key field**: a taken key is filed under every key field the form maps, and a hidden field renders nowhere, so when every mapped key field is hidden the save is refused with no message at all, and when one half is hidden the message shows under the other half only; a `disabledOn('create')` one shows it under a field the user cannot change.
 **Give such a key a getter or make it public**: the rule sees only a property it can read, so a `private readonly` one with neither is still Symfony's `NoSuchPropertyException`.
-[`MakeRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/MakeRecordTest.php) pins both over a two-field key the constructor sets and lower-cases, and over a nested derived identity whose constructor takes its parent ([below](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone)).
+The rule is pinned over a key the constructor sets and lower-cases, and over a nested derived identity whose constructor takes its parent ([below](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone)); an unreadable key's `NoSuchPropertyException` is pinned at the mapper, and the hidden-field consequence is unpinned.
 
 ### The record joins its parent before the mapping, and leaves it when the create is refused
 
@@ -94,7 +94,7 @@ The record both attach is the one `makeRecord()` built, so a child whose constru
 Each attach writes the child's mapped-by property through the schemas mapper, and on a property no setter can change that write is [left alone when it already holds the same record](../schemas/property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value), compared by identity: `getParentRecord()` answers the one instance the page resolved for the request, so both attaches pass.
 A constructor handed **another** parent is refused by name at the first attach — *Cannot write association …: no setter can change that property, and it already holds another value* — before anything is mapped or persisted, so nothing is saved under either parent; the attach's own identifier guard does not see it first, because it reads only a record the manager already holds.
 A `makeRecord()` that answers the parent record itself, or anything else that is no instance of the resource's record class, is refused before the first attach.
-Pinned by [`MakeRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/MakeRecordTest.php).
+Pinned.
 
 ### A record whose assigned key is still blank after `persist()` is refused before the flush
 
@@ -108,7 +108,7 @@ An empty field dehydrates to null instead, which never gets here: over a nullabl
 A key field over a non-nullable property [is required on its own](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types), so the `InvalidTypeException` arm is reached only on a field that says `required(false)`.
 
 One record cannot be detached: a single derived identity whose target's string key is still `''` flattens to an identity hash of `''`, which Doctrine can neither detach nor remove.
-The page swallows that `ORMInvalidArgumentException` and throws its own message rather than Doctrine's *Entity has no identity, therefore remove from identity map cannot be performed*; the record stays scheduled in the unit of work for the rest of the request, and nothing is written, because nothing flushes after the refusal ([`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php)).
+The page swallows that `ORMInvalidArgumentException` and throws its own message rather than Doctrine's *Entity has no identity, therefore remove from identity map cannot be performed*; the record stays scheduled in the unit of work for the rest of the request, and nothing is written, because nothing flushes after the refusal.
 
 ### Both key reads ask the form's own reader, rebound to the page's manager
 

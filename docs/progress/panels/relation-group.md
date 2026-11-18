@@ -37,7 +37,7 @@ The two setters are additions the public `make()` signature hides; `$label` stay
 
 Reaching that locator at all takes a service definition, and the group gets an explicit one in [`SylamentPanelsBundle::loadExtension()`](../../../packages/panels/src/SylamentPanelsBundle.php) — `->set(RelationGroup::class)->autowire()->autoconfigure()` — rather than a glob, because it is the only `Component` under `Resources/RelationManagers/` (the other two classes there are a live component and a value object).
 Without it `newInstance()` silently falls back to `new`, `EvaluatesClosures::getInvoker()` builds an `Invoker` over an empty `Container`, and every closure the group evaluates — `label()`, `managers()`, the four badge/icon setters, `tab()` — resolves no service at all.
-The panels bundle Integration suite pins the invoker identity.
+That a closure the group evaluates takes a service is pinned.
 
 ### The closure manager list is evaluated; Filament's is returned raw
 

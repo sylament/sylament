@@ -74,10 +74,10 @@ The gap shows only in the band: nothing else reads those methods on a resource p
 | redirect | `redirect($url)` when `getRedirectUrl()` is filled | a `RedirectResponse` when `getRedirectUrl()` is non-null, else `null` |
 
 Re-deriving the order from the method body invites normalising `beforeSave` to sit after the mutator; it fires inside the state read, before it, as in Filament.
-A `Halt` thrown anywhere in the ladder returns `null` and skips every step after it: on the `EditHookedArticle` fixture's `$haltsBeforeSave` arm the hooks that ran are `beforeValidate`, `afterValidate`, `beforeSave`, and the row is untouched.
+A `Halt` thrown anywhere in the ladder returns `null` and skips every step after it: on a halt in `beforeSave` the hooks that ran are `beforeValidate`, `afterValidate`, `beforeSave`, and the row is untouched.
 
 Before the mapping, `save()` binds the form's association reader to the manager the page writes through — a [`withEntityManager()`](../schemas/association-reader.md) clone of whatever reader the form holds — so the changed-, blank- and taken-key passes that end `getData()` read the unit of work and the database the flush writes to, not the container's default manager.
-After the flush, `$schema->loadStateFromRelationships()` — Filament's post-save step, [ported as the host's](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) — keys a relationship repeater's added items by the identifiers the flush gave them, so the next save updates what this one created (`EditRecordRelationshipsTest`).
+After the flush, `$schema->loadStateFromRelationships()` — Filament's post-save step, [ported as the host's](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) — keys a relationship repeater's added items by the identifiers the flush gave them, so the next save updates what this one created.
 
 A save that stays on the page answers `null` from the live action, so the response is the re-rendered component: notifications' `LiveDeliverySubscriber` drains the flash bag during that re-render and dispatches `sylament:notification` as a browser event, which the document outlet's controller shows.
 
@@ -88,7 +88,7 @@ Nothing else in the request may flush, which is why `handleRecordUpdate()` is th
 
 The record's **key** is the one field that does not stay mutated: the record check refuses an edited identifier field and puts the stored value back, so even a flush later in the request has no key to write ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)).
 Without that, a composite or assigned key would re-key the row and strand the page's record prop until the next request 404ed, a taken one would close the entity manager, and an IDENTITY one would report *Saved* while Doctrine dropped the edit.
-[`EditRecordChangedKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordChangedKeyTest.php) and `CompositeRecordPagesTest`'s key-edit case pin it.
+Pinned on the page over both composite flavours, and one tier down at the record check.
 
 ### The edit page's own edit modal is the page form itself
 
@@ -100,7 +100,7 @@ The cost, and it is Filament's too: **the modal's own submit writes nothing.**
 An embed carries no state of its own, so the action's schema — bound to `mountedActionsData.0` — is empty, and `EditAction`'s write maps that empty array onto the record before reporting success.
 The typing is real, because it went straight into the page's `data`; it is the page's own **Save** that persists it.
 A header `EditAction` on an edit page is therefore a magnified view of the form already on the page rather than a second way to save it, which is what Filament's resolver makes it.
-`EditRecordTest` pins exactly that sequence, so the day the behaviour changes it changes visibly.
+That sequence is pinned, so the day the behaviour changes it changes visibly.
 
 The second cost, also Filament's: **while the modal is open, the page carries the form's ids twice.**
 One schema rendered in two places emits one set of ids in two places — on `EditArticle` with the modal mounted, the document holds `id="form.title"` and `id="form.slug"` twice each, and `label[for="form.title"]` twice.
@@ -125,7 +125,7 @@ The nullable return type is Filament's, and the override point is unchanged — 
 The exception-as-predicate returns with authorization and is not emulated meanwhile.
 The create page's `getRedirectUrl(): string` is **not** nullable, matching Filament: a create always goes somewhere.
 
-The visible half of this is that a successful save returns `null` from the `#[LiveAction]`, so the response is the re-rendered component rather than a redirect — which is what lets notifications' `LiveDeliverySubscriber` dispatch the toast as a browser event on the same round trip (`EditRecordTest`).
+The visible half of this is that a successful save returns `null` from the `#[LiveAction]`, so the response is the re-rendered component rather than a redirect — which is what lets notifications' `LiveDeliverySubscriber` dispatch the toast as a browser event on the same round trip.
 The create page's redirect takes the other delivery path, the flash bag drained by the document's outlet.
 
 ### The document title of an edit page carries the record label, not the record title

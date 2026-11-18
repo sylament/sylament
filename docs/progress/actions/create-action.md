@@ -69,7 +69,7 @@ A relation-scoped create whose form maps the relationship's own association (a p
 The attach after the mapping makes the relationship win, so the record lands under the owner the relationship names, which is Filament's outcome too.
 But the record check ran while the form's pick still stood, so the taken-key lookup asked about the **picked** owner: a key free under the relationship's owner and taken under the pick is refused as *"This value is already used."*, and the converse, free under the pick and taken under the relationship's owner, passes the check and meets the database's constraint at the flush, which follows from the order and is unpinned.
 It is a misconfiguration, because the relationship already supplies the field, and refusing it by name would mean inspecting the form for an association the mapping names.
-Pinned by a relationship-arm case and, on a nested create page, by panels' [`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php).
+Pinned by a relationship-arm case.
 
 ### A key the modal leaves blank is refused by name after `persist()`
 
@@ -86,7 +86,7 @@ Doctrine makes one exception to the detach.
 A record whose whole key flattens to `''` (a single derived identity whose target's single string key is still `''`) is filed under an identity hash of `''`, which Doctrine can neither detach nor remove, the shape [`ReplicateAction` meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) too.
 There the `detach()` raises Doctrine's *Entity has no identity, therefore remove from identity map cannot be performed* in place of the named refusal; the action catches it and throws the named refusal all the same.
 Nothing is written, because nothing flushes after the refusal, but that record stays scheduled for the rest of the request.
-Pinned by a blank-key case over a single derived identity whose target's key is still `''`; panels' create page catches the same refusal, pinned by its [`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php).
+Pinned by a blank-key case over a single derived identity whose target's key is still `''`; panels' create page catches the same refusal, pinned by a case of its own.
 
 A key component still **null** never reaches the read: Doctrine's `AssignedGenerator` refuses it inside `persist()` with its own `EntityMissingAssignedId` (*Entity of type … is missing an assigned ID for field '…'*), once every `prePersist` filler has run, and the action lets that refusal through unchanged.
 On the relationship arm the record is already in a many-to-many owner's collection by then, and left there it would fail a later flush in the same request on *A new entity was found through the relationship*.

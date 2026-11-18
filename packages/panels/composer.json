@@ -31,10 +31,5 @@
         "psr-4": {
             "Sylament\\Panels\\": "src/"
         }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Sylament\\Panels\\Tests\\": "tests/"
-        }
     }
 }

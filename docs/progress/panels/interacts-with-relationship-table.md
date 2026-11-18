@@ -64,7 +64,7 @@ Naming it once is what keeps a tab label and a band label from drifting apart; t
 ### The related arms delegate, and the no-related arm is the identity
 
 `form()` and `infolist()` hand the schema to the related resource's own method when one is named, and otherwise **return the schema untouched**, which is the identity a subclass override replaces.
-A host with no related resource therefore mounts an action modal on the host's own `form()` override, or on an empty schema when it declares none: it does not error, and `ManageRelatedRecordsTest` pins that arm because no shipped page reaches it.
+A host with no related resource therefore mounts an action modal on the host's own `form()` override, or on an empty schema when it declares none: it does not error, and the empty-schema arm is pinned because no shipped page reaches it.
 
 ## Divergences
 
@@ -107,7 +107,7 @@ The guess flag is passed too (Filament-exact), which only helps a deeper chain.
 And the owner is matched against the related resource's parent record class with `instanceof`, not a class-name compare, so a Doctrine proxy or a subclassed entity still matches; an exact compare would drop the parameter silently and turn the URL into a missing-parameter exception.
 
 The owner is merged only when the related resource actually nests under a resource speaking for the owner.
-A related resource nesting under **nothing** is handed no owner at all (its URLs are flat, pinned by a fixture that has no parent), and a related resource nesting under a **different** parent than the owner gets none either — so its create URL raises Symfony's `MissingMandatoryParametersException` rather than answering null.
+A related resource nesting under **nothing** is handed no owner at all (its URLs are flat, which is pinned), and a related resource nesting under a **different** parent than the owner gets none either — so its create URL raises Symfony's `MissingMandatoryParametersException` rather than answering null.
 Filament has the identical hole (it passes no owner anywhere), so this is inventoried rather than fixed: the honest answer needs the caller to say which record fills the foreign parameter, which nothing in the tier knows.
 
 ### Both seeding probes clone the action, where vendor clones in one of four

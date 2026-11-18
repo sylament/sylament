@@ -112,7 +112,7 @@ The [unknown-key no-op](#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that
 
 The second load is the one with no Filament counterpart: [`getTabsSchema()`](#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) calls `loadDefaultActiveTab()` again at render time.
 It is a guard rather than a duplicate, and it exists because two paths reach a render with a null key that no mount hook will see.
-A client can blank the property (it is writable, and the strip is what writes it); and a host can begin declaring tabs on a **hydration**, where no `#[PostMount]` runs at all — the fixture `ListNotes` does exactly that behind a flag.
+A client can blank the property (it is writable, and the strip is what writes it); and a host can begin declaring tabs on a **hydration**, where no `#[PostMount]` runs at all; a case pins each.
 Either way the strip would render with no tab selected, so the invariant is *a host with tabs never renders the strip with a null active tab*, and the render seam is the only place left to enforce it.
 
 **Residual, recorded rather than fixed:** the render-time heal is **DOM-only**.

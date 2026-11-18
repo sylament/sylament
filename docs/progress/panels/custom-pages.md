@@ -148,7 +148,7 @@ It is also why `getPanel()` can only live on `Pages\Page` itself and never on a 
 `#[PostHydrate(priority: 20)] stampPanelRequestAttribute()` writes the page's `panelId` back onto the current request.
 Twenty is not decorative: actions' `afterMountedActionsHydrated()` runs at **10** and re-resolves every mounted action, rebuilding the header list and minting the URLs inside it.
 UX orders higher priorities first, so the stamp must precede it or those URLs answer for the default panel.
-`PageRenderTest`'s *"stamps the panel before a mounted action rebuilds the header, not after"* is the falsifiable form of that sentence: it mounts and calls an action on the non-default **probe** panel and reads the header link's `href` off the response.
+The falsifiable form of that sentence is pinned: a case mounts an action on a page opened in a non-default panel, calls the page and reads the header link's `href` off the response.
 
 The prop is minted by the getter its dehydration read runs (`$this->panelId ??= $this->currentPanel?->get()?->getId()`) rather than in a mount, because a page's `mount()` signature is the page's own and the base has none.
 That closes the page half of the [multi-panel URL divergence](resource.md#url-generation-inside-a-live-action-resolves-the-panel-the-page-was-opened-in); a nested live component's own request stays open.
@@ -196,7 +196,7 @@ Four things the shape depends on:
 - **`getRecordTitle()` is the only pre-mount-safe title reader.**
   `PageController` reads `getTitle()` off an **un-mounted** page for the document `<title>`, so a `getTitle()` override that calls `getRecord()` 404s every GET of the page, [the trap the edit page's own guard exists for](edit-record.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
 - **The body is either a `content()` override or a child template.**
-  The fixture [`PreviewProbePage`](../../../packages/panels/tests/Fixtures/Resources/Pages/PreviewProbePage.php) takes the template route, extending the base chrome and filling `{% block content %}` with markup that reads `this.getRecord`.
+  On the template route the page's template extends the base chrome and fills `{% block content %}` with markup that reads `this.getRecord`.
 
 ## Divergences
 
@@ -216,7 +216,7 @@ The narrowness is forced by the Document template, which branches on the string 
 So a consumer wanting a third shell overrides `@SylamentPanels/partials/Document/index.html.twig`, the one seam that is already a plain Twig template a Symfony application can override by path, and the failing `getLayout()` value is the loud form of that instruction.
 
 The Document's branch tests the **string literal** `'SylamentPanels:SimpleLayout'` rather than `SimplePage::LAYOUT`, because Twig has no constant import; the controller's `in_array()` guard is *not* what pins the two sides together, because both compare against the same constants and would move as one.
-What pins them is [`PageControllerTest`](../../../packages/panels/tests/Integration/Controllers/PageControllerTest.php)'s `/probe/simple` case, which requests the URL and asserts the rendered `body > .sy-pa-simple-layout`: a rename on either side fails there.
+What pins them is a case that opens a page naming the simple layout and asserts the `.sy-pa-simple-layout` its body renders: a rename on either side fails there.
 
 ### `halt()`'s rollback flag is carried and ignored
 
@@ -225,7 +225,7 @@ Nothing reads the flag: page-level `CanUseDatabaseTransactions` is not ported, s
 It is carried rather than dropped so that porting the transactions concern is additive: the exception already tells it what to do.
 
 What the catch *does* fix is real: without it a `Halt` thrown from a `beforeSave` hook escapes `save()` and answers 500.
-The [`EditHookedArticle`](../../../packages/panels/tests/Fixtures/Resources/Pages/EditHookedArticle.php) fixture's `$haltsBeforeSave` arm pins the ladder stopping where the hook threw (no mutator, no write, no notification, no redirect, and the row untouched); the create page's arm stops [its own ladder](create-record.md#create-runs-filaments-ladder-in-filaments-order-and-maps-after-the-mutator) the same way.
+A halt thrown from the edit page's `beforeSave` is pinned stopping the ladder where the hook threw (no later hook runs, and the row is untouched); the create page's arm stops [its own ladder](create-record.md#create-runs-filaments-ladder-in-filaments-order-and-maps-after-the-mutator) the same way.
 
 ### Header actions are bound lazily rather than at boot
 
@@ -242,7 +242,7 @@ The two reads are the two directions, and each needs a different half:
 
 - **Out**, at render: the base page chrome reads `this.getCachedHeaderActions` rather than `this.getHeaderActions`, once, for every page that extends it, because the *binding* is what a trigger renders from.
   `CanOpenUrl::getUrl()` reaches the page through `getLiveComponentOrNull()`, so an unbound `CreateAction` renders as a `<button>` with no href instead of an `<a>` to the resource's create page, and `getDefaultActionRecordClass()`, `getDefaultActionRecordLabel()` and `getDefaultActionRecordTitle()` are skipped with it.
-  No error anywhere, which is why the shipped fixture pins the rendered `href`.
+  No error anywhere, which is why the rendered `href` is pinned.
 - **In**, when the browser posts a mount back: `getAction()` is overridden on the base to try the trait's own lookup first (the action cache, then [actions' method discovery](../actions/has-actions.md), which finds a `<name>Action()` or `<name>()` method returning an `Action`) and, **only when that misses**, to run the header and form walks once and look again.
   Render-time reading alone could never cover this: the request that *calls* a mounted action renders no header at all, so nothing would have populated the cache by the time the name was looked up.
 

@@ -4,7 +4,7 @@ description: Use before landing anything that touches Doctrine, to run the MySQL
 ---
 # Server gates
 
-`composer test` runs on SQLite: in memory for the per-package suites, a file per worker for the root suite. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
+`composer test` runs on SQLite, a file per worker for the root suite; the placeholder suites of `infolists` and `widgets` open no database. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
 
 ## 1. Start the servers
 
@@ -23,18 +23,18 @@ composer test:postgresql
 
 Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:suites`, every per-bundle suite and the root suite, and not Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
 
-## 3. Run one bundle or one package on one server
+## 3. Run one package on one server
 
 ```sh
-SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8' composer test:<bundle>
-SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' composer test:<bundle>
+SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8' vendor/bin/pest tests/Packages/<Pkg>
+SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' vendor/bin/pest tests/Packages/<Pkg>
 ```
 
-With the variable unset or empty, a suite runs on SQLite. A migrated package has no `composer test:<bundle>`: its tests are in the root suite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The root suite takes a path the same way: `SYLAMENT_TEST_DATABASE_URL='<url>' vendor/bin/pest tests/Packages/<Pkg>`, in one process, since `TestDatabaseExtension` refuses `--parallel`.
+With the variable unset or empty, the suite runs on SQLite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The run is one process, since `TestDatabaseExtension` refuses `--parallel`.
 
 ## 4. Keep server runs serial
 
-- For the per-package suites the pool gives each entity manager a test builds a database of its own, named `<base>_<package>_<TEST_TOKEN>_<slot>`; for the root suite it keeps one per worker, `<base>_suite_<TEST_TOKEN>`. A run that sets `SYLAMENT_TEST_RUN` gets `_<run>` after `<base>` in both. The `TEST_TOKEN` a parallel run sets keeps its processes' databases apart, and `SYLAMENT_TEST_RUN` keeps two runs' apart.
+- For the root suite the pool keeps one database per worker, `<base>_suite_<TEST_TOKEN>`; a run that sets `SYLAMENT_TEST_RUN` gets `_<run>` after `<base>`. `SYLAMENT_TEST_RUN` keeps two runs' databases apart.
 - It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold. A root-suite run holds about three.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 

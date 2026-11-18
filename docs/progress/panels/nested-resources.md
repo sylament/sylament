@@ -105,7 +105,7 @@ An **object** in any of those slots is converted to a route key by the resource 
 
 ### The chain is resolved once per request, and each step is scoped to the one above it
 
-`getResolvedParentRecords()` walks the ancestors root-first and resolves each through **its own** resource's `resolveRecordRouteBinding()`, passing a scope built from the resource one level *below* it, so at depth two the chapter is resolved unscoped and the verse through `VerseResource::getParentScopedRecordQuery($chapter)`.
+`getResolvedParentRecords()` walks the ancestors root-first and resolves each through **its own** resource's `resolveRecordRouteBinding()`, passing a scope built from the resource one level *below* it, so at depth two the outer parent is resolved unscoped and the inner one through its own resource's `getParentScopedRecordQuery($outerParent)`.
 A key naming a real record of another branch is refused at the step it belongs to rather than resolved and then compared, and the failure is a `NotFoundHttpException` at that step.
 The walk is memoized for the request and re-run on the next one, so a live request re-validates the chain it was handed rather than trusting the previous render.
 
@@ -131,7 +131,7 @@ A nested resource still answers `shouldRegisterNavigation()` **true** and still 
 
 Every nested read narrows through [the reader's scope of the resource's own record query](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write), which scopes an owner of any width [through the owner's own collection](../schemas/relationship.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path), and panels adds no predicate beyond it and the codec's `RecordKey` / `IdentifierConstraint`.
 So the whole nested tier works under a parent of any width: the record page, the nested listing, a mounted action's scope, the routed create page's write, a modal `CreateAction` joining through `getDefaultActionRelationship()`, and the three ancestor route-key mints (`Resource::getUrl()`, `guessAncestorParameters()` and `Page::getResourceBreadcrumbs()`).
-Panels' fixtures pin parents keyed by two scalars, by an association plus a scalar, and by a single derived identity; the join-entity flavour, whose whole identifier is two associations, is pinned one tier down at the reader.
+Panels' cases pin parents keyed by two scalars, by an association plus a scalar, and by a single derived identity; the join-entity flavour, whose whole identifier is two associations, is pinned one tier down at the reader.
 A parent placeholder needs no pattern of its own: `PanelRouteLoader` always follows one with `/`, so the compiler's default pattern is enough, and only `{record}` is ever given `[^/]+`.
 
 ## Divergences

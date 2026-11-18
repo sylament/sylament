@@ -111,7 +111,7 @@ So the route action is [`PageController`](#the-controller-reads-the-document-val
 What a user writes is unchanged — a `Page` subclass listed in `pages()` — and the page is still a live component once rendered, so its actions round-trip through `ux_live_component` exactly as Filament's do through Livewire's.
 
 One wiring consequence falls out of it, and it is invisible until a panel is mounted near the root: `ux_live_component`'s path is `/{_live_component}/{_live_action}`, so an application importing that route without the recipe's `/_components` prefix has it match `/admin` first and every panel page 404s with *Component "admin" not found*.
-The panels test kernel mounts it under the prefix for that reason.
+The test kernel mounts it under the prefix for that reason.
 
 ### The loader refuses a placeholder the page cannot mount, which Filament does not
 
@@ -160,7 +160,7 @@ A `{record}` written with any of Symfony's inline syntaxes — `{record<\d+>}`, 
 `RouteCollection::add()` unsets a name before assigning it and checks nothing, so two mounts deriving one route name would leave the later one standing and the earlier one unreachable — with no error at route-build time, at request time or in `debug:router` — and resources multiply the ways to collide (two pages sharing a `$slug`, two resources sharing a slug, a resource page landing on a page's name).
 Every mount goes through one `addRoute()` that records the name's owner and throws a `LogicException` naming both mounts when a second claims it.
 The compile-time [component-name check](page.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) does not cover this and cannot: it keys on the FQCN, which is exactly what differs when two classes derive one slug.
-Two of the three collision kinds are pinned by [`PanelRouteLoaderTest`](../../../packages/panels/tests/Unit/Routing/PanelRouteLoaderTest.php); the third, a resource page landing on a panel page's name, runs through the same `$owners` map with no per-kind branch.
+Two of the three collision kinds are pinned; the third, a resource page landing on a panel page's name, runs through the same `$owners` map with no per-kind branch.
 
 The guard covers **names**, not **paths**.
 Two mounts that derive one path under two different names both reach the collection, and the router answers one of them — first-wins, silently.

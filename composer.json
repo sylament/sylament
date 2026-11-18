@@ -64,7 +64,6 @@
     "autoload-dev": {
         "psr-4": {
             "Sylament\\Infolists\\Tests\\": "packages/infolists/tests/",
-            "Sylament\\Panels\\Tests\\": "packages/panels/tests/",
             "Sylament\\Tests\\": "tests/",
             "Sylament\\Tests\\Fixtures\\": "tests/Fixtures/src/",
             "Sylament\\Widgets\\Tests\\": "packages/widgets/tests/"
@@ -95,17 +94,12 @@
         ],
         "test:suites": [
             "@test:infolists",
-            "@test:panels",
             "@test:widgets",
             "@test:pest"
         ],
         "test:infolists": [
             "@putenv XDEBUG_MODE=off",
             "pest -c packages/infolists/phpunit.dist.xml --test-directory=packages/infolists/tests"
-        ],
-        "test:panels": [
-            "@putenv XDEBUG_MODE=off",
-            "pest -c packages/panels/phpunit.dist.xml --test-directory=packages/panels/tests"
         ],
         "test:mysql": [
             "@putenv SYLAMENT_TEST_DATABASE_URL=mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4",

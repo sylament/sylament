@@ -77,7 +77,7 @@ The idiom is the one [`Pages\Page::getHumanizedClassBasename()`](page.md) uses o
 
 `HasTable::getTable()` is `$this->table($this->makeTable())`: the subclass hook is applied by the *caller*, once.
 So the relationship seed goes in `makeTable()`, which is what the base overrides; redeclaring `table()` on the base to wrap `makeTable()` would run a subclass's hook twice and duplicate every query scope, column and action it adds.
-Subclasses override `table()` exactly as on every other table host, and the Unit suite pins the single application with a counting fixture.
+Subclasses override `table()` exactly as on every other table host, and the single application is pinned.
 
 ### The view arm shares the form builder because `ViewAction` disables its own schema
 
@@ -89,7 +89,7 @@ When infolists land, the arm splits.
 
 `HasActions::getDefaultActionSuccessRedirectUrl()` answers `null`, and the delete-to-index redirect is `EditRecord`'s own override of it, which the manager never inherits, so there is no override to write.
 A deleted row just leaves the manager's table.
-The Integration suite pins it, because the obvious reading (a `DeleteAction` on a resource-shaped host sends you to the index) is what the edit page does and what a reader would expect here.
+It is pinned, because the obvious reading (a `DeleteAction` on a resource-shaped host sends you to the index) is what the edit page does and what a reader would expect here.
 
 ### There is no refresh-after-save eventing, and that is parity
 
@@ -134,7 +134,7 @@ The consequence is an invariant on the consumer: the badge statics run on **ever
 
 Filament loads it from `mount()` (`RelationManager.php:120-123`), which is safe there because Livewire populates a nested component's matching properties *before* `mount()` runs.
 ux-twig-component is the other way round: [`ComponentFactory::mountFromObject()`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php) invokes `mount()` first and only then assigns the mount data `mount()` did not consume, so anything the hook reads is still at its declared default.
-That matters for a manager: loading the default active tab **memoises the tab set**, so a `getTabs()` reading the owner key, or a registration property like `TaggedTasksRelationManager::$tag`, would build its tabs (and, through `modifyQueryWithActiveTab()`, scope the table) against values nobody set yet.
+That matters for a manager: loading the default active tab **memoises the tab set**, so a `getTabs()` reading the owner key, or a registration property such as a `$tag` its registration sets, would build its tabs (and, through `modifyQueryWithActiveTab()`, scope the table) against values nobody set yet.
 
 So the hook is a `#[PostMount(priority: 30)]` on [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) shared by all three tabbed hosts, and no host calls it from `mount()`.
 Post-mount runs after every property is assigned, and after UX's own query-string seeding (`RequestInitializeSubscriber` listens on `PostMountEvent` at priority 256, and every listener runs before the first `#[PostMount]` method), which buys a second thing: a blank `?tab=` is healed while the props can still be dehydrated with the healed value.
@@ -156,7 +156,7 @@ What is ours is the **override**: Filament's `RelationManager` inherits the null
 
 We answer it because `Action::getTable()` is null for an action the table never configured, so a `CreateAction` mounted straight on the manager (through a schema, or a group outside the table) would otherwise reach no relationship at all and create a record attached to nothing.
 The gate is Filament's own (both of its implementations answer for a `CreateAction` and `null` for everything else), and it is the house rule for the whole hook cluster: a host answering one of them [must discriminate by action](../actions/interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action).
-A manager's table always carries the relationship, so this arm is unreachable from the shipped table path and the Unit suite pins it directly.
+A manager's table always carries the relationship, so this arm is unreachable from the shipped table path and a create action outside the table pins it directly.
 
 ### The `defaultForm()` two-column wrapper does not port
 
@@ -179,7 +179,7 @@ The tabs do **not** move the decision: [`HasTabs`](has-tabs.md) ships on [the sh
 The heading needs no chrome of the manager's: `makeTable()` seeds `Table::heading()` with `static::getTitle()` as Filament's does, and the table's `sy-ta-header` band renders it inside the container, so the tab label and the table heading stay one string by construction.
 
 The `Modals` outlet is not optional decoration: without it every action a manager mounts renders **nothing at all**, with no error anywhere.
-The Integration suite pins it inside the root for that reason.
+It is pinned inside the root for that reason.
 
 ### A manager must carry `#[AsLiveComponent]`, and the pass enforces it
 

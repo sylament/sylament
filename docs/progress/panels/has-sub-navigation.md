@@ -106,7 +106,7 @@ With the guard, a page with no sub-navigation emits neither root modifier and to
 `SubNavigationSidebar` renders one `<twig:SylamentPanels:SidebarGroup>` per group rather than a band-specific list component — the group's markup is already the label-plus-items shape the band wants, its CSS is not sidebar-scoped, and a non-collapsible group renders as a plain labelled `<div>` with no disclosure semantics and no control to operate.
 
 The reuse costs one thing, and the template pays it at the call site: `SidebarGroup` builds `id="sy-pa-sidebar-group-items-{groupIndex}"` unconditionally, and a `Start`/`End` band renders on the same document as the panel sidebar, both starting at index 0.
-The band passes `:groupIndex="'sub-' ~ loop.index0"`, so the two id families cannot collide; `SubNavigationRenderTest` pins `#sy-pa-sidebar-group-items-sub-0`.
+The band passes `:groupIndex="'sub-' ~ loop.index0"`, so the two id families cannot collide, which is pinned.
 Filament has no such collision because its band is a different component with no ids at all.
 
 ### The active tab is selected by `[aria-current="page"]`, because an active group trigger carries `aria-current="true"`
@@ -135,7 +135,7 @@ A concrete page that means to set its position from PHP must redeclare the prope
 
 Filament's `Resources\Pages\Page::getSubNavigationPosition()` is `static::getResource()::getSubNavigationPosition()` — a flat override, so the page-level static it inherits from `HasSubNavigation` is dead on every resource page.
 Ours reads `static::$subNavigationPosition ?? $this->getResourceInstance()->getSubNavigationPosition()`, so the tier a user would reasonably expect to work does work: one page of a resource can name a position the rest of the resource does not.
-`Unit/Resources/Pages/PageTest` pins it in both directions, because the difference is invisible until someone declares the static and it is ignored.
+It is pinned in both directions, because the difference is invisible until someone declares the static and it is ignored.
 
 ### A plain page item is built here, where Filament asks the page for it
 

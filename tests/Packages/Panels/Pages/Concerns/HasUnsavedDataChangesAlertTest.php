@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\GuardedEditArticle;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\UnguardedEditArticle;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Symfony\UX\LiveComponent\Exception\HydrationException;
 
@@ -31,6 +32,14 @@ it('guards the data of a page that turns the alert on for itself in a panel that
 
     expect($this->unsavedChangesGuard($page->render()->crawler()))->toMatchArray(['dataModel' => 'data', 'guardActions' => 'false'])
         ->and(fn () => $page->set('savedDataHash', 'forged'))->toThrow(HydrationException::class, 'The model "savedDataHash" was sent for update, but it is not writable');
+});
+
+it("leaves the data of a page that turns the alert off for itself unmarked in a panel that turns it on, whose actions it still guards", function (): void {
+    $this->seed($article = new Article('Draft'));
+
+    $page = $this->createLiveComponent(UnguardedEditArticle::class, ['record' => $article->id, 'panelId' => 'simple-knobs']);
+
+    expect($this->unsavedChangesGuard($page->render()->crawler()))->toBe(['savedHash' => '', 'dataModel' => '', 'guardActions' => 'true']);
 });
 
 it('marks the saved data again once a save writes it, and keeps the mark when a save writes nothing', function (): void {

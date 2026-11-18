@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Panel;
@@ -11,8 +12,11 @@ use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Routing\PanelRouteLoader;
+use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Tests\Fixtures\Entity\Article;
+use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Panels\AdminPanelProvider;
+use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListArticles;
@@ -21,9 +25,53 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\RouteCollection;
 
 /*
- * A panel these cases mount is built inline over a registry of its own: a panel the loader
- * refuses can never join the kernel's, whose every route build it would break.
+ * A panel the loader refuses, or one shaped only for its join, is built inline over a registry of
+ * its own: a panel the loader refuses can never join the kernel's, whose every route build it
+ * would break.
  */
+
+it("mounts every page of a panel as a GET route at the panel's path, which PageController serves for that page", function (): void {
+    $routes = $this::getContainer()->get('router')->getRouteCollection();
+    $settings = $routes->get('sylament.panel-routing.pages.settings');
+
+    expect($settings?->getPath())->toBe('/panel-routing/settings')
+        ->and($settings?->getMethods())->toBe(['GET'])
+        ->and($settings?->getDefaults())->toBe(['_controller' => PageController::class, '_sylament_panel' => 'panel-routing', '_sylament_page' => SettingsPage::class])
+        ->and($routes->get('sylament.panel-routing.pages.dashboard')?->getPath())->toBe('/panel-routing');
+});
+
+it("mounts every page of a resource under the resource's slug, by the key it is registered under", function (): void {
+    $router = $this::getContainer()->get('router');
+    $edit = $router->getRouteCollection()->get('sylament.admin.resources.articles.edit');
+
+    expect($router->generate('sylament.admin.resources.articles.index'))->toBe('/admin/articles')
+        ->and($router->generate('sylament.admin.resources.articles.create'))->toBe('/admin/articles/create')
+        ->and($router->generate('sylament.admin.resources.articles.edit', ['record' => 12]))->toBe('/admin/articles/12/edit')
+        ->and($edit?->getMethods())->toBe(['GET'])
+        ->and($edit?->getDefaults())->toBe(['_controller' => PageController::class, '_sylament_panel' => 'admin', '_sylament_page' => EditArticle::class]);
+});
+
+it('narrows a record placeholder a separator follows, so a key spelling that separator generates a URL that matches back', function (string $route, string $key): void {
+    $router = $this::getContainer()->get('router');
+
+    $url = $router->generate("sylament.panel-routing.resources.previews.{$route}", ['record' => $key]);
+
+    expect($router->getRouteCollection()->get("sylament.panel-routing.resources.previews.{$route}")?->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($router->match($url))->toMatchArray(['_route' => "sylament.panel-routing.resources.previews.{$route}", 'record' => $key]);
+})->with([
+    'a dash, in a slug' => ['dashed', 'spring-sale'],
+    'a tilde, in a composite key' => fn (): array => ['tilded', RecordKey::of($this->entityManager(), new OrderLine(order: 7, line: 2))],
+    'a dot, in a file name' => ['dotted', 'report.v2'],
+]);
+
+it('leaves a record placeholder a slash or a second placeholder follows to the default pattern, which splits at the first separator', function (): void {
+    $router = $this::getContainer()->get('router');
+    $routes = $router->getRouteCollection();
+
+    expect($routes->get('sylament.panel-routing.resources.previews.edit')?->getRequirements())->toBe([])
+        ->and($routes->get('sylament.panel-routing.resources.previews.localised')?->getRequirements())->toBe([])
+        ->and($router->match('/panel-routing/previews/5-en-GB'))->toMatchArray(['_route' => 'sylament.panel-routing.resources.previews.localised', 'record' => '5', 'locale' => 'en-GB']);
+});
 
 it('joins the panel, resource and page paths with exactly one slash, at the site root too', function (): void {
     $settings = new class extends Page {

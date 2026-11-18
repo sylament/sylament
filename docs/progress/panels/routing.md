@@ -84,6 +84,7 @@ A prop must be a `#[LiveProp]` to survive past the first render: only live props
 
 It is there because nothing else can be.
 It reads `localStorage['sylament.theme']` and stamps `dark` on `<html>` **before the stylesheet is requested**, which is the only placement that avoids a light flash on every dark-mode page load; a Stimulus controller connects far too late, and [the shell is otherwise Turbo-indifferent](layout-templates.md#the-shell-is-turbo-indifferent-and-worker-safe) precisely to avoid inline scripts.
+The importmap's own inline scripts, which `importmap()` writes after it, are AssetMapper's, not the port's.
 It is not a second implementation of the controller's rule but the same one, written twice and required to agree on all six arms — explicit `dark` wins, explicit `light` wins, and *everything else* — absent key, unreadable storage, unrecognised value, explicit `system` — means system:
 
 ```js

@@ -9,6 +9,7 @@ return static function (ContainerConfigurator $container): void {
         'icons' => [
             'modal.close-button' => 'support:heart',
             'components.text-input.actions.show-password' => 'support:star',
+            'pages.dashboard.navigation-item' => 'support:star',
         ],
     ]);
 };

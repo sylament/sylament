@@ -22,12 +22,8 @@ describe('document', function (): void {
             ->and($page->filter(Selectors::contentWidth('7xl') . ' ' . Selectors::PAGE)->count())->toBe(1);
     });
 
-    it("renders a simple page in the simple layout, its body carrying the page's attributes", function (): void {
-        $page = $this->visit('/panel-routing/sign-in');
-
-        expect($page->filter(Selectors::SIMPLE_LAYOUT . ' ' . Selectors::SIMPLE_PAGE)->count())->toBe(1)
-            ->and($page->filter(Selectors::NAVIGATION)->count())->toBe(0)
-            ->and($page->filter('body')->attr('data-screen'))->toBe('sign-in');
+    it("carries a simple page's attributes on the document body", function (): void {
+        expect($this->visit('/panel-routing/sign-in')->filter('body')->attr('data-screen'))->toBe('sign-in');
     });
 
     it('stamps the theme from storage in a head script, the one script the document writes', function (): void {

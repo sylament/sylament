@@ -292,6 +292,11 @@ final class Selectors
     public const string BODY_ROW = 'tbody tr';
 
     /**
+     * The row of per-column search inputs, rendered while a column the developer shows is searchable on its own input; its class is its one hook.
+     */
+    public const string COLUMN_SEARCH_ROW = 'tr.sy-ta-column-search-row';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string

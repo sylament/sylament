@@ -31,7 +31,7 @@ Both halves of Filament's trait are ported, and they are two features rather tha
 `applySearchToTableQuery()` is where they meet — it applies the column terms first and the global term second, the order Filament applies them in.
 
 The per-column half is the [seeded bag](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) and its [first-call hydration snapshot](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot); its query pass mirrors the global one word for word — the column's own `splitIndividualSearchTerms()` overriding the table's `splitSearchTerms()` wherever it answers non-null, an `Orx` per word, `andWhere()`-d only if the column joined it — over exactly the **individually** searchable columns the developer has not hidden, so a term left on a column the developer later hid, or on one that is only globally searchable, constrains nothing.
-A column the *user* toggled off still constrains, exactly as it still renders an input.
+A column the *user* toggled off still constrains and keeps its chip, while its input leaves the row with its cell, as Filament's does, since the row renders the visible columns.
 It is what the `columnSearches` injection reads.
 
 The global half composes like this.

@@ -38,9 +38,9 @@ What the port adds on top of the provider's responsibilities is container wiring
 ### No test pins the manifest's `symfony/*` requires
 
 The monorepo resolves every package out of one root `vendor/`, so a require dropped from [`composer.json`](../../../packages/notifications/composer.json) fails nothing in this suite and breaks only the split repository.
-A manifest entry is assertable all the same: [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) decodes a package's `composer.json` and pins the requires and suggests no other check sees, tables' `symfony/html-sanitizer` require among them.
+A manifest entry is assertable all the same: a manifest scan decodes a package's `composer.json` and pins the requires and suggests no other check sees, tables' `symfony/html-sanitizer` require among them.
 No test reads this manifest.
-What is missing is an Architecture `ManifestTest` that pins each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names and `sylament/actions` as a require rather than a suggest.
+What is missing is a case of that scan pinning each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names and `sylament/actions` as a require rather than a suggest.
 
 ### The database-notifications registration waits on its panel
 

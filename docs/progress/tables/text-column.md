@@ -228,7 +228,7 @@ A column that asked for markdown and silently got none is the failure this refus
 `markdown()` and `commonMarkOptions()` / `commonMarkExtensions()` themselves are unguarded, since they only assign, so configuring a markdown column on an install without the package is legal right up to the render.
 That is deliberate: the throw names the column, which a container-time failure could not.
 
-The absent branch cannot be exercised by uninstalling, so the guard is pinned by use, every markdown case running its present arm, which a renamed converter class dead-ends, and the [manifest scan](../../../tests/Architecture/ManifestTest.php) keeps the package a `suggest`, so promoting the dependency fails the suite.
+The absent branch cannot be exercised by uninstalling, so the guard is pinned by use, every markdown case running its present arm, which a renamed converter class dead-ends, and a manifest scan keeps the package a `suggest`, so promoting the dependency fails the suite.
 
 ### The CommonMark pair is declared on `CanFormatState`, not composed from a support trait
 

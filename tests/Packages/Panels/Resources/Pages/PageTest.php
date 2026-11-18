@@ -107,6 +107,7 @@ describe('mounted action record', function (): void {
             ->assertActionMounted($frame);
 
         expect($tester->component()->getMountedAction())->toBeInstanceOf(DeleteAction::class)
+            ->and($tester->component()->getMountedAction()?->getRecord())->toBeRecord(id: $alpha->id, title: 'Alpha')
             ->and($tester->render()->crawler()->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Delete shortlisted article');
     });
 

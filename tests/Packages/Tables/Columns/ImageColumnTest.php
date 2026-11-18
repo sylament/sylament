@@ -104,6 +104,7 @@ describe('its images', function (): void {
         expect($style(ImageColumn::make('photo')))->toBe('height: 2.5rem')
             ->and($style(ImageColumn::make('photo')->stacked()))->toBe('height: 2rem')
             ->and($style(ImageColumn::make('photo')->imageHeight(40)))->toBe('height: 40px')
+            ->and($style(ImageColumn::make('photo')->imageHeight('3rem')))->toBe('height: 3rem')
             ->and($style(ImageColumn::make('photo')->imageWidth('3rem')))->toBe('height: 2.5rem; width: 3rem')
             ->and($style(ImageColumn::make('photo')->imageSize(24)))->toBe('height: 24px; width: 24px')
             ->and($circular->filter(Selectors::IMAGE_COLUMN . '.sy-circular img')->attr('style'))->toBe('height: 2.5rem; width: 2.5rem')

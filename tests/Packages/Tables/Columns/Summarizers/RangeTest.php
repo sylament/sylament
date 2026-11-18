@@ -38,6 +38,12 @@ it('shows two dates by the days they differ by, two instants of one day by their
     'one instant' => [['2024-03-05 10:00:00', '2024-03-05 10:00:00'], 'Mar 5, 2024 10:00:00'],
 ]);
 
+it('leaves two ends that read as no date as they are, rather than failing the render', function (): void {
+    $this->seed(new LarderJar('Airport'), new LarderJar('Airbag'));
+
+    expect($this->renderSummarizer(Range::make()->minimalDateTimeDifference(), 'label'))->toContainElement(Selectors::summarizerFigure('range'), 'Airbag - Airport');
+});
+
 it('shows two texts by the shortest beginnings that tell them apart, and one text once', function (array $labels, string $range): void {
     $this->seed(...array_map(static fn (string $label): LarderJar => new LarderJar($label), $labels));
 
@@ -46,4 +52,5 @@ it('shows two texts by the shortest beginnings that tell them apart, and one tex
     'two texts' => [['Airport', 'Airbag'], 'Airb - Airp'],
     'a text and its beginning' => [['Airbag', 'Air'], 'Air - Airb'],
     'one text' => [['Airbag', 'Airbag'], 'Airbag'],
+    'a blank text below another' => [['', 'Airbag'], 'Airbag'],
 ]);

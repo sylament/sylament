@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
@@ -46,12 +47,16 @@ describe('the datasets', function (): void {
             ->and($this::textSummaries($crawler->filter(Selectors::summaryRow('all'))))->toBe(['Sum 7']);
     });
 
-    it("narrows the page row to the page's keys, bound as the identifier's own type", function (): void {
+    it("narrows the page row to the page's keys, bound as the identifier's own type, and not at all where the page is the whole filtered set", function (): void {
         $this->seed($apricot = new LarderJar('Apricot', position: 1), $bramble = new LarderJar('Bramble', position: 2), new LarderJar('Cherry', position: 4));
 
-        $page = $this->createLiveComponent(SummarizedJarTable::class)->component()->getPageTableSummaryQuery();
+        $tester = $this->createLiveComponent(SummarizedJarTable::class);
+        $page = $tester->component()->getPageTableSummaryQuery();
+        $whole = $tester->searchTable('Cherry')->component()->getPageTableSummaryQuery();
 
-        expect($page?->getParameter('sylament_summary_keys')?->getValue())->toBe([$apricot->id, $bramble->id]);
+        expect($page?->getParameter('sylament_summary_keys')?->getValue())->toBe([$apricot->id, $bramble->id])
+            ->and($whole)->toBeInstanceOf(QueryBuilder::class)
+            ->and($whole?->getParameter('sylament_summary_keys'))->toBeNull();
     });
 
     it('narrows the page row of a composite-keyed table to the records on the page', function (string $lineClass, Closure $lines): void {

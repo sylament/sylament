@@ -22,6 +22,7 @@ use Sylament\Tests\Fixtures\Tables\ConfiguredSelectionProductTable;
 use Sylament\Tests\Fixtures\Tables\FetchJoinedLarderTable;
 use Sylament\Tests\Fixtures\Tables\FetchJoinedSeedlingOwnerTable;
 use Sylament\Tests\Fixtures\Tables\GroupedSelectionLarderJarTable;
+use Sylament\Tests\Fixtures\Tables\RefusingGroupedSelectionLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 
 describe('reading the selection', function (): void {
@@ -234,15 +235,28 @@ describe('selecting all', function (): void {
     it("counts the banner's select-all against every selectable record, the page alone where selection is page-only, and the filtered query where simple pagination keeps no total", function (array $props, string $selectAll): void {
         $this->seed(...array_map(static fn (array $row): Product => new Product($row['name']), ConfiguredSelectionProductTable::ROWS));
 
-        $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, [...$props, 'tableRecordsPerPage' => 5])->render()->crawler();
+        $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['tableRecordsPerPage' => 5, ...$props])->render()->crawler();
 
         expect($crawler)->toContainElement(Selectors::SELECTION_BANNER . ' ' . SupportSelectors::LINK, $selectAll);
     })->with([
         'every record' => [[], 'Select all 6'],
         'the page' => [['pageOnly' => true], 'Select all 5'],
         'the selectable records' => [['refuses' => true], 'Select all 5'],
+        'the selectable records of the page' => [['pageOnly' => true, 'refuses' => true, 'tableRecordsPerPage' => 10], 'Select all 5'],
         'every record, simply paginated' => [['simplePagination' => true], 'Select all 6'],
     ]);
+
+    it('selects only the records the table lets the user select where selection is page-only', function (): void {
+        $products = array_map(static fn (array $row): Product => new Product($row['name']), ConfiguredSelectionProductTable::ROWS);
+        $this->seed(...$products);
+
+        $selected = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['pageOnly' => true, 'refuses' => true, 'tableRecordsPerPage' => 10])
+            ->call('selectAllTableRecords')
+            ->component()->selectedTableRecordKeys;
+        sort($selected, SORT_NATURAL);
+
+        expect($selected)->toBe(array_map(static fn (Product $product): string => (string) $product->id, array_slice($products, 0, 5)));
+    });
 
     it('selects one key per record off a query fetch-joining a to-many, in one statement', function (): void {
         $cellar = new Larder('Cellar');
@@ -323,6 +337,30 @@ describe('grouped selection', function (): void {
     })->with([
         'across the pages' => [false, 2, true],
         'page-only' => [true, 0, false],
+    ]);
+
+    it("leaves a record the table refuses out of its group's checkbox, across the pages and on the page alike", function (bool $pageOnly, array $zest): void {
+        $this->seed(
+            $acme = new Product('Acme'),
+            $zestSupplier = new Product('Zest'),
+            new LarderJar('Apricot', supplier: $acme),
+            new LarderJar('Blackberry', supplier: $acme),
+            $date = new LarderJar('Date', supplier: $zestSupplier),
+            new LarderJar('Elder', supplier: $zestSupplier),
+            $fig = new LarderJar('Fig', supplier: $zestSupplier),
+            $grape = new LarderJar('Grape', supplier: $zestSupplier),
+        );
+        $crawler = $this->createLiveComponent(RefusingGroupedSelectionLarderJarTable::class, ['pageOnly' => $pageOnly, 'tableRecordsPerPage' => 5])->render()->crawler();
+
+        $keys = json_decode((string) $crawler->filter(Selectors::groupHeaderRow('Zest') . ' input' . Selectors::GROUP_CHECKBOX)->attr('data-sy-group-keys'), flags: JSON_THROW_ON_ERROR);
+        sort($keys, SORT_NATURAL);
+
+        $ids = ['Date' => (string) $date->id, 'Fig' => (string) $fig->id, 'Grape' => (string) $grape->id];
+
+        expect($keys)->toBe(array_map(static fn (string $label): string => $ids[$label], $zest));
+    })->with([
+        'across the pages' => [false, ['Date', 'Fig', 'Grape']],
+        'page-only' => [true, ['Date', 'Fig']],
     ]);
 
     it('gathers the records with a blank group column in a group of their own', function (): void {

@@ -11,12 +11,13 @@ use Symfony\Component\DomCrawler\Crawler;
 use Twig\Markup;
 
 describe('money and numbers', function (): void {
-    it('prints money in the currency and locale it is given, divided and rounded as told', function (Closure $summarizer, string $printed): void {
+    it('prints money in the currency and locale it is given, divided and rounded as told, and a figure that is no number as it is', function (Closure $summarizer, string $printed): void {
         expect($this->renderSummarizer($summarizer()))->toContainElement(Selectors::summarizerFigure('text'), $printed);
     })->with([
         'dollars' => [fn (): Summarizer => Summarizer::make()->using(static fn (): float => 1234.5)->money('USD', locale: 'en_US'), '$1,234.50'],
         'cents divided into euros' => [fn (): Summarizer => Summarizer::make()->using(static fn (): int => 123450)->money('EUR', divideBy: 100, locale: 'de_DE'), "1.234,50\u{a0}€"],
         'whole dollars' => [fn (): Summarizer => Summarizer::make()->using(static fn (): float => 1234.56)->money('USD', locale: 'en_US', decimalPlaces: 0), '$1,235'],
+        'a figure that is no number' => [fn (): Summarizer => Summarizer::make()->using(static fn (): string => 'n/a')->money('USD', locale: 'en_US'), 'n/a'],
     ]);
 
     it('prints a number to at most the places it is given, in the locale it is given', function (): void {

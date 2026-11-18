@@ -113,6 +113,22 @@ describe('applySort()', function (): void {
             ->and($sorted(TextColumn::make('easels_exists')->exists('easels')->sortable()))->toBe(['Alpha', 'Mike', 'Zulu'])
             ->and($sorted(TextColumn::make('easels_count')->counts('easels')->sortable(['name'])))->toBe(['Zulu', 'Mike', 'Alpha']);
     });
+
+    it('orders a scoped aggregate column by its scoped aggregate, handing the scope its injections by name', function (): void {
+        $zulu = new Atelier('Zulu');
+        $mike = new Atelier('Mike');
+        $alpha = new Atelier('Alpha');
+        $this->seed($zulu, $mike, $alpha, new AtelierEasel($zulu, 2), new AtelierEasel($zulu, 3), new AtelierEasel($mike, 1), new AtelierEasel($mike, 1), new AtelierEasel($mike, 1), new AtelierEasel($alpha, 2));
+
+        $query = $this->entityManager()->createQueryBuilder()->select('atelier')->from(Atelier::class, 'atelier');
+        TextColumn::make('raised')
+            ->counts(['easels as raised' => static fn (string $alias, QueryBuilder $query): QueryBuilder => $query->andWhere("{$alias}.position > 1")])
+            ->sortable()
+            ->table(Table::make(new ProductTable($this->entityManager()))->query($query))
+            ->applySort($query, 'desc');
+
+        expect(array_map(static fn (Atelier $atelier): string => $atelier->name, $query->getQuery()->getResult()))->toBe(['Zulu', 'Alpha', 'Mike']);
+    });
 });
 
 describe('applySearchConstraint()', function (): void {

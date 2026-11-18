@@ -6,6 +6,7 @@ use Sylament\Actions\Testing\TestAction;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Tables\Filters\Filter;
+use Sylament\Tables\Testing\Testable;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
@@ -133,6 +134,7 @@ describe('mounting', function (): void {
     })->with([
         'a filter named' => ['?filters[seal][value]=screw', ['Fig', 'Quince']],
         'a false named as text' => ['?filters[sealedOn][value]=false', ['Plum', 'Fig', 'Open']],
+        'a null named as text' => ['?filters[sealedOn][value]=null', ['Plum', 'Fig', 'Pear', 'Quince', 'Open']],
         'no filters' => ['', ['Plum']],
         'a list in place of the filters' => ['?filters[]=abc', ['Plum']],
     ]);
@@ -150,6 +152,23 @@ describe('removing and resetting', function (): void {
             ->assertCanSeeTableRecords([$plum, $fig])
             ->assertCanNotSeeTableRecords([$unlabelled]);
     });
+
+    it('returns a live table to its first page when a chip is removed or the filters are reset', function (Closure $clear): void {
+        $this->seed(new LarderJar(), $apple = new LarderJar('Apple'), $bay = new LarderJar('Bay'), $cob = new LarderJar('Cob'), $date = new LarderJar('Date'));
+
+        $tester = $this->createLiveComponent(ArrangedJarFilterTable::class, ['variants' => ['live', 'paged']])
+            ->filterTable('labelled')
+            ->call('gotoTablePage', ['page' => 2])
+            ->assertCanSeeTableRecords([$cob, $date])
+            ->assertCanNotSeeTableRecords([$bay]);
+
+        $clear($tester)
+            ->assertCanSeeTableRecords([$apple])
+            ->assertCanNotSeeTableRecords([$bay, $cob, $date]);
+    })->with([
+        'a chip removed' => [static fn (Testable $tester): Testable => $tester->removeTableFilter('labelled')],
+        'the filters reset' => [static fn (Testable $tester): Testable => $tester->resetTableFilters()],
+    ]);
 
     it('resets the whole filter when its chip names a field the filter does not have', function (): void {
         $tester = $this->createLiveComponent(ShapedJarFilterTable::class)

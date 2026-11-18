@@ -8,6 +8,7 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\ActionSetsProductTable;
 use Sylament\Tests\Fixtures\Tables\AlignedColumnsTable;
+use Sylament\Tests\Fixtures\Tables\GroupedHeaderLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 
@@ -32,6 +33,14 @@ it('appends the actions it is pushed after the set before them, which keeps its 
 
     expect($crawler)->toContainButtons(Selectors::HEADER_ACTIONS . ' button', ['Purge', 'Restock'])
         ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(1);
+});
+
+it("renders a group among its actions in the header band, mounting each of the group's members by its name", function (): void {
+    $tester = $this->createLiveComponent(GroupedHeaderLarderJarTable::class);
+
+    expect($tester->render()->crawler())->toContainButtons(Selectors::HEADER_ACTIONS . ' button', ['Create', 'Stock', 'Restock', 'Donate']);
+
+    $tester->mountAction(TestAction::make('donate')->table())->assertActionMounted(TestAction::make('donate')->table());
 });
 
 it('refuses a member that is neither an action nor a group', function (): void {

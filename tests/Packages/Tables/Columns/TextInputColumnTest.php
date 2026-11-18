@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Tables\Columns\TextInputColumn;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -112,6 +113,8 @@ describe('the affixes', function (): void {
 
         expect($crawler)->toContainElement($stock . ' ' . SupportSelectors::PREFIX . ':not(' . SupportSelectors::INLINE . ') svg' . SupportSelectors::GRAY, 'Heart')
             ->and($crawler)->toContainElement($stock . ' ' . SupportSelectors::INLINE_SUFFIX . ' svg' . SupportSelectors::color('success'), 'Star')
-            ->and($crawler)->toContainElement($stock . ' ' . FormsSelectors::INPUT . FormsSelectors::INPUT_HAS_INLINE_SUFFIX);
+            ->and($crawler)->toContainElement($stock . ' ' . FormsSelectors::INPUT . FormsSelectors::INPUT_HAS_INLINE_SUFFIX)
+            ->and($this->renderViewComponent(TextInputColumn::make('stock')->record(['stock' => 'Full'])->prefixIcon('support:heart')->prefixIconColor('danger')))
+            ->toContainElement(SupportSelectors::PREFIX . ' svg' . SupportSelectors::color('danger'), 'Heart');
     });
 });

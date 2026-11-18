@@ -59,7 +59,9 @@ describe('boolean mode', function (): void {
             ->and($icons(IconColumn::make('stocked')->true('support:heart', 'info')->false('support:star', 'gray'))->each(static fn (Crawler $icon): array => [$icon->text(), $icon->matches(SupportSelectors::color('info')), $icon->matches(SupportSelectors::GRAY)]))
             ->toBe([['Heart', true, false], ['Star', false, true]])
             ->and($this->renderViewComponent(IconColumn::make('stocked')->record(['stocked' => [true, false]])->falseIcon(false))->filter('.sy-ta-sr-only')->each(static fn (Crawler $name): string => $name->text()))
-            ->toBe(['Yes']);
+            ->toBe(['Yes'])
+            ->and($this->renderViewComponent(IconColumn::make('stocked')->record(['stocked' => [true, false]])->trueIcon(false))->filter('.sy-ta-sr-only')->each(static fn (Crawler $name): string => $name->text()))
+            ->toBe(['No']);
     });
 
     it('draws the icon an application registers for the true arm, and an icon given to the column over it', function (): void {

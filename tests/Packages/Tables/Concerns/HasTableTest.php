@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\PersistentCollection;
 use Sylament\Actions\Testing\TestAction;
+use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
@@ -115,6 +116,11 @@ describe('records', function (): void {
             ->and($page->filter(Selectors::row('vase'))->text())->toBe('Vase');
     });
 
+    it('finds a row by its key on the page a records() closure returns', function (): void {
+        $this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'page'])
+            ->assertTableColumnExists('name', static fn (TextColumn $column): bool => $column->getState() === 'Vase', record: 'vase');
+    });
+
     it('keeps the last of two rows that arrive under one key', function (): void {
         $crawler = $this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'generator'])->render()->crawler();
 
@@ -134,6 +140,13 @@ describe('records', function (): void {
         'an array row with an integer key' => ['listRow', 'Array records of table [Sylament\Tests\Fixtures\Tables\ShapedRecordsTable] must be keyed by field name; one arrived carrying a non-string key.'],
         'a blank __key' => ['blankKey', 'Record arrays must have a unique, printable [__key] entry for identification.'],
     ]);
+
+    it('refuses to key an object row with no id to read, as it refuses one whose id is blank', function (): void {
+        $host = $this->createLiveComponent(ShapedRecordsTable::class)->component();
+
+        expect(fn (): string => $host->getTableRecordKey(new stdClass()))
+            ->toThrow(LogicException::class, 'Object records must expose a readable non-blank [id] for identification; [stdClass] does not. Give it one, or use array records with a [__key] entry.');
+    });
 
     it('lists and counts the rows of its records() closure without querying a query it also declares', function (): void {
         $this->seed(new Product('Desk'));

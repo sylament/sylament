@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\LinkedLarderJarTable;
+use Sylament\Tests\Fixtures\Tables\NewTabLinkedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -45,10 +46,10 @@ describe('extra link attributes', function (): void {
         'replaced' => [false, null],
     ]);
 
-    it('never lets them replace the derived href, nor a target the new tab sets', function (bool $opensInNewTab, string $target): void {
+    it('never lets them replace the derived href, nor a target the new tab sets', function (string $host, bool $opensInNewTab, string $target): void {
         $this->seed($jar = new LarderJar('Apricot'));
 
-        $link = $this->createLiveComponent(LinkedLarderJarTable::class, ['opensInNewTab' => $opensInNewTab])
+        $link = $this->createLiveComponent($host, ['opensInNewTab' => $opensInNewTab])
             ->render()
             ->crawler()
             ->filter(Selectors::cell((string) $jar->id, 'label') . ' ' . Selectors::CELL_WRAPPER);
@@ -56,8 +57,9 @@ describe('extra link attributes', function (): void {
         expect($link->attr('href'))->toBe("/jars/{$jar->id}")
             ->and($link->attr('target'))->toBe($target);
     })->with([
-        'a new tab, opened before the URL is set' => [true, '_blank'],
-        'no new tab, where their target stands' => [false, '_self'],
+        'a new tab, opened before the URL is set' => [LinkedLarderJarTable::class, true, '_blank'],
+        'a new tab, asked for by the URL itself' => [NewTabLinkedLarderJarTable::class, false, '_blank'],
+        'no new tab, where their target stands' => [LinkedLarderJarTable::class, false, '_self'],
     ]);
 
     it("reads them once per record, however many of the record's cells link", function (): void {

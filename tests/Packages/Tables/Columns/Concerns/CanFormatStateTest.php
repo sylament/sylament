@@ -168,19 +168,23 @@ describe('html and markdown', function (): void {
 });
 
 describe('dates', function (): void {
-    it('prints a date, a timestamp or a parseable string in the format it is given, and nothing for a blank state', function (): void {
+    it('prints a date, a timestamp or a parseable string in the format it is given, and nothing for a blank state or a blank member of a list', function (): void {
         $text = fn (mixed $state, TextColumn $column): string => $this->renderViewComponent($column->record(['shippedOn' => $state]))->filter(Selectors::TEXT_ITEM)->text();
         $blank = $this->renderViewComponent(TextColumn::make('shippedOn')->record(['shippedOn' => null])->date('Y'));
+        $list = $this->renderViewComponent(TextColumn::make('shippedOn')->record(['shippedOn' => ['2024-03-05', '']])->date('Y')->listWithLineBreaks());
 
         expect($text(new DateTimeImmutable('2024-03-05 14:30:00', new DateTimeZone('UTC')), TextColumn::make('shippedOn')->date('d M Y', timezone: 'UTC')))->toBe('05 Mar 2024')
             ->and($text(1709649000, TextColumn::make('shippedOn')->dateTime('Y-m-d H:i', timezone: 'UTC')))->toBe('2024-03-05 14:30')
             ->and($text('2024-03-05', TextColumn::make('shippedOn')->date('j F Y')))->toBe('5 March 2024')
             ->and($blank)->toContainElement(Selectors::TEXT_COLUMN)
-            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0);
+            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0)
+            ->and($list->filter(Selectors::TEXT_ITEM)->each(static fn (Crawler $item): string => $item->text()))->toBe(['2024', '']);
     });
 
-    it("prints since() as the time elapsed, and puts each date arm's text in the cell's tooltip, in the table's formats when given none", function (): void {
+    it("prints since() as the time elapsed, and puts each date arm's text in the cell's tooltip, in the table's formats when given none, leaving a blank member of a list without either", function (): void {
         $since = $this->renderViewComponent(TextColumn::make('seenAt')->record(['seenAt' => new DateTimeImmutable('-3 days')])->since()->sinceTooltip());
+        $blankMember = fn (TextColumn $column): array => $this->renderViewComponent($column->record(['seenAt' => ['2024-03-05', '']])->listWithLineBreaks())
+            ->filter(Selectors::TEXT_ITEM)->each(static fn (Crawler $item): array => [$item->text(), $item->filter('[title]')->count()]);
         $table = Table::make(new class implements InteractsWithTable {
             use HasTable;
         })->defaultDateDisplayFormat('d/m/Y')->defaultDateTimeDisplayFormat('d/m/Y H:i')->defaultTimeDisplayFormat('H:i');
@@ -191,7 +195,9 @@ describe('dates', function (): void {
             ->and($since->filter(Selectors::TEXT_ITEM . ' [title]')->attr('title'))->toBe('3 days ago')
             ->and($title(TextColumn::make('packedAt')->dateTimeTooltip()))->toBe('05/03/2024 14:30')
             ->and($title(TextColumn::make('packedAt')->timeTooltip()))->toBe('14:30')
-            ->and($title(TextColumn::make('packedAt')->dateTooltip()))->toBe('05/03/2024');
+            ->and($title(TextColumn::make('packedAt')->dateTooltip()))->toBe('05/03/2024')
+            ->and($blankMember(TextColumn::make('seenAt')->since()->sinceTooltip())[1])->toBe(['', 0])
+            ->and($blankMember(TextColumn::make('seenAt')->dateTooltip('Y')))->toBe([['2024-03-05', 1], ['', 0]]);
     });
 
     it("prints an instant in the timezone it is given, else the column's timezone(), else the process default", function (): void {

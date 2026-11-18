@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use Sylament\Actions\DeleteAction;
+use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\Selectors as ActionsSelectors;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditTitleKeyedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListArticles;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListScopedArticles;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListTitleKeyedArticles;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
@@ -130,5 +133,39 @@ describe('mounted action record', function (): void {
         expect(fn (): mixed => $tester->mountAction(['name' => 'delete', 'context' => ['recordKey' => 'abc']]))
             ->toThrow(NotFoundHttpException::class)
             ->and($this->statementsRun())->toBe([]);
+    });
+
+    it("acts on the row a table action's key names, whatever property the resource keys its URLs by", function (): void {
+        $this->seed($alpha = new Article('Alpha'), $beta = new Article('Beta'));
+
+        $this->createLiveComponent(ListTitleKeyedArticles::class, ['panelId' => 'resource-routes'])
+            ->callAction(TestAction::make('delete')->table($alpha))
+            ->assertCanSeeTableRecords([$beta])
+            ->assertCanNotSeeTableRecords([$alpha]);
+    });
+
+    it("acts on its form's record from a field action, whatever property the resource keys its URLs by", function (): void {
+        $this->seed($alpha = new Article('Alpha'));
+
+        $trigger = $this->visit('/resource-routes/title-keyed-articles/Alpha/edit')->filter(ActionsSelectors::trigger('shout'));
+        $context = json_decode((string) $trigger->attr('data-live-context-param'), true);
+
+        expect($context)->toBe(['recordKey' => (string) $alpha->id, 'schemaComponent' => 'form.title']);
+
+        $this->createLiveComponent(EditTitleKeyedArticle::class, ['record' => 'Alpha', 'panelId' => 'resource-routes'])
+            ->mountAction(['name' => 'shout', 'context' => $context])
+            ->assertFormSet(['title' => 'ALPHA']);
+    });
+
+    it('refuses as missing the id a header action mints for the record it carries, on a resource keyed by another property', function (): void {
+        $this->seed($alpha = new Article('Alpha'));
+
+        $trigger = $this->visit('/resource-routes/title-keyed-articles/Alpha/edit')->filter(Selectors::HEADER_ACTIONS . ' ' . ActionsSelectors::trigger('delete'));
+        $context = json_decode((string) $trigger->attr('data-live-context-param'), true);
+        $tester = $this->createLiveComponent(EditTitleKeyedArticle::class, ['record' => 'Alpha', 'panelId' => 'resource-routes']);
+
+        expect($context)->toBe(['recordKey' => (string) $alpha->id])
+            ->and(fn (): mixed => $tester->mountAction(['name' => 'delete', 'context' => $context]))
+            ->toThrow(NotFoundHttpException::class);
     });
 });

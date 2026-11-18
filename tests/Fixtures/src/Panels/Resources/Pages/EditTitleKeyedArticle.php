@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Fixtures\Panels\Resources\Pages;
 
+use Sylament\Actions\DeleteAction;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Tests\Fixtures\Panels\Resources\TitleKeyedArticleResource;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -12,4 +13,11 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 final class EditTitleKeyedArticle extends EditRecord
 {
     protected static string $resource = TitleKeyedArticleResource::class;
+
+    public function getHeaderActions(): array
+    {
+        return [
+            DeleteAction::make()->record($this->getRecord()),
+        ];
+    }
 }

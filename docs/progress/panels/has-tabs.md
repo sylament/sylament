@@ -131,7 +131,7 @@ The two column-manager statements are [a todo row](#updatedactivetab-does-not-re
 
 The two additions are the interesting half.
 `loadDefaultActiveTab()` runs first because this hook *is* the untrusted edge: the strip is the only element that writes the property, so a client can post `null` or `''`, and healing here rather than only at render means the healed value still reaches the wire on this response.
-`flushCachedTableRecords()` is a guard: the host caches its resolved records per request and the tab changes their query, but nothing a shipped page runs resolves the rows before this hook, so the cache it clears is still empty, and the call keeps a host that reads its records earlier in the request from rendering the previous tab's rows.
+`flushCachedTableRecords()` is a guard: the host caches its resolved records per request and the tab changes their query, but nothing a shipped page runs resolves the rows before this hook, so the cache it clears is still empty and dropping the call changes no response.
 Filament needs no equivalent because its `resetPage()` invalidates the same cache on the way through.
 
 ### The strip is a `Schema` a partial renders, not a `Component` a content schema holds

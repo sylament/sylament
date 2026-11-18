@@ -26,17 +26,18 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A table of larder jars a user groups by their seal (collapsible), the day they were sealed
  * on, their supplier's name (its heading unprefixed), their larder's name, which no column
- * reads, or their label, sorted by label by default. Each variant configures one thing: the groups (`closureGroups` adds `initial`,
- * keyed by a label's first letter, `titled`, keyed so and titled per record, and two ordered
- * by position, `reordered` through a builder its closure returns and `orderedInPlace` through
- * the one it is handed, each closure recording what it is handed in the {@see HookLog};
- * `described` describes the supplier's group from its injections), the default group (`defaultSeal`, one the user
- * can select; `defaultPosition`, one by position the user cannot; `defaultInstance`, a
- * declared one by position labelled `Shelf position`), the settings (`settingsHidden`,
- * `directionHidden`, `dropdownOnDesktop`, `collapsed`, `relabelledTrigger`), the mode
- * (`groupsOnly`, `summarized` counting the labels), and the rest of the table (`paged`, two
- * rows a page; `striped`; `reorderable` by position; `selectable`, with a record action and
- * a bulk action).
+ * reads, or their label, sorted by label by default. Each variant configures one thing: the
+ * groups (`closureGroups` adds `initial`, keyed by a label's first letter, `titled`, keyed
+ * so and titled per record, and two ordered by position, `reordered` through a builder its
+ * closure returns and `orderedInPlace` through the one it is handed, each closure recording
+ * what it is handed in the {@see HookLog}; `described` describes the supplier's group from
+ * its injections), the default group (`defaultSeal`, one the user can select;
+ * `defaultPosition`, one by position the user cannot; `defaultInstance`, a declared one by
+ * position labelled `Shelf position`), the settings (`settingsHidden`, `directionHidden`,
+ * `dropdownOnDesktop`, `collapsed`, `relabelledTrigger`), the mode (`groupsOnly`,
+ * `summarized` counting the labels), and the rest of the table (`paged`, two rows a page;
+ * `striped`; `reorderable` by position; `selectable`, with a record action and a bulk
+ * action).
  */
 #[AsLiveComponent(name: 'Tables:GroupableLarderJarTable', template: '@Fixtures/tables/table.html.twig')]
 class GroupableLarderJarTable implements InteractsWithActions, InteractsWithTable

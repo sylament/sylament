@@ -29,7 +29,7 @@ it('refuses a blank id by the class and an id carrying a colon by the id', funct
         ->and(static fn (): Group => Group::make('seal')->id('seal:desc'))->toThrow(LogicException::class, $colon);
 });
 
-it('labels a group as declared, else by the second-to-last segment of its id, spaced and title-cased', function (): void {
+it('labels a group as declared, else by its id spaced and capitalised, a dotted id by its second-to-last segment', function (): void {
     $this->seed(new LarderJar('Apple', position: 3));
 
     $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['defaultInstance']])->render()->crawler();

@@ -111,6 +111,15 @@ it('forgets a remembered page size the table does not offer, and remembers none 
         ->and($visitor->getRequest()->getSession()->has($key))->toBeFalse();
 });
 
+it('remembers every row as the page size of a table that offers all of them', function (): void {
+    $this->seed(new Product('Lamp'));
+    $client = $this::getContainer()->get('test.client');
+
+    $this->createLiveComponent(RememberingProductTable::class, client: $client)->set('tableRecordsPerPage', 'all');
+
+    expect($this->visit(TablePageController::url('Tables:RememberingProductTable'), client: $client)->filter(SupportSelectors::PER_PAGE_SELECT . ' option[selected]')->text())->toBe('All');
+});
+
 it('remembers nothing and throws nothing without a session to remember in', function (bool $withRequest): void {
     $requestStack = new RequestStack();
 

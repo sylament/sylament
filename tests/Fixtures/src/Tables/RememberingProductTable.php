@@ -22,7 +22,7 @@ use Symfony\UX\LiveComponent\Metadata\UrlMapping;
  * A product table a routed page carries in its URL and remembers between visits: its sort,
  * its search and its page are bound to the query string (the page as `shelfPage`, under the
  * host's identifier, while its table names another), and its sort, search, column searches
- * and `short` filter are remembered in the session, beside the per-page choice of 5 or 10.
+ * and `short` filter are remembered in the session, beside the per-page choice of 5, 10 or all.
  */
 #[AsLiveComponent(name: 'Tables:RememberingProductTable', template: '@Fixtures/tables/table.html.twig')]
 class RememberingProductTable implements InteractsWithSchemas, InteractsWithTable
@@ -55,7 +55,7 @@ class RememberingProductTable implements InteractsWithSchemas, InteractsWithTabl
             ->filters([
                 Filter::make('short')->query(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere('LENGTH(product.name) <= 5')),
             ])
-            ->paginationPageOptions([5, 10])
+            ->paginationPageOptions([5, 10, 'all'])
             ->queryStringIdentifier('ledger')
             ->persistSortInSession()
             ->persistSearchInSession()

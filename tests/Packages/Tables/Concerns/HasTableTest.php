@@ -19,13 +19,13 @@ use Sylament\Tests\Fixtures\Tables\InjectingRecordsTable;
 use Sylament\Tests\Fixtures\Tables\InvoiceLineTable;
 use Sylament\Tests\Fixtures\Tables\JarredLarderTable;
 use Sylament\Tests\Fixtures\Tables\KeyOverridingProductTable;
+use Sylament\Tests\Fixtures\Tables\KeyShapedPagedTable;
 use Sylament\Tests\Fixtures\Tables\OrderLineTable;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 use Sylament\Tests\Fixtures\Tables\RememberingProductTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\ShapedRecordsTable;
 use Sylament\Tests\Fixtures\Tables\TablePageController;
-use Sylament\Tests\Fixtures\Tables\WalkerHintedOrderLineTable;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Error\RuntimeError;
 
@@ -420,15 +420,18 @@ describe('the all-records count', function (): void {
             ->toThrow(LogicException::class, 'Table [' . ShapedRecordsTable::class . '] cannot count its records: a simple-paginated records() closure carries no total.');
     });
 
-    it('refuses by name to count a composite root whose query names its own output walker', function (): void {
-        $this->seed(new OrderLine(order: 7, line: 2));
+    it('refuses by name to count a composite root whose query names its own output walker', function (string $root, object $line): void {
+        $this->seed($line);
 
-        $tester = $this->createLiveComponent(WalkerHintedOrderLineTable::class);
+        $tester = $this->createLiveComponent(KeyShapedPagedTable::class, ['root' => $root, 'walker' => true, 'tableRecordsPerPage' => 'all']);
 
         expect($tester->render()->crawler()->filter(Selectors::row('7~2')))->toHaveCount(1)
             ->and(fn (): mixed => $tester->assertCountTableRecords(1))
-            ->toThrow(LogicException::class, 'Cannot read table [' . WalkerHintedOrderLineTable::class . ']: the record class [' . OrderLine::class . '] is keyed by more than one field or by an association, and the table query sets its own output walker');
-    });
+            ->toThrow(LogicException::class, 'Cannot read table [' . KeyShapedPagedTable::class . ']: the record class [' . $line::class . '] is keyed by more than one field or by an association, and the table query sets its own output walker');
+    })->with([
+        'scalar fields' => fn (): array => ['orderLine', new OrderLine(order: 7, line: 2)],
+        'an association plus a scalar' => fn (): array => ['invoiceLine', new InvoiceLine(new Invoice(7), line: 2)],
+    ]);
 });
 
 describe('the URL', function (): void {

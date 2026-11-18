@@ -11,9 +11,9 @@ use Sylament\Tests\Fixtures\Actions\SecondManager;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 
 /**
- * An application's own association reader, which a create page hands its form, recording both key reads a create asks
- * it, the record check's changed-key question and the blank-key read after `persist()`, each with the manager it was
- * rebound to: the registry's, the request's {@see SecondManager}, or none.
+ * An application's own association reader, which a create or an edit page hands its form, recording the key reads a
+ * save asks it, the record check's changed-key question and, on a create, the blank-key read after `persist()`, each
+ * with the manager it was rebound to: the registry's, the request's {@see SecondManager}, or none.
  */
 final class KeyReadsRecordingAssociationReader extends AssociationReader
 {

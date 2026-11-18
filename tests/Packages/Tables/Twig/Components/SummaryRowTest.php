@@ -58,15 +58,15 @@ it("places a blank cell wherever the record row places its actions and its check
 it("stamps each cell with its column's responsive pair, the row header with the first column's, and pads a blank cell as a cell", function (): void {
     $this->seed(new LarderJar('Apricot', position: 1), new LarderJar('Bramble', position: 2), new LarderJar('Cherry', position: 4));
 
-    $cells = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['responsive', 'actions'], 'actionsPosition' => 'AfterCells'])->render()->crawler()->filter(Selectors::summaryRow('page'))->children();
+    $row = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['responsive', 'actions'], 'actionsPosition' => 'AfterCells'])->render()->crawler()->filter(Selectors::summaryRow('page'));
+    $sum = $row->filter('td')->reduce(fn (Crawler $cell): bool => $this::textSummaries($cell) === ['Sum 3']);
+    $pads = $row->children()->reduce(static fn (Crawler $cell): bool => $cell->children()->count() === 0 && $cell->text() === '');
 
-    expect($cells->eq(1)->matches(Selectors::SUMMARY_HEADING . Selectors::hiddenFrom('lg')))->toBeTrue()
-        ->and($cells->eq(2)->matches(Selectors::visibleFrom('md')))->toBeTrue()
-        ->and($cells->eq(3)->matches(Selectors::RESPONSIVE))->toBeFalse()
-        ->and($cells->first()->text())->toBe('')
-        ->and($cells->first()->matches('td' . Selectors::CELL))->toBeTrue()
-        ->and($cells->last()->text())->toBe('')
-        ->and($cells->last()->matches('td' . Selectors::CELL))->toBeTrue();
+    expect($row)->toContainElement(Selectors::SUMMARY_HEADING . Selectors::hiddenFrom('lg'), 'This page')
+        ->and($sum)->toHaveCount(1)
+        ->and($sum->matches(Selectors::visibleFrom('md')))->toBeTrue()
+        ->and($row->filter(Selectors::summarizer('range'))->closest('td')?->matches(Selectors::RESPONSIVE))->toBeFalse()
+        ->and($pads->each(static fn (Crawler $pad): bool => $pad->matches('td' . Selectors::CELL)))->toBe([true, true]);
 });
 
 it("heads a group's row with the group's title in a cell of its own while only the groups show", function (): void {

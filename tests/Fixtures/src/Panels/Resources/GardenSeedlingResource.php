@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Panels\Resources;
 
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Actions\EditAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Schemas\Schema;
@@ -18,7 +19,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListGardenSeedlings;
 /**
  * A garden's seedlings as a resource nested under the garden's, titled by name, whose record
  * query is rooted at its own alias and hides every seedling named `Hidden …`: a searchable,
- * sortable name column, and a list, create and edit page of its own.
+ * sortable name column with a row action to edit, and a list, create and edit page of its own.
  */
 final class GardenSeedlingResource extends Resource
 {
@@ -49,9 +50,11 @@ final class GardenSeedlingResource extends Resource
 
     public function table(Table $table): Table
     {
-        return $table->columns([
-            TextColumn::make('name')->searchable()->sortable(),
-        ]);
+        return $table
+            ->columns([
+                TextColumn::make('name')->searchable()->sortable(),
+            ])
+            ->recordActions([EditAction::make()]);
     }
 
     public function getPages(): array

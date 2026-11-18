@@ -214,12 +214,12 @@ describe('the urls it mints', function (): void {
 });
 
 describe('the nested list', function (): void {
-    it("lists only its parent's records its own query keeps, searching and sorting within them", function (): void {
-        $names = $this->visit("/nested/gardens/{$this->rose->id}/garden-seedlings")
-            ->filter(TablesSelectors::columnCells('name'))
-            ->each(static fn (Crawler $cell): string => $cell->text());
+    it("lists only its parent's records its own query keeps, linking each to its nested edit page, searching and sorting within them", function (): void {
+        $page = $this->visit("/nested/gardens/{$this->rose->id}/garden-seedlings");
+        $editLinks = $page->filter(TablesSelectors::RECORD_ACTIONS . ' a[href]')->each(static fn (Crawler $link): ?string => parse_url((string) $link->attr('href'), PHP_URL_PATH));
 
-        expect($names)->toEqualCanonicalizing(['Fern', 'Sage']);
+        expect($page->filter(TablesSelectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text()))->toEqualCanonicalizing(['Fern', 'Sage'])
+            ->and($editLinks)->toEqualCanonicalizing([($this->seedlingUrl)($this->rose, $this->fern), ($this->seedlingUrl)($this->rose, $this->sage)]);
 
         $this->createLiveComponent(ListGardenSeedlings::class, ['parentRecords' => ['garden' => (string) $this->rose->id], 'panelId' => 'nested'])
             ->searchTable('fe')

@@ -42,10 +42,10 @@ describe('breadcrumbs', function (): void {
 
         expect($notes->filter(Selectors::PAGE_HEADING)->text())->toBe('Notes Page')
             ->and($notes->filter(SupportSelectors::BREADCRUMBS))->toHaveCount(0)
-            ->and($notes->filter('header.sy-pa-header-has-breadcrumbs'))->toHaveCount(0)
+            ->and($notes->filter(Selectors::HEADER_WITH_BREADCRUMBS))->toHaveCount(0)
             ->and($settings->filter(SupportSelectors::LINKED_BREADCRUMB)->each(fn (Crawler $crumb): array => [$crumb->text(), $crumb->attr('href')]))->toBe([['Pages', '/pages/notes-page']])
             ->and($settings->filter(SupportSelectors::UNLINKED_BREADCRUMB)->each(fn (Crawler $crumb): string => $crumb->text()))->toBe(['Settings'])
-            ->and($settings->filter('header.sy-pa-header-has-breadcrumbs'))->toHaveCount(1);
+            ->and($settings->filter(Selectors::HEADER_WITH_BREADCRUMBS))->toHaveCount(1);
     });
 });
 
@@ -200,11 +200,10 @@ describe('hosts', function (): void {
     });
 
     it('redraws unchanged on refresh, called or dispatched, keeping a mounted action', function (): void {
-        $page = $this->createLiveComponent(SettingsPage::class, ['panelId' => 'pages'])->mountAction('reset');
-        $before = $page->render()->crawler()->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn')->html();
-        $refreshed = $page->call('refresh')->render()->crawler();
+        $refreshed = $this->createLiveComponent(SettingsPage::class, ['panelId' => 'pages'])->mountAction('reset')->call('refresh')->render()->crawler();
 
-        expect($refreshed->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn')->html())->toBe($before)
+        expect($refreshed->filter(Selectors::PAGE_HEADING)->text())->toBe('Configure the site')
+            ->and($refreshed->filter(Selectors::HEADER_ACTIONS . ' ' . ActionsSelectors::trigger('reset')))->toHaveCount(1)
             ->and($refreshed->filter(ActionsSelectors::mountedModal(0) . ActionsSelectors::OPEN))->toHaveCount(1)
             ->and($this->createLiveComponent(NotesPage::class)->emit('refresh-page')->render()->crawler()->filter(Selectors::PAGE_HEADING)->text())->toBe('Notes Page');
     });

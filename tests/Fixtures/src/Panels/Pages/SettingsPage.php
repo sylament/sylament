@@ -23,8 +23,8 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
  * sub-navigation band, and a header of actions aligned to the end. The header declares an
  * action through its method, one inline that notifies, one that asks for confirmation, a
  * link to the notes page in the panel the page was opened in (its URL minted as the list is
- * declared), and two groups, the one leaving its placement to the page holding an action that
- * notifies.
+ * declared), a `help` action with no URL of its own that the page links by default, and two
+ * groups, the one leaving its placement to the page holding an action that notifies.
  *
  * A live request on it carries the `panelId` of the panel it was opened in, as a GET of its
  * route mints it; built outside any panel, it would answer for the default one, which does
@@ -74,9 +74,15 @@ final class SettingsPage extends Page
             Action::make('ping')->action(static fn (): Notification => Notification::make()->title('Pong')->send()),
             Action::make('reset')->requiresConfirmation()->action(static fn (): Notification => Notification::make()->title('Reset')->send()),
             Action::make('notes')->url($this->urlGenerator->generate(NotesPage::getRouteName($this->getPanel()))),
+            Action::make('help'),
             ActionGroup::make([Action::make('export')->action(static fn (): Notification => Notification::make()->title('Exported')->send()), Action::make('import')]),
             ActionGroup::make([Action::make('share')])->dropdownPlacement('top-start'),
         ];
+    }
+
+    public function getDefaultActionUrl(Action $action): ?string
+    {
+        return $action->getName() === 'help' ? 'https://example.com/help' : parent::getDefaultActionUrl($action);
     }
 
     public function archiveAction(): Action

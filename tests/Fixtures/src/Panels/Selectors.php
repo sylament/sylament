@@ -167,6 +167,16 @@ final class Selectors
      */
     public const string NAVIGATION_GROUP_LABEL = '.sy-pa-sidebar-group-btn';
 
+    /**
+     * The container `Header` wraps its actions row in, rendered only when the header has actions; its class is its one hook.
+     */
+    public const string HEADER_ACTIONS_CONTAINER = '.sy-pa-header-actions-ctn';
+
+    /**
+     * A page header that renders breadcrumbs, by the class `Header` marks it with for the actions' offset.
+     */
+    public const string HEADER_WITH_BREADCRUMBS = 'header.sy-pa-header-has-breadcrumbs';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

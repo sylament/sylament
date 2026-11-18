@@ -9,12 +9,12 @@ use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 
-it("renders the page's declared header actions in its header, each bound to the page", function (): void {
+it("renders the page's declared header actions in its header, each bound to the page, so one takes the page's default URL", function (): void {
     $header = $this->visit('/pages/settings-page')->filter(Selectors::HEADER_ACTIONS);
 
     expect($header->filter(ActionsSelectors::trigger('archive')))->toHaveCount(1)
         ->and($header->filter(ActionsSelectors::trigger('ping')))->toHaveCount(1)
-        ->and($header->filter(ActionsSelectors::TRIGGER . '[href]')->each(fn (Crawler $link): array => [$link->text(), $link->attr('href')]))->toBe([['Notes', '/pages/notes-page']])
+        ->and($header->filter(ActionsSelectors::TRIGGER . '[href]')->each(fn (Crawler $link): array => [$link->text(), $link->attr('href')]))->toBe([['Notes', '/pages/notes-page'], ['Help', 'https://example.com/help']])
         ->and($header->filter(SupportSelectors::DROPDOWN . ' ' . ActionsSelectors::trigger('share')))->toHaveCount(1);
 });
 
@@ -38,7 +38,7 @@ it("aligns the header actions row as the page declares, never the row's containe
     $page = $this->visit('/pages/settings-page');
 
     expect($page->filter(Selectors::HEADER_ACTIONS . SupportSelectors::align('end')))->toHaveCount(1)
-        ->and($page->filter('.sy-pa-header-actions-ctn' . SupportSelectors::NO_ALIGN))->toHaveCount(1);
+        ->and($page->filter(Selectors::HEADER_ACTIONS_CONTAINER . SupportSelectors::NO_ALIGN))->toHaveCount(1);
 });
 
 it('renders a header whose declaration looks an action up by name before the list is bound', function (): void {

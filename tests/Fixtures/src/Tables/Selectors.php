@@ -155,6 +155,31 @@ final class Selectors
     public const string INLINE = '.sy-inline';
 
     /**
+     * A record's checkbox for the bulk actions, ticked or not, by its accessible name.
+     */
+    public const string RECORD_CHECKBOX = 'input[type="checkbox"][aria-label^="Select/deselect record"]';
+
+    /**
+     * The header's checkbox selecting the current page, by its accessible name.
+     */
+    public const string PAGE_CHECKBOX = 'input[type="checkbox"][aria-label="Select/deselect all records on this page for bulk actions."]';
+
+    /**
+     * The toolbar band's start group, holding the reorder trigger, the toolbar actions and the grouping settings; its class is its one hook.
+     */
+    public const string TOOLBAR_ACTIONS = '.sy-ta-header-toolbar-actions';
+
+    /**
+     * The header band's list of header actions; its class is its one hook.
+     */
+    public const string HEADER_ACTIONS = '.sy-ta-header-actions';
+
+    /**
+     * The wrapper of a record's actions inside its row's actions cell; its class is its one hook.
+     */
+    public const string RECORD_ACTIONS = '.sy-ta-actions';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string
@@ -240,5 +265,13 @@ final class Selectors
     public static function editableCell(string $column, string $record): string
     {
         return self::EDITABLE_CELL . "[data-sylament--tables--editable-cell-column-value=\"{$column}\"][data-sylament--tables--editable-cell-record-value=\"{$record}\"]";
+    }
+
+    /**
+     * The checkbox of the record with this key, by its accessible name.
+     */
+    public static function recordCheckbox(string $key): string
+    {
+        return "input[type=\"checkbox\"][aria-label=\"Select/deselect record {$key} for bulk actions.\"]";
     }
 }

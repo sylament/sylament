@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Enums\IconSize;
+use Sylament\Support\Icons\IconManager;
 use Sylament\Tables\Columns\IconColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Sylament\Tables\Twig\TablesIconAlias;
 use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Forms\ColoredLevel;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
@@ -59,6 +61,14 @@ describe('boolean mode', function (): void {
             ->toBe([['Heart', true, false], ['Star', false, true]])
             ->and($this->renderViewComponent(IconColumn::make('stocked')->record(['stocked' => [true, false]])->falseIcon(false))->filter('.sy-ta-sr-only')->each(static fn (Crawler $name): string => $name->text()))
             ->toBe(['Yes']);
+    });
+
+    it('draws the icon an application registers for the true arm, and an icon given to the column over it', function (): void {
+        $this::getContainer()->get(IconManager::class)->register([TablesIconAlias::COLUMNS_ICON_COLUMN_TRUE => 'support:heart']);
+        $icons = fn (IconColumn $column): array => $this->renderViewComponent($column->record(['stocked' => [true, false]]))->filter('svg')->each(static fn (Crawler $icon): string => $icon->text());
+
+        expect($icons(IconColumn::make('stocked')->boolean()))->toBe(['Heart', 'x-circle'])
+            ->and($icons(IconColumn::make('stocked')->trueIcon('support:star')))->toBe(['Star', 'x-circle']);
     });
 
     it('lets its own icon and colour win over the boolean arms, falling through to them where they answer nothing', function (): void {

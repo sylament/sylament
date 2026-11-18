@@ -36,6 +36,7 @@ describe('the search fields', function (): void {
     })->with([
         'the defaults' => [[], null, null, 'Search', 'debounce(500)'],
         'a placeholder' => [[], 'Find a larder', null, 'Find a larder', 'debounce(500)'],
+        'milliseconds' => [[], null, '750ms', 'Search', 'debounce(750)'],
         'seconds' => [[], null, '1s', 'Search', 'debounce(1000)'],
         'a bare number, read as milliseconds' => [[], null, '250', 'Search', 'debounce(250)'],
         'a duration it cannot read' => [[], null, 'soon', 'Search', 'debounce(500)'],

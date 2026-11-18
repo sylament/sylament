@@ -16,7 +16,7 @@ use Symfony\Component\DomCrawler\Crawler;
 describe('the global term', function (): void {
     it('searches by the typed term trimmed, a blank one by nothing, while the wire keeps the term as typed', function (): void {
         $this->seed($redLamp = new Larder('Red Lamp'), $redChair = new Larder('Red Chair'), $blueLamp = new Larder('Blue Lamp'));
-        $wire = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableSearch'];
+        $wire = fn (Testable $tester): mixed => $this::liveProps($tester->render()->crawler())['tableSearch'];
 
         $tester = $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['wholeTerm']])
             ->searchTable(' Red ')
@@ -132,7 +132,7 @@ describe('resetTableSearch()', function (): void {
 describe('the per-column terms', function (): void {
     it('seeds a term for every column searchable on its own input, a dotted name nested, keeping a blank and dropping a key that names no column', function (): void {
         $this->seed($oak = new Seedling('Oak'), $elm = new Seedling('Elm'));
-        $bag = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableColumnSearches'];
+        $bag = fn (Testable $tester): mixed => $this::liveProps($tester->render()->crawler())['tableColumnSearches'];
 
         $tester = $this->createLiveComponent(SeedlingGardenTable::class);
 
@@ -220,7 +220,7 @@ describe('the per-column terms', function (): void {
 
     it('ignores a reset naming no column searchable on its own input, leaving every term where it was', function (string $column): void {
         $this->seed($oak = new Seedling('Oak'), $elm = new Seedling('Elm'));
-        $bag = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableColumnSearches'];
+        $bag = fn (Testable $tester): mixed => $this::liveProps($tester->render()->crawler())['tableColumnSearches'];
 
         $tester = $this->createLiveComponent(SeedlingGardenTable::class)
             ->searchTableColumns(['name' => 'Oak'])

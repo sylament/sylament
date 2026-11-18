@@ -286,7 +286,7 @@ describe('selecting all', function (): void {
 
         expect(preg_grep('/^SELECT \w+\.\w+ AS \w+, \w+\.\w+ AS \w+ FROM \w+ \w+ LEFT JOIN Seedling \w+ ON [\w.= ]+$/', $this->statementsRun()))->toHaveCount(1)
             ->and($crawler->filter(Selectors::SELECTED_RECORD))->toHaveCount(2)
-            ->and(json_decode($crawler->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['selectedTableRecords'])->toHaveCount(2);
+            ->and($this::liveProps($crawler)['selectedTableRecords'])->toHaveCount(2);
 
         $tester->callAction(TestAction::make('archive')->table()->bulk());
 

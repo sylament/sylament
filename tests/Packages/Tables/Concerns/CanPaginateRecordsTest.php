@@ -108,7 +108,7 @@ describe('the page size', function (): void {
 
     it('puts its page size on the wire as the string its select holds, and null with no select where there is nothing to page by, and keeps its page when that value comes back unchanged', function (): void {
         $this->seed(...array_map(static fn (int $number): LarderJar => new LarderJar(sprintf('Jar %02d', $number)), range(1, 11)));
-        $wire = static fn (Testable $tester): array => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR);
+        $wire = fn (Testable $tester): array => $this::liveProps($tester->render()->crawler());
 
         $tester = $this->createLiveComponent(PagedLarderJarTable::class, ['options' => [2, 5, 'all']]);
 

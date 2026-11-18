@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Tables;
 
 use Doctrine\ORM\QueryBuilder;
+use LogicException;
 use Sylament\Tables\Columns\Summarizers\Summarizer;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -22,6 +23,22 @@ trait TablesHelpers
         TextColumn::make($column)->table(Table::make(new SummarizerMountHost()))->summarize($summarizer);
 
         return $this->renderViewComponent($summarizer->query($query ?? $this->entityManager()->createQueryBuilder()->select('jar')->from(LarderJar::class, 'jar')));
+    }
+
+    /**
+     * The live host's props in the markup as the server dehydrated them onto the wire.
+     *
+     * @return array<mixed>
+     */
+    protected static function liveProps(Crawler $crawler): array
+    {
+        $props = json_decode($crawler->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR);
+
+        if (!is_array($props)) {
+            throw new LogicException('The live host carries no props object on the wire.');
+        }
+
+        return $props;
     }
 
     /**

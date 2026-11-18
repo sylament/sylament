@@ -12,7 +12,7 @@ use Symfony\Component\DomCrawler\Crawler;
 
 describe('the grouping state', function (): void {
     it('publishes the grouping as written, and a blank one as nothing', function (string $grouping, ?string $published): void {
-        $props = json_decode((string) $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true);
+        $props = $this::liveProps($this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler());
 
         expect($props['tableGrouping'])->toBe($published);
     })->with([
@@ -29,7 +29,7 @@ describe('the grouping state', function (): void {
             $fig = new LarderJar('Fig', seal: JarSeal::Screw),
         );
 
-        $grouping = static fn (Testable $tester): mixed => json_decode((string) $tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true)['tableGrouping'];
+        $grouping = fn (Testable $tester): mixed => $this::liveProps($tester->render()->crawler())['tableGrouping'];
 
         $tester = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['paged']])
             ->call('gotoTablePage', ['page' => 2])
@@ -59,7 +59,7 @@ describe('the grouping state', function (): void {
             ->call('gotoTablePage', ['page' => 2])
             ->call('groupTable', $arguments)
             ->assertCanSeeTableRecords([$fig]);
-        $props = json_decode((string) $tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true);
+        $props = $this::liveProps($tester->render()->crawler());
 
         expect($props['tableGrouping'])->toBeNull()
             ->and($props['tablePage'])->toBe(2);
@@ -69,7 +69,7 @@ describe('the grouping state', function (): void {
     ]);
 
     it('clears a mounted grouping the table does not offer, then seeds a default the user can select into a blank one', function (array $variants, ?string $mounted, ?string $seeded): void {
-        $props = json_decode((string) $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants, 'tableGrouping' => $mounted])->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true);
+        $props = $this::liveProps($this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants, 'tableGrouping' => $mounted])->render()->crawler());
 
         expect($props['tableGrouping'])->toBe($seeded);
     })->with([

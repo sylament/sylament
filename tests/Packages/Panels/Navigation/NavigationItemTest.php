@@ -24,6 +24,7 @@ it('is drawn only while it is neither hidden nor made invisible, hidden winning 
     $group = NavigationGroup::make('Drafts')->items([
         NavigationItem::make('Outline')->hidden(false)->visible()->url('/outline'),
         NavigationItem::make('Scrapped')->visible()->hidden()->url('/scrapped'),
+        NavigationItem::make('Withdrawn')->hidden()->visible()->url('/withdrawn'),
     ]);
 
     $labels = $this->renderTwigComponent('SylamentPanels:SidebarGroup', ['group' => $group])->crawler()->filter(Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text());

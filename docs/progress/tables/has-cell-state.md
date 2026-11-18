@@ -53,7 +53,8 @@ Other `src/` sites use the same spelling for the same reason; widening the asser
 
 `distinctList()` on a fanned-out path runs `array_unique($values, SORT_REGULAR)`, which compares with `==`.
 For the ordinary case — a list of strings pulled off a collection — that is exactly what it reads as.
-For a path that ends **at** an association, where the values are entities rather than scalars, `==` on two objects of the same class compares their properties one by one, so two distinct rows that happen to carry equal field values collapse into one entry while `===` would have kept both.
+For a path that ends **at** an association, where the values are entities rather than scalars, `==` on two objects of the same class compares their properties one by one, so two distinct objects whose every property is equal collapse into one entry while `===` would have kept both.
+A persisted entity's identifier is one of those properties, so two rows of the database never collapse and the same row reached twice does; only objects with no identifier of their own, such as value objects, collapse on equal fields alone.
 
 It is Filament's behaviour too, by the very same call: `Collection::unique()` with no key and its default `$strict = false` is `array_unique($this->items, SORT_REGULAR)`.
 So neither codebase dedupes by identity here, and the note exists because the code says `SORT_REGULAR` — a flag that reads like "the default, nothing to see" and is in fact the whole semantics.

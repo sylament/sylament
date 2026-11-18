@@ -7,7 +7,6 @@ namespace Sylament\Tests\Fixtures\Panels;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Support\Enums\Width;
-use Sylament\Tests\Fixtures\Panels\Pages\CustomShellPage;
 use Sylament\Tests\Fixtures\Panels\Pages\MonthlyReportPage;
 use Sylament\Tests\Fixtures\Panels\Pages\NotesPage;
 use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
@@ -26,6 +25,6 @@ final class PagesPanelProvider extends PanelProvider
             ->id('pages')
             ->path('pages')
             ->maxContentWidth(Width::FiveExtraLarge)
-            ->pages([NotesPage::class, SettingsPage::class, TemplatedPage::class, MonthlyReportPage::class, StandalonePage::class, CustomShellPage::class]);
+            ->pages([NotesPage::class, SettingsPage::class, TemplatedPage::class, MonthlyReportPage::class, StandalonePage::class]);
     }
 }

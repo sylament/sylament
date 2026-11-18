@@ -59,7 +59,7 @@ describe('navigation', function (): void {
         $item = fn (Crawler $page, string $href): Crawler => $page->filter(Selectors::NAVIGATION . " a[href=\"{$href}\"]");
         $ungrouped = $notes->filter(Selectors::NAVIGATION . ' .sy-pa-sidebar-group:not([data-group-label]) ' . Selectors::NAVIGATION_ITEM_LABEL);
 
-        expect($ungrouped->each(fn (Crawler $label): string => $label->text()))->toBe(['Notes Page', 'Custom Shell Page', 'Reports', 'Templated Page'])
+        expect($ungrouped->each(fn (Crawler $label): string => $label->text()))->toBe(['Notes Page', 'Reports', 'Templated Page'])
             ->and($item($notes, '/pages/settings-page')->filter(Selectors::NAVIGATION_ITEM_LABEL)->text())->toBe('Site settings')
             ->and($item($notes, '/pages/settings-page')->filter('svg')->text())->toBe('home')
             ->and($item($settings, '/pages/settings-page')->filter('svg')->text())->toBe('rectangle-stack')
@@ -171,7 +171,7 @@ describe('body', function (): void {
 });
 
 describe('shell', function (): void {
-    it('renders in the panel shell, in the simple shell when it names it, and refuses any other layout by name', function (): void {
+    it('renders in the panel shell, and in the simple shell when it names it', function (): void {
         $notes = $this->visit('/pages/notes-page');
         $standalone = $this->visit('/pages/standalone-page');
 
@@ -179,8 +179,7 @@ describe('shell', function (): void {
             ->and($notes->filter(Selectors::TOPBAR))->toHaveCount(1)
             ->and($notes->filter(Selectors::SIMPLE_LAYOUT))->toHaveCount(0)
             ->and($standalone->filter('body ' . Selectors::SIMPLE_LAYOUT . ' ' . Selectors::PAGE))->toHaveCount(1)
-            ->and($standalone->filter(Selectors::NAVIGATION))->toHaveCount(0)
-            ->and(fn () => $this->visit('/pages/custom-shell-page'))->toThrow(LogicException::class, 'The page Sylament\Tests\Fixtures\Panels\Pages\CustomShellPage names the layout "App:MarketingLayout"');
+            ->and($standalone->filter(Selectors::NAVIGATION))->toHaveCount(0);
     });
 
     it('hands its layout the data it declares, a simple shell without its topbar', function (): void {

@@ -147,11 +147,11 @@ final class Selectors
     }
 
     /**
-     * A sortable header cell in a sort state: `ascending`, `descending`, or `none` while another column or none sorts.
+     * The header cell of a sortable column in a sort state: `ascending`, `descending`, or `none` while another column or none sorts; the column is named as `headerCell()` takes it.
      */
-    public static function sortState(string $state): string
+    public static function sortState(string $column, string $state): string
     {
-        return "th[aria-sort=\"{$state}\"]";
+        return self::headerCell($column) . "[aria-sort=\"{$state}\"]";
     }
 
     /**

@@ -197,6 +197,11 @@ final class Selectors
      */
     public const string PER_PAGE_SELECT = 'select[data-model="tableRecordsPerPage"]';
 
+    /**
+     * The line a pagination opens with, counting the records the page shows; its class is its one hook.
+     */
+    public const string PAGINATION_OVERVIEW = '.sy-pagination-overview';
+
     public const string OUTLINED = '.sy-outlined';
 
     public const string LINK_LABEL = '.sy-link-label';

@@ -297,6 +297,16 @@ final class Selectors
     public const string COLUMN_SEARCH_ROW = 'tr.sy-ta-column-search-row';
 
     /**
+     * The busy status a deferred table renders in place of its records until it loads.
+     */
+    public const string LOADING = '[role="status"][aria-busy="true"]';
+
+    /**
+     * The live host's root, whose `data-live-props-value` holds its props as the server dehydrated them onto the wire.
+     */
+    public const string LIVE_PROPS = '[data-live-props-value]';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string

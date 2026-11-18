@@ -75,3 +75,14 @@ it("loads support's core controller eagerly, autoimporting the toolkit styleshee
         'autoimport' => ['@sylament/support/styles/index.css' => true],
     ]);
 });
+
+/**
+ * The unsaved-changes guard runs only where StimulusBundle loads this controller up front: a lazy or disabled block
+ * leaves every page rendering and saving with no prompt, and no error says so.
+ */
+it("loads panels' unsaved-changes controller eagerly", function (): void {
+    expect(PackageManifest::assets('panels')['symfony']['controllers']['unsaved-changes'] ?? null)->toMatchArray([
+        'fetch' => 'eager',
+        'enabled' => true,
+    ]);
+});

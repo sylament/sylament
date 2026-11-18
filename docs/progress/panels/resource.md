@@ -165,7 +165,7 @@ On the default arm the key is [`RecordKey::of()`](../schemas/record-key-contract
 
 `$recordRouteKeyName` is Filament's own static with Filament's meaning: the URL segment is one property of the record, read through schemas' `PropertyAccessor` on the way out and bound as one untyped parameter on the way back.
 The key codec is consulted on neither side, so three things hold on this arm that the default arm rules out.
-The bind is **untyped**, so a non-numeric segment against a numeric column is a `DriverException` — a 500, because `PageController` converts only an `HttpExceptionInterface` — where the default arm answers a 404 without querying.
+The bind is **untyped**, so a non-numeric segment against a numeric column reaches the database as the client sent it and the platform decides: for `abc`, SQLite and MySQL match no row, a 404, and PostgreSQL refuses the comparison with a `DriverException`, a 500, because `PageController` converts only an `HttpExceptionInterface`; the default arm answers a 404 without querying on every platform.
 The named column need not be **unique**, so `getOneOrNullResult()` may raise `NonUniqueResultException`, a 500 for the same reason.
 And the value reaches the `sy-pa-resource-record-<key>` class token raw, so a property holding whitespace [splits that token in two](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
 A value that is blank or not scalar is refused on the way out with *The route key of [X] is not a printable value.*

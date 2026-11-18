@@ -87,7 +87,7 @@ Worked, all **verified by executing** the reference implementation against a SQL
 | `('example.com', '/clanky/Žofia~Návratová')` | `example=2Ecom~=2Fclanky=2F=C5=BDofia=7EN=C3=A1vratov=C3=A1` |
 | `('a=b', 'c\|d')` | `a=3Db~c=7Cd` |
 | `('x y', 'p%2Fq')` | `x=20y~p=252Fq` |
-| `Venue('main-hall')` + `'autumn/2026'` (derived identity) | `main-hall~autumn=2F2026` |
+| `StageVenue('main-hall')` + `'autumn/2026'` (derived identity) | `main-hall~autumn=2F2026` |
 | `Zone::Footer` + `2` (a backed enum plus a scalar) | `footer~2` |
 | `1`, `2` (scalar pair) | `1~2` |
 | `'sy/0.1'` (a **single** string identifier) | `sy/0.1` — verbatim, see [the divergence](record-key.md#a-single-string-identifier-containing--or--stays-broken) |
@@ -274,7 +274,7 @@ For an association identifier field the type is the **target's** identifier fiel
 
 ### The operations and their DQL
 
-Three classes stand in below: `Song` (`#[Id] int $id`) for the single-identifier lane that must not move; `Shortcut` (`#[Id] string $host`, `#[Id] string $path`) for a scalar pair; and `Residency` (`#[Id]` ManyToOne `Venue`, `#[Id] string $season`) for a derived identity, whose `Venue` is itself keyed on a `Handle` value object through a custom DBAL type — so the association arm is exercised with a type that actually converts.
+Three illustrative classes stand in below: `Song` (`#[Id] int $id`) for the single-identifier lane that must not move; `Shortcut` (`#[Id] string $host`, `#[Id] string $path`) for a scalar pair; and `Residency` (`#[Id]` ManyToOne `Venue`, `#[Id] string $season`) for a derived identity.
 
 | Operation | Single identifier | Scalar pair | Derived identity |
 | --- | --- | --- | --- |
@@ -304,7 +304,8 @@ That is the property that makes this a foundation rather than a rewrite.
 The by-key dissociate's statement is DQL wherever its foreign key is one column; only a mapped-by spanning several join columns writes through [`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table).
 
 **The DQL parses down to ordinary SQL.**
-`equals()` on a scalar pair executes as `… WHERE s0_.host = ? AND s0_.path = ?`, on a derived identity as `… WHERE r0_.venue_id = ? AND r0_.season = ?`, and a DQL `DELETE` over two composite keys as `DELETE FROM Residency WHERE ((venue_id = ? AND season = ?) OR (venue_id = ? AND season = ?))` — all three executed.
+Over the illustrative classes, `equals()` on a scalar pair parses to `… WHERE s0_.host = ? AND s0_.path = ?`, on a derived identity to `… WHERE r0_.venue_id = ? AND r0_.season = ?`, and a DQL `DELETE` over two composite keys to `DELETE FROM Residency WHERE ((venue_id = ? AND season = ?) OR (venue_id = ? AND season = ?))`.
+The root suite runs `equals()` over both composite flavours, each finding its record and only it.
 
 **A `KeySelection` is read back through `keyOf($row)` or `keyOfHydrated($row)`, never re-derived.**
 Each reads exactly the aliases it projected, throwing a `LogicException` naming the class and the missing column if the row came from a different selection, and hands the values to its held `IdentifierFields::toKey()`; they differ in which values they convert through the field's own DBAL type first, and the caller picks by the hydrator that produced the row.

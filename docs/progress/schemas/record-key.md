@@ -72,7 +72,7 @@ The normalisation is where a hand-rolled copy would go wrong, and the rule is **
 Which values are raw is the hydrator's answer, and **no hydrator converts every key column and the hydrators disagree about which ones they do**.
 The scalar hydrator converts *none* — an aliased select is `isScalar`, and `AbstractHydrator::gatherScalarRowData()` skips both the DBAL type and `enumType` for those under a documented `// WARNING: BC break!` decision (`vendor/doctrine/orm/src/Internal/Hydration/AbstractHydrator.php:422-424`).
 The array hydrator converts a *field path* but not an `IDENTITY()` expression, which `SqlWalker` registers as a plain `'string'` (`vendor/doctrine/orm/src/Query/SqlWalker.php:1370`, against `:1315` for a field path).
-So a `Handle`-keyed `Venue` reached through `IDENTITY()` arrives raw under **both** hydrations, a `BackedEnum` arrives as an *instance* under the array hydrator and as its **backing value** under the scalar one, and converting only the association arm of a scalar row mints a different string on the row side than the record side mints.
+So an association whose target is keyed through a converting DBAL type, reached through `IDENTITY()`, arrives raw under **both** hydrations, a `BackedEnum` arrives as an *instance* under the array hydrator and as its **backing value** under the scalar one, and converting only the association arm of a scalar row mints a different string on the row side than the record side mints.
 So `keyOf()`, over a scalar row, converts every value, and `keyOfHydrated()`, over an array row, converts the association halves alone ([the second reader](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time)).
 A value the hydrator already built into an **object** is the one thing left alone, and it needs nothing: the printable rule unwraps a `BackedEnum` to its backing value and a `Stringable` to its string, which is exactly what the record side does with the same object.
 The rule that falls out: a row-to-key decode is **called**, never re-derived at a call site.
@@ -268,7 +268,7 @@ It is recorded, not built.
 ### A single string identifier containing `.` or `/` stays broken
 
 [The grammar](record-key-contract.md#the-grammar) exempts a one-field identifier from escaping, so a single-identifier key is the identifier value itself — and that deliberately **leaves** a hole open rather than closing it.
-A `Book` keyed on `code` with the value `sy/0.1` breaks the `{record}` route (the `/`) and re-addresses a repeater item's state path (the `.`).
+A record keyed on a single string `code` with the value `sy/0.1` breaks the `{record}` route (the `/`) and re-addresses a repeater item's state path (the `.`).
 This is stated so the first user with a slug-keyed entity does not read the contract as a guarantee it does not make: **only a composite key carries the alphabet guarantee.**
 Closing it for single identifiers would move every URL and every pinned test in the repo, a breaking change of its own.
 

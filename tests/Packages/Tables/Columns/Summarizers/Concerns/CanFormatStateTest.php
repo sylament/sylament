@@ -45,7 +45,7 @@ describe('the text around the figure', function (): void {
     });
 
     it('cuts a long figure to its limit, ending it as told', function (): void {
-        expect($this->renderSummarizer(Summarizer::make()->using(static fn (): string => 'Blackcurrant')->limit(5)))->toContainElement(Selectors::summarizerFigure('text'), 'Black...');
+        expect($this->renderSummarizer(Summarizer::make()->using(static fn (): string => 'Blackcurrant')->limit(5, end: '…')))->toContainElement(Selectors::summarizerFigure('text'), 'Black…');
     });
 
     it('prints its placeholder for a figure that comes out blank', function (Closure $figure): void {

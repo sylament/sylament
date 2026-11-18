@@ -51,7 +51,7 @@ describe('the reorder mode', function (): void {
 });
 
 describe('reorderTable()', function (): void {
-    it('numbers the records by their place in the order between its two hooks, the reorder mode off, and lists them in it', function (): void {
+    it('numbers the records by their place in the order, handing the order to its before and after hooks, the reorder mode off, and lists them in it', function (): void {
         $this->seed($apple = new LarderJar('Apple', position: 1), $banana = new LarderJar('Banana', position: 2), $cherry = new LarderJar('Cherry', position: 3));
         $order = [(string) $cherry->id, (string) $apple->id, (string) $banana->id];
 

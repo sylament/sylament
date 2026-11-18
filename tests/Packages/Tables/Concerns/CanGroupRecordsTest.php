@@ -12,7 +12,7 @@ use Symfony\Component\DomCrawler\Crawler;
 
 describe('the grouping state', function (): void {
     it('publishes the grouping as written, and a blank one as nothing', function (string $grouping, ?string $published): void {
-        $props = json_decode((string) $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value'), true);
+        $props = json_decode((string) $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true);
 
         expect($props['tableGrouping'])->toBe($published);
     })->with([
@@ -29,7 +29,7 @@ describe('the grouping state', function (): void {
             $fig = new LarderJar('Fig', seal: JarSeal::Screw),
         );
 
-        $grouping = static fn (Testable $tester): mixed => json_decode((string) $tester->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value'), true)['tableGrouping'];
+        $grouping = static fn (Testable $tester): mixed => json_decode((string) $tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true)['tableGrouping'];
 
         $tester = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['paged']])
             ->call('gotoTablePage', ['page' => 2])
@@ -59,7 +59,7 @@ describe('the grouping state', function (): void {
             ->call('gotoTablePage', ['page' => 2])
             ->call('groupTable', $arguments)
             ->assertCanSeeTableRecords([$fig]);
-        $props = json_decode((string) $tester->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value'), true);
+        $props = json_decode((string) $tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true);
 
         expect($props['tableGrouping'])->toBeNull()
             ->and($props['tablePage'])->toBe(2);
@@ -69,7 +69,7 @@ describe('the grouping state', function (): void {
     ]);
 
     it('clears a mounted grouping the table does not offer, then seeds a default the user can select into a blank one', function (array $variants, ?string $mounted, ?string $seeded): void {
-        $props = json_decode((string) $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants, 'tableGrouping' => $mounted])->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value'), true);
+        $props = json_decode((string) $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants, 'tableGrouping' => $mounted])->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value'), true);
 
         expect($props['tableGrouping'])->toBe($seeded);
     })->with([
@@ -143,9 +143,9 @@ describe('the group header rows', function (): void {
         $this->seed(new LarderJar('Apple', seal: JarSeal::Wax), new LarderJar('Cherry', seal: JarSeal::Screw), new LarderJar('Fig', seal: JarSeal::Wax));
 
         $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants, 'tableGrouping' => 'seal'])->render()->crawler();
-        $width = count($crawler->filter('thead th'));
+        $width = count($crawler->filter(Selectors::HEADER_CELLS));
 
-        expect($crawler->filter('tbody tr')->each(static fn (Crawler $row): string => $row->matches(Selectors::GROUP_HEADER_ROW) ? (string) $row->attr('data-sy-group') : 'record'))->toBe(['screw', 'record', 'wax', 'record', 'record'])
+        expect($crawler->filter(Selectors::BODY_ROW)->each(static fn (Crawler $row): string => $row->matches(Selectors::GROUP_HEADER_ROW) ? (string) $row->attr('data-sy-group') : 'record'))->toBe(['screw', 'record', 'wax', 'record', 'record'])
             ->and($crawler->filter(Selectors::GROUP_HEADER_ROW)->each(static fn (Crawler $row): int => array_sum($row->filter('td')->each(static fn (Crawler $cell): int => (int) ($cell->attr('colspan') ?? 1)))))->toBe([$width, $width]);
     })->with([
         'a plain table' => [[]],
@@ -160,16 +160,16 @@ describe('the group header rows', function (): void {
             ->render()
             ->crawler();
         $wax = $crawler->filter(Selectors::groupHeaderRow('wax'));
-        $tick = $wax->filter('input[type="checkbox"][data-sylament--tables--table-target="groupCheckbox"]');
+        $tick = $wax->filter('input[type="checkbox"]' . Selectors::tableTarget('groupCheckbox'));
 
         expect($tick->attr('data-action'))->toBe('change->sylament--tables--table#toggleGroupRecords')
             ->and(json_decode((string) $tick->attr('data-sy-group-keys'), true))->toBe([(string) $apple->id, (string) $cherry->id])
             ->and($tick->attr('checked'))->not->toBeNull()
-            ->and($crawler->filter(Selectors::groupHeaderRow('screw') . ' input[data-sylament--tables--table-target="groupCheckbox"]')->attr('checked'))->toBeNull()
+            ->and($crawler->filter(Selectors::groupHeaderRow('screw') . ' input' . Selectors::tableTarget('groupCheckbox'))->attr('checked'))->toBeNull()
             ->and($wax->filter(Selectors::GROUP_HEADER)->attr('data-action'))->toBe('click->sylament--tables--table#toggleGroup')
             ->and($wax->filter('button[aria-label="Seal: wax"][aria-expanded="true"]')->attr('data-action'))->toBe('click->sylament--tables--table#toggleGroup')
-            ->and($crawler->filter(Selectors::GROUP_BY_SELECT . '[data-sylament--tables--table-target="groupColumn"][data-action="change->sylament--tables--table#group"]'))->toHaveCount(2)
-            ->and($crawler->filter(Selectors::GROUP_DIRECTION_SELECT . '[data-sylament--tables--table-target="groupDirection"][data-action="change->sylament--tables--table#group"]'))->toHaveCount(2);
+            ->and($crawler->filter(Selectors::GROUP_BY_SELECT . Selectors::tableTarget('groupColumn') . '[data-action="change->sylament--tables--table#group"]'))->toHaveCount(2)
+            ->and($crawler->filter(Selectors::GROUP_DIRECTION_SELECT . Selectors::tableTarget('groupDirection') . '[data-action="change->sylament--tables--table#group"]'))->toHaveCount(2);
     });
 
     it('opens one heading for the records of two keys a title closure titles alike', function (): void {
@@ -208,7 +208,7 @@ describe('the group header rows', function (): void {
 
         $rows = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['striped'], 'tableGrouping' => $grouping])->render()->crawler()->filter(Selectors::ROW);
 
-        expect($rows->each(static fn (Crawler $row): bool => $row->matches('.sy-striped')))->toBe($striped);
+        expect($rows->each(static fn (Crawler $row): bool => $row->matches(Selectors::STRIPED)))->toBe($striped);
     })->with([
         'grouped' => ['seal', [false, true, false, false, true]],
         'ungrouped' => [null, [false, true, false, true, false]],

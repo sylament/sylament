@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
+use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\EditableCellLooksTable;
 use Sylament\Tests\Fixtures\Tables\EditableLarderJarTable;
@@ -74,8 +75,8 @@ describe('the input', function (): void {
     it('carries inline and its alignment on its root', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::TEXT_INPUT_COLUMN . Selectors::INLINE . SupportSelectors::align('end'))
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'email') . ' ' . Selectors::TEXT_INPUT_COLUMN . ':not(' . Selectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
+        expect($crawler)->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::TEXT_INPUT_COLUMN . SchemasSelectors::INLINE . SupportSelectors::align('end'))
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'email') . ' ' . Selectors::TEXT_INPUT_COLUMN . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
     });
 
     it('keeps its cell out of the record link a clickable row wraps its other cells in', function (): void {
@@ -92,26 +93,26 @@ describe('the affixes', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
         $weight = Selectors::cell('north', 'weight');
 
-        expect($crawler)->toContainElement($weight . ' ' . SupportSelectors::PREFIX . ':not(.sy-inline)', 'kg')
+        expect($crawler)->toContainElement($weight . ' ' . SupportSelectors::PREFIX . ':not(' . SchemasSelectors::INLINE . ')', 'kg')
             ->and($crawler)->toContainElement($weight . ' ' . SupportSelectors::INLINE_SUFFIX, 'net')
-            ->and($crawler)->toContainElement($weight . ' ' . FormsSelectors::INPUT . '.sy-fo-input-has-inline-suffix:not(.sy-fo-input-has-inline-prefix)');
+            ->and($crawler)->toContainElement($weight . ' ' . FormsSelectors::INPUT . FormsSelectors::INPUT_HAS_INLINE_SUFFIX . ':not(' . FormsSelectors::INPUT_HAS_INLINE_PREFIX . ')');
     });
 
     it('places a side by the last call on it, a prefix() resetting an earlier inlinePrefix()', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'volume') . ' ' . SupportSelectors::PREFIX . ':not(.sy-inline)', 'l')
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'volume') . ' ' . FormsSelectors::INPUT . ':not(.sy-fo-input-has-inline-prefix)')
+        expect($crawler)->toContainElement(Selectors::cell('north', 'volume') . ' ' . SupportSelectors::PREFIX . ':not(' . SchemasSelectors::INLINE . ')', 'l')
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'volume') . ' ' . FormsSelectors::INPUT . ':not(' . FormsSelectors::INPUT_HAS_INLINE_PREFIX . ')')
             ->and($crawler)->toContainElement(Selectors::cell('north', 'depth') . ' ' . SupportSelectors::INLINE_PREFIX, 'cm')
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'depth') . ' ' . FormsSelectors::INPUT . '.sy-fo-input-has-inline-prefix');
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'depth') . ' ' . FormsSelectors::INPUT . FormsSelectors::INPUT_HAS_INLINE_PREFIX);
     });
 
     it('renders a prefix and a suffix icon in the wrapper, gray unless coloured, placed inline as a label is', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
         $stock = Selectors::cell('north', 'stock');
 
-        expect($crawler)->toContainElement($stock . ' ' . SupportSelectors::PREFIX . ':not(.sy-inline) svg' . SupportSelectors::GRAY, 'Heart')
+        expect($crawler)->toContainElement($stock . ' ' . SupportSelectors::PREFIX . ':not(' . SchemasSelectors::INLINE . ') svg' . SupportSelectors::GRAY, 'Heart')
             ->and($crawler)->toContainElement($stock . ' ' . SupportSelectors::INLINE_SUFFIX . ' svg' . SupportSelectors::color('success'), 'Star')
-            ->and($crawler)->toContainElement($stock . ' ' . FormsSelectors::INPUT . '.sy-fo-input-has-inline-suffix');
+            ->and($crawler)->toContainElement($stock . ' ' . FormsSelectors::INPUT . FormsSelectors::INPUT_HAS_INLINE_SUFFIX);
     });
 });

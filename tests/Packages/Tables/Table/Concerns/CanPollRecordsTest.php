@@ -10,7 +10,7 @@ use Sylament\Tests\Fixtures\Tables\Selectors;
 use Twig\Error\RuntimeError;
 
 it('hands the table controller its poll interval in milliseconds, and none while it does not poll or while it reorders', function (array $props, ?string $milliseconds): void {
-    $interval = static fn (Testable $tester): ?string => $tester->render()->crawler()->filter('[data-controller~="sylament--tables--table"]')->attr('data-sylament--tables--table-poll-interval-value');
+    $interval = static fn (Testable $tester): ?string => $tester->render()->crawler()->filter(Selectors::TABLE_CONTROLLER)->attr('data-sylament--tables--table-poll-interval-value');
 
     $tester = $this->createLiveComponent(PagedLarderJarTable::class, $props);
 

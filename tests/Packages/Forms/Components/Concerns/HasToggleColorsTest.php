@@ -23,7 +23,7 @@ it('falls back to a gray switch with a primary track, and paints a gray track wh
 
 it('marks a track whose colour name is unknown without painting it any shade', function (): void {
     expect($this->renderSchemaComponent(Toggle::make('notify')->offColor('danger')->onColor('nonsense')))
-        ->toContainElement(Selectors::TOGGLE_TRACK . SupportSelectors::COLORED . ':not([class*="sy-bg-color-"]):not(' . SupportSelectors::color('danger') . ')');
+        ->toContainElement(Selectors::TOGGLE_TRACK . SupportSelectors::COLORED . ':not(' . SupportSelectors::BACKGROUND_COLORED . '):not(' . SupportSelectors::color('danger') . ')');
 });
 
 it('renders an array palette as inline colour declarations on the element it colours', function (): void {

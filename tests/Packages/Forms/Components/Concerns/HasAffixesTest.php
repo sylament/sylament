@@ -7,6 +7,7 @@ use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Components\Contracts\HasAffixes;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Tests\Fixtures\Forms\AffixActionForm;
+use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -32,12 +33,12 @@ it('puts an inline prefix inside the border; the last call on a side wins', func
 it('puts an inline suffix inside the border, and pads the control on an inline side only while that side shows something', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('w')->prefix('kg', isInline: true)->suffix('EUR', isInline: true)))
         ->toContainElement(SupportSelectors::INLINE_SUFFIX, 'EUR')
-        ->toContainElement('input.sy-fo-input-has-inline-prefix.sy-fo-input-has-inline-suffix[name="w"]')
+        ->toContainElement('input' . Selectors::INPUT_HAS_INLINE_PREFIX . Selectors::INPUT_HAS_INLINE_SUFFIX . '[name="w"]')
         ->and($this->renderSchemaComponent(TextInput::make('w')->prefix('kg')->inlinePrefix()->suffix('EUR')->inlineSuffix()))
         ->toContainElement(SupportSelectors::INLINE_PREFIX, 'kg')
         ->toContainElement(SupportSelectors::INLINE_SUFFIX, 'EUR')
         ->and($this->renderSchemaComponent(TextInput::make('w')->prefix('kg')->inlineSuffix()))
-        ->toContainElement('input[name="w"]:not(.sy-fo-input-has-inline-prefix):not(.sy-fo-input-has-inline-suffix)');
+        ->toContainElement('input[name="w"]:not(' . Selectors::INPUT_HAS_INLINE_PREFIX . '):not(' . Selectors::INPUT_HAS_INLINE_SUFFIX . ')');
 });
 
 it('renders an affix icon in gray unless a colour is set', function (): void {

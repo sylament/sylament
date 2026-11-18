@@ -41,8 +41,8 @@ it("marks each cell and header cell with its column's name, kebabbing each dotte
     expect($crawler->filter(Selectors::headerCell('author.name')))->toHaveCount(1)
         ->and($crawler->filter(Selectors::headerCell('author-name')))->toHaveCount(1)
         ->and($crawler->filter(Selectors::headerCell('released-at')))->toHaveCount(1)
-        ->and($crawler->filter(Selectors::cell('lamp', 'author.name'))->matches('[class~="sy-ta-cell-author.name"]'))->toBeTrue()
-        ->and($crawler->filter(Selectors::cell('lamp', 'authorName'))->matches('[class~="sy-ta-cell-author-name"]'))->toBeTrue();
+        ->and($crawler->filter(Selectors::cell('lamp', 'author.name'))->matches(Selectors::cellClass('author.name')))->toBeTrue()
+        ->and($crawler->filter(Selectors::cell('lamp', 'authorName'))->matches(Selectors::cellClass('author-name')))->toBeTrue();
 });
 
 it("puts a column's width, growth and header wrapping on its header cell, growing only a column told to and given no width", function (): void {

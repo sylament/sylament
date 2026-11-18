@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 it("remembers the sort, search, column searches, filters and page size a client chose across that client's next page load", function (): void {
     $this->seed(new Product('Clamp'), new Product('Lamp'), new Product('Lampshade'), new Product('Lamb'), new Product('Ramp'), new Product('Desk'));
     $client = $this::getContainer()->get('test.client');
-    $names = static fn (Crawler $page): array => $page->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text());
+    $names = static fn (Crawler $page): array => $page->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text());
 
     $this->createLiveComponent(RememberingProductTable::class, client: $client)
         ->sortTable('name', 'desc')
@@ -29,7 +29,7 @@ it("remembers the sort, search, column searches, filters and page size a client 
 
     expect($names($remembered))->toBe(['Lamp', 'Clamp'])
         ->and($remembered->filter(Selectors::columnSearch('name'))->attr('value'))->toBe('lam')
-        ->and($remembered->filter(Selectors::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['Search: amp', 'Name: lam', 'Short'])
+        ->and($remembered->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['Search: amp', 'Name: lam', 'Short'])
         ->and($remembered->filter(SupportSelectors::PER_PAGE_SELECT . ' option[selected]')->text())->toBe('5')
         ->and($names($fresh))->toBe(['Clamp', 'Lamp', 'Lampshade', 'Lamb', 'Ramp', 'Desk'])
         ->and($fresh->filter(Selectors::columnSearch('name'))->attr('value'))->toBe('')
@@ -48,7 +48,7 @@ it('remembers only the page size of a table that opted into remembering nothing'
 
     $page = $this->visit(TablePageController::url('Tables:BrowsableProductTable'), client: $client);
 
-    expect($page->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Desk', 'Lamp'])
+    expect($page->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Desk', 'Lamp'])
         ->and($page->filter(SupportSelectors::PER_PAGE_SELECT . ' option[selected]')->text())->toBe('5');
 });
 
@@ -75,7 +75,7 @@ it('lets the URL win over what the table remembers, and fills from it only what 
 
     $page = $this->visit(TablePageController::url('Tables:RememberingProductTable') . '?search=lam', client: $client);
 
-    expect($page->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Lampshade', 'Lamp', 'Lamb', 'Clamp']);
+    expect($page->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Lampshade', 'Lamp', 'Lamb', 'Clamp']);
 });
 
 it('forgets a remembered sort once a URL names a sort the table does not offer', function (): void {
@@ -85,7 +85,7 @@ it('forgets a remembered sort once a URL names a sort the table does not offer',
 
     $this->createLiveComponent(RememberingProductTable::class, client: $client)->sortTable('name', 'desc');
 
-    $remembered = $this->visit($url, client: $client)->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text());
+    $remembered = $this->visit($url, client: $client)->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text());
     $this->visit($url . '?sort=price:asc', client: $client);
     $forgotten = $this->visit($url, client: $client);
 

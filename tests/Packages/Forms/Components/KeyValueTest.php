@@ -7,6 +7,7 @@ use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Components\KeyValue;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Tests\Fixtures\Forms\KeyValueRowsHost;
+use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -21,8 +22,8 @@ describe('rendering', function (): void {
         expect($crawler->filter('#' . str_replace('.', '\.', (string) $table->attr('aria-labelledby')))->text())->toBe('Pairs')
             ->and($table->filter('thead th:not(.sy-fo-key-value-action-col)')->each(static fn (Crawler $heading): string => $heading->text()))->toBe(['Key', 'Value'])
             ->and($table->filter('tbody tr')->each(static fn (Crawler $row): array => [
-                $row->filter('input[aria-label="Key"]')->attr('value'),
-                $row->filter('input[aria-label="Value"]')->attr('value'),
+                $row->filter(Selectors::KEY_VALUE_KEY)->attr('value'),
+                $row->filter(Selectors::KEY_VALUE_VALUE)->attr('value'),
             ]))->toBe([['colour', 'red'], ['size', 'L']])
             ->and($table->filter('tbody input')->each(static fn (Crawler $input): string => $input->attr('data-model') ?? ''))
             ->toBe(['norender|data.pairs.0.key', 'norender|data.pairs.0.value', 'norender|data.pairs.1.key', 'norender|data.pairs.1.value']);
@@ -126,7 +127,7 @@ describe('add', function (): void {
             ->callAction(TestAction::make('add')->schemaComponent('pairs'));
 
         expect($tester->component()->data['pairs'])->toBe([['key' => 'colour', 'value' => 'red'], ['key' => '', 'value' => '']])
-            ->and($tester->render()->crawler()->filter('input[data-model*="data.pairs."][aria-label="Key"]'))->toHaveCount(2);
+            ->and($tester->render()->crawler()->filter(Selectors::KEY_VALUE_KEY . '[data-model*="data.pairs."]'))->toHaveCount(2);
     });
 
     it('relabels the add link, or lets addAction() modify it', function (Closure $field, string $label): void {
@@ -168,7 +169,7 @@ describe('delete', function (): void {
             ->callAction(TestAction::make('delete')->schemaComponent('pairs'), arguments: ['row' => 0]);
 
         expect($tester->component()->data['pairs'])->toBe([['key' => '', 'value' => '']])
-            ->and($tester->render()->crawler()->filter('input[data-model*="data.pairs."][aria-label="Key"]'))->toHaveCount(1);
+            ->and($tester->render()->crawler()->filter(Selectors::KEY_VALUE_KEY . '[data-model*="data.pairs."]'))->toHaveCount(1);
     });
 
     it('keeps a value typed into a later row in the delete request itself, moving it up with its row', function (): void {

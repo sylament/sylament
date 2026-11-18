@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use Sylament\Tests\Fixtures\Tables\Selectors;
+
 it('renders a label around the magnifying glass and a search input named "Search", bound to the table search after half a second', function (): void {
     $crawler = $this->renderTwigComponent('SylamentTables:SearchField')->crawler();
-    $input = $crawler->filter('label.sy-ta-search-field input[type="search"][aria-label="Search"]');
+    $input = $crawler->filter('label' . Selectors::SEARCH_FIELD . ' input[type="search"][aria-label="Search"]');
 
-    expect($crawler)->toContainElement('label.sy-ta-search-field svg title', 'magnifying-glass-20-solid')
+    expect($crawler)->toContainElement('label' . Selectors::SEARCH_FIELD . ' svg title', 'magnifying-glass-20-solid')
         ->and($input)->toHaveCount(1)
         ->and($input->attr('placeholder'))->toBe('Search')
         ->and($input->attr('autocomplete'))->toBe('off')

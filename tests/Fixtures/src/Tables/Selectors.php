@@ -7,18 +7,17 @@ namespace Sylament\Tests\Fixtures\Tables;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 /**
- * The markup tables render: the roots of its columns, named by the `sy-ta-` class that marks
- * each, for an area asserting what a trait puts on them, and a row's checkbox ticked for the
- * bulk actions, by its accessible name and state; the records table by its element; a record's
- * row and cell, a group's header row and the summary rows by the ids the table template gives
- * them under its host id; a column's header cell by the class naming its column, and its sort
- * trigger and sort state by the live action it sends and its `aria-sort`; the search inputs by
- * the live model they bind; the filters and column manager triggers, an indicator's remove
- * button, the remove-all button and a record's reorder handle by their accessible names; the
- * filters modal by its id, the column manager by its Stimulus controller and the selection
- * banner by the controller's target; and the header band, the toolbar band, a cell's wrapper,
- * the filters panel, an active-filter indicator and the empty state by the `sy-ta-` class that
- * is their one hook.
+ * The markup tables render, for a test to find: the live host's root carrying its props, the
+ * records table, its rows, cells and header cells, a column's root and its content wrapper, the
+ * header and toolbar bands with their actions, the search fields and the per-column search row,
+ * the selection checkboxes, banner and cells, the filters' trigger, panel, modal, form fields
+ * and indicators, the column manager's trigger, dialog, items and controls, the grouping
+ * settings and a group's header, checkbox and summary row, the summary band and a summarizer's
+ * body, the reorder triggers and handles, the editable cells and their errors, and the empty,
+ * loading, striped, bulleted and responsive looks; each named by the `sy-ta-` class that is its
+ * one hook, by the id the table template gives it under its host id, by its accessible name, or
+ * by the Stimulus controller, target, value or live action that wires it, with a static helper
+ * for a family keyed by a record, a column or a value.
  */
 final class Selectors
 {
@@ -152,11 +151,6 @@ final class Selectors
     public const string CELL_ERROR = '.sy-ta-cell-error';
 
     /**
-     * A column's root laid out inline by `inline()`; the class is the behaviour the stylesheet reads.
-     */
-    public const string INLINE = '.sy-inline';
-
-    /**
      * A record's checkbox for the bulk actions, ticked or not, by its accessible name.
      */
     public const string RECORD_CHECKBOX = 'input[type="checkbox"][aria-label^="Select/deselect record"]';
@@ -247,7 +241,7 @@ final class Selectors
     public const string COLUMN_MANAGER_PANEL_FOOTER = '.sy-ta-col-manager-actions-ctn';
 
     /**
-     * The records table's header cells in their order, one per visible column on a table with no selection or record actions.
+     * Every cell of the records table's header row in its order: one per visible column, and the selection and actions cells where the table has them.
      */
     public const string HEADER_CELLS = 'thead th';
 
@@ -282,11 +276,6 @@ final class Selectors
     public const string SUMMARY_HEADING = 'th[scope="row"]';
 
     /**
-     * Every cell of the table's header row, the selection and action cells included.
-     */
-    public const string COLUMN_HEADER = 'thead th';
-
-    /**
      * Every row of the table's body: a record's, a group's header and every summary row.
      */
     public const string BODY_ROW = 'tbody tr';
@@ -305,6 +294,71 @@ final class Selectors
      * The live host's root, whose `data-live-props-value` holds its props as the server dehydrated them onto the wire.
      */
     public const string LIVE_PROPS = '[data-live-props-value]';
+
+    /**
+     * The table's root carrying its Stimulus controller, mounted on a table that selects, reorders, defers its loading or groups.
+     */
+    public const string TABLE_CONTROLLER = '[data-controller~="sylament--tables--table"]';
+
+    /**
+     * A body or search-row cell, of a record's row or a summary row; its class is its one hook.
+     */
+    public const string CELL = '.sy-ta-cell';
+
+    /**
+     * A column's header cell; its class is its one hook beside the class naming its column (`headerCell()`).
+     */
+    public const string HEADER_CELL = '.sy-ta-header-cell';
+
+    /**
+     * The cell holding the header's or a row's selection checkbox; its class is its one hook.
+     */
+    public const string SELECTION_CELL = '.sy-ta-selection-cell';
+
+    /**
+     * A group's checkbox, in its header row, selecting every record of the group; its class is its one hook.
+     */
+    public const string GROUP_CHECKBOX = '.sy-ta-group-checkbox';
+
+    /**
+     * A row painted as a stripe: every other record's row of a striped table or of its group, and the summary band's rows; the class is the behaviour the stylesheet reads.
+     */
+    public const string STRIPED = '.sy-striped';
+
+    /**
+     * A list a text column or a values summarizer bullets; the class is the behaviour the stylesheet reads.
+     */
+    public const string BULLETED = '.sy-bulleted';
+
+    /**
+     * A search field, the toolbar's or a column's own; its class is its one hook.
+     */
+    public const string SEARCH_FIELD = '.sy-ta-search-field';
+
+    /**
+     * Any cell a column's responsive visibility stamps, hidden from or shown only from a breakpoint.
+     */
+    public const string RESPONSIVE = '[class*="sy-ta-hidden"], [class*="sy-ta-visible"]';
+
+    /**
+     * The toolbar's trigger opening the reorder mode, by its accessible name.
+     */
+    public const string REORDER_TRIGGER = 'button[aria-label="Reorder records"]';
+
+    /**
+     * The toolbar's trigger closing the reorder mode, by its accessible name.
+     */
+    public const string FINISH_REORDERING_TRIGGER = 'button[aria-label="Finish reordering records"]';
+
+    /**
+     * The icon button opening the grouping settings, by its accessible name.
+     */
+    public const string GROUP_TRIGGER = 'button[aria-label="Group"]';
+
+    /**
+     * The live action an indicator's remove button sends.
+     */
+    public const string REMOVE_FILTER_ACTION = '[data-live-action-param="removeTableFilter"]';
 
     /**
      * The row of the record with this key.
@@ -482,5 +536,53 @@ final class Selectors
     public static function groupSummaryRow(string $key): string
     {
         return "tr[id\$=\".table.group-summary.{$key}\"]";
+    }
+
+    /**
+     * A target of the table's Stimulus controller (`count`, `selectAll`, `groupCheckbox`, `groupDirectionField`, …).
+     */
+    public static function tableTarget(string $target): string
+    {
+        return "[data-sylament--tables--table-target=\"{$target}\"]";
+    }
+
+    /**
+     * A value the table's Stimulus controller reads, or, without one, the value's presence.
+     */
+    public static function tableValue(string $name, ?string $value = null): string
+    {
+        return $value === null ? "[data-sylament--tables--table-{$name}-value]" : "[data-sylament--tables--table-{$name}-value=\"{$value}\"]";
+    }
+
+    /**
+     * A cell a column's `hiddenFrom()` hides from this breakpoint up.
+     */
+    public static function hiddenFrom(string $breakpoint): string
+    {
+        return "[class~=\"{$breakpoint}:sy-ta-hidden\"]";
+    }
+
+    /**
+     * A cell a column's `visibleFrom()` shows only from this breakpoint up.
+     */
+    public static function visibleFrom(string $breakpoint): string
+    {
+        return "[class~=\"{$breakpoint}:sy-ta-visible\"]";
+    }
+
+    /**
+     * Every record's cell of a column, by the id the table template gives it.
+     */
+    public static function columnCells(string $column): string
+    {
+        return "td[id\$=\".column.{$column}\"]";
+    }
+
+    /**
+     * The class naming a column on each of its cells, the column named as `headerCell()` takes it.
+     */
+    public static function cellClass(string $column): string
+    {
+        return "[class~=\"sy-ta-cell-{$column}\"]";
     }
 }

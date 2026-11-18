@@ -12,7 +12,7 @@ it("removes a chip's filter through the live action its control sends, naming no
     $crawler = $tester->render()->crawler();
 
     expect($crawler)
-        ->toContainElement(Selectors::removeFilterButton('waxed') . '[data-live-action-param="removeTableFilter"]')
+        ->toContainElement(Selectors::removeFilterButton('waxed') . Selectors::REMOVE_FILTER_ACTION)
         ->toContainElement(Selectors::removeFilterButton('listed'))
         ->and($crawler->filter(Selectors::removeFilterButton('listed') . '[data-live-field-param]')->count())->toBe(0);
 

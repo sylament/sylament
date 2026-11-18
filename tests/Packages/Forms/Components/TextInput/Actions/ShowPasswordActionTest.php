@@ -7,5 +7,5 @@ use Sylament\Tests\Fixtures\Forms\Selectors;
 
 it('renders a show-password button its controller answers in the browser, with no live click, drawn with its eye icon', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('secret')->password()->revealable()))
-        ->toContainElement('button[aria-label="Show password"]' . Selectors::textInputAction('reveal') . ' svg', 'eye-20-solid');
+        ->toContainElement(Selectors::SHOW_PASSWORD_BUTTON . Selectors::textInputAction('reveal') . ' svg', 'eye-20-solid');
 });

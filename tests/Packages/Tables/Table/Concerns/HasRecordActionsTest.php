@@ -81,12 +81,12 @@ it('places the actions cell where its position says, the two positions on each s
 
     $crawler = $this->createLiveComponent(PositionedRecordActionsProductTable::class, ['position' => $position, 'selectable' => $selectable, 'checkboxPosition' => $checkboxPosition])->render()->crawler();
     $kinds = static fn (Crawler $cell): string => match (true) {
-        $cell->matches('.sy-ta-selection-cell') => 'checkbox',
+        $cell->matches(Selectors::SELECTION_CELL) => 'checkbox',
         $cell->matches('th[aria-label="Actions"]') || $cell->filter(Selectors::RECORD_ACTIONS)->count() > 0 => 'actions',
         default => 'name',
     };
 
-    expect($crawler->filter('thead th')->each($kinds))->toBe($order)
+    expect($crawler->filter(Selectors::HEADER_CELLS)->each($kinds))->toBe($order)
         ->and($crawler->filter(Selectors::row((string) $lamp->id) . ' td')->each($kinds))->toBe($order);
 })->with([
     'before the cells, no checkboxes' => ['BeforeCells', false, null, ['actions', 'name']],

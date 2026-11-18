@@ -88,9 +88,9 @@ describe('row chrome', function (): void {
 
         $crawler = $this->createLiveComponent(SelectionReadingProductTable::class)->selectTableRecords([$lamp])->render()->crawler();
 
-        expect($crawler->filter(Selectors::row((string) $lamp->id) . '.sy-selected'))->toHaveCount(1)
+        expect($crawler->filter(Selectors::row((string) $lamp->id) . SupportSelectors::SELECTED))->toHaveCount(1)
             ->and($crawler->filter(Selectors::row((string) $desk->id)))->toHaveCount(1)
-            ->and($crawler->filter(Selectors::row((string) $desk->id) . '.sy-selected'))->toHaveCount(0);
+            ->and($crawler->filter(Selectors::row((string) $desk->id) . SupportSelectors::SELECTED))->toHaveCount(0);
     });
 });
 
@@ -176,13 +176,13 @@ describe('selection controller', function (): void {
         $tester = $this->createLiveComponent(SelectionReadingProductTable::class);
         $unselected = $tester->render()->crawler();
         $selected = $tester->selectTableRecords([$lamp])->render()->crawler();
-        $checkbox = $unselected->filter("input[type=\"checkbox\"][aria-label=\"Select/deselect record {$lamp->id} for bulk actions.\"]");
+        $checkbox = $unselected->filter(Selectors::recordCheckbox((string) $lamp->id));
 
-        expect($unselected->filter('[data-controller="sylament--tables--table"][data-sylament--tables--table-can-track-value="true"][data-sylament--tables--table-page-only-value="false"][data-sylament--tables--table-all-selectable-count-value="1"][data-sylament--tables--table-count-one-value="1 record selected"][data-sylament--tables--table-count-many-value=":count records selected"]'))->toHaveCount(1)
+        expect($unselected->filter(Selectors::TABLE_CONTROLLER . Selectors::tableValue('can-track', 'true') . Selectors::tableValue('page-only', 'false') . Selectors::tableValue('all-selectable-count', '1') . Selectors::tableValue('count-one', '1 record selected') . Selectors::tableValue('count-many', ':count records selected')))->toHaveCount(1)
             ->and($unselected->filter(Selectors::SELECTION_BANNER . '[hidden]'))->toHaveCount(1)
-            ->and($unselected->filter('[data-sylament--tables--table-target="count"]'))->toHaveCount(1)
-            ->and($unselected->filter('[data-sylament--tables--table-target="selectAll"]'))->toHaveCount(1)
-            ->and($unselected->filter('[data-sylament--tables--table-target="deselectAll"]'))->toHaveCount(1)
+            ->and($unselected->filter(Selectors::tableTarget('count')))->toHaveCount(1)
+            ->and($unselected->filter(Selectors::tableTarget('selectAll')))->toHaveCount(1)
+            ->and($unselected->filter(Selectors::tableTarget('deselectAll')))->toHaveCount(1)
             ->and($checkbox->attr('value'))->toBe((string) $lamp->id)
             ->and($checkbox->attr('data-action'))->toBe('change->sylament--tables--table#toggleRecord')
             ->and($selected->filter(Selectors::SELECTION_BANNER))->toHaveCount(1)
@@ -192,7 +192,7 @@ describe('selection controller', function (): void {
     it('mounts the table controller only on a table that selects, reorders, defers its loading or groups', function (string $host, array $props, ?string $value): void {
         $this->seed(new Product('Lamp'), new LarderJar('Apricot'));
 
-        $controller = $this->createLiveComponent($host, $props)->render()->crawler()->filter('[data-controller="sylament--tables--table"]');
+        $controller = $this->createLiveComponent($host, $props)->render()->crawler()->filter(Selectors::TABLE_CONTROLLER);
 
         expect($controller)->toHaveCount($value === null ? 0 : 1);
 
@@ -236,21 +236,21 @@ describe('grouping', function (): void {
 
         expect($settings)->toHaveCount(2)
             ->and($inline->filter('.sy-ta-grouping-settings-field-label'))->toHaveCount(0)
-            ->and($inline->filter('.sy-input-wrp-label')->text())->toBe('Group by')
+            ->and($inline->filter(SupportSelectors::INPUT_WRAPPER_LABEL)->text())->toBe('Group by')
             ->and($inline)->toContainElement(SupportSelectors::SCREEN_READER_ONLY, 'Group direction')
-            ->and($inline->filter('select[aria-label="Group direction"]'))->toHaveCount(1)
+            ->and($inline->filter(Selectors::GROUP_DIRECTION_SELECT))->toHaveCount(1)
             ->and($dropdown->filter('.sy-ta-grouping-settings-field-label')->each(static fn (Crawler $label): string => $label->text()))->toBe(['Group by', 'Group direction'])
-            ->and($dropdown->filter('.sy-input-wrp-label'))->toHaveCount(0);
+            ->and($dropdown->filter(SupportSelectors::INPUT_WRAPPER_LABEL))->toHaveCount(0);
     });
 
     it("lands a group's checkbox under the selection header, the record actions beside it on the same side", function (string $position): void {
         $this->seed(new LarderJar('Apricot'));
 
         $crawler = $this->createLiveComponent(GroupedLarderJarTable::class, ['tableGrouping' => 'label', 'actionsPosition' => $position, 'checkboxPosition' => $position])->render()->crawler();
-        $headerCells = $crawler->filter('thead th')->each(static fn (Crawler $cell): bool => $cell->matches('.sy-ta-selection-cell'));
+        $headerCells = $crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): bool => $cell->matches(Selectors::SELECTION_CELL));
         $column = 0;
 
-        foreach ($crawler->filter(Selectors::groupHeaderRow('Apricot') . ' td')->each(static fn (Crawler $cell): array => [$cell->filter('.sy-ta-group-checkbox')->count() > 0, (int) ($cell->attr('colspan') ?? 1)]) as [$holdsCheckbox, $span]) {
+        foreach ($crawler->filter(Selectors::groupHeaderRow('Apricot') . ' td')->each(static fn (Crawler $cell): array => [$cell->filter(Selectors::GROUP_CHECKBOX)->count() > 0, (int) ($cell->attr('colspan') ?? 1)]) as [$holdsCheckbox, $span]) {
             if ($holdsCheckbox) {
                 break;
             }
@@ -313,11 +313,11 @@ describe('column search row', function (): void {
         $tester = $this->createLiveComponent(GroupedLarderJarTable::class);
         $hostId = $tester->component()->getTableHostId();
         $crawler = $tester->render()->crawler();
-        $searchCells = $crawler->filter('tr.sy-ta-column-search-row td');
+        $searchCells = $crawler->filter(Selectors::COLUMN_SEARCH_ROW . ' td');
 
         expect($crawler->filter(Selectors::columnSearch('label'))->attr('id'))->toBe("{$hostId}.table.column-search.label.input")
             ->and($searchCells->each(static fn (Crawler $cell): ?string => $cell->attr('id')))->toContain("{$hostId}.table.column-search.label", "{$hostId}.table.column-search.position")
-            ->and($searchCells)->toHaveCount($crawler->filter('thead th')->count());
+            ->and($searchCells)->toHaveCount($crawler->filter(Selectors::HEADER_CELLS)->count());
     })->with([
         'records' => [true],
         'no records' => [false],
@@ -328,7 +328,7 @@ describe('filters chrome', function (): void {
     it('teleports the filters dropdown and counts the active filters on an extra-small badge beside its trigger', function (): void {
         $crawler = $this->createLiveComponent(FilterableLarderJarTable::class)->filterTable('seal', JarSeal::Wax->value)->render()->crawler();
 
-        expect($crawler->filter('.sy-ta-filters-dropdown[data-sylament--support--dropdown-teleport-value="true"] ' . Selectors::FILTERS_TRIGGER))->toHaveCount(1)
+        expect($crawler->filter('.sy-ta-filters-dropdown' . SupportSelectors::TELEPORTED_DROPDOWN . ' ' . Selectors::FILTERS_TRIGGER))->toHaveCount(1)
             ->and($crawler)->toContainElement('.sy-ta-filters-trigger-badge-ctn ' . SupportSelectors::BADGE . '.sy-size-xs', '1');
     });
 });

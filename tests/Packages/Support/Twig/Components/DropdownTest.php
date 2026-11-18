@@ -10,8 +10,8 @@ it('toggles a hidden panel of its content from a trigger, placed below its start
 
     expect($dropdown)
         ->toContainElement($root . SupportSelectors::dropdownValue('placement', 'bottom-start') . SupportSelectors::dropdownValue('offset', '8') . SupportSelectors::dropdownValue('flip', 'true'))
-        ->toContainElement($root . ' ' . SupportSelectors::DROPDOWN_TRIGGER . '[data-sylament--support--dropdown-target="trigger"][data-action~="click->sylament--support--dropdown#toggle"] button', 'Actions')
-        ->toContainElement($root . ' ' . SupportSelectors::DROPDOWN_PANEL . '[hidden][data-sylament--support--dropdown-target="panel"]:not([style]) a[href="/orders/1/edit"]', 'Edit')
+        ->toContainElement($root . ' ' . SupportSelectors::DROPDOWN_TRIGGER . SupportSelectors::dropdownTarget('trigger') . '[data-action~="click->sylament--support--dropdown#toggle"] button', 'Actions')
+        ->toContainElement($root . ' ' . SupportSelectors::DROPDOWN_PANEL . '[hidden]' . SupportSelectors::dropdownTarget('panel') . ':not([style]) a[href="/orders/1/edit"]', 'Edit')
         ->and($this->renderTwigComponent('SylamentSupport:Dropdown', ['placement' => 'right-start', 'offset' => 4, 'flip' => false, 'width' => '12rem'], content: 'Edit', blocks: ['trigger' => 'Actions'])->crawler())
         ->toContainElement(SupportSelectors::DROPDOWN . SupportSelectors::dropdownValue('placement', 'right-start') . SupportSelectors::dropdownValue('offset', '4') . SupportSelectors::dropdownValue('flip', 'false') . ' ' . SupportSelectors::DROPDOWN_PANEL . SupportSelectors::dropdownPanelStyle('width', '12rem'), 'Edit');
 });

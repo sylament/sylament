@@ -15,7 +15,7 @@ it('stripes every other row of a striped table and no row of a plain one', funct
     $striped = $this->createLiveComponent(HeadedLarderJarTable::class)->render()->crawler();
     $plain = $this->createLiveComponent(ProductTable::class)->render()->crawler();
 
-    expect($striped->filter(Selectors::ROW)->each(static fn (Crawler $row): bool => $row->matches('.sy-striped')))->toBe([false, true, false])
+    expect($striped->filter(Selectors::ROW)->each(static fn (Crawler $row): bool => $row->matches(Selectors::STRIPED)))->toBe([false, true, false])
         ->and($plain->filter(Selectors::ROW))->toHaveCount(2)
-        ->and($plain->filter(Selectors::ROW . '.sy-striped'))->toHaveCount(0);
+        ->and($plain->filter(Selectors::ROW . Selectors::STRIPED))->toHaveCount(0);
 });

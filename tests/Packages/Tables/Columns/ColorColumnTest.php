@@ -50,7 +50,7 @@ describe('its swatches', function (): void {
             ['button', 'Copy #fff', 'background-color: #fff', '#fff', 'Paint copied', '500'],
             ['button', 'Copy colour', null, 'red;position:fixed', 'Paint copied', '500'],
         ])
-            ->and($swatches->filter('.sy-copyable[data-controller="sylament--support--clipboard"][data-action~="click->sylament--support--clipboard#copy"][data-action~="keydown.enter->sylament--support--clipboard#copy"][data-action~="keydown.space->sylament--support--clipboard#copy"]:not([tabindex])'))->toHaveCount(2);
+            ->and($swatches->filter(SupportSelectors::COPYABLE . SupportSelectors::CLIPBOARD_CONTROLLER . SupportSelectors::CLIPBOARD_COPY . ':not([tabindex])'))->toHaveCount(2);
     });
 
     it('runs no copy closure for a swatch that is not copyable', function (): void {

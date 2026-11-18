@@ -5,30 +5,20 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Support;
 
 /**
- * The standalone-root marker, and the looks support's components give any area's markup:
- * colour, palette, size, font, alignment, state, the hidden and wrapped looks, button, button
- * group, icon button, icon, link, badge and its label, breadcrumb separator, a fieldset with its
- * hidden label and required mark, a section's container, variants and collapsibility, a tabs
- * layout, the active tab or step, the screen-reader-only text and the cloak a persisted state
- * hides behind until its controller connects, named by the `sy-` class or custom property the
- * stylesheet paints them by; the grid itself, the column counts, spans, starts and orders
- * support's grid gives a schema, and the bare counts and direction class of a column-wise grid,
- * by the custom property or class the stylesheet lays its grid out by; a section's Stimulus
- * controller and the values it reads, and the sortable controller with its handles, items and
- * animation duration, by the `data-` hooks it reads; a section's collapse button by its place
- * and its state, whose name changes; the modal's dialog, an open one and the heading,
- * description, icon, footer actions and submit read off it, its window, width, footer,
- * slide-over, sticky parts and the clickable, click-through and overlaid looks, a link's label,
- * the outlined look, and a dropdown, its trigger, its panel and its items by the `sy-` classes
- * the stylesheet paints them by, and its panel's size by the custom properties it sets there;
- * the modal's close, the badge's delete and the pagination's chevron buttons by their names;
- * the pagination by its name, its page buttons by their names and the current one by its
- * `aria-current`, and its per-page select by the live model it binds;
- * the values the modal controller reads and the dismiss a button wires to it, and a dropdown's
- * controller and its placement, offset, flip and teleport by the Stimulus hooks it reads.
- * The input wrapper, its invalid state and each side of it are named by their `sy-` classes,
- * because which side an affix sits on is the stylesheet's contract; what sits there is asserted
- * by its text, its role or its element.
+ * The markup support's components give any area's markup, for a test to find: the
+ * standalone-root marker; the colour, palette, size, font, alignment, state, hidden, wrapped,
+ * inline, selected and background-coloured looks; the button, button group, icon button, icon,
+ * checkbox, link and its label, badge with its label and its container, breadcrumb separator,
+ * fieldset with its hidden label and required mark, section and its container, variants and
+ * collapsibility, the active tab or step, the screen-reader-only text and the cloak a persisted
+ * state hides behind; the grid, its column counts, spans, starts and orders, and a column-wise
+ * grid's counts and direction; the modal's dialog and its parts, width, slide-over and sticky
+ * looks; a dropdown with its trigger, panel, items, targets and placement values; the
+ * pagination, its overview, page buttons and per-page select; the input wrapper with its sides,
+ * their label, icons and actions; and the copyable look with its clipboard controller, its copy
+ * bindings and the values it reads. Each is named by the `sy-` class or custom property the
+ * stylesheet paints or lays it out by, the class being the behaviour, or by its accessible
+ * name, its role or the Stimulus controller, target, action or value that wires it.
  */
 final class Selectors
 {
@@ -152,8 +142,6 @@ final class Selectors
 
     public const string MODAL_HEADING = self::OPEN_MODAL . ' .sy-modal-heading';
 
-    public const string MODAL_DESCRIPTION = self::OPEN_MODAL . ' .sy-modal-description';
-
     public const string MODAL_ICON = self::OPEN_MODAL . ' .sy-modal-icon-ctn svg';
 
     public const string MODAL_FOOTER_ACTIONS = self::OPEN_MODAL . ' .sy-modal-footer-actions button';
@@ -229,6 +217,40 @@ final class Selectors
     public const string INLINE_PREFIX = '.sy-input-wrp-prefix.sy-inline';
 
     public const string INLINE_SUFFIX = '.sy-input-wrp-suffix.sy-inline';
+
+    /**
+     * The label text an input wrapper's side shows beside or in place of its icon.
+     */
+    public const string INPUT_WRAPPER_LABEL = '.sy-input-wrp-label';
+
+    public const string SELECTED = '.sy-selected';
+
+    /**
+     * A checkbox in support's checkbox look, the one every package's checkboxes share.
+     */
+    public const string CHECKBOX = '.sy-checkbox';
+
+    /**
+     * An element painted a background colour, of any palette or shade.
+     */
+    public const string BACKGROUND_COLORED = '[class*="sy-bg-color-"]';
+
+    /**
+     * The container of a badge's label, beside which its icons sit.
+     */
+    public const string BADGE_LABEL_CONTAINER = '.sy-badge-label-ctn';
+
+    /**
+     * A value a user copies by clicking it; the class is the behaviour the stylesheet reads.
+     */
+    public const string COPYABLE = '.sy-copyable';
+
+    public const string CLIPBOARD_CONTROLLER = '[data-controller~="sylament--support--clipboard"]';
+
+    /**
+     * The three bindings that copy: a click, Enter and Space.
+     */
+    public const string CLIPBOARD_COPY = '[data-action~="click->sylament--support--clipboard#copy"][data-action~="keydown.enter->sylament--support--clipboard#copy"][data-action~="keydown.space->sylament--support--clipboard#copy"]';
 
     public const string PREFIX_ICON = '.sy-input-wrp-prefix svg';
 
@@ -325,6 +347,14 @@ final class Selectors
     }
 
     /**
+     * A target of the dropdown controller: its `trigger` or its `panel`.
+     */
+    public static function dropdownTarget(string $target): string
+    {
+        return "[data-sylament--support--dropdown-target=\"{$target}\"]";
+    }
+
+    /**
      * A value the dropdown controller reads: its placement, offset or flip.
      */
     public static function dropdownValue(string $name, string $value): string
@@ -370,6 +400,14 @@ final class Selectors
     public static function modalSticky(string $part): string
     {
         return ".sy-modal-has-sticky-{$part}";
+    }
+
+    /**
+     * A value the clipboard controller reads: the `text` it copies, the `message` it confirms with and the `duration` it shows it for.
+     */
+    public static function clipboardValue(string $name, string $value): string
+    {
+        return "[data-sylament--support--clipboard-{$name}-value=\"{$value}\"]";
     }
 
     public static function sortableAnimationDuration(string $milliseconds): string

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Support\Colors\Color;
 use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
+use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\EditableCellLooksTable;
 use Sylament\Tests\Fixtures\Tables\EditableFlaggedSampleTable;
@@ -55,8 +56,8 @@ it('publishes its state on its root for the controller, and commits its switch o
 it('carries inline and its alignment on its root', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . Selectors::INLINE . SupportSelectors::align('center'))
-        ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::TOGGLE_COLUMN . ':not(' . Selectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
+    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . SchemasSelectors::INLINE . SupportSelectors::align('center'))
+        ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::TOGGLE_COLUMN . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
 });
 
 describe('colours and icons', function (): void {
@@ -86,7 +87,7 @@ describe('colours and icons', function (): void {
 
     it('renders each icon in the span named for its state, and no span for an icon not given', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
-        $spans = static fn (string $column): array => $crawler->filter(Selectors::cell('north', $column) . ' .sy-fo-toggle-icon-off, ' . Selectors::cell('north', $column) . ' .sy-fo-toggle-icon-on')
+        $spans = static fn (string $column): array => $crawler->filter(Selectors::cell('north', $column) . ' ' . FormsSelectors::TOGGLE_ICON_OFF . ', ' . Selectors::cell('north', $column) . ' ' . FormsSelectors::TOGGLE_ICON_ON)
             ->each(static fn (Crawler $span): string => $span->attr('class') . ': ' . $span->filter('svg')->text());
 
         expect($spans('lit'))->toBe(['sy-fo-toggle-icon-off: Heart', 'sy-fo-toggle-icon-on: Star'])

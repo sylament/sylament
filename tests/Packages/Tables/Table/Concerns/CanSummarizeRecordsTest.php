@@ -32,7 +32,7 @@ it('keeps the band while a column the user toggled off or the developer hid is s
     $all = $crawler->filter(Selectors::summaryRow('all'));
 
     expect($all->filter(Selectors::SUMMARY_HEADING)->text())->toBe('All larder jars')
-        ->and((int) $all->filter(Selectors::SUMMARY_HEADING)->attr('colspan'))->toBe($crawler->filter(Selectors::COLUMN_HEADER)->count())
+        ->and((int) $all->filter(Selectors::SUMMARY_HEADING)->attr('colspan'))->toBe($crawler->filter(Selectors::HEADER_CELLS)->count())
         ->and($crawler->filter(Selectors::headerCell('position')))->toHaveCount(0)
         ->and($all->filter(Selectors::summarizer('text')))->toHaveCount(0)
         ->and(preg_grep('/\bSUM\(/', $this->statementsRun()))->toBe([]);

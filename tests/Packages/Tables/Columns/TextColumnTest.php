@@ -77,11 +77,11 @@ describe('its markup', function (): void {
         $root = fn (TextColumn $column): Crawler => $this->renderViewComponent($column->record(['tags' => ['oak', 'ash', 'elm']]))->filter(Selectors::TEXT_COLUMN);
 
         expect($root(TextColumn::make('tags')->badge())->matches('.sy-ta-text-has-badges'))->toBeTrue()
-            ->and($root(TextColumn::make('tags')->bulleted())->matches('.sy-bulleted.sy-ta-text-has-line-breaks'))->toBeTrue()
-            ->and($root(TextColumn::make('tags')->listWithLineBreaks())->matches('.sy-ta-text-has-line-breaks:not(.sy-bulleted)'))->toBeTrue()
+            ->and($root(TextColumn::make('tags')->bulleted())->matches(Selectors::BULLETED . '.sy-ta-text-has-line-breaks'))->toBeTrue()
+            ->and($root(TextColumn::make('tags')->listWithLineBreaks())->matches('.sy-ta-text-has-line-breaks:not(' . Selectors::BULLETED . ')'))->toBeTrue()
             ->and($root(TextColumn::make('tags')->limitList(2))->matches('.sy-ta-text-list-limited'))->toBeTrue()
             ->and($root(TextColumn::make('tags')->extraAttributes(['data-shelf' => 'top']))->attr('data-shelf'))->toBe('top')
-            ->and($root(TextColumn::make('tags'))->matches(Selectors::TEXT_COLUMN . ':not(.sy-ta-text-has-badges):not(.sy-bulleted):not(.sy-ta-text-has-line-breaks):not(.sy-ta-text-list-limited)'))->toBeTrue();
+            ->and($root(TextColumn::make('tags'))->matches(Selectors::TEXT_COLUMN . ':not(.sy-ta-text-has-badges):not(' . Selectors::BULLETED . '):not(.sy-ta-text-has-line-breaks):not(.sy-ta-text-list-limited)'))->toBeTrue();
     });
 
     it('renders each value as a badge, coloured and sized as the column says, with its icon inside it on the side it is given', function (): void {
@@ -89,10 +89,10 @@ describe('its markup', function (): void {
         $plain = $this->renderViewComponent(TextColumn::make('tags')->record(['tags' => ['oak']])->badge()->icon('support:star'));
 
         expect($styled->filter(SupportSelectors::BADGE . SupportSelectors::color('success') . SupportSelectors::size('lg') . ' ' . SupportSelectors::BADGE_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['oak', 'ash'])
-            ->and($styled->filter(SupportSelectors::BADGE . ' .sy-badge-label-ctn + svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['Star', 'Star'])
+            ->and($styled->filter(SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_LABEL_CONTAINER . ' + svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['Star', 'Star'])
             ->and($styled->filter(Selectors::TEXT_ITEM . ' > svg'))->toHaveCount(0)
             ->and($plain)->toContainElement(SupportSelectors::BADGE . SupportSelectors::color('primary') . SupportSelectors::size('sm') . ' ' . SupportSelectors::BADGE_LABEL, 'oak')
-            ->and($plain->filter(SupportSelectors::BADGE . ' svg + .sy-badge-label-ctn'))->toHaveCount(1);
+            ->and($plain->filter(SupportSelectors::BADGE . ' svg + ' . SupportSelectors::BADGE_LABEL_CONTAINER))->toHaveCount(1);
     });
 
     it('sizes each item small by default, base as medium, and a custom size as a class of its own', function (): void {
@@ -145,10 +145,10 @@ describe('its markup', function (): void {
         $plain = $this->renderViewComponent(TextColumn::make('price')->record(['price' => 1234.5])->money('USD', locale: 'en_US')->copyable()->tooltip('Price')->icon('support:star'));
         $badged = $this->renderViewComponent(TextColumn::make('tags')->record(['tags' => ['oak', 'ash']])->badge()->copyable()->tooltip('Tag'));
 
-        expect($plain)->toContainElement(Selectors::TEXT_ITEM . ' span.sy-copyable[role="button"][title="Price"][data-sylament--support--clipboard-text-value="$1,234.50"]', '$1,234.50')
+        expect($plain)->toContainElement(Selectors::TEXT_ITEM . ' span' . SupportSelectors::COPYABLE . '[role="button"][title="Price"]' . SupportSelectors::clipboardValue('text', '$1,234.50'), '$1,234.50')
             ->and($plain->filter(Selectors::TEXT_ITEM . ' > svg')->text())->toBe('Star')
-            ->and($plain->filter('.sy-copyable svg, button'))->toHaveCount(0)
-            ->and($badged->filter(SupportSelectors::BADGE . '.sy-copyable[role="button"][title="Tag"]')->each(static fn (Crawler $badge): ?string => $badge->attr('data-sylament--support--clipboard-text-value')))->toBe(['oak', 'ash']);
+            ->and($plain->filter(SupportSelectors::COPYABLE . ' svg, button'))->toHaveCount(0)
+            ->and($badged->filter(SupportSelectors::BADGE . SupportSelectors::COPYABLE . '[role="button"][title="Tag"]')->each(static fn (Crawler $badge): ?string => $badge->attr('data-sylament--support--clipboard-text-value')))->toBe(['oak', 'ash']);
     });
 });
 

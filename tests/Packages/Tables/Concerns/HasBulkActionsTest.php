@@ -294,7 +294,7 @@ describe('grouped selection', function (): void {
         $crawler = $this->createLiveComponent(GroupedSelectionLarderJarTable::class)->render()->crawler();
 
         $groupKeys = static function (string $group) use ($crawler): array {
-            $keys = json_decode((string) $crawler->filter(Selectors::groupHeaderRow($group) . ' input.sy-ta-group-checkbox')->attr('data-sy-group-keys'), flags: JSON_THROW_ON_ERROR);
+            $keys = json_decode((string) $crawler->filter(Selectors::groupHeaderRow($group) . ' input' . Selectors::GROUP_CHECKBOX)->attr('data-sy-group-keys'), flags: JSON_THROW_ON_ERROR);
             sort($keys, SORT_NATURAL);
 
             return $keys;

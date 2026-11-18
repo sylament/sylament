@@ -262,7 +262,7 @@ describe('record resolution', function (): void {
 
         $tester->callMountedAction();
 
-        expect($tester->render()->crawler()->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Desk'])
+        expect($tester->render()->crawler()->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Desk'])
             ->and($tester->component()->getTableRecord((string) $desk->id))->toBeInstanceOf(Product::class)
             ->and($tester->component()->getTableRecord((string) $lamp->id))->toBeNull();
     });
@@ -306,7 +306,7 @@ describe('the query', function (): void {
             ->render()
             ->crawler();
 
-        expect($crawler->filter('td[id$=".column.label"]')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Bramble', 'Almond', 'Banana', 'Apricot']);
+        expect($crawler->filter(Selectors::columnCells('label'))->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Bramble', 'Almond', 'Banana', 'Apricot']);
     });
 
     it("runs every filter's base query before any filter's query, so a join one filter adds serves another declared before it", function (): void {
@@ -325,7 +325,7 @@ describe('the query', function (): void {
             ->render()
             ->crawler();
 
-        expect($crawler->filter('td[id$=".column.label"]')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Apricot']);
+        expect($crawler->filter(Selectors::columnCells('label'))->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Apricot']);
     });
 
     it('fetch-joins the to-one a shown column reads on the page alone, never on the count or a resolved record', function (): void {
@@ -422,7 +422,7 @@ describe('the all-records count', function (): void {
 describe('the URL', function (): void {
     it('seeds the sort, the search and the page its URL names, the seeded search keeping the seeded page', function (): void {
         $this->seed(...array_map(static fn (int $number): Product => new Product(sprintf('P%02d', $number)), range(1, 12)));
-        $names = static fn (Crawler $page): array => $page->filter('td[id$=".column.name"]')->each(static fn (Crawler $cell): string => $cell->text());
+        $names = static fn (Crawler $page): array => $page->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text());
 
         $bound = $this->visit(TablePageController::url('Tables:RememberingProductTable') . '?search=P&sort=name:desc&shelfPage=2');
         $unbound = $this->visit(TablePageController::url('Tables:ProductTable') . '?search=P&page=2');
@@ -437,7 +437,7 @@ describe('the URL', function (): void {
 
         $page = $this->visit(TablePageController::url('Tables:RememberingProductTable') . '?ledgerPage=2&page=2');
 
-        expect($page->filter('td[id$=".column.name"]')->first()->text())->toBe('P01')
+        expect($page->filter(Selectors::columnCells('name'))->first()->text())->toBe('P01')
             ->and($this->createLiveComponent(RememberingProductTable::class)->component()->getIdentifiedTableQueryStringPropertyNameFor('page'))->toBe('ledgerPage');
     });
 

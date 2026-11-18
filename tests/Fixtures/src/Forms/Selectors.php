@@ -8,21 +8,22 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 /**
  * The markup forms' templates give a test to find: the field wrapper's root by the `data-` hook
- * a validation error scrolls to, and its label and content columns, label row, hidden label,
- * the label it renders as a heading for a control that is no labelable element, required mark
- * and error messages; the control a text field renders; a fused group's root; a toggle's control root and track; a toggle-buttons
- * option's button label, which must follow its input; a repeater's item in its default and simple
- * views, a table view's row and header cell, and the add row and its button; a select's
- * `<select>`, the same element carrying the JS control's Stimulus controller, the one with no
- * controller, the inline-prefix class that strips its padding, and its options past the empty
- * placeholder; a checkbox list's options
- * grid and the label and description an option shows; and a radio's group by its role, its
- * option inputs by their type, and the label and description a radio option shows. Each is named
- * by the `sy-fo-` class the stylesheet lays out or paints it by, the class being the behaviour,
- * unless a role, a type or a `data-` hook names it. A text input's control and an affix button its
- * Stimulus controller answers in the browser, with no live click, are named by the controller's
- * target and action, and a file field's controller element by the state path its value map names,
- * beside the pond container FilePond builds inside and the image editor's dialog.
+ * a validation error scrolls to, its label and content columns, label row, hidden label, the
+ * label it renders as a heading for a control that is no labelable element, required mark and
+ * error messages; a text field's control and the classes its inline prefix and suffix give it,
+ * a text input's controller target and its affix buttons' actions, and the password reveal
+ * button by its accessible name; a fused group's root; a toggle's control root, track and on
+ * and off icons; a toggle-buttons option's button label, which must follow its input; a
+ * repeater's item in its default and simple views, a table view's row and header cell, and the
+ * add row and its button; a key-value field's key and value inputs by their accessible names; a
+ * select's `<select>`, the same element with and without the JS control's Stimulus controller,
+ * the inline-prefix class that strips its padding, and its options past the empty placeholder;
+ * a checkbox list's options grid and an option's label and description; a radio's group by its
+ * role, its option inputs by their type, and an option's label and description; and a file
+ * field's controller element by the state path its value map names, the pond container FilePond
+ * builds inside and the image editor's dialog. Each is named by the `sy-fo-` class the
+ * stylesheet lays out or paints it by, the class being the behaviour, unless a role, a type, an
+ * accessible name or a `data-` hook names it.
  */
 final class Selectors
 {
@@ -44,6 +45,12 @@ final class Selectors
 
     public const string INPUT = '.sy-fo-input';
 
+    public const string INPUT_HAS_INLINE_PREFIX = '.sy-fo-input-has-inline-prefix';
+
+    public const string INPUT_HAS_INLINE_SUFFIX = '.sy-fo-input-has-inline-suffix';
+
+    public const string SHOW_PASSWORD_BUTTON = 'button[aria-label="Show password"]';
+
     public const string FUSED_GROUP = '.sy-fo-fused-group';
 
     public const string TEXT_INPUT_TARGET = '[data-sylament--forms--text-input-target="input"]';
@@ -57,6 +64,10 @@ final class Selectors
     public const string TOGGLE = '.sy-fo-toggle';
 
     public const string TOGGLE_TRACK = '.sy-fo-toggle-track';
+
+    public const string TOGGLE_ICON_OFF = '.sy-fo-toggle-icon-off';
+
+    public const string TOGGLE_ICON_ON = '.sy-fo-toggle-icon-on';
 
     /**
      * The adjacency the selected-state stylesheet reads, `input:checked + label.sy-btn`.
@@ -74,6 +85,10 @@ final class Selectors
     public const string TABLE_REPEATER_HEADER_CELL = '.sy-fo-table-repeater thead th';
 
     public const string REPEATER_ADD = '.sy-fo-repeater-add';
+
+    public const string KEY_VALUE_KEY = 'input[aria-label="Key"]';
+
+    public const string KEY_VALUE_VALUE = 'input[aria-label="Value"]';
 
     public const string SELECT = 'select.sy-fo-select';
 

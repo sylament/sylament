@@ -21,8 +21,8 @@ it('is disabled and invalid only when told', function (): void {
 
 it('shows a prefix and a suffix label around its content, and no affix for a blank one', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '€', 'suffix' => 'per kg'], content: '<input name="price">')->crawler())
-        ->toContainElement(SupportSelectors::PREFIX . '.sy-input-wrp-prefix-has-label .sy-input-wrp-label', '€')
-        ->toContainElement(SupportSelectors::SUFFIX . '.sy-input-wrp-suffix-has-label .sy-input-wrp-label', 'per kg')
+        ->toContainElement(SupportSelectors::PREFIX . '.sy-input-wrp-prefix-has-label ' . SupportSelectors::INPUT_WRAPPER_LABEL, '€')
+        ->toContainElement(SupportSelectors::SUFFIX . '.sy-input-wrp-suffix-has-label ' . SupportSelectors::INPUT_WRAPPER_LABEL, 'per kg')
         ->and($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '', 'suffix' => new Markup('', 'UTF-8')], content: '<input name="price">')->crawler())
         ->toContainElement(SupportSelectors::INPUT_WRAPPER . ' input[name="price"]')
         ->not->toContainElement(SupportSelectors::PREFIX)

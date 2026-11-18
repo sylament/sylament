@@ -13,7 +13,7 @@ namespace Sylament\Tests\Fixtures\Schemas;
  * component's gap, density and columns reach, which the schema every render wraps a
  * component in would otherwise answer for, and a section's content by the id its key gives it; a schema root by the key its controller is given; a control bound to a state path, by the
  * `data-model` value schemas' binding modifiers write; a tab and its panel, by the
- * roles the Tabs and Tab partials give them; a wizard step's header button and panel,
+ * roles the Tabs and Tab partials give them, and the targets of the tabs controller; a wizard step's header button and panel,
  * by the step key the Wizard and Step partials put on both, its header entry and its cancel and
  * submit slots, by their controller targets, and the values its controller reads.
  */
@@ -83,6 +83,14 @@ final class Selectors
     public static function wizardValue(string $name, ?string $value = null): string
     {
         return $value === null ? "[data-sylament--schemas--wizard-{$name}-value]" : "[data-sylament--schemas--wizard-{$name}-value=\"{$value}\"]";
+    }
+
+    /**
+     * A target of the tabs controller (`nav`, `tab`, `panel`, `dropdown`, `dropdownItem`, `triggerTab`, `moreButton`, `badgePlaceholder`).
+     */
+    public static function tabsTarget(string $target): string
+    {
+        return "[data-sylament--schemas--tabs-target=\"{$target}\"]";
     }
 
     public static function sectionContentOf(string $key): string

@@ -65,7 +65,7 @@ it('paints an outlined button in its text shades alone and a filled one with its
 
     expect($outlined)
         ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::OUTLINED . SupportSelectors::color('primary') . '[class~="dark:sy-text-color-500"]', 'Save')
-        ->not->toContainElement('[class*="sy-bg-color-"]')
+        ->not->toContainElement(SupportSelectors::BACKGROUND_COLORED)
         ->and($filled)
         ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::color('primary') . ':not(' . SupportSelectors::OUTLINED . ')[class~="hover:sy-bg-color-300"]', 'Save');
 });

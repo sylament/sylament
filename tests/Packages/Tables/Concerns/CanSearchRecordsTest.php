@@ -6,7 +6,6 @@ use Sylament\Tables\Testing\Testable;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Seedling;
-use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\SearchableLarderTable;
 use Sylament\Tests\Fixtures\Tables\SeedlingGardenTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -17,7 +16,7 @@ use Symfony\Component\DomCrawler\Crawler;
 describe('the global term', function (): void {
     it('searches by the typed term trimmed, a blank one by nothing, while the wire keeps the term as typed', function (): void {
         $this->seed($redLamp = new Larder('Red Lamp'), $redChair = new Larder('Red Chair'), $blueLamp = new Larder('Blue Lamp'));
-        $wire = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableSearch'];
+        $wire = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableSearch'];
 
         $tester = $this->createLiveComponent(SearchableLarderTable::class)
             ->searchTable(' Red ')
@@ -98,7 +97,7 @@ describe('the query pass', function (): void {
 describe('resetTableSearch()', function (): void {
     it("shows the term, trimmed, on a removable chip that clears it, back on the first page with the selection cleared, even when no term is set", function (): void {
         $this->seed($blueLamp = new Larder('Blue Lamp'), $redChair = new Larder('Red Chair'), $redLamp = new Larder('Red Lamp'));
-        $chips = static fn (Testable $tester): array => $tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL)->each(static fn (Crawler $label): string => $label->text(normalizeWhitespace: false));
+        $chips = static fn (Testable $tester): array => $tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $label): string => $label->text(normalizeWhitespace: false));
 
         $tester = $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['paged']])->searchTable('   ');
 
@@ -133,7 +132,7 @@ describe('resetTableSearch()', function (): void {
 describe('the per-column terms', function (): void {
     it('seeds a term for every column searchable on its own input, a dotted name nested, keeping a blank and dropping a key that names no column', function (): void {
         $this->seed($oak = new Seedling('Oak'), $elm = new Seedling('Elm'));
-        $bag = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableColumnSearches'];
+        $bag = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableColumnSearches'];
 
         $tester = $this->createLiveComponent(SeedlingGardenTable::class);
 
@@ -182,7 +181,7 @@ describe('the per-column terms', function (): void {
             ->assertCanSeeTableRecords([$redLamp])
             ->assertCanNotSeeTableRecords([$redChair]);
 
-        expect($toggledOff->render()->crawler())->toContainElement(Selectors::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL, 'Supplier: Acme');
+        expect($toggledOff->render()->crawler())->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Supplier: Acme');
 
         $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['supplierHidden']])
             ->searchTableColumns(['supplier' => ['name' => 'Acme']])
@@ -194,7 +193,7 @@ describe('the per-column terms', function (): void {
         $redLamp = new Larder('Red Lamp');
         $redLamp->supplier = $acme;
         $this->seed($acme, $redLamp, $blueLamp = new Larder('Blue Lamp'), $redChair = new Larder('Red Chair'));
-        $chips = static fn (Testable $tester): array => $tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL)->each(static fn (Crawler $label): string => $label->text(normalizeWhitespace: false));
+        $chips = static fn (Testable $tester): array => $tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $label): string => $label->text(normalizeWhitespace: false));
 
         $tester = $this->createLiveComponent(SearchableLarderTable::class, ['nameOwnInput' => true])
             ->searchTableColumns(['name' => ' Lamp ', 'supplier' => ['name' => 'Acme']]);
@@ -221,7 +220,7 @@ describe('the per-column terms', function (): void {
 
     it('ignores a reset naming no column searchable on its own input, leaving every term where it was', function (string $column): void {
         $this->seed($oak = new Seedling('Oak'), $elm = new Seedling('Elm'));
-        $bag = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter('[data-live-props-value]')->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableColumnSearches'];
+        $bag = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableColumnSearches'];
 
         $tester = $this->createLiveComponent(SeedlingGardenTable::class)
             ->searchTableColumns(['name' => 'Oak'])

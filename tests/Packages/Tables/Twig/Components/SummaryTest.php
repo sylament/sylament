@@ -54,9 +54,9 @@ it("stamps each header cell with its column's responsive pair", function (): voi
 
     $cells = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['responsive']])->render()->crawler()->filter(Selectors::summaryRow('header'))->children();
 
-    expect($cells->eq(0)->matches('[class~="lg:sy-ta-hidden"]'))->toBeTrue()
-        ->and($cells->eq(1)->matches('[class~="md:sy-ta-visible"]'))->toBeTrue()
-        ->and($cells->eq(2)->matches('[class*="sy-ta-hidden"], [class*="sy-ta-visible"]'))->toBeFalse();
+    expect($cells->eq(0)->matches(Selectors::hiddenFrom('lg')))->toBeTrue()
+        ->and($cells->eq(1)->matches(Selectors::visibleFrom('md')))->toBeTrue()
+        ->and($cells->eq(2)->matches(Selectors::RESPONSIVE))->toBeFalse();
 });
 
 it('gives the grouped column no cell in the band while only the groups show', function (): void {
@@ -67,5 +67,5 @@ it('gives the grouped column no cell in the band while only the groups show', fu
 
     expect($all->children()->first()->text())->toBe('Summary')
         ->and($this::textSummaries($all))->toBe(['Count 2'])
-        ->and($all->children()->count())->toBe($crawler->filter(Selectors::COLUMN_HEADER)->count());
+        ->and($all->children()->count())->toBe($crawler->filter(Selectors::HEADER_CELLS)->count());
 });

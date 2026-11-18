@@ -59,7 +59,7 @@ describe('component services', function (): void {
         $this::bootKernel(['environment' => 'registered_icons']);
 
         expect($this->renderSchemaComponent(TextInput::make('secret')->password()->revealable()))
-            ->toContainElement('button[aria-label="Show password"]' . Selectors::textInputAction('reveal') . ' svg', 'Star');
+            ->toContainElement(Selectors::SHOW_PASSWORD_BUTTON . Selectors::textInputAction('reveal') . ' svg', 'Star');
     });
 });
 

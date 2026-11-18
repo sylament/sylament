@@ -18,13 +18,13 @@ it('opens a reordering mode from its toolbar trigger, where rows drag by a handl
     $reordering = $tester->call('toggleTableReordering')->render()->crawler();
     $closed = $tester->call('toggleTableReordering')->render()->crawler();
 
-    expect($browsing->filter('button[aria-label="Reorder records"][data-opens="reordering"] title')->text())->toBe('arrows-up-down')
+    expect($browsing->filter(Selectors::REORDER_TRIGGER . '[data-opens="reordering"] title')->text())->toBe('arrows-up-down')
         ->and($browsing->filter(SupportSelectors::SORTABLE_CONTROLLER))->toHaveCount(0)
         ->and($browsing->filter(Selectors::reorderHandle($keys[0])))->toHaveCount(0)
         ->and($browsing)->toContainButtons('button.sy-ac', ['Restock', 'Reorder records', 'Rename', 'Rename'])
         ->and($browsing->filter(Selectors::sortTrigger('label')))->toHaveCount(1)
         ->and($browsing->filter('a' . Selectors::CELL_WRAPPER))->toHaveCount(2)
-        ->and($reordering->filter('button[aria-label="Finish reordering records"][data-opens="browsing"] title')->text())->toBe('check')
+        ->and($reordering->filter(Selectors::FINISH_REORDERING_TRIGGER . '[data-opens="browsing"] title')->text())->toBe('check')
         ->and($reordering)->toContainElement('[role="status"]', 'Drag and drop the records into order.')
         ->and($reordering)->toContainElement(SupportSelectors::SORTABLE_CONTROLLER . SupportSelectors::sortableAnimationDuration('300') . '[data-action="sylament--support--sortable:end->sylament--tables--table#reorder"]')
         ->and($reordering->filter(Selectors::ROW . SupportSelectors::SORTABLE_ITEM)->each(static fn (Crawler $row): ?string => $row->attr('data-sortable-item')))->toBe($keys)
@@ -34,7 +34,7 @@ it('opens a reordering mode from its toolbar trigger, where rows drag by a handl
         ->and($reordering->filter(Selectors::sortTrigger('label')))->toHaveCount(0)
         ->and($reordering->filter('div' . Selectors::CELL_WRAPPER))->toHaveCount(2)
         ->and($closed->filter(SupportSelectors::SORTABLE_CONTROLLER))->toHaveCount(0)
-        ->and($closed->filter('button[aria-label="Reorder records"]'))->toHaveCount(1);
+        ->and($closed->filter(Selectors::REORDER_TRIGGER))->toHaveCount(1);
 });
 
 it('offers no reordering, and opens no mode on request, until a column is named, its condition holds and it is authorized', function (array $props): void {
@@ -46,7 +46,7 @@ it('offers no reordering, and opens no mode on request, until a column is named,
         ->crawler();
 
     expect($crawler->filter(Selectors::row((string) $jar->id)))->toHaveCount(1)
-        ->and($crawler->filter('button[aria-label="Reorder records"], button[aria-label="Finish reordering records"]'))->toHaveCount(0)
+        ->and($crawler->filter(Selectors::REORDER_TRIGGER . ', ' . Selectors::FINISH_REORDERING_TRIGGER))->toHaveCount(0)
         ->and($crawler->filter(SupportSelectors::SORTABLE_CONTROLLER))->toHaveCount(0)
         ->and($crawler->filter(Selectors::reorderHandle((string) $jar->id)))->toHaveCount(0);
 })->with([

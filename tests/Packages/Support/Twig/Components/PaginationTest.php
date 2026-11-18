@@ -8,9 +8,9 @@ use Symfony\Component\DomCrawler\Crawler;
 
 it('tells which records the page shows out of the total, and that it shows none on an empty page', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3], ['id' => 4]], 30, 2, 2)])->crawler())
-        ->toContainElement('nav' . SupportSelectors::STANDALONE_ROOT . '.sy-pagination[aria-label="Pagination"] .sy-pagination-overview', 'Showing 3 to 4 of 30 results')
+        ->toContainElement('nav' . SupportSelectors::STANDALONE_ROOT . '.sy-pagination[aria-label="Pagination"] ' . SupportSelectors::PAGINATION_OVERVIEW, 'Showing 3 to 4 of 30 results')
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 4, 10)])->crawler())
-        ->toContainElement('.sy-pagination-overview', 'Showing 0 results of 30');
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 0 results of 30');
 });
 
 it('offers a per-page select bound to the table, all named All, the current choice selected, only with more than one choice', function (): void {
@@ -23,7 +23,7 @@ it('offers a per-page select bound to the table, all named All, the current choi
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 30, 1, 10), 'pageOptions' => [5, 10], 'currentPageOptionProperty' => 'perPage'])->crawler())
         ->toContainElement('select[data-model="perPage"] option[value="5"]', '5')
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 30, 1, 10), 'pageOptions' => [10]])->crawler())
-        ->toContainElement('.sy-pagination-overview', 'Showing 1 to 1 of 30 results')
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 1 of 30 results')
         ->not->toContainElement('select');
 });
 
@@ -32,8 +32,8 @@ it('pages through a window of numbered buttons, each going to its page, the curr
 
     expect($pagination)
         ->toContainButtons('.sy-pagination-items button', ['Previous page', 'Go to page 1', 'Go to page 2', 'Go to page 3', 'Go to page 4', 'Go to page 14', 'Go to page 15', 'Next page'])
-        ->toContainElement('button[aria-label="Go to page 2"][aria-current="page"][disabled][data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="2"]', '2')
-        ->toContainElement('button[aria-label="Go to page 14"]:not([aria-current]):not([disabled])[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="14"]', '14')
+        ->toContainElement(SupportSelectors::pageButton(2) . '[aria-current="page"][disabled][data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="2"]', '2')
+        ->toContainElement(SupportSelectors::pageButton(14) . ':not([aria-current]):not([disabled])[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="14"]', '14')
         ->toContainElement(SupportSelectors::PREVIOUS_PAGE_BUTTON . '[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="1"]')
         ->toContainElement(SupportSelectors::NEXT_PAGE_BUTTON . '[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="3"]')
         ->toContainElement('.sy-pagination-items [aria-hidden="true"]:not(button)', Paginator::GAP);
@@ -45,7 +45,7 @@ it('goes back only after the first page and forward only before the last, and of
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3]], 3, 3, 1)])->crawler())
         ->toContainButtons('.sy-pagination-items button', ['Previous page', 'Go to page 1', 'Go to page 2', 'Go to page 3'])
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 1, 1, 10)])->crawler())
-        ->toContainElement('.sy-pagination-overview', 'Showing 1 to 1 of 1 results')
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 1 of 1 results')
         ->not->toContainElement('button');
 });
 
@@ -73,11 +73,11 @@ it('draws its first, previous, next and last chevrons at the medium icon size', 
 
 it('pages without a total through the previous and the next alone, saying which records the page shows', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3], ['id' => 4]], null, 2, 2, hasMoreRecords: true), 'extremeLinks' => true])->crawler())
-        ->toContainElement('.sy-pagination-overview', 'Showing 3 to 4 results')
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 3 to 4 results')
         ->toContainButtons('.sy-pagination-items button', ['Go to the first page', 'Previous page', 'Next page'])
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3], ['id' => 4]], null, 2, 2)])->crawler())
         ->toContainButtons('.sy-pagination-items button', ['Previous page'])
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([], null, 1, 2)])->crawler())
-        ->toContainElement('.sy-pagination-overview', 'Showing 0 results')
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 0 results')
         ->not->toContainElement('button');
 });

@@ -30,7 +30,7 @@ it('bullets its list unless told otherwise', function (bool $bulleted, int $bull
     $crawler = $this->renderSummarizer(Values::make()->bulleted($bulleted), 'seal');
 
     expect($crawler)->toContainElement(Selectors::SUMMARIZER_VALUE, 'wax')
-        ->and($crawler->filter(Selectors::summarizer('values') . ' ul.sy-bulleted'))->toHaveCount($bullets);
+        ->and($crawler->filter(Selectors::summarizer('values') . ' ul' . Selectors::BULLETED))->toHaveCount($bullets);
 })->with([
     'by default' => [true, 1],
     'unbulleted' => [false, 0],

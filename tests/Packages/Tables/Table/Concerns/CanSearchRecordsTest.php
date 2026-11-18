@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\Product;
-use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\SearchableLarderTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\TablePageController;
@@ -127,7 +126,7 @@ describe('session persistence', function (): void {
 
         expect($page->filter(Selectors::row((string) $redLamp->id)))->toHaveCount(1)
             ->and($page->filter(Selectors::row((string) $redChair->id)))->toHaveCount($remembers ? 0 : 1)
-            ->and($page->filter(Selectors::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL)->each(static fn (Crawler $chip): string => $chip->text(normalizeWhitespace: false)))->toBe($remembers ? ['Search: Lamp'] : []);
+            ->and($page->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text(normalizeWhitespace: false)))->toBe($remembers ? ['Search: Lamp'] : []);
     })->with([
         'remembering' => ['Tables:SessionSearchedLarderTable', true],
         'forgetting' => ['Tables:SearchableLarderTable', false],

@@ -29,7 +29,7 @@ it('spans the row header across every column up to the first summarized one, so 
     $page = $crawler->filter(Selectors::summaryRow('page'));
 
     expect($page->children())->toHaveCount(1)
-        ->and((int) $page->filter(Selectors::SUMMARY_HEADING)->attr('colspan'))->toBe($crawler->filter(Selectors::COLUMN_HEADER)->count())
+        ->and((int) $page->filter(Selectors::SUMMARY_HEADING)->attr('colspan'))->toBe($crawler->filter(Selectors::HEADER_CELLS)->count())
         ->and($page->filter(Selectors::summarizer('text')))->toHaveCount(0);
 });
 
@@ -38,7 +38,7 @@ it("places a blank cell wherever the record row places its actions and its check
 
     $crawler = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['actions'], 'actionsPosition' => $actionsPosition, 'checkboxPosition' => $checkboxPosition])->render()->crawler();
     $blanks = static fn (Crawler $cells): array => $cells->each(static fn (Crawler $cell): bool => $cell->text() === '');
-    $head = $blanks($crawler->filter(Selectors::COLUMN_HEADER));
+    $head = $blanks($crawler->filter(Selectors::HEADER_CELLS));
 
     expect($head)->toContain(true)
         ->and($blanks($crawler->filter(Selectors::summaryRow('header'))->children()))->toBe($head)
@@ -60,13 +60,13 @@ it("stamps each cell with its column's responsive pair, the row header with the 
 
     $cells = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['responsive', 'actions'], 'actionsPosition' => 'AfterCells'])->render()->crawler()->filter(Selectors::summaryRow('page'))->children();
 
-    expect($cells->eq(1)->matches(Selectors::SUMMARY_HEADING . '[class~="lg:sy-ta-hidden"]'))->toBeTrue()
-        ->and($cells->eq(2)->matches('[class~="md:sy-ta-visible"]'))->toBeTrue()
-        ->and($cells->eq(3)->matches('[class*="sy-ta-hidden"], [class*="sy-ta-visible"]'))->toBeFalse()
+    expect($cells->eq(1)->matches(Selectors::SUMMARY_HEADING . Selectors::hiddenFrom('lg')))->toBeTrue()
+        ->and($cells->eq(2)->matches(Selectors::visibleFrom('md')))->toBeTrue()
+        ->and($cells->eq(3)->matches(Selectors::RESPONSIVE))->toBeFalse()
         ->and($cells->first()->text())->toBe('')
-        ->and($cells->first()->matches('td.sy-ta-cell'))->toBeTrue()
+        ->and($cells->first()->matches('td' . Selectors::CELL))->toBeTrue()
         ->and($cells->last()->text())->toBe('')
-        ->and($cells->last()->matches('td.sy-ta-cell'))->toBeTrue();
+        ->and($cells->last()->matches('td' . Selectors::CELL))->toBeTrue();
 });
 
 it("heads a group's row with the group's title in a cell of its own while only the groups show", function (): void {

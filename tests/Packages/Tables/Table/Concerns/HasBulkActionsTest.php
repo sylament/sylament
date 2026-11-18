@@ -19,9 +19,9 @@ describe('selection chrome', function (): void {
         expect($crawler->filter(Selectors::recordCheckbox((string) $lamp->id) . '[checked]'))->toHaveCount(1)
             ->and($crawler->filter(Selectors::recordCheckbox((string) $vase->id)))->toHaveCount(1)
             ->and($crawler->filter(Selectors::recordCheckbox((string) $vase->id) . '[checked]'))->toHaveCount(0)
-            ->and($crawler->filter('th.sy-ta-selection-cell ' . Selectors::PAGE_CHECKBOX . '.sy-checkbox'))->toHaveCount(1)
-            ->and($crawler->filter('td.sy-ta-selection-cell ' . Selectors::RECORD_CHECKBOX . '.sy-checkbox'))->toHaveCount(2)
-            ->and($crawler->filter('th.sy-ta-header-cell')->each(static fn (Crawler $cell): bool => $cell->matches(Selectors::headerCell('name'))))->toBe([true]);
+            ->and($crawler->filter('th' . Selectors::SELECTION_CELL . ' ' . Selectors::PAGE_CHECKBOX . SupportSelectors::CHECKBOX))->toHaveCount(1)
+            ->and($crawler->filter('td' . Selectors::SELECTION_CELL . ' ' . Selectors::RECORD_CHECKBOX . SupportSelectors::CHECKBOX))->toHaveCount(2)
+            ->and($crawler->filter('th' . Selectors::HEADER_CELL)->each(static fn (Crawler $cell): bool => $cell->matches(Selectors::headerCell('name'))))->toBe([true]);
     });
 
     it('offers a primary "Select all" with the ceiling, hidden until the controller reveals it, beside a danger "Deselect all", on a page past the end too', function (int $page, int $rows): void {
@@ -68,8 +68,8 @@ describe('selection settings', function (): void {
         $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['refuses' => true])->render()->crawler();
 
         expect($crawler->filter(Selectors::row((string) $lamp->id) . ' ' . Selectors::RECORD_CHECKBOX))->toHaveCount(1)
-            ->and($crawler->filter(Selectors::row((string) $vase->id) . ' td.sy-ta-selection-cell'))->toHaveCount(1)
-            ->and($crawler->filter(Selectors::row((string) $vase->id) . ' td.sy-ta-selection-cell input'))->toHaveCount(0)
+            ->and($crawler->filter(Selectors::row((string) $vase->id) . ' td' . Selectors::SELECTION_CELL))->toHaveCount(1)
+            ->and($crawler->filter(Selectors::row((string) $vase->id) . ' td' . Selectors::SELECTION_CELL . ' input'))->toHaveCount(0)
             ->and(array_values(array_unique($this::getContainer()->get(HookLog::class)->hooks)))->toBe(['asked about Lamp, the same record', 'asked about Vase, the same record']);
     });
 
@@ -77,9 +77,9 @@ describe('selection settings', function (): void {
         $this->seed($lamp = new Product('Lamp'));
 
         $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['checkboxPosition' => $position])->render()->crawler();
-        $kinds = static fn (Crawler $cell): string => $cell->matches('.sy-ta-selection-cell') ? 'checkbox' : 'name';
+        $kinds = static fn (Crawler $cell): string => $cell->matches(Selectors::SELECTION_CELL) ? 'checkbox' : 'name';
 
-        expect($crawler->filter('thead th')->each($kinds))->toBe($order)
+        expect($crawler->filter(Selectors::HEADER_CELLS)->each($kinds))->toBe($order)
             ->and($crawler->filter(Selectors::row((string) $lamp->id) . ' td')->each($kinds))->toBe($order);
     })->with([
         'by default' => [null, ['checkbox', 'name']],
@@ -87,7 +87,7 @@ describe('selection settings', function (): void {
     ]);
 
     it("hands the controller whether selection is page-only and can track deselections, page-only on a records() table whatever it sets and untracked where filtering keeps the selection", function (array $props, string $pageOnly, string $canTrack): void {
-        $controller = $this->createLiveComponent(ConfiguredSelectionProductTable::class, $props)->render()->crawler()->filter('[data-controller="sylament--tables--table"]');
+        $controller = $this->createLiveComponent(ConfiguredSelectionProductTable::class, $props)->render()->crawler()->filter(Selectors::TABLE_CONTROLLER);
 
         expect($controller->attr('data-sylament--tables--table-page-only-value'))->toBe($pageOnly)
             ->and($controller->attr('data-sylament--tables--table-can-track-value'))->toBe($canTrack);
@@ -104,10 +104,10 @@ describe('selection settings', function (): void {
 
         $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['groupsOnly' => $groupsOnly])->render()->crawler();
 
-        expect($crawler->filter('th.sy-ta-selection-cell'))->toHaveCount(1)
+        expect($crawler->filter('th' . Selectors::SELECTION_CELL))->toHaveCount(1)
             ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(1)
             ->and($crawler->filter(Selectors::PAGE_CHECKBOX))->toHaveCount($pageWide)
-            ->and($crawler->filter(Selectors::SELECTION_BANNER . ' [data-sylament--tables--table-target="selectAll"]'))->toHaveCount($pageWide)
+            ->and($crawler->filter(Selectors::SELECTION_BANNER . ' ' . Selectors::tableTarget('selectAll')))->toHaveCount($pageWide)
             ->and($crawler)->toContainElement(Selectors::SELECTION_BANNER . ' ' . SupportSelectors::LINK, 'Deselect all');
     })->with([
         'page-wide selection' => [false, 1],

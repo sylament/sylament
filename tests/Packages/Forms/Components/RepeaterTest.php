@@ -560,7 +560,7 @@ describe('collapsing', function (): void {
         expect($collapsible)->toContainButtons('.sy-fo-repeater-item-header-collapsible-actions button', ['Collapse', 'Expand', 'Collapse', 'Expand'])
             ->and($collapsible->filter('.sy-fo-repeater')->attr('data-controller'))->toBe('sylament--forms--repeater')
             ->and($collapsible->filter('[data-sylament--forms--repeater-persist-value]'))->toHaveCount(0)
-            ->and($collapsible->filter('li.sy-collapsed'))->toHaveCount(0)
+            ->and($collapsible->filter('li' . SupportSelectors::COLLAPSED))->toHaveCount(0)
             ->and($plain->filter('.sy-fo-repeater-item-header'))->toHaveCount(2)
             ->and($plain->filter('button[aria-label="Collapse"]'))->toHaveCount(0);
     });

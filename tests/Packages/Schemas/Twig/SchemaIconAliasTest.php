@@ -20,7 +20,7 @@ it('swaps the icon of its own control for the one an application registers under
     expect($rendered)->toContainElement($icon, 'Heart')
         ->and(array_count_values($rendered->filter('svg')->each(fn (Crawler $svg): string => $svg->text()))['Heart'] ?? 0)->toBe(1);
 })->with([
-    'the tab dropdown trigger' => [SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON, fn (): Component => Tabs::make('Order')->scrollable(false)->tabs([Tab::make('Details')]), '[data-sylament--schemas--tabs-target="triggerTab"] svg'],
-    'the more tabs button' => [SchemaIconAlias::COMPONENTS_TABS_MORE_TABS_BUTTON, fn (): Component => Tabs::make('Order')->scrollable(false)->tabs([Tab::make('Details')]), '[data-sylament--schemas--tabs-target="moreButton"] svg'],
+    'the tab dropdown trigger' => [SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON, fn (): Component => Tabs::make('Order')->scrollable(false)->tabs([Tab::make('Details')]), Selectors::tabsTarget('triggerTab') . ' svg'],
+    'the more tabs button' => [SchemaIconAlias::COMPONENTS_TABS_MORE_TABS_BUTTON, fn (): Component => Tabs::make('Order')->scrollable(false)->tabs([Tab::make('Details')]), Selectors::tabsTarget('moreButton') . ' svg'],
     'the completed wizard step' => [SchemaIconAlias::COMPONENTS_WIZARD_COMPLETED_STEP, fn (): Component => Wizard::make([Step::make('Details')]), Selectors::WIZARD_HEADER_STEP . ' svg'],
 ]);

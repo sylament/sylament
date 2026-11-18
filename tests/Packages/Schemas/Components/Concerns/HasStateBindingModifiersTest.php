@@ -6,6 +6,7 @@ use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
+use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Schemas\LazyKeyValueForm;
 
 it('binds the input as its modifiers ask', function (Component $field, string $dataModel): void {
@@ -37,8 +38,8 @@ it('binds each key and value cell at the liveness of the field', function (): vo
         ->crawler();
 
     expect($crawler)
-        ->toContainElement('input[aria-label="Key"][data-model="on(change)|data.pairs.0.key"][value="colour"]')
-        ->toContainElement('input[aria-label="Value"][data-model="on(change)|data.pairs.0.value"][value="red"]');
+        ->toContainElement(FormsSelectors::KEY_VALUE_KEY . '[data-model="on(change)|data.pairs.0.key"][value="colour"]')
+        ->toContainElement(FormsSelectors::KEY_VALUE_VALUE . '[data-model="on(change)|data.pairs.0.value"][value="red"]');
 });
 
 it('reports a debounce set on the field or inherited from its container, never one on blur', function (): void {

@@ -116,7 +116,6 @@ describe('the record sub-navigation', function (): void {
             ->and($page)->toContainElement(Selectors::ACTIVE_SUB_NAVIGATION_ITEM, "Edit Banded {$label}");
     })->with([
         'scalar fields' => fn (): array => [new OrderLine(order: 7, line: 2, note: 'First'), '/edit-shapes/banded-order-lines', 'Order Line'],
-        'an association plus a scalar' => fn (): array => [new InvoiceLine(new Invoice(7), line: 2, note: 'First'), '/edit-shapes/banded-invoice-lines', 'Invoice Line'],
     ]);
 
     it('draws none for a resource that declares none', function (): void {

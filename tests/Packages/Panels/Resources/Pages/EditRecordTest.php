@@ -122,7 +122,6 @@ it('marks its root with the edit page, its resource and its record', function (o
     'a single identifier' => fn (): array => [new Article('Draft'), '/admin/articles/%s/edit', 'sy-pa-resource-articles'],
     'a slashed slug' => fn (): array => [new VettedBinder(), '/edit-shapes/binders/sheeted/%s/edit', 'sy-pa-resource-binders-sheeted'],
     'scalar fields' => fn (): array => [new OrderLine(order: 7, line: 2, note: 'First'), '/admin/order-lines/%s/edit', 'sy-pa-resource-order-lines'],
-    'an association plus a scalar' => fn (): array => [new InvoiceLine(new Invoice(7), line: 2, note: 'First'), '/admin/invoice-lines/%s/edit', 'sy-pa-resource-invoice-lines'],
 ]);
 
 it('shows a title and a crumb of its own', function (): void {

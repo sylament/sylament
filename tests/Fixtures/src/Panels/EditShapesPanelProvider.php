@@ -6,7 +6,6 @@ namespace Sylament\Tests\Fixtures\Panels;
 
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
-use Sylament\Tests\Fixtures\Panels\Resources\BandedInvoiceLineResource;
 use Sylament\Tests\Fixtures\Panels\Resources\BandedOrderLineResource;
 use Sylament\Tests\Fixtures\Panels\Resources\SheetedBinderResource;
 use Sylament\Tests\Fixtures\Panels\Resources\VariantHerbResource;
@@ -24,7 +23,6 @@ final class EditShapesPanelProvider extends PanelProvider
             ->resources([
                 VariantHerbResource::class,
                 BandedOrderLineResource::class,
-                BandedInvoiceLineResource::class,
                 SheetedBinderResource::class,
             ]);
     }

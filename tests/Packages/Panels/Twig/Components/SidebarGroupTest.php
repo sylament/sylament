@@ -38,7 +38,7 @@ describe('label', function (): void {
     });
 
     it('renders no label for a group without one, only its items', function (): void {
-        $group = $this->visit('/shell/shelf')->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP . ':not([data-group-label])');
+        $group = $this->visit('/shell/shelf')->filter(Selectors::NAVIGATION . ' ' . Selectors::UNGROUPED_NAVIGATION_GROUP);
 
         expect($group->filter(Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text()))->toBe(['Slugged Settings Page', 'Inbox'])
             ->and($group->filter(Selectors::NAVIGATION_GROUP_LABEL)->count())->toBe(0);

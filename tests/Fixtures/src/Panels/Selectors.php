@@ -11,14 +11,14 @@ namespace Sylament\Tests\Fixtures\Panels;
  * header with breadcrumbs, its header actions with their container, its content area, its form
  * submitting to a live action, the form actions row and its submit button, and a field by its
  * name; the simple layout and the simple header with its subheading; the shell's sidebar and
- * its navigation landmark, a navigation group, any or by its label, with its label and
- * disclosure toggle, a navigation item with its label, and the active item; the topbar, the
- * user menu trigger, the theme switcher, and the logo with its light and dark renditions; the
- * sub-navigation band beside a page and its active item, the top band's tab strip and the
- * band's narrow-screen menu; the global search's live root, its field and controller, its
- * results panel, a category and its heading, and a result's link and heading; the
- * unsaved-changes guard; and a relation manager's root, any or by its class, with a tab of the
- * record page's bar for one, any or under its key. Each is named by its accessible name or
+ * its navigation landmark, a navigation group, any, by its label or the label-less one, with
+ * its label and disclosure toggle, a navigation item with its label, and the active item; the
+ * topbar, the user menu trigger, the theme switcher, and the logo with its light and dark
+ * renditions; the sub-navigation band beside a page and its active item, the top band's tab
+ * strip and the band's narrow-screen menu; the global search's live root, its field and
+ * controller, its results panel, a category and its heading, and a result's link and heading;
+ * the unsaved-changes guard; and a relation manager's root, any or by its class, with a tab of
+ * the record page's bar for one, any or under its key. Each is named by its accessible name or
  * role, the `data-` hook or id it carries, or the `sy-pa-` class that is the template's one
  * hook on it, and a selector a sub-navigation band would also match is scoped to the landmark
  * it reads.
@@ -168,6 +168,12 @@ final class Selectors
      * Unscoped, so compose it under `NAVIGATION` for the sidebar's groups.
      */
     public const string NAVIGATION_GROUP = '.sy-pa-sidebar-group';
+
+    /**
+     * The navigation group of the ungrouped items, the one `SidebarGroup` renders with no `data-group-label`; unscoped, as
+     * `NAVIGATION_GROUP` is.
+     */
+    public const string UNGROUPED_NAVIGATION_GROUP = self::NAVIGATION_GROUP . ':not([data-group-label])';
 
     /**
      * The light rendition of a brand logo that has a dark-mode one beside it (`Logo`), which the stylesheet hides in dark mode.

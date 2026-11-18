@@ -91,6 +91,13 @@ describe('the options', function (): void {
             ->and($options($this->createLiveComponent(RecordsLaneCellsTable::class)->render()->crawler(), 'north', 'grade'))->toBe(['1: One', '2 selected: Two', '3 disabled: Three']);
     });
 
+    it('selects only the option whose key spells the state, never another key that reads as the same number', function (): void {
+        $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
+
+        expect($crawler->filter(Selectors::cell('north', 'code') . ' ' . FormsSelectors::OPTION)->each(static fn (Crawler $option): string => $option->attr('value') . ($option->attr('selected') === null ? '' : ' selected')))
+            ->toBe(['01', '1 selected']);
+    });
+
     it('renders a grouped map as an optgroup per group', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 

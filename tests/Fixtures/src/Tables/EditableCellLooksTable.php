@@ -26,11 +26,11 @@ use Twig\Markup;
 /**
  * A jar, listed as a plain array under a record link, whose editable cells each show one way
  * a developer dresses the four editable columns: text inputs by type, input mode, step,
- * placeholder, affixes and their icons; selects by option map, groups, placeholder and enum
- * (a pure one with `pureEnumSeal`); checkboxes and switches ticked, unticked, disabled and
- * coloured; and a read-only label beside them. A second row adds its own bin to the `bin`
- * and `crate` selects, whose option closures name the row's bin and record each read, `bin`
- * remembering its first answer.
+ * placeholder, affixes and their icons; selects by option map, groups, placeholder, enum (a
+ * pure one with `pureEnumSeal`) and keys that read as one number; checkboxes and switches
+ * ticked, unticked, disabled and coloured; and a read-only label beside them. A second row
+ * adds its own bin to the `bin` and `crate` selects, whose option closures name the row's
+ * bin and record each read, `bin` remembering its first answer.
  */
 #[AsLiveComponent(name: 'Tables:EditableCellLooksTable', template: '@Fixtures/tables/table.html.twig')]
 class EditableCellLooksTable implements InteractsWithTable
@@ -65,6 +65,7 @@ class EditableCellLooksTable implements InteractsWithTable
                     'lid' => 'tin',
                     'fill' => 'jam',
                     'seal' => JarSeal::Screw,
+                    'code' => '1',
                     'ticked' => true,
                     'unticked' => false,
                     'frozen' => true,
@@ -104,6 +105,7 @@ class EditableCellLooksTable implements InteractsWithTable
                 SelectColumn::make('lid')->options(['tin' => 'Tin', 'cork' => 'Cork'])->disabled(),
                 SelectColumn::make('fill')->options(['jam' => 'Jam', 'honey' => 'Honey'])->selectablePlaceholder(false),
                 SelectColumn::make('seal')->enum($this->pureEnumSeal ? PlainSuit::class : JarSeal::class),
+                SelectColumn::make('code')->options(['01' => 'Zero one', '1' => 'One']),
                 SelectColumn::make('bin')->options($this->bins('bin'))->rememberOptions(),
                 SelectColumn::make('crate')->options($this->bins('crate')),
                 CheckboxColumn::make('ticked')

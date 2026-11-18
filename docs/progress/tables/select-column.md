@@ -64,6 +64,7 @@ A closure that means to answer differently per record must therefore **not** rem
 
 The cell renders `<twig:SylamentSupport:InputWrapper>` around `select.sy-fo-select`, minus the `id`, `name` and `data-model` a schema field carries and plus an `aria-label` taken from the column label with any markup stripped.
 The selected option is the one matching the cell root's `state` value, which is the record's own state normally and the **refused input** while the host holds a refusal for the cell, so the user's choice stays on screen beside the message explaining it.
+The match is string identity, so of the keys `01` and `1` only the one the state spells is selected, where a loose comparison would read both as the number one and select the two.
 An enum-typed record value reaches that comparison as its backing string, because `getClientState()` runs the [state casts](#the-only-state-cast-a-column-carries-is-the-enum-arms) back through `set()` before the string conversion.
 
 ## Divergences

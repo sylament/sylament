@@ -200,7 +200,7 @@ The same deferral, for the same reason, is recorded on [`Table::filtersFormWidth
 ### The width ladder steps only `3xs` to `7xl` and `screen`
 
 Filament's stylesheet gives every `Width` case a step of the modal window, while ours steps `3xs` to `7xl` and `screen` alone.
-A window handed `none`, `full`, `min`, `max`, `fit`, `prose`, `container` or one of `screen-sm` to `screen-2xl` carries its `sy-modal-<value>` class with no rule behind it, so nothing caps the window's full width.
+A window handed `none`, `full`, `min`, `max`, `fit`, `prose`, `container` or one of `screen-sm` to `screen-2xl` carries its `sy-modal-<value>` class with no rule behind it, so the window is uncapped.
 
 ### The open state is a Stimulus value, not only an event
 

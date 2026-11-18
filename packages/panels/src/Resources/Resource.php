@@ -422,7 +422,8 @@ abstract class Resource
             $parentResource = $this->getParentResourceInstance();
             $parentParameterName = $this->getParentRouteParameterName();
             $parentRecord = $parameters[$parentParameterName] ?? null;
-            unset($parameters[$parentParameterName]);
+            $parentPageParameters = $parameters;
+            unset($parentPageParameters[$parentParameterName]);
 
             $relationshipPage = u($this->getParentRelationshipName())->kebab()->toString();
 
@@ -430,12 +431,12 @@ abstract class Resource
                 if ($parentResource->hasPage($pageKey)) {
                     // A null parent key is omitted, so the generator names `record`
                     // as the missing parameter rather than refusing a null one.
-                    return $parentResource->getUrl($pageKey, [...$parameters, ...($parentRecord === null ? [] : ['record' => $parentRecord])], $isAbsolute, $panel, $shouldGuessMissingParameters);
+                    return $parentResource->getUrl($pageKey, [...$parentPageParameters, ...($parentRecord === null ? [] : ['record' => $parentRecord])], $isAbsolute, $panel, $shouldGuessMissingParameters);
                 }
             }
 
             if ($parentResource->hasPage('index')) {
-                return $parentResource->getUrl('index', $parameters, $isAbsolute, $panel, $shouldGuessMissingParameters);
+                return $parentResource->getUrl('index', $parentPageParameters, $isAbsolute, $panel, $shouldGuessMissingParameters);
             }
         }
 

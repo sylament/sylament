@@ -251,6 +251,7 @@ Starting from the nearest record object the caller passed, each missing level is
 
 `getIndexUrl()` on a nested resource answers with the **parent's** page, in Filament's arm order: a page the parent registers under the kebab-cased relationship key (the [`ManageRelatedRecords`](manage-related-records.md) page), else the parent's `view`, else its `edit`, all three carrying the parent record as `record`, else the parent's `index`, which takes no parent key.
 Only a resource no parent lists falls through to an index page of its own, which is why [a nested resource with no index page does not throw](resource.md#a-parentless-resource-with-no-index-page-throws-from-its-first-breadcrumb).
+That fall-through keeps the parent's key, where Filament has already unset it: the resource's own index is mounted under its parent like every page of a nested resource, so without the key no URL can be minted for it.
 The three record-carrying arms pass the parent key **only when it is non-null**, where Filament always spreads `'record' => $record`: passing null makes the generator refuse a null parameter, while omitting it makes the generator name `record` as the missing one, which tells a caller what it forgot.
 
 Filament's `view` and `edit` arms also append `'relation' => $relationshipName` to preselect the relation-manager tab through its `#[Url(as: 'relation')]` property.

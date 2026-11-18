@@ -265,7 +265,7 @@ describe('urls', function (): void {
             ->toThrow(MissingMandatoryParametersException::class, '"gardens"');
     });
 
-    it("lists itself on its parent's relationship page, else its view, else its edit page, else its index, carrying no tab", function (string $resource, array $parameters, string $url): void {
+    it("lists itself on its parent's relationship page, else its view, else its edit page, else its index, carrying no tab, and on its own index under a parent listing nothing", function (string $resource, array $parameters, string $url): void {
         $indexUrl = ($this->resource)($resource)->getIndexUrl($parameters, isAbsolute: false, panel: 'nested');
 
         expect($indexUrl)->toBe($url)
@@ -275,6 +275,7 @@ describe('urls', function (): void {
         'the view page, before the edit page' => [GreenhouseVentSeedlingResource::class, ['vent' => 'v-1'], '/nested/greenhouse-vents/v-1'],
         'the edit page, before the index' => [GardenSeedlingResource::class, ['garden' => '7'], '/nested/gardens/7/edit'],
         "the index, without the parent's key" => [StockedCrockResource::class, ['larder' => '4'], '/nested/stocked-larders'],
+        "its own index, under a parent listing nothing, with the parent's key" => [ArrivingVoyageResource::class, ['arrivalDock' => '3'], '/nested/docks/3/arriving-voyages'],
     ]);
 
     it("names the parent page's record as the parameter missing from an index URL asked for without its parent", function (): void {

@@ -34,7 +34,7 @@ describe('card', function (): void {
         $page = $this->visit('/simple-shapes/card-simple-page')->filter(Selectors::SIMPLE_PAGE);
 
         expect($page->filter(Selectors::SIMPLE_HEADER . ' ' . Selectors::PAGE_HEADING)->text())->toBe('Welcome back')
-            ->and($page->filter(Selectors::SIMPLE_HEADER . ' p')->text())->toBe('Sign in to continue.')
+            ->and($page->filter(Selectors::SIMPLE_HEADER_SUBHEADING)->text())->toBe('Sign in to continue.')
             ->and($page->filter('.sy-pa-simple-page-content')->text())->toContain('Your account is ready.');
     });
 

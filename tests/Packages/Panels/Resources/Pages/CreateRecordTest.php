@@ -73,7 +73,7 @@ describe('the page', function (): void {
 
         expect($page->filter(Selectors::formSubmittingTo('create')))->toHaveCount(1)
             ->and($page)->toContainButtons(Selectors::FORM_ACTIONS . ' ' . ActionsSelectors::TRIGGER, ['Create', 'Cancel'])
-            ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' button[type="submit"]:not([data-action])', 'Create')
+            ->and($page)->toContainElement(Selectors::FORM_SUBMIT_BUTTON, 'Create')
             ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' a[href="http://localhost/admin/articles"]' . SupportSelectors::GRAY, 'Cancel');
     });
 

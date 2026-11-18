@@ -66,7 +66,7 @@ it('drives the form element and its submit button from one method name', functio
     $page = $this->visit('/create-shapes/potted-plants/create-custom-row');
 
     expect($page->filter(Selectors::formSubmittingTo('plant')))->toHaveCount(1)
-        ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' button[type="submit"]:not([data-action])', CreateCustomRowPottedPlant::CREATE_LABEL);
+        ->and($page)->toContainElement(Selectors::FORM_SUBMIT_BUTTON, CreateCustomRowPottedPlant::CREATE_LABEL);
 
     $this->createLiveComponent(CreateCustomRowPottedPlant::class, ['panelId' => 'create-shapes'])
         ->fillForm(['name' => 'Fern'])

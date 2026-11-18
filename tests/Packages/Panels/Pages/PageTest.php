@@ -118,8 +118,8 @@ describe('body', function (): void {
         $notes = $this->visit('/pages/notes-page');
         $templated = $this->visit('/pages/templated-page');
 
-        expect($notes->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn .sy-pa-page-content'))->toHaveCount(1)
-            ->and($templated->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn .sy-pa-page-content')->text())->toBe('The Spring edition');
+        expect($notes->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn ' . Selectors::PAGE_CONTENT))->toHaveCount(1)
+            ->and($templated->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn ' . Selectors::PAGE_CONTENT)->text())->toBe('The Spring edition');
     });
 
     it("fills a child template's header, content and footer blocks from the page and the child's own variables", function (): void {
@@ -128,7 +128,7 @@ describe('body', function (): void {
         $chrome = $templated->filter(Selectors::PAGE . ' .sy-pa-page-header-main-ctn');
 
         expect($chrome->filter('p')->first()->text())->toBe('Welcome to The Spring edition')
-            ->and($chrome->filter('.sy-pa-page-content')->text())->toBe('The Spring edition')
+            ->and($chrome->filter(Selectors::PAGE_CONTENT)->text())->toBe('The Spring edition')
             ->and($chrome->filter('footer')->text())->toBe('Read Templated Page again next season.')
             ->and($templated->filter(Selectors::PAGE_HEADING))->toHaveCount(0)
             ->and($notes->filter(Selectors::PAGE . ' header.sy-pa-header'))->toHaveCount(1)
@@ -138,13 +138,13 @@ describe('body', function (): void {
     it('renders its default header only when it has something to head', function (): void {
         $page = $this->visit('/pages/standalone-page');
 
-        expect($page->filter(Selectors::PAGE . ' .sy-pa-page-content'))->toHaveCount(1)
+        expect($page->filter(Selectors::PAGE . ' ' . Selectors::PAGE_CONTENT))->toHaveCount(1)
             ->and($page->filter(Selectors::PAGE . ' header.sy-pa-header'))->toHaveCount(0);
     });
 
     it('renders the schema its content() builds inside the content area, which is empty otherwise', function (): void {
-        expect($this->visit('/pages/settings-page')->filter(Selectors::PAGE . ' .sy-pa-page-content')->text())->toBe('Every setting applies to the whole site.')
-            ->and($this->visit('/pages/notes-page')->filter(Selectors::PAGE . ' .sy-pa-page-content')->text())->toBe('');
+        expect($this->visit('/pages/settings-page')->filter(Selectors::PAGE . ' ' . Selectors::PAGE_CONTENT)->text())->toBe('Every setting applies to the whole site.')
+            ->and($this->visit('/pages/notes-page')->filter(Selectors::PAGE . ' ' . Selectors::PAGE_CONTENT)->text())->toBe('');
     });
 
     it('builds its content only to render it, so a live request that redirects without rendering builds none', function (): void {

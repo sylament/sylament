@@ -96,7 +96,7 @@ it('submits its form to save, through a Save submit button beside a gray Cancel 
 
     expect($page->filter(Selectors::formSubmittingTo('save')))->toHaveCount(1)
         ->and($page)->toContainButtons(Selectors::FORM_ACTIONS . ' ' . ActionsSelectors::TRIGGER, ['Save', 'Cancel'])
-        ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' button[type="submit"]:not([data-action])', 'Save')
+        ->and($page)->toContainElement(Selectors::FORM_SUBMIT_BUTTON, 'Save')
         ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' a[href="http://localhost/admin/articles"]' . SupportSelectors::GRAY, 'Cancel');
 });
 

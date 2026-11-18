@@ -11,7 +11,7 @@ it("holds the skip link and the user menu with its theme switcher in its strip, 
     expect($page->filter(Selectors::SIMPLE_LAYOUT . ' ' . Selectors::SKIP_LINK)->text())->toBe('Skip to content')
         ->and($strip->filter(Selectors::USER_MENU_TRIGGER))->toHaveCount(1)
         ->and($strip->filter(Selectors::THEME_SWITCHER))->toHaveCount(1)
-        ->and($page->filter(Selectors::contentWidth('2xl') . '#sy-pa-main ' . Selectors::SIMPLE_PAGE))->toHaveCount(1);
+        ->and($page->filter(Selectors::contentWidth('2xl') . Selectors::SKIP_LINK_TARGET . ' ' . Selectors::SIMPLE_PAGE))->toHaveCount(1);
 });
 
 it('renders its content at the large width when handed no width class', function (): void {

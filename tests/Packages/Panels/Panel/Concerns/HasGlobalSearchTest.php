@@ -43,8 +43,8 @@ it('tunes the field by its debounce, key bindings and suffix, and by a half-seco
         $search = $this->createLiveComponent(GlobalSearch::class, ['panelId' => $panel])->render()->crawler();
 
         return [
-            $search->filter('#sy-pa-global-search-input')->attr('data-model'),
-            json_decode((string) $search->filter('[data-controller="sylament--panels--global-search"]')->attr('data-sylament--panels--global-search-key-bindings-value'), true),
+            $search->filter(Selectors::GLOBAL_SEARCH_INPUT)->attr('data-model'),
+            json_decode((string) $search->filter(Selectors::GLOBAL_SEARCH_CONTROLLER)->attr('data-sylament--panels--global-search-key-bindings-value'), true),
             $search->filter(SupportSelectors::INLINE_SUFFIX)->each(fn (Crawler $suffix): string => $suffix->text()),
         ];
     };

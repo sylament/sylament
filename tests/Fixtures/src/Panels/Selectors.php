@@ -5,16 +5,23 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Panels;
 
 /**
- * The markup panels' templates give a test to find: the document title; the page's root, an
- * ordinary page's and a simple page's, the root a page with a sub-navigation band marks, its
- * heading, header actions, form and form actions row; the shell's sidebar navigation, a
- * navigation group by its label with its disclosure toggle, a navigation item with its label,
- * the active item, the topbar, the user menu trigger, the theme switcher, the logo, the global
- * search's live root and the main content area by its width; the sub-navigation band beside a
- * page and its active item; the simple layout; a relation manager's root; and a field by its
- * name. Each is named by its accessible name or role, the `data-` hook it carries, or the
- * `sy-pa-` class that is the template's one hook on it, and a selector a sub-navigation band
- * would also match is scoped to the landmark it reads.
+ * The markup panels' templates give a test to find: the document title, the skip link and the
+ * main content area it jumps to, at a width; the page's root, an ordinary page's and a simple
+ * page's, the root a page with a sub-navigation band marks at its position, its heading, its
+ * header with breadcrumbs, its header actions with their container, its content area, its form
+ * submitting to a live action, the form actions row and its submit button, and a field by its
+ * name; the simple layout and the simple header with its subheading; the shell's sidebar and
+ * its navigation landmark, a navigation group, any or by its label, with its label and
+ * disclosure toggle, a navigation item with its label, and the active item; the topbar, the
+ * user menu trigger, the theme switcher, and the logo with its light and dark renditions; the
+ * sub-navigation band beside a page and its active item, the top band's tab strip and the
+ * band's narrow-screen menu; the global search's live root, its field and controller, its
+ * results panel, a category and its heading, and a result's link and heading; the
+ * unsaved-changes guard; and a relation manager's root, any or by its class, with a tab of the
+ * record page's bar for one, any or under its key. Each is named by its accessible name or
+ * role, the `data-` hook or id it carries, or the `sy-pa-` class that is the template's one
+ * hook on it, and a selector a sub-navigation band would also match is scoped to the landmark
+ * it reads.
  */
 final class Selectors
 {
@@ -46,10 +53,21 @@ final class Selectors
     public const string FORM = 'form.sy-pa-form';
 
     /**
+     * The content area of an ordinary page's chrome, holding what `content()` builds or a child template's content block;
+     * its class is its one hook.
+     */
+    public const string PAGE_CONTENT = '.sy-pa-page-content';
+
+    /**
      * The form actions row below the form, by the id its `form-actions` key gives it in the `formActions` schema; the row's
      * alignment or full-width class sits on its inner container.
      */
     public const string FORM_ACTIONS = '[id="formActions.form-actions"]';
+
+    /**
+     * The form actions row's submit button, which submits the record page's `<form>` rather than calling a live action.
+     */
+    public const string FORM_SUBMIT_BUTTON = self::FORM_ACTIONS . ' button[type="submit"]:not([data-action])';
 
     /**
      * The shell's navigation landmark in the sidebar (`Sidebar`), holding the panel's navigation groups.
@@ -102,6 +120,16 @@ final class Selectors
      * The global search's live root (`GlobalSearch`), which the topbar mounts only for a panel with global search on.
      */
     public const string GLOBAL_SEARCH = '[data-live-name-value="SylamentPanels:GlobalSearch"]';
+
+    /**
+     * The global search's field, by the stable id its label points at.
+     */
+    public const string GLOBAL_SEARCH_INPUT = '#sy-pa-global-search-input';
+
+    /**
+     * The element the `sylament--panels--global-search` controller binds to inside the global search's live root.
+     */
+    public const string GLOBAL_SEARCH_CONTROLLER = '[data-controller="sylament--panels--global-search"]';
 
     /**
      * The main content area of either layout (`Layout`, `SimpleLayout`), which carries the page's width class.
@@ -183,9 +211,19 @@ final class Selectors
     public const string SIMPLE_HEADER = 'header.sy-pa-simple-header';
 
     /**
+     * The subheading `SimpleHeader` renders under the simple page's heading, only when the page has one.
+     */
+    public const string SIMPLE_HEADER_SUBHEADING = self::SIMPLE_HEADER . ' p.sy-pa-simple-header-subheading';
+
+    /**
+     * The id of either layout's main content area, which the skip link jumps to.
+     */
+    public const string SKIP_LINK_TARGET = '#sy-pa-main';
+
+    /**
      * The skip link either layout renders first, by the main content area it jumps to.
      */
-    public const string SKIP_LINK = 'a[href="#sy-pa-main"]';
+    public const string SKIP_LINK = 'a[href="' . self::SKIP_LINK_TARGET . '"]';
 
     /**
      * The element the `sylament--panels--unsaved-changes` controller binds to inside a page's live root; its class is its one hook.

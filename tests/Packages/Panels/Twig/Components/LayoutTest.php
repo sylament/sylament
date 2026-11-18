@@ -9,9 +9,9 @@ use Symfony\Component\DomCrawler\Crawler;
 it("wraps the page's live root in the one main landmark the skip link targets, the rest of the shell static around it", function (): void {
     $page = $this->visit('/shell/shelf');
 
-    expect($page->filter('.sy-pa-body a.sy-pa-skip-link[href="#sy-pa-main"]')->text())->toBe('Skip to content')
+    expect($page->filter('.sy-pa-body ' . Selectors::SKIP_LINK . '.sy-pa-skip-link')->text())->toBe('Skip to content')
         ->and($page->filter(Selectors::MAIN)->count())->toBe(1)
-        ->and($page->filter(Selectors::MAIN . '#sy-pa-main ' . Selectors::PAGE)->count())->toBe(1)
+        ->and($page->filter(Selectors::MAIN . Selectors::SKIP_LINK_TARGET . ' ' . Selectors::PAGE)->count())->toBe(1)
         ->and(array_map(fn (string $id): int => $page->filter("[id=\"{$id}\"]")->count(), ['sy-pa-topbar', 'sy-pa-sidebar', 'sy-pa-main']))->toBe([1, 1, 1])
         ->and($page->filter(Selectors::THEME_SWITCHER)->count())->toBe(1)
         ->and($page->filter(TablesSelectors::LIVE_PROPS . ' ' . Selectors::THEME_SWITCHER)->count())->toBe(0)

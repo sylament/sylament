@@ -10,7 +10,7 @@ it('mounts the narrow-screen menu ahead of the content, and the band once at the
         Selectors::SUB_NAVIGATION_MENU => 'menu',
         Selectors::SUB_NAVIGATION => 'sidebar',
         Selectors::SUB_NAVIGATION_TABS => 'tabs',
-        '.sy-pa-page-content' => 'content',
+        Selectors::PAGE_CONTENT => 'content',
     ];
 
     $drawn = $this->visit($uri)->filter(implode(', ', array_keys($hooks)))->each(fn (Crawler $node): ?string => array_find($hooks, fn (string $name, string $selector): bool => $node->matches($selector)));

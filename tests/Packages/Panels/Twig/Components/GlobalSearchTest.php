@@ -13,10 +13,10 @@ use Symfony\Component\HttpFoundation\Request;
 it('renders a labelled search field on a controller of its own inside the live root, and no results panel before a term', function (): void {
     $tester = $this->createLiveComponent(GlobalSearch::class, ['panelId' => 'search']);
     $search = $tester->render()->crawler();
-    $input = $search->filter('input#sy-pa-global-search-input');
+    $input = $search->filter('input' . Selectors::GLOBAL_SEARCH_INPUT);
 
     expect($search->filter(Selectors::GLOBAL_SEARCH)->attr('data-controller'))->toBe('live')
-        ->and($search->filter(Selectors::GLOBAL_SEARCH . ' [data-controller="sylament--panels--global-search"]'))->toHaveCount(1)
+        ->and($search->filter(Selectors::GLOBAL_SEARCH . ' ' . Selectors::GLOBAL_SEARCH_CONTROLLER))->toHaveCount(1)
         ->and($search->filter('label[for="sy-pa-global-search-input"]')->text())->toBe('Global search')
         ->and([$input->attr('type'), $input->attr('placeholder'), $input->attr('data-sylament--panels--global-search-target'), $input->attr('data-action')])
         ->toBe(['search', 'Search', 'input', 'keydown.down->sylament--panels--global-search#focusFirstResult'])

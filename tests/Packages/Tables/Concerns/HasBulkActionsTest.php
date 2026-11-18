@@ -242,20 +242,20 @@ describe('selecting all', function (): void {
         'every record' => [[], 'Select all 6'],
         'the page' => [['pageOnly' => true], 'Select all 5'],
         'the selectable records' => [['refuses' => true], 'Select all 5'],
-        'the selectable records of the page' => [['pageOnly' => true, 'refuses' => true, 'tableRecordsPerPage' => 10], 'Select all 5'],
+        'the selectable records of the page' => [['pageOnly' => true, 'refuses' => true, 'tableSort' => 'name:desc'], 'Select all 4'],
         'every record, simply paginated' => [['simplePagination' => true], 'Select all 6'],
     ]);
 
-    it('selects only the records the table lets the user select where selection is page-only', function (): void {
+    it('selects only the records of the page the table lets the user select where selection is page-only', function (): void {
         $products = array_map(static fn (array $row): Product => new Product($row['name']), ConfiguredSelectionProductTable::ROWS);
         $this->seed(...$products);
 
-        $selected = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['pageOnly' => true, 'refuses' => true, 'tableRecordsPerPage' => 10])
+        $selected = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['pageOnly' => true, 'refuses' => true, 'tableRecordsPerPage' => 5, 'tableSort' => 'name:desc'])
             ->call('selectAllTableRecords')
             ->component()->selectedTableRecordKeys;
         sort($selected, SORT_NATURAL);
 
-        expect($selected)->toBe(array_map(static fn (Product $product): string => (string) $product->id, array_slice($products, 0, 5)));
+        expect($selected)->toBe(array_map(static fn (Product $product): string => (string) $product->id, array_slice($products, 1, 4)));
     });
 
     it('selects one key per record off a query fetch-joining a to-many, in one statement', function (): void {

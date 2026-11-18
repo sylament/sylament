@@ -44,6 +44,12 @@ it('leaves two ends that read as no date as they are, rather than failing the re
     expect($this->renderSummarizer(Range::make()->minimalDateTimeDifference(), 'label'))->toContainElement(Selectors::summarizerFigure('range'), 'Airbag - Airport');
 });
 
+it('shows the filled end alone where the other is blank, rather than reading the blank one as now', function (): void {
+    $this->seed(new LarderJar(''), new LarderJar('2024-03-05'));
+
+    expect($this->renderSummarizer(Range::make()->minimalDateTimeDifference(), 'label'))->toContainElement(Selectors::summarizerFigure('range'), '2024-03-05');
+});
+
 it('shows two texts by the shortest beginnings that tell them apart, and one text once', function (array $labels, string $range): void {
     $this->seed(...array_map(static fn (string $label): LarderJar => new LarderJar($label), $labels));
 

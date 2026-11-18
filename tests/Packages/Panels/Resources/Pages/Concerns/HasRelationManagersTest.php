@@ -52,9 +52,9 @@ it("mounts a manager with its own default properties, and a configuration's prop
     $group = $this->visit("/relations/gardens/{$this->garden->id}/edit?relation=beds");
     $configured = $this->visit("/relations/gardens/{$this->garden->id}/edit?relation=plants");
 
-    expect($group)->toContainElement(Selectors::relationManager(TaggedPlantsRelationManager::class) . ' ' . SchemasSelectors::TAB . '[aria-selected="true"]', 'Starting M')
+    expect($group)->toContainElement(Selectors::relationManager(TaggedPlantsRelationManager::class) . ' ' . SchemasSelectors::SELECTED_TAB, 'Starting M')
         ->toContainElement(Selectors::relationManager(TaggedPlantsRelationManager::class) . ' ' . TablesSelectors::columnCells('name'), 'Mint')
-        ->and($configured)->toContainElement(Selectors::relationManager(TaggedPlantsRelationManager::class) . ' ' . SchemasSelectors::TAB . '[aria-selected="true"]', 'Starting B');
+        ->and($configured)->toContainElement(Selectors::relationManager(TaggedPlantsRelationManager::class) . ' ' . SchemasSelectors::SELECTED_TAB, 'Starting B');
 });
 
 it('renders the managers after the form, never inside it', function (): void {

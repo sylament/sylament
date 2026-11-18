@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Schemas;
 
 /**
- * A schema's root, the root of one a live host renders as its own, which carries the
- * schema's Stimulus controller, a schema carrying none, its gap and density, and the cells its children and its actions sit in, a growing one included; the roots of schemas'
- * layout, prose, icon and action-row components, named by the `sy-sc-` class that marks each, for an area
- * asserting what a trait puts on them; a section's content schema, the child schema a
- * component's gap, density and columns reach, which the schema every render wraps a
- * component in would otherwise answer for, and a section's content by the id its key gives it; a schema root by the key its controller is given; a control bound to a state path, by the
- * `data-model` value schemas' binding modifiers write; a tab and its panel, by the
- * roles the Tabs and Tab partials give them, and the targets of the tabs controller; a wizard step's header button and panel,
- * by the step key the Wizard and Step partials put on both, its header entry and its cancel and
- * submit slots, by their controller targets, and the values its controller reads.
+ * A schema's root, the root of one a live host renders as its own, which carries the schema's
+ * Stimulus controller, a schema carrying none, its gap and density, and the cells its children
+ * and its actions sit in, a growing one included; the roots of schemas' layout, prose, icon and
+ * action-row components, named by the `sy-sc-` class that marks each, for an area asserting
+ * what a trait puts on them; a section's content schema, the child schema a component's gap,
+ * density and columns reach, which the schema every render wraps a component in would otherwise
+ * answer for, and a section's content by the id its key gives it; a schema root by the key its
+ * controller is given; a control bound to a state path, by the `data-model` value schemas'
+ * binding modifiers write; a tab, the selected one, and its panel, by the roles and the
+ * selection state the Tabs and Tab partials give them, and the targets of the tabs controller;
+ * a wizard step's header button and panel, by the step key the Wizard and Step partials put on
+ * both, its header entry and its cancel and submit slots, by their controller targets, and the
+ * values its controller reads.
  */
 final class Selectors
 {
@@ -59,6 +62,11 @@ final class Selectors
     public const string TABS = '.sy-sc-tabs';
 
     public const string TAB = '[role="tab"]';
+
+    /**
+     * The selected tab, the one a tab strip marks `aria-selected="true"`.
+     */
+    public const string SELECTED_TAB = self::TAB . '[aria-selected="true"]';
 
     public const string TAB_PANEL = '[role="tabpanel"]';
 

@@ -70,7 +70,7 @@ it('shows its tab strip above the table on the first tab, and a page declaring n
     $bins = $this->visit("/related/stocked-larders/{$this->pantry->id}/bins");
 
     expect($jars)->toContainButtons(SchemasSelectors::TAB, ['All', 'Waxed'])
-        ->toContainElement(SchemasSelectors::TAB . '[aria-selected="true"]', 'All')
+        ->toContainElement(SchemasSelectors::SELECTED_TAB, 'All')
         ->and($bins->filter(SchemasSelectors::TAB))->toHaveCount(0)
         ->and($bins->filter(TablesSelectors::ROW))->toHaveCount(1);
 });

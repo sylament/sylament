@@ -159,7 +159,7 @@ describe('its tabs and its title', function (): void {
         $manager = $this->visit("/relations/gardens/{$garden->id}/edit?relation=plants")->filter(Selectors::relationManager(TaggedPlantsRelationManager::class));
 
         expect($manager)->toContainButtons(SchemasSelectors::TAB, ['Starting B', 'All of Kitchen'])
-            ->toContainElement(SchemasSelectors::TAB . '[aria-selected="true"]', 'Starting B')
+            ->toContainElement(SchemasSelectors::SELECTED_TAB, 'Starting B')
             ->and($manager->filter(TablesSelectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Basil', 'Bay']);
     });
 

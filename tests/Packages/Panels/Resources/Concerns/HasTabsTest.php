@@ -28,7 +28,7 @@ it('opens on its first tab, or the declared tab the query string names, scoped b
 
     $page = $this->visit('/list-pages/shelf/articles' . $query);
 
-    expect($page->filter(SchemasSelectors::TAB . '[aria-selected="true"]')->text())->toBe($label)
+    expect($page->filter(SchemasSelectors::SELECTED_TAB)->text())->toBe($label)
         ->and($page->filter(TablesSelectors::ROW . ' ' . TablesSelectors::TEXT_COLUMN)->each(static fn (Crawler $cell): string => $cell->text()))->toBe($titles)
         ->and($this::renderedLiveProps($page)['activeTab'])->toBe($key);
 })->with([
@@ -48,7 +48,7 @@ it('builds its tabs from the properties the page opened with, and renders the st
 
     $tester = $this->createLiveComponent(ListTabbedArticles::class, ['panelId' => 'list-pages', 'tabless' => true])->set('tabless', false);
 
-    expect($tester->render()->crawler()->filter(SchemasSelectors::TAB . '[aria-selected="true"]')->text())->toBe('All');
+    expect($tester->render()->crawler()->filter(SchemasSelectors::SELECTED_TAB)->text())->toBe('All');
 });
 
 it('lists every record once a later request stops declaring the tab it had active', function (): void {
@@ -76,7 +76,7 @@ it('switches tab back on the first page, showing the rows the new tab scopes, an
     $tester->set('activeTab', null);
 
     expect($this::renderedLiveProps($tester->render()->crawler())['activeTab'])->toBe('all')
-        ->and($tester->render()->crawler()->filter(SchemasSelectors::TAB . '[aria-selected="true"]')->text())->toBe('All');
+        ->and($tester->render()->crawler()->filter(SchemasSelectors::SELECTED_TAB)->text())->toBe('All');
 });
 
 it("keeps a record outside the active tab's scope out of a row action's reach, unless the tab leaves its scope out of the lookup", function (): void {

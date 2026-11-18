@@ -39,15 +39,15 @@ it('hands its closures the owner, by name and by its class, and the page class',
 
 it('takes the tab its tab() callback returns, and keeps its own when the callback returns nothing', function (): void {
     $raised = Tab::make('Raised beds');
+    $given = null;
 
     $replaced = RelationGroup::make('Beds')->tab(static fn (Tab $tab): Tab => $raised)->getTabComponent();
-    $kept = RelationGroup::make('Beds')->tab(static function (Tab $tab): void {
-        $tab->badge('2');
+    $kept = RelationGroup::make('Beds')->tab(static function (Tab $tab) use (&$given): void {
+        $given = $tab;
     })->getTabComponent();
 
     expect($replaced)->toBe($raised)
-        ->and($kept->getLabel())->toBe('Beds')
-        ->and($kept->getBadge())->toBe('2');
+        ->and($kept)->toBe($given);
 });
 
 it('shows its icon, label and badge on its tab, coloured and titled from the badge it resolved', function (): void {

@@ -98,7 +98,7 @@ describe('the grouping settings', function (): void {
     ]);
 
     it('opens the settings from an icon button named "Group" showing the grouping icon, which the table can modify', function (array $variants, string $label): void {
-        $settings = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants])->render()->crawler()->filter('.sy-ta-grouping-settings [data-controller="sylament--support--dropdown"]');
+        $settings = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants])->render()->crawler()->filter('.sy-ta-grouping-settings ' . SupportSelectors::DROPDOWN_CONTROLLER);
 
         expect($settings->filter(SupportSelectors::dropdownTarget('trigger'))->filter("button[aria-label=\"{$label}\"]")->text())->toBe('rectangle-stack-20-solid')
             ->and($settings->filter(SupportSelectors::dropdownTarget('panel'))->filter(Selectors::GROUP_BY_SELECT))->toHaveCount(1);

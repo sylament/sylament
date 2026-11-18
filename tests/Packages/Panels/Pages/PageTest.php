@@ -57,7 +57,7 @@ describe('navigation', function (): void {
         $report = $this->visit('/pages/reports/monthly');
 
         $item = fn (Crawler $page, string $href): Crawler => $page->filter(Selectors::NAVIGATION . " a[href=\"{$href}\"]");
-        $ungrouped = $notes->filter(Selectors::NAVIGATION . ' .sy-pa-sidebar-group:not([data-group-label]) ' . Selectors::NAVIGATION_ITEM_LABEL);
+        $ungrouped = $notes->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP . ':not([data-group-label]) ' . Selectors::NAVIGATION_ITEM_LABEL);
 
         expect($ungrouped->each(fn (Crawler $label): string => $label->text()))->toBe(['Notes Page', 'Reports', 'Templated Page'])
             ->and($item($notes, '/pages/settings-page')->filter(Selectors::NAVIGATION_ITEM_LABEL)->text())->toBe('Site settings')
@@ -73,7 +73,7 @@ describe('navigation', function (): void {
         $page = $this->visit('/pages/notes-page');
 
         expect($page->filter(Selectors::navigationGroup('Configuration') . ' ' . Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text()))->toBe(['Site settings'])
-            ->and($page->filter(Selectors::NAVIGATION . ' .sy-pa-sidebar-group:not([data-group-label]) ' . Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text()))->toContain('Notes Page')->not->toContain('Site settings');
+            ->and($page->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP . ':not([data-group-label]) ' . Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text()))->toContain('Notes Page')->not->toContain('Site settings');
     });
 
     it('leaves a page that opts out of navigation off the sidebar and a sub-navigation band, while its route still answers', function (): void {

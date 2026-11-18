@@ -17,7 +17,7 @@ it('offers a per-page select bound to the table, all named All, the current choi
     $pagination = $this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 30, 1, 10), 'pageOptions' => [5, 10, 'all'], 'currentPerPage' => 10])->crawler();
 
     expect($pagination)->toContainElement('label .sy-pagination-per-page-label', 'Per page')
-        ->toContainElement('label select[data-model="tableRecordsPerPage"] option[value="10"][selected]', '10')
+        ->toContainElement('label ' . SupportSelectors::PER_PAGE_SELECT . ' option[value="10"][selected]', '10')
         ->toContainElement('label select option[value="all"]:not([selected])', 'All')
         ->and($pagination->filter('select option')->each(fn (Crawler $option): string => $option->attr('value') ?? ''))->toBe(['5', '10', 'all'])
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 30, 1, 10), 'pageOptions' => [5, 10], 'currentPageOptionProperty' => 'perPage'])->crawler())

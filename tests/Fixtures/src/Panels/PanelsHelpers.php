@@ -28,7 +28,7 @@ trait PanelsHelpers
         }
 
         /** @var array<string, mixed> $props */
-        $props = self::liveProps($root);
+        $props = static::liveProps($root);
 
         return $props;
     }

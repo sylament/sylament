@@ -10,6 +10,7 @@ use Sylament\Tests\Fixtures\Actions\ActionsHelpers;
 use Sylament\Tests\Fixtures\Forms\FormsHelpers;
 use Sylament\Tests\Fixtures\Notifications\NotificationsHelpers;
 use Sylament\Tests\Fixtures\Schemas\SchemasHelpers;
+use Sylament\Tests\Fixtures\Tables\TablesHelpers;
 use Sylament\Tests\Infrastructure\Concerns\InteractsWithDatabase;
 use Sylament\Tests\Infrastructure\Concerns\InteractsWithRendering;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
@@ -27,6 +28,7 @@ abstract class TestCase extends KernelTestCase
     use InteractsWithTwigComponents;
     use NotificationsHelpers;
     use SchemasHelpers;
+    use TablesHelpers;
 
     private static int $declaredClassCount = 0;
 

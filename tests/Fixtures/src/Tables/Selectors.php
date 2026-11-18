@@ -272,6 +272,26 @@ final class Selectors
     public const string GROUP_DIRECTION_SELECT = 'select[aria-label="Group direction"]';
 
     /**
+     * One entry of a values summarizer's list.
+     */
+    public const string SUMMARIZER_VALUE = '.sy-ta-values-summary li';
+
+    /**
+     * The cell a summary row leads with, heading the row it spans.
+     */
+    public const string SUMMARY_HEADING = 'th[scope="row"]';
+
+    /**
+     * Every cell of the table's header row, the selection and action cells included.
+     */
+    public const string COLUMN_HEADER = 'thead th';
+
+    /**
+     * Every row of the table's body: a record's, a group's header and every summary row.
+     */
+    public const string BODY_ROW = 'tbody tr';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string
@@ -415,5 +435,37 @@ final class Selectors
     public static function columnManagerReorderHandle(string $column): string
     {
         return 'button' . SupportSelectors::SORTABLE_HANDLE . "[aria-label=\"Reorder {$column}\"]";
+    }
+
+    /**
+     * A summarizer's body in a summary cell, by the `sy-ta-` class that is its one hook: `text` (a sum, an average, a count or a bare summarizer), `range` or `values`.
+     */
+    public static function summarizer(string $body): string
+    {
+        return ".sy-ta-{$body}-summary";
+    }
+
+    /**
+     * The label a summarizer's body leads with, named as `summarizer()` takes it.
+     */
+    public static function summarizerLabel(string $body): string
+    {
+        return ".sy-ta-{$body}-summary-label";
+    }
+
+    /**
+     * The figure of a `text` or `range` summarizer's body: the span beside its label.
+     */
+    public static function summarizerFigure(string $body): string
+    {
+        return self::summarizer($body) . " span:not(.sy-ta-{$body}-summary-label)";
+    }
+
+    /**
+     * The summary row closing the group with this key, percent-encoded as its id carries it.
+     */
+    public static function groupSummaryRow(string $key): string
+    {
+        return "tr[id\$=\".table.group-summary.{$key}\"]";
     }
 }

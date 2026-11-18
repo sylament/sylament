@@ -15,11 +15,13 @@ use Sylament\Panels\Routing\PanelRouteLoader;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
-use Sylament\Tests\Fixtures\Panels\AdminPanelProvider;
 use Sylament\Tests\Fixtures\Panels\Pages\SluggedSettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListArticles;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\PreviewSeparatedPath;
+use Sylament\Tests\Fixtures\Panels\Resources\SeparatedPathResource;
+use Sylament\Tests\Fixtures\Panels\RoutingPanelProvider;
 use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\RouteCollection;
@@ -118,7 +120,7 @@ it('joins the panel, resource and page paths with exactly one slash, at the site
 });
 
 it('tracks the file of every page, resource and provider the routes derive from', function (): void {
-    $routes = new PanelRouteLoader(new PanelRegistry([new AdminPanelProvider()]), $this::getContainer()->get(ResourceRegistry::class))();
+    $routes = new PanelRouteLoader(new PanelRegistry([new RoutingPanelProvider()]), $this::getContainer()->get(ResourceRegistry::class))();
 
     $files = array_map(
         static fn (FileResource $file): string => $file->getResource(),
@@ -126,10 +128,10 @@ it('tracks the file of every page, resource and provider the routes derive from'
     );
 
     expect($files)->toContain(
-        new ReflectionClass(AdminPanelProvider::class)->getFileName(),
-        new ReflectionClass(ArticleResource::class)->getFileName(),
-        new ReflectionClass(ListArticles::class)->getFileName(),
-        new ReflectionClass(EditArticle::class)->getFileName(),
+        new ReflectionClass(RoutingPanelProvider::class)->getFileName(),
+        new ReflectionClass(SluggedSettingsPage::class)->getFileName(),
+        new ReflectionClass(SeparatedPathResource::class)->getFileName(),
+        new ReflectionClass(PreviewSeparatedPath::class)->getFileName(),
     );
 });
 

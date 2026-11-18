@@ -25,7 +25,7 @@ Both hosts compose one tier, [`InteractsWithRelationshipTable`](interacts-with-r
 | [`$activeRelationManager`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `#[Url(as: 'relation')] public ?string $activeRelationManager` | done | — | [semantics](#the-relation-binding-is-the-toolkits-only-static-url-mapping) |
 | [`getCachedRelationManagers()` / `getRelationManagers()` / `getAllRelationManagers()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | the same three | done | — | [semantics](#the-registrations-are-read-once-per-request-and-filtered-by-the-record) |
 | [`normalizeRelationManagerClass()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `normalizeRelationManagerClass()` | done | — | — |
-| [`getRelationManagersContentComponent()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `getRelationManagersContentComponent()` | done | — | [semantics](#four-arms-one-component-and-the-registration-keys-are-the-identities) |
+| [`getRelationManagersContentComponent()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `getRelationManagersContentComponent()` | done | — | [semantics](#four-arms-one-component-and-the-registration-keys-are-the-identities) · [diverges](#two-groups-holding-one-manager-under-one-key-share-its-embed-identity) |
 | The active-manager defaulting | [`renderingHasRelationManagers()`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php) | done | — | [diverges](#the-defaulting-is-folded-into-the-builder-and-casts-the-key-to-a-string) |
 | [`EditRecord::content()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`schemas()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | — | [detail](#content-ships-in-a-narrow-shape) |
 | `hasCombinedRelationManagerTabsWithContent()` / `getContentTabComponent()` / `getContentTabLabel()` / `getContentTabIcon()` / `getContentTabPosition()` / `Enums\ContentTabPosition` | the same five plus the enum | skipped | — | [diverges](#the-combined-content-tab-does-not-port) |
@@ -77,7 +77,6 @@ That is load-bearing twice over: [`Tabs::configureChildSchema()`](../schemas/tab
 An `array_values()` anywhere in the builder would leave the tabs keyed `0`, `1`, … while `$activeRelationManager` still held `sections` — the bar would render, no tab would ever light up, and nothing would report an error.
 
 Every embed is keyed too, because an unkeyed embed cannot keep a stable child id across renders ([live-component.md](../schemas/live-component.md)): the plain arms key by the manager class, and a group's embeds by `"{class}-{groupKey}"`, the key the manager sits under in its group, so the same manager registered twice in one group still keeps two identities.
-Two groups holding it under the same key share one, where Filament's keep them apart, because a relation-manager tab's key does not join its embeds' keys ([why](../schemas/tabs.md#the-non-inheritable-key-is-what-keeps-a-childs-absolute-key-unchanged)).
 
 A **group's** embed array is the one place the keys are dropped rather than kept: Filament maps its group's managers through `collect()->map()->all()`, which preserves the registration keys, and ours builds a plain `list`.
 Nothing reads them — `HasComponents::components()` does not treat an array key as an identity, and the group key is already on every embed's explicit `->key()` — so this is a recorded departure rather than a defect.
@@ -112,6 +111,12 @@ Ours is an instance method on the [registered resource service](resource.md#reso
 The trait reaches it through `getResourceInstance()` rather than `static::getResource()::`.
 
 The signature is otherwise Filament's, including the union of what an entry may be — a manager class-string, a `RelationGroup`, or a `RelationManagerConfiguration`.
+
+### Two groups holding one manager under one key share its embed identity
+
+A group keys each embed by the key the manager sits under in that group, as Filament's does, so two groups holding one manager under the same in-group key give its two embeds one identity, where Filament's keep them apart.
+Filament re-keys each tab with an inheritable key, so the tab's key joins its embeds' keys; schemas' `Tabs` re-keys it non-inheritably, so a relation-manager tab's key joins none ([why](../schemas/tabs.md#the-re-keying-hook-must-run-before-any-key-is-read)).
+Only a browser shows the shared identity, across a switch between the two groups' tabs.
 
 ### The defaulting is folded into the builder, and casts the key to a string
 

@@ -81,7 +81,7 @@ Vendor's `getColumnManagerWidth()` is `Width | string | null` and falls back thr
 Ours is `?string`, a raw CSS length or a `Width` value such as `lg`, and it is genuinely nullable: with nothing set, the dropdown takes the `20rem` its own stylesheet declares and the modal takes `md`.
 The dropdown takes the string as its panel's width, so a `Width` value is no width to it.
 Support's `Modal` reads its `width` as a size token (`sy-modal-<value>`), so the partial hands the modal a `Width` value as its token, which is how Filament's modal reads one, and caps its window with any other string as an inline `max-width`, where Filament's would emit the string as a class.
-A `Width` value the modal stylesheet has no step for (`full`, `prose`, the `screen-*` values) leaves the window uncapped.
+A `Width` value [the modal's width ladder](../support/modal.md#the-width-ladder-steps-only-3xs-to-7xl-and-screen) has no step for leaves the window uncapped.
 
 [`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php) exists, so nothing blocks the back-fill: it is retyping the property and the setter and porting the column-count match.
 It is the same gap [`filtersFormWidth()` records](has-filters.md#the-filters-form-columns-follow-the-layout-the-width-does-not), and the two setters land together.

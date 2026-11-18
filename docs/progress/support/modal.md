@@ -27,7 +27,7 @@ It is template-only: there is no Sylament PHP `ModalComponent` class.
 | Header: `heading` / `description` / `icon` / `iconColor` + `aria-*` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) heading block | done | — | [diverges](#the-header-icon-drops-filaments-background-wrapper) |
 | Content slot | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `$slot` | done | — | — |
 | Footer slot | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `$footer` | done | — | — |
-| `width` → `sy-modal-<width>` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `width` | done | — | [diverges](#the-default-width-is-md-not-sm) |
+| `width` → `sy-modal-<width>` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `width` | done | — | [diverges](#the-default-width-is-md-not-sm) · [diverges](#the-width-ladder-steps-only-3xs-to-7xl-and-screen) |
 | `returnsFocus` (Filament's `restoresFocus`) | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `restoresFocus` | done | — | [diverges](#returnsfocus-stays-true-where-filaments-action-modal-hardcodes-false) |
 | Close button (+ `closeByEscaping` tab-order juggling, `autofocus` translation) | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `closeButton` | done | — | [diverges](#the-chrome-defaults-are-literal-constants-not-modalcomponent-statics) |
 | `ModalComponent` static config (global defaults seam) | [`ModalComponent.php`](../../../vendor/filament/support/src/View/Components/ModalComponent.php) | todo | — | [detail](#modalcomponents-global-defaults-have-no-sylament-seam) |
@@ -196,6 +196,11 @@ The width is emitted verbatim as a `sy-modal-<value>` class rather than resolved
 [`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php) exists for panels' page and panel width surfaces, but `width()` takes a plain string and the class is `sy-modal-<value>`.
 Retyping it means narrowing the property's type, mapping each case to a modal class and re-deriving the `sy-modal-screen` arm, which is a modal-sized change of its own rather than a rider on a page change.
 The same deferral, for the same reason, is recorded on [`Table::filtersFormWidth()`](../tables/table.md#surface).
+
+### The width ladder steps only `3xs` to `7xl` and `screen`
+
+Filament's stylesheet gives every `Width` case a step of the modal window, while ours steps `3xs` to `7xl` and `screen` alone.
+A window handed `none`, `full`, `min`, `max`, `fit`, `prose`, `container` or one of `screen-sm` to `screen-2xl` carries its `sy-modal-<value>` class with no rule behind it, so nothing caps the window's full width.
 
 ### The open state is a Stimulus value, not only an event
 

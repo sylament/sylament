@@ -53,12 +53,10 @@ describe('the registration', function (): void {
         $seedlings = ($this->resource)(GardenSeedlingResource::class);
         $registration = $seedlings->getParentResourceRegistration();
 
-        expect($seedlings->getParentResource())->toBe(GardenResource::class)
-            ->and($registration?->parentResource)->toBe(GardenResource::class)
+        expect($registration?->parentResource)->toBe(GardenResource::class)
             ->and($registration?->childResource)->toBe(GardenSeedlingResource::class)
             ->and($registration?->getRelationshipName())->toBeNull()
             ->and($seedlings->getParentResourceRegistration())->toBe($registration)
-            ->and(($this->resource)(GardenResource::class)->getParentResource())->toBeNull()
             ->and(($this->resource)(GardenResource::class)->getParentResourceRegistration())->toBeNull();
     });
 

@@ -1,0 +1,14 @@
+<dl data-template="orbit">
+    <dt>record</dt>
+    <dd data-variable="record">{{ component.getRecord.name }}</dd>
+    <dt>state</dt>
+    <dd data-variable="state">{{ component.getState }}</dd>
+    <dt>planet</dt>
+    <dd data-variable="planet">{{ planet ?? '' }}</dd>
+    <dt>alignment</dt>
+    <dd data-variable="alignment">{{ component.getAlignmentClass }}</dd>
+    <dt>record variable</dt>
+    <dd data-variable="record-variable">{{ record is defined ? 'defined' : 'undefined' }}</dd>
+    <dt>state variable</dt>
+    <dd data-variable="state-variable">{{ state is defined ? 'defined' : 'undefined' }}</dd>
+</dl>

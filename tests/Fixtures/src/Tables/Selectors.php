@@ -185,6 +185,26 @@ final class Selectors
     public const string TEXT_ITEM = '.sy-ta-text-item';
 
     /**
+     * The root of an icon column's cell.
+     */
+    public const string ICON_COLUMN = '.sy-ta-icon';
+
+    /**
+     * The root of an image column's cell.
+     */
+    public const string IMAGE_COLUMN = '.sy-ta-image';
+
+    /**
+     * The root of a colour column's cell.
+     */
+    public const string COLOR_COLUMN = '.sy-ta-color';
+
+    /**
+     * The placeholder a column's partial shows for a blank state; its class is its one hook.
+     */
+    public const string PLACEHOLDER = '.sy-ta-placeholder';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string

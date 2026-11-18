@@ -333,9 +333,10 @@ describe('a selection over several identifier fields', function (): void {
     it('subtracts a tracked deselection larger than one batch from every key the table admits, and keeps a smaller one one exclusion', function (Closure $lines): void {
         $seeded = $lines(502);
         $this->seed(...$seeded);
+        $host = $this->createLiveComponent(BatchedSelectionLineTable::class, ['lineClass' => $seeded[0]::class])->component();
         $tracked = fn (array $deselected): Testable => $this->createLiveComponent(BatchedSelectionLineTable::class, ['lineClass' => $seeded[0]::class])
             ->set('isTrackingDeselectedTableRecords', true)
-            ->set('deselectedTableRecords', array_map(fn (object $line): string => $this->createLiveComponent(BatchedSelectionLineTable::class, ['lineClass' => $seeded[0]::class])->component()->getTableRecordKey($line), $deselected));
+            ->set('deselectedTableRecords', array_map($host->getTableRecordKey(...), $deselected));
 
         $tracked(array_slice($seeded, 0, 501))->callAction(TestAction::make('readKeys')->table()->bulk());
 

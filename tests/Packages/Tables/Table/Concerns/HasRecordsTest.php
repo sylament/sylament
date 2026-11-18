@@ -16,12 +16,10 @@ use Sylament\Tests\Fixtures\Tables\GroupedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\ReorderableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\ShapedRecordsTable;
 
-it('labels a record as a record, and many as records, on a table with no record class', function (): void {
-    $table = $this->createLiveComponent(AlignedColumnsTable::class)->component()->getTable();
-
-    expect($table->getRecordLabel())->toBe('record')
-        ->and($table->getPluralRecordLabel())->toBe('records');
+it('says there are no records on an empty table with no record class', function (): void {
+    expect($this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'none'])->render()->crawler())->toContainElement(Selectors::EMPTY_STATE . ' h2', 'No records');
 });
 
 it('names its records by the label given, the plural deriving from it until one is given', function (array $props, string $heading): void {

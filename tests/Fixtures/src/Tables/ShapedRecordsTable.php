@@ -25,7 +25,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * with no id (`idless`), a generator yielding one key twice (`generator`), the array rows on a page carrying
  * its total (`page`) or none (`simplePage`), a string (`text`), a row that is a number
  * (`numberRow`), an array row with an integer key (`listRow`), a blank `__key` (`blankKey`),
- * or array rows beside a declared product query (`besideQuery`).
+ * array rows beside a declared product query (`besideQuery`), or no rows at all (`none`).
  */
 #[AsLiveComponent(name: 'Tables:ShapedRecordsTable', template: '@Fixtures/tables/table.html.twig')]
 class ShapedRecordsTable implements InteractsWithTable
@@ -64,6 +64,7 @@ class ShapedRecordsTable implements InteractsWithTable
             'idless' => [new ShelfItem('Lamp')],
             'generator' => $this->yieldTwice(),
             'page' => new Paginator(['lamp' => ['__key' => 'lamp', 'name' => 'Lamp'], 'vase' => ['name' => 'Vase']], totalRecordCount: 12, page: 1, recordsPerPage: 10),
+            'none' => [],
             'simplePage' => new Paginator([['__key' => 'lamp', 'name' => 'Lamp']], totalRecordCount: null, page: 1, recordsPerPage: 10, hasMoreRecords: true),
             'text' => 'Lamp',
             'numberRow' => [7],

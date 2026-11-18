@@ -151,6 +151,16 @@ final class Selectors
      */
     public const string LOGO_DARK = self::LOGO . '.sy-pa-logo-dark';
 
+    /**
+     * The band `SubNavigationTabs` renders above the page at the `top` position, support's tab strip; its class is its one hook.
+     */
+    public const string SUB_NAVIGATION_TABS = '.sy-pa-sub-navigation-tabs';
+
+    /**
+     * The narrow-screen dropdown `SubNavigationMobileMenu` renders ahead of every band, listing its items; its class is its one hook.
+     */
+    public const string SUB_NAVIGATION_MENU = '.sy-pa-sub-navigation-dropdown';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

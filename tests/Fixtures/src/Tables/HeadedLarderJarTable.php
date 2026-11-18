@@ -21,7 +21,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A searchable, striped table of larder jars under a heading and a description, its
  * sealed jars' rows carrying a class of their own and a `create` header action
- * beside them; the heading, its level and the action are mount props.
+ * beside them; the heading, its level, the action and the record labels are mount
+ * props.
  */
 #[AsLiveComponent(name: 'Tables:HeadedLarderJarTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class HeadedLarderJarTable implements InteractsWithActions, InteractsWithTable
@@ -39,6 +40,12 @@ class HeadedLarderJarTable implements InteractsWithActions, InteractsWithTable
     #[LiveProp]
     public bool $creates = true;
 
+    #[LiveProp]
+    public ?string $recordLabel = null;
+
+    #[LiveProp]
+    public ?string $pluralRecordLabel = null;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
     ) {
@@ -52,6 +59,8 @@ class HeadedLarderJarTable implements InteractsWithActions, InteractsWithTable
                 TextColumn::make('label')->searchable(),
             ])
             ->defaultSort('label')
+            ->recordLabel($this->recordLabel)
+            ->pluralRecordLabel($this->pluralRecordLabel)
             ->heading($this->heading)
             ->description($this->heading === null ? null : 'The jars on the shelf')
             ->rootHeadingLevel($this->rootHeadingLevel)

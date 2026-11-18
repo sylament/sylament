@@ -9,19 +9,24 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Tables\AlignedColumnsTable;
 use Sylament\Tests\Fixtures\Tables\GroupedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
-use Sylament\Tests\Fixtures\Tables\ProductTable;
 use Sylament\Tests\Fixtures\Tables\ReorderableLarderJarTable;
+use Sylament\Tests\Fixtures\Tables\Selectors;
 
-it('labels a record by its class, or as a record without one, until a label is given, and derives the plural from it', function (string $host, Closure $configure, string $label, string $plural): void {
-    $table = $configure($this->createLiveComponent($host)->component()->getTable());
+it('labels a record as a record, and many as records, on a table with no record class', function (): void {
+    $table = $this->createLiveComponent(AlignedColumnsTable::class)->component()->getTable();
 
-    expect($table->getRecordLabel())->toBe($label)
-        ->and($table->getPluralRecordLabel())->toBe($plural);
+    expect($table->getRecordLabel())->toBe('record')
+        ->and($table->getPluralRecordLabel())->toBe('records');
+});
+
+it('names its records by the label given, the plural deriving from it until one is given', function (array $props, string $heading): void {
+    $crawler = $this->createLiveComponent(HeadedLarderJarTable::class, $props)->render()->crawler();
+
+    expect($crawler)->toContainElement(Selectors::EMPTY_STATE . ' h3', $heading)
+        ->and($crawler->filter(Selectors::EMPTY_STATE . ' p')->text())->toBe('Create a jar to get started.');
 })->with([
-    'a query table' => [ProductTable::class, fn (Table $table): Table => $table, 'product', 'products'],
-    'a records table' => [AlignedColumnsTable::class, fn (Table $table): Table => $table, 'record', 'records'],
-    'a given label' => [AlignedColumnsTable::class, fn (Table $table): Table => $table->recordLabel('jar'), 'jar', 'jars'],
-    'a given plural' => [AlignedColumnsTable::class, fn (Table $table): Table => $table->recordLabel('jar')->pluralRecordLabel('jarfuls'), 'jar', 'jarfuls'],
+    'a given label' => [['recordLabel' => 'jar'], 'No jars'],
+    'a given plural' => [['recordLabel' => 'jar', 'pluralRecordLabel' => 'jarfuls'], 'No jarfuls'],
 ]);
 
 it("titles a record by the closure, else by the title attribute, and by the table's label wherever the attribute reads no text", function (Closure $configure, string $title): void {

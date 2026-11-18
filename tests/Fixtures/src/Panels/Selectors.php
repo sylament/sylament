@@ -58,6 +58,7 @@ final class Selectors
 
     /**
      * A navigation item in the sidebar (`SidebarItem`), never one of a sub-navigation band; its class is its one hook.
+     * Scoped to the `Sidebar` landmark, so it matches nothing in a bare `SidebarItem` render.
      */
     public const string NAVIGATION_ITEM = self::NAVIGATION . ' .sy-pa-sidebar-item';
 
@@ -68,6 +69,7 @@ final class Selectors
 
     /**
      * The sidebar item of the page being shown, the one link `SidebarItem` marks the current page in the sidebar.
+     * Scoped to the `Sidebar` landmark, so it matches nothing in a bare `SidebarItem` render.
      */
     public const string ACTIVE_NAVIGATION_ITEM = self::NAVIGATION . ' a[aria-current="page"]';
 
@@ -135,6 +137,7 @@ final class Selectors
 
     /**
      * A navigation group in the sidebar (`SidebarGroup`), by the label its `data-group-label` carries; a group with no label carries none.
+     * Scoped to the `Sidebar` landmark, so it matches nothing in a bare `SidebarGroup` render.
      */
     public static function navigationGroup(string $label): string
     {

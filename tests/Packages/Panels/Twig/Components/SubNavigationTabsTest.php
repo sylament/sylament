@@ -15,7 +15,7 @@ it('tabs an ungrouped item as a link and a labelled group as a tab opening its i
     $reports = $tabs->filter(SupportSelectors::DROPDOWN_TRIGGER . ' button');
 
     expect([
-        $overview->filter('.sy-tabs-item-label')->text(),
+        $overview->filter(SupportSelectors::TABS_ITEM_LABEL)->text(),
         $overview->attr('aria-current'),
         $overview->filter('svg')->text(),
         $overview->filter(SupportSelectors::BADGE . SupportSelectors::color('success') . ' ' . SupportSelectors::BADGE_LABEL)->text(),

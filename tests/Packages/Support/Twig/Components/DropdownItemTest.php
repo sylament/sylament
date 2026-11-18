@@ -53,5 +53,5 @@ it('draws its icon before its label, at the size it is given, and no icon withou
 
 it('wraps its label in a label span', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:DropdownItem', ['icon' => 'support:star'], content: 'Favourite')->crawler())
-        ->toContainElement(SupportSelectors::DROPDOWN_ITEM . ' .sy-dropdown-item-label', 'Favourite');
+        ->toContainElement(SupportSelectors::DROPDOWN_ITEM . ' ' . SupportSelectors::DROPDOWN_ITEM_LABEL, 'Favourite');
 });

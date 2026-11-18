@@ -8,17 +8,19 @@ namespace Sylament\Tests\Fixtures\Support;
  * The markup support's components give any area's markup, for a test to find: the
  * standalone-root marker; the colour, palette, size, font, alignment, state, hidden, wrapped,
  * inline, selected and background-coloured looks; the button, button group, icon button, icon,
- * checkbox, link and its label, badge with its label and its container, breadcrumb separator,
- * fieldset with its hidden label and required mark, section and its container, variants and
- * collapsibility, the active tab or step, the screen-reader-only text and the cloak a persisted
- * state hides behind; the grid, its column counts, spans, starts and orders, and a column-wise
- * grid's counts and direction; the modal's dialog and its parts, width, slide-over and sticky
- * looks; a dropdown with its trigger, panel, items, targets and placement values; the
- * pagination, its overview, page buttons and per-page select; the input wrapper with its sides,
- * their label, icons and actions; and the copyable look with its clipboard controller, its copy
- * bindings and the values it reads. Each is named by the `sy-` class or custom property the
- * stylesheet paints or lays it out by, the class being the behaviour, or by its accessible
- * name, its role or the Stimulus controller, target, action or value that wires it.
+ * checkbox, link and its label, badge with its label and its container; the breadcrumbs
+ * landmark and its crumbs, linked, unlinked and current, with the separator for each reading
+ * direction; the fieldset with its hidden label and required mark, section and its container,
+ * variants and collapsibility, the active tab or step and a tab's label, the screen-reader-only
+ * text and the cloak a persisted state hides behind; the grid, its column counts, spans, starts
+ * and orders, and a column-wise grid's counts and direction; the modal's dialog and its parts,
+ * width, slide-over and sticky looks; a dropdown with its trigger, panel, items and their
+ * labels, targets and placement values; the pagination, its overview, page buttons and per-page
+ * select; the input wrapper with its sides, their label, icons and actions; and the copyable
+ * look with its clipboard controller, its copy bindings and the values it reads. Each is named
+ * by the `sy-` class or custom property the stylesheet paints or lays it out by, the class
+ * being the behaviour, or by its accessible name, its role or the Stimulus controller, target,
+ * action or value that wires it.
  */
 final class Selectors
 {
@@ -80,6 +82,11 @@ final class Selectors
 
     public const string ACTIVE = '.sy-active';
 
+    /**
+     * The label inside a tab of support's tab strip (`TabsItem`), read as the tab's text; its class is its one hook.
+     */
+    public const string TABS_ITEM_LABEL = '.sy-tabs-item-label';
+
     public const string CLOAK = '.sy-cloak';
 
     public const string SECTION_CONTROLLER = '[data-controller="sylament--support--section"]';
@@ -131,6 +138,31 @@ final class Selectors
     public const string BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-ltr';
 
     public const string RTL_BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-rtl';
+
+    /**
+     * The breadcrumbs landmark (`Breadcrumbs`), which a panel page's header renders above its heading.
+     */
+    public const string BREADCRUMBS = 'nav[aria-label="Breadcrumbs"]';
+
+    /**
+     * Each crumb's label (`Breadcrumbs`), linked or not, read as the crumb's text; its class is its one hook.
+     */
+    public const string BREADCRUMB = self::BREADCRUMBS . ' .sy-breadcrumbs-item-label';
+
+    /**
+     * A crumb given a URL, which `Breadcrumbs` renders as a link.
+     */
+    public const string LINKED_BREADCRUMB = self::BREADCRUMBS . ' a[href]';
+
+    /**
+     * A crumb given an integer key in place of a URL, which `Breadcrumbs` renders as plain text.
+     */
+    public const string UNLINKED_BREADCRUMB = self::BREADCRUMBS . ' span.sy-breadcrumbs-item-label';
+
+    /**
+     * The last crumb, which `Breadcrumbs` marks as the current page, linked or not.
+     */
+    public const string CURRENT_BREADCRUMB = self::BREADCRUMBS . ' [aria-current="page"]';
 
     public const string SECTION_COLLAPSE_BUTTON = 'header button[aria-expanded]';
 
@@ -203,6 +235,11 @@ final class Selectors
     public const string DROPDOWN_PANEL = '.sy-dropdown-panel';
 
     public const string DROPDOWN_ITEM = '.sy-dropdown-item';
+
+    /**
+     * The label inside a dropdown item (`DropdownItem`), read as the item's text; its class is its one hook.
+     */
+    public const string DROPDOWN_ITEM_LABEL = '.sy-dropdown-item-label';
 
     public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
 
@@ -421,29 +458,4 @@ final class Selectors
     {
         return ".sy-vertical-align-{$value}";
     }
-
-    /**
-     * The breadcrumbs landmark (`Breadcrumbs`), which a panel page's header renders above its heading.
-     */
-    public const string BREADCRUMBS = 'nav[aria-label="Breadcrumbs"]';
-
-    /**
-     * Each crumb's label (`Breadcrumbs`), linked or not, read as the crumb's text; its class is its one hook.
-     */
-    public const string BREADCRUMB = self::BREADCRUMBS . ' .sy-breadcrumbs-item-label';
-
-    /**
-     * A crumb given a URL, which `Breadcrumbs` renders as a link.
-     */
-    public const string LINKED_BREADCRUMB = self::BREADCRUMBS . ' a[href]';
-
-    /**
-     * A crumb given an integer key in place of a URL, which `Breadcrumbs` renders as plain text.
-     */
-    public const string UNLINKED_BREADCRUMB = self::BREADCRUMBS . ' span.sy-breadcrumbs-item-label';
-
-    /**
-     * The last crumb, which `Breadcrumbs` marks as the current page, linked or not.
-     */
-    public const string CURRENT_BREADCRUMB = self::BREADCRUMBS . ' [aria-current="page"]';
 }

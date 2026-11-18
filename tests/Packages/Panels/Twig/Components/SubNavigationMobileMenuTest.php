@@ -13,7 +13,7 @@ it('lists every band item in one menu under the label of the page shown, with no
 
     expect($menu->filter(SupportSelectors::DROPDOWN_TRIGGER . ' button')->innerText())->toBe('Overview')
         ->and($menu->filter(SupportSelectors::DROPDOWN_ITEM)->each(fn (Crawler $item): array => [
-            $item->filter('.sy-dropdown-item-label')->text(),
+            $item->filter(SupportSelectors::DROPDOWN_ITEM_LABEL)->text(),
             $item->attr('href'),
             $item->attr('target'),
             $item->attr('aria-current'),

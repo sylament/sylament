@@ -10,18 +10,18 @@ it('lists its crumbs in a navigation landmark named Breadcrumbs, or by the name 
     $renamed = $this->renderTwigComponent('SylamentSupport:Breadcrumbs', ['breadcrumbs' => $crumbs, 'aria-label' => 'You are here'])->crawler();
 
     expect($this->renderTwigComponent('SylamentSupport:Breadcrumbs', ['breadcrumbs' => $crumbs])->crawler())
-        ->toContainElement('nav[aria-label="Breadcrumbs"] ol li a[href="/orders"]', 'Orders')
-        ->toContainElement('nav[aria-label="Breadcrumbs"] ol li a[href="/orders/12"]', 'Order 12')
+        ->toContainElement(SupportSelectors::BREADCRUMBS . ' ol li a[href="/orders"]', 'Orders')
+        ->toContainElement(SupportSelectors::BREADCRUMBS . ' ol li a[href="/orders/12"]', 'Order 12')
         ->and($renamed)->toContainElement('nav[aria-label="You are here"] ol li a[href="/orders"]', 'Orders')
-        ->and($renamed->filter('nav[aria-label="Breadcrumbs"]'))->toHaveCount(0);
+        ->and($renamed->filter(SupportSelectors::BREADCRUMBS))->toHaveCount(0);
 });
 
 it('links a crumb keyed by its URL and labels one keyed by a number, a quoted number included', function (): void {
     $nav = $this->renderTwigComponent('SylamentSupport:Breadcrumbs', ['breadcrumbs' => ['/orders' => 'Orders', '12' => 'Order 12', 'Edit']])->crawler();
 
     expect($nav)->toContainElement('a[href="/orders"]', 'Orders')
-        ->toContainElement('span.sy-breadcrumbs-item-label', 'Order 12')
-        ->toContainElement('span.sy-breadcrumbs-item-label', 'Edit')
+        ->toContainElement(SupportSelectors::UNLINKED_BREADCRUMB, 'Order 12')
+        ->toContainElement(SupportSelectors::UNLINKED_BREADCRUMB, 'Edit')
         ->and($nav->filter('a')->each(fn (Crawler $link): string => $link->text()))->toBe(['Orders']);
 });
 
@@ -45,6 +45,6 @@ it('marks its last crumb as the current page, a link or a label alike', function
 
     expect($endingInLink)->toContainElement('a[href="/orders/12"][aria-current="page"]', 'Order 12')
         ->and($endingInLink->filter('[aria-current]'))->toHaveCount(1)
-        ->and($endingInLabel)->toContainElement('span.sy-breadcrumbs-item-label[aria-current="page"]', 'Order 12')
+        ->and($endingInLabel)->toContainElement(SupportSelectors::UNLINKED_BREADCRUMB . '[aria-current="page"]', 'Order 12')
         ->and($endingInLabel->filter('[aria-current]'))->toHaveCount(1);
 });

@@ -8,7 +8,7 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('is a button of the type it is given, button by default, and as an anchor a link to its href opening in a new tab only when asked', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:TabsItem', content: 'Orders')->crawler())
-        ->toContainElement('button' . SupportSelectors::STANDALONE_ROOT . '.sy-tabs-item[type="button"]:not([href]):not([target]) .sy-tabs-item-label', 'Orders')
+        ->toContainElement('button' . SupportSelectors::STANDALONE_ROOT . '.sy-tabs-item[type="button"]:not([href]):not([target]) ' . SupportSelectors::TABS_ITEM_LABEL, 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:TabsItem', ['type' => 'submit'], content: 'Orders')->crawler())
         ->toContainElement('button.sy-tabs-item[type="submit"]', 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:TabsItem', ['tag' => 'a', 'href' => '/orders', 'target' => '_blank'], content: 'Orders')->crawler())

@@ -16,7 +16,7 @@ use Twig\Markup;
 /**
  * A table of two array rows whose columns each carry one piece of a column's chrome: its
  * label, header width, growth and wrapping, tooltips, extra cell and header attributes,
- * responsive visibility, visibility and toggling, links, a click turned off and a disabled
+ * responsive visibility (one column searched on its own), visibility and toggling, links, a click turned off and a disabled
  * checkbox; the cases read each by its column's name.
  */
 #[AsLiveComponent(name: 'Tables:ColumnChromeTable', template: '@Fixtures/tables/table.html.twig')]
@@ -75,6 +75,7 @@ class ColumnChromeTable implements InteractsWithTable
                     ->state('Fragile')
                     ->grow()
                     ->hiddenFrom('md')
+                    ->searchable(isIndividual: true)
                     ->extraCellAttributes(['data-first' => 'yes'])
                     ->extraCellAttributes(['data-second' => 'yes'])
                     ->extraHeaderAttributes(['data-first' => 'yes'])

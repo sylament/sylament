@@ -34,4 +34,29 @@ trait PanelsHelpers
         /** @var array<string, mixed> $props */
         return $props;
     }
+
+    /**
+     * The three values the unsaved-changes guard hands its controller (`savedHash`, `dataModel`, `guardActions`), read off
+     * the one guard a page rendered, or null when it rendered none.
+     *
+     * @return array{savedHash: ?string, dataModel: ?string, guardActions: ?string}|null
+     */
+    protected static function unsavedChangesGuard(Crawler $page): ?array
+    {
+        $guard = $page->filter(Selectors::UNSAVED_CHANGES_GUARD);
+
+        if ($guard->count() > 1) {
+            throw new LogicException('The markup holds more than one unsaved-changes guard.');
+        }
+
+        if ($guard->count() === 0) {
+            return null;
+        }
+
+        return [
+            'savedHash' => $guard->attr('data-sylament--panels--unsaved-changes-saved-hash-value'),
+            'dataModel' => $guard->attr('data-sylament--panels--unsaved-changes-data-model-value'),
+            'guardActions' => $guard->attr('data-sylament--panels--unsaved-changes-guard-actions-value'),
+        ];
+    }
 }

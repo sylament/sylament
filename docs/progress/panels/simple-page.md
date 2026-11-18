@@ -90,7 +90,8 @@ If the guard grows a fourth value, both templates change together.
 ### `SimplePage extends Page`, so it is routable and hides itself from navigation
 
 Filament's `SimplePage extends BasePage` — the render half, with no panel awareness — and cannot be registered through `pages()` at all; its only consumers are the auth and tenancy pages, which the framework routes itself.
-Ours extends `Pages\Page`, so `pages([Welcome::class])` mounts it like any other page, it carries a slug, a route name, breadcrumbs, header actions and the panel stamp, and it can host actions and schemas.
+Ours extends `Pages\Page`, so `pages([Welcome::class])` mounts it like any other page, it carries a slug, a route name and the panel stamp, and it can host actions and schemas.
+Its partial renders the actions its `content()` declares and their modals, but no breadcrumbs and no header actions, as Filament's simple page renders neither.
 
 That is a **strictly larger** surface, and the cost of it is one line: `protected static bool $shouldRegisterNavigation = false`, so a simple page stays out of the sidebar unless it asks to be there.
 Without the default, every routable simple page would appear in the navigation of the shell it deliberately does not render.

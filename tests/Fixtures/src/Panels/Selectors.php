@@ -177,6 +177,21 @@ final class Selectors
      */
     public const string HEADER_WITH_BREADCRUMBS = 'header.sy-pa-header-has-breadcrumbs';
 
+    /**
+     * The header `SimpleHeader` renders above a simple page's card, holding its logo, heading and subheading; its class is its one hook.
+     */
+    public const string SIMPLE_HEADER = 'header.sy-pa-simple-header';
+
+    /**
+     * The skip link either layout renders first, by the main content area it jumps to.
+     */
+    public const string SKIP_LINK = 'a[href="#sy-pa-main"]';
+
+    /**
+     * The element the `sylament--panels--unsaved-changes` controller binds to inside a page's live root; its class is its one hook.
+     */
+    public const string UNSAVED_CHANGES_GUARD = '.sy-pa-unsaved-changes';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

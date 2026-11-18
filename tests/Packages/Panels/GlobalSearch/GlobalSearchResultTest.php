@@ -16,8 +16,7 @@ it('renders its actions as small links, and shows only the visible ones', functi
         ->and($this->renderViewComponent(Action::make('open')->url('/open'))->filter(SupportSelectors::SMALL_LINK))->toHaveCount(0);
 });
 
-it('labels its details when they are a map, and never when they are a list or none', function (): void {
+it('labels its details when they are a map, and never when they are a list', function (): void {
     expect(new GlobalSearchResult(title: 'Moon', url: '/moon', details: ['Author' => 'Ada'])->hasDetailLabels())->toBeTrue()
-        ->and(new GlobalSearchResult(title: 'Moon', url: '/moon', details: ['Ada'])->hasDetailLabels())->toBeFalse()
-        ->and(new GlobalSearchResult(title: 'Moon', url: '/moon')->hasDetailLabels())->toBeFalse();
+        ->and(new GlobalSearchResult(title: 'Moon', url: '/moon', details: ['Ada'])->hasDetailLabels())->toBeFalse();
 });

@@ -17,12 +17,22 @@ owns:
 | --- | --- | --- | --- | --- |
 | [`fillForm()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#fillform-sends-one-live-request-per-key) |
 | `fillForm()`'s uploaded-file values | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
+| `fillForm()` adding a repeater item under a key the state lacks | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | [detail](#fillform-adds-a-new-repeater-item-empty) |
 | [`assertFormSet()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | — |
 | [`assertHasFormErrors()` / `assertHasNoFormErrors()`](../../../packages/forms/src/Testing/TestsForms.php): a key alone, a constraint class or a message | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#a-constraint-class-stands-where-filament-names-a-rule) · [diverges](#a-bare-call-reads-the-errors-of-the-form-under-test) · [semantics](#the-errors-are-the-ones-the-last-response-showed) |
 | `assertHasFormErrors()` / `assertHasNoFormErrors()`'s list and closure values | [`TestsValidation.php`](../../../vendor/livewire/livewire/src/Features/SupportValidation/TestsValidation.php) (Livewire) | todo | — | — |
 | `assertFormExists()` / `assertFormComponentExists()` / `assertFormComponentDoesNotExist()` | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
 | `assertFormFieldExists()` / `assertFormFieldDoesNotExist()` / `assertFormFieldDisabled()` / `assertFormFieldEnabled()` / `assertFormFieldReadOnly()` / `assertFormFieldHidden()` / `assertFormFieldVisible()` | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
 | `assertFormFieldIsDisabled()` / `…IsEnabled()` / `…IsReadOnly()` / `…IsHidden()` / `…IsVisible()` | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | skipped | — | [deprecated for `assertFormFieldDisabled()` and its siblings](../README.md#statuses) |
+
+## Details
+
+### `fillForm()` adds a new repeater item empty
+
+`fillForm()` writes a non-empty associative array key by key, so an item a relationship repeater's state does not hold yet arrives as one write per field, each under a key the repeater lacks, and lands as an empty item.
+`fillForm(['sheets' => ['added' => ['heading' => 'Two']]])` leaves `sheets.added` as `[]`, as the raw `set('data.sheets.added.heading', 'Two')` does.
+Filament's `fillFormDataForTesting()` sets each leaf in process with `data_set()`, which builds the missing item around it.
+A test adds such an item with one write of the whole item, `set('data.sheets.added', ['heading' => 'Two'])`, which the repeater keeps.
 
 ## Semantics
 

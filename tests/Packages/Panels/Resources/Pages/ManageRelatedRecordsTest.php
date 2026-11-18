@@ -140,14 +140,14 @@ describe('the owner is the page record', function (): void {
         expect($view->attr('value'))->toBe('Fig')
             ->and($view->attr('disabled'))->not->toBeNull();
     });
+});
 
-    it('deletes a row and stays on the page', function (): void {
-        ($this->page)(ManageLarderJars::class)
-            ->callAction(TestAction::make('delete')->table($this->fig))
-            ->assertNoRedirect()
-            ->assertCanSeeTableRecords([$this->apricot, $this->quince])
-            ->assertCanNotSeeTableRecords([$this->fig]);
+it('deletes a row and stays on the page', function (): void {
+    ($this->page)(ManageLarderJars::class)
+        ->callAction(TestAction::make('delete')->table($this->fig))
+        ->assertNoRedirect()
+        ->assertCanSeeTableRecords([$this->apricot, $this->quince])
+        ->assertCanNotSeeTableRecords([$this->fig]);
 
-        expect($this->entityManager()->getRepository(LarderJar::class)->findBy(['label' => 'Fig']))->toBe([]);
-    });
+    expect($this->entityManager()->getRepository(LarderJar::class)->findBy(['label' => 'Fig']))->toBe([]);
 });

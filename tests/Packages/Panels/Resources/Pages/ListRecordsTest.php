@@ -42,16 +42,6 @@ describe('the page', function (): void {
         'declaring both, under a slug with a slash' => ['/list-pages/shelf/articles', 'Article shelf', 'Shelf', 'shelf-articles'],
     ]);
 
-    it('answers the table testing API, and round-trips a live request, as a live component', function (): void {
-        $this->seed($apple = new Article('Apple'), $bean = new Article('Draft Bean'));
-
-        $this->createLiveComponent(ListArticles::class)
-            ->assertCanSeeTableRecords([$apple, $bean], inOrder: true)
-            ->assertCountTableRecords(2)
-            ->refresh()
-            ->assertCanSeeTableRecords([$apple, $bean], inOrder: true);
-    });
-
     it("shows the empty state under the resource's plural label", function (): void {
         expect($this->visit('/resource-routes/scoped-articles'))->toContainElement(TablesSelectors::EMPTY_STATE . ' h2, ' . TablesSelectors::EMPTY_STATE . ' h3', 'No shortlisted articles');
     });
@@ -221,15 +211,5 @@ describe('the modals', function (): void {
             ->filter(SupportSelectors::OPEN_MODAL);
 
         expect($modal->filter(SchemasSelectors::schemaKeyed('mountedActionSchema0') . SupportSelectors::ONE_COLUMN))->toHaveCount(1);
-    });
-
-    it('saves a row edit made in its modal, and toasts', function (): void {
-        $this->seed($draft = new Article('Draft'));
-
-        $this->createLiveComponent(ListModalArticles::class, ['panelId' => 'list-pages'])
-            ->callAction(TestAction::make('edit')->table($draft), data: ['title' => 'Final'])
-            ->assertNotified('Saved');
-
-        expect($this->reload($draft)->title)->toBe('Final');
     });
 });

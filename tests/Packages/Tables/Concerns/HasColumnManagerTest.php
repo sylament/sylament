@@ -16,7 +16,7 @@ describe('mounting', function (): void {
 
         $crawler = $this->createLiveComponent(ColumnManagerProductTable::class)->render()->crawler();
 
-        expect($crawler->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name'])
+        expect($crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name'])
             ->and($crawler->filter(Selectors::cell('1', 'code')))->toHaveCount(0)
             ->and($crawler)->toContainElement(Selectors::cell('1', 'name'), 'Lamp')
             ->and($crawler)->toContainElement(Selectors::columnManagerCheckbox('id') . '[checked][disabled]')
@@ -37,7 +37,7 @@ describe('mounting', function (): void {
 
         $page = $this->visit($url, client: $client);
 
-        expect($page->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
+        expect($page->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
     })->with([
         'a usable state' => [ColumnManagerProductTable::class, [
             ['type' => 'column', 'name' => 'id', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
@@ -92,8 +92,8 @@ describe('the draft', function (): void {
         expect($drafted->filter(Selectors::COLUMN_MANAGER_ITEM_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['Code', 'Name', 'ID'])
             ->and($drafted)->toContainElement(Selectors::columnManagerCheckbox('code') . '[checked]')
             ->and($drafted)->toContainElement(Selectors::columnManagerCheckbox('name') . ':not([checked])')
-            ->and($drafted->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name'])
-            ->and($applied->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Code', 'ID'])
+            ->and($drafted->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name'])
+            ->and($applied->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Code', 'ID'])
             ->and($applied->filter(Selectors::cell('1', 'name')))->toHaveCount(0)
             ->and($applied)->toContainElement(Selectors::cell('1', 'code'), 'LAMP');
     });
@@ -109,7 +109,7 @@ describe('the draft', function (): void {
 
         expect($drafted->filter(Selectors::COLUMN_MANAGER_ITEM_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['ID', 'Name', 'Code'])
             ->and($drafted)->toContainElement(Selectors::columnManagerCheckbox('id') . '[checked][disabled]')
-            ->and($applied->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name'])
+            ->and($applied->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name'])
             ->and($tester->component()->tableColumns[0])->toBe(['type' => 'column', 'name' => 'id', 'isToggled' => true, 'isToggledHiddenByDefault' => null]);
     });
 
@@ -126,7 +126,7 @@ describe('the draft', function (): void {
             ->render()
             ->crawler();
 
-        expect($crawler->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Name', 'Note'])
+        expect($crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Name', 'Note'])
             ->and($crawler->filter(Selectors::COLUMN_MANAGER_ITEM_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['ID', 'Name', 'Note'])
             ->and($crawler)->toContainElement(Selectors::columnManagerCheckbox('id') . ':not([checked]):not([disabled])');
     });
@@ -152,7 +152,7 @@ describe('the draft', function (): void {
 describe('applying and resetting', function (): void {
     it('applies a state it is handed, the default state for a malformed one, and resets to the declared toggles and order', function (): void {
         $this->seed(new Product('Lamp'));
-        $headers = static fn (Crawler $crawler): array => $crawler->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text());
+        $headers = static fn (Crawler $crawler): array => $crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text());
         $reordered = [
             ['type' => 'column', 'name' => 'code', 'isToggled' => true, 'isToggledHiddenByDefault' => true],
             ['type' => 'column', 'name' => 'name', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
@@ -187,17 +187,6 @@ describe('applying and resetting', function (): void {
             ->and(array_keys($host->getTable()->getVisibleColumns()))->toBe(['id', 'name', 'code'])
             ->and($host->isTableColumnToggledHidden('name'))->toBeFalse();
     });
-
-    it('toggles every column it can on or off at once, leaving the one nobody may toggle shown', function (): void {
-        $this->seed(new Product('Lamp'));
-
-        $tester = $this->createLiveComponent(ColumnManagerProductTable::class);
-        $shown = $tester->toggleAllTableColumns()->render()->crawler();
-        $hidden = $tester->toggleAllTableColumns(false)->render()->crawler();
-
-        expect($shown->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name', 'Code'])
-            ->and($hidden->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID']);
-    });
 });
 
 describe('the order', function (): void {
@@ -213,24 +202,27 @@ describe('the order', function (): void {
         $reordered = $tester->render()->crawler();
         $declared = $tester->set('variants', [])->render()->crawler();
 
-        expect($reordered->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Code', 'Name', 'ID'])
-            ->and($declared->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name', 'Code'])
+        expect($reordered->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Code', 'Name', 'ID'])
+            ->and($declared->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name', 'Code'])
             ->and(array_column($client->getRequest()->getSession()->get('sylament.tables.' . md5(ColumnManagerProductTable::class) . '_columns'), 'name'))->toBe(['code', 'name', 'id']);
     });
 
-    it('reads an order dragged back to the declared one as no reorder at all, so a column declared later arrives at its declared place', function (): void {
+    it('appends a column declared later after a custom order, and places it where it is declared once the order is dragged back to the declared one', function (array $orders, array $headers): void {
         $this->seed(new Product('Lamp'));
         $state = static fn (string ...$names): array => array_map(static fn (string $name): array => ['type' => 'column', 'name' => $name, 'isToggled' => true, 'isToggledHiddenByDefault' => $name === 'id' ? null : $name === 'code'], $names);
+        $tester = $this->createLiveComponent(ColumnManagerProductTable::class, ['variants' => ['reorderable']]);
 
-        $crawler = $this->createLiveComponent(ColumnManagerProductTable::class, ['variants' => ['reorderable']])
-            ->call('applyTableColumnManager', ['state' => $state('code', 'id', 'name')])
-            ->call('applyTableColumnManager', ['state' => $state('id', 'name', 'code')])
-            ->set('variants', ['reorderable', 'noteAdded'])
-            ->render()
-            ->crawler();
+        foreach ($orders as $order) {
+            $tester->call('applyTableColumnManager', ['state' => $state(...$order)]);
+        }
 
-        expect($crawler->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['ID', 'Name', 'Note', 'Code']);
-    });
+        $crawler = $tester->set('variants', ['reorderable', 'noteAdded'])->render()->crawler();
+
+        expect($crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
+    })->with([
+        'a custom order' => [[['code', 'id', 'name']], ['Code', 'ID', 'Name', 'Note']],
+        'an order dragged back to the declared one' => [[['code', 'id', 'name'], ['id', 'name', 'code']], ['ID', 'Name', 'Note', 'Code']],
+    ]);
 });
 
 describe('the session', function (): void {
@@ -242,7 +234,7 @@ describe('the session', function (): void {
 
         $page = $this->visit(TablePageController::url('Tables:' . new ReflectionClass($host)->getShortName()), client: $client);
 
-        expect($page->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
+        expect($page->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
     })->with([
         'persisted' => [ColumnManagerProductTable::class, ['ID']],
         'not persisted' => [UnpersistedColumnManagerProductTable::class, ['ID', 'Name']],

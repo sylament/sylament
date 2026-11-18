@@ -128,7 +128,7 @@ Mount through a live rig and probe the seeded state before asserting on a toggle
 
 `syncTableColumnState()` re-`columns()` the table in the stored order only when `hasReorderableColumns()` is on.
 Turning reordering off therefore restores the declared order immediately, and the next request re-derives both bags in it.
-The stored order stays in the session only until the next mount or live action writes the state back in the declared order; Filament's, which writes the state back on every request, loses it on the first.
+The stored order stays in the session only until the next mount, apply or reset writes the state back in the declared order; Filament's, which writes the state back on every request, loses it on the first.
 
 `updateTableColumns()` reads `getDefaultTableColumnState()` **before** it re-columns the table.
 The ordering is what keeps the method correct on its own: the default state is memoised on first read, so reading it after the table has been re-columned in the stored order would memoise the *stored* order as the declared one and leave Reset with nothing to restore.

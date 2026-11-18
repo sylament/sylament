@@ -25,7 +25,7 @@ describe('the trigger', function (): void {
 
         expect($crawler->filter(Selectors::COLUMN_MANAGER_TRIGGER))->toHaveCount($triggers)
             ->and($crawler->filter(Selectors::TOOLBAR))->toHaveCount($triggers)
-            ->and($crawler->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
+            ->and($crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
     })->with([
         'toggleable columns' => [[], 1, ['ID', 'Name']],
         'reorderable columns' => [['plain', 'reorderable'], 1, ['ID', 'Name', 'Code']],

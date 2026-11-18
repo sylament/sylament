@@ -387,6 +387,11 @@ final class Selectors
      */
     public static function columnManagerReorderHandle(string $column): string
     {
-        return "button[data-sortable-handle][aria-label=\"Reorder {$column}\"]";
+        return 'button' . SupportSelectors::SORTABLE_HANDLE . "[aria-label=\"Reorder {$column}\"]";
     }
+
+    /**
+     * The records table's header cells in their order, one per visible column on a table with no selection or record actions.
+     */
+    public const string HEADER_CELLS = 'thead th';
 }

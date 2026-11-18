@@ -4,19 +4,30 @@ declare(strict_types=1);
 
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;
+use Sylament\Panels\PanelProvider;
+use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Resources\ResourceRegistry;
+use Sylament\Panels\Routing\PanelRouteLoader;
+use Sylament\Tests\Fixtures\Panels\Pages\AttributedSignInPage;
+use Sylament\Tests\Fixtures\Panels\Pages\SluggedSettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
-use Sylament\Tests\Fixtures\Panels\Resources\HookedArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\OrderLineResource;
-use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateArticle;
-use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 
-it('accumulates pages and resources across calls, keeping the first of a repeated entry, as a list', function (): void {
-    $panel = Panel::make()
-        ->pages([Dashboard::class, EditArticle::class])
-        ->pages([Dashboard::class, CreateArticle::class])
-        ->resources([ArticleResource::class, ArticleResource::class])
-        ->resources([HookedArticleResource::class, ArticleResource::class, OrderLineResource::class]);
+it('accumulates pages and resources across calls, mounting a repeated entry once', function (): void {
+    $routes = new PanelRouteLoader(new PanelRegistry([new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('panel-components')->path('panel-components')
+                ->pages([SluggedSettingsPage::class, Dashboard::class])
+                ->pages([Dashboard::class, AttributedSignInPage::class])
+                ->resources([ArticleResource::class, ArticleResource::class])
+                ->resources([OrderLineResource::class]);
+        }
+    }]), $this::getContainer()->get(ResourceRegistry::class))();
 
-    expect($panel->getPages())->toBe([Dashboard::class, EditArticle::class, CreateArticle::class])
-        ->and($panel->getResources())->toBe([ArticleResource::class, HookedArticleResource::class, OrderLineResource::class]);
+    expect($routes->get('sylament.panel-components.pages.settings')?->getPath())->toBe('/panel-components/settings')
+        ->and($routes->get('sylament.panel-components.pages.dashboard')?->getPath())->toBe('/panel-components')
+        ->and($routes->get('sylament.panel-components.pages.sign-in')?->getPath())->toBe('/panel-components/sign-in')
+        ->and($routes->get('sylament.panel-components.resources.articles.index')?->getPath())->toBe('/panel-components/articles')
+        ->and($routes->get('sylament.panel-components.resources.order-lines.index')?->getPath())->toBe('/panel-components/order-lines');
 });

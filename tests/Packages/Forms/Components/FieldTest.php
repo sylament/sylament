@@ -53,7 +53,7 @@ describe('wrapper slots', function (): void {
         expect($render->filter(Selectors::LABEL_COLUMN)->text())->toBe('Above label Before label Name Explain Below label')
             ->and($render->filter(Selectors::LABEL_ROW)->text())->toBe('Before label Name Explain')
             ->and($render)
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::align('end'), 'Explain')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE . SupportSelectors::align('end'), 'Explain')
             ->toContainButtons(SupportSelectors::SMALL_LINK, ['Explain']);
     });
 
@@ -67,7 +67,7 @@ describe('wrapper slots', function (): void {
         expect($render->filter(Selectors::CONTENT_COLUMN)->text())->toBe('Above content Before content After content Below content')
             ->and($render)
             ->toContainElement('.sy-fo-field-content-ctn input[name="name"]')
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::align('end'), 'After content');
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE . SupportSelectors::align('end'), 'After content');
     });
 
     it('renders the error-message slots around its error list, only while it has errors', function (): void {

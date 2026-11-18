@@ -14,7 +14,6 @@ use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Forms\ColoredLevel;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -148,7 +147,7 @@ describe('its cell', function (): void {
         $root = fn (IconColumn $column): Crawler => $this->renderViewComponent($column->record(['trees' => ['oak', 'ash']])->icon('support:star'))->filter(Selectors::ICON_COLUMN);
 
         expect($root(IconColumn::make('trees')->alignEnd()->inline()->listWithLineBreaks()->wrap()->extraAttributes(['data-shelf' => 'top']))
-            ->matches(SupportSelectors::align('end') . SchemasSelectors::INLINE . '.sy-ta-icon-has-line-breaks' . SupportSelectors::WRAPPED . '[data-shelf="top"]'))->toBeTrue()
+            ->matches(SupportSelectors::align('end') . SupportSelectors::INLINE . '.sy-ta-icon-has-line-breaks' . SupportSelectors::WRAPPED . '[data-shelf="top"]'))->toBeTrue()
             ->and($root(IconColumn::make('trees'))->matches(':not(.sy-ta-icon-has-line-breaks):not(' . SupportSelectors::WRAPPED . ')'))->toBeTrue();
     });
 

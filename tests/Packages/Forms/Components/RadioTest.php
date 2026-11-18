@@ -8,7 +8,6 @@ use Sylament\Schemas\Components\Group;
 use Sylament\Tests\Fixtures\Forms\RadioForm;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Schemas\TaggingStateCast;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
@@ -128,10 +127,10 @@ describe('layout', function (): void {
         $inline = $group(Radio::make('plan')->inline());
         $notInline = $group(Radio::make('plan')->inline(false));
 
-        expect([$default->matches(SupportSelectors::GRID_DIRECTION_COLUMN), $default->matches(SchemasSelectors::INLINE)])->toBe([true, false])
+        expect([$default->matches(SupportSelectors::GRID_DIRECTION_COLUMN), $default->matches(SupportSelectors::INLINE)])->toBe([true, false])
             ->and([$rows->matches(SupportSelectors::columns('lg', 3)), $rows->matches(SupportSelectors::GRID_DIRECTION_COLUMN)])->toBe([true, false])
-            ->and([$inline->matches(SchemasSelectors::INLINE), $inline->attr('style')])->toBe([true, null])
-            ->and([$notInline->matches(SchemasSelectors::INLINE), $notInline->matches(SupportSelectors::GRID_DIRECTION_COLUMN)])->toBe([false, true]);
+            ->and([$inline->matches(SupportSelectors::INLINE), $inline->attr('style')])->toBe([true, null])
+            ->and([$notInline->matches(SupportSelectors::INLINE), $notInline->matches(SupportSelectors::GRID_DIRECTION_COLUMN)])->toBe([false, true]);
     });
 });
 

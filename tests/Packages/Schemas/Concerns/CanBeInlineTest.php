@@ -14,7 +14,7 @@ it('lays its children out in a row without a grid, and lets a child that grows t
     ]));
 
     expect($render)
-        ->toContainElement(Selectors::SCHEMA . Selectors::INLINE . ':not([style])')
+        ->toContainElement(Selectors::SCHEMA . SupportSelectors::INLINE . ':not([style])')
         ->toContainElement(Selectors::GROWABLE . ' ' . Selectors::TEXT, 'Growing')
         ->toContainElement(Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Fixed')
         ->and($render->filter(Selectors::GROWABLE))->toHaveCount(1)

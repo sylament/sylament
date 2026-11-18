@@ -77,9 +77,9 @@ describe('slots', function (): void {
     it('lays every slot out inline, while its content keeps its grid', function () use ($slotted): void {
         $render = $this->renderSchemaComponent($slotted());
 
-        expect($render->filter(Selectors::SCHEMA . Selectors::INLINE)->each(static fn (Crawler $schema): string => $schema->text()))
+        expect($render->filter(Selectors::SCHEMA . SupportSelectors::INLINE)->each(static fn (Crawler $schema): string => $schema->text()))
             ->toBe(['Before', 'After', 'Above', 'Header end', 'Footer', 'Below'])
-            ->and($render)->toContainElement(Selectors::SECTION_CONTENT . ':not(' . Selectors::INLINE . ')', 'Body');
+            ->and($render)->toContainElement(Selectors::SECTION_CONTENT . ':not(' . SupportSelectors::INLINE . ')', 'Body');
     });
 
     it('shows the actions beside its label and above or below its box as small links and its groups there small, its header and footer actions as buttons, and a slot action asked for as a button as one', function (): void {

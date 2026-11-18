@@ -225,7 +225,7 @@ describe('the query lane', function (): void {
         }
 
         expect($crawler->filter(Selectors::ROW)->each(static function (Crawler $row) use ($collection): array {
-            $items = explode(', ', $row->filter("td[id$=\".column.{$collection}\"]")->text());
+            $items = explode(', ', $row->filter(Selectors::columnCells($collection))->text());
             sort($items);
 
             return [(string) preg_replace('/^.*\.records\./', '', (string) $row->attr('id')), $items];

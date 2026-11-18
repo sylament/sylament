@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Sylament\Tables\Columns\ColorColumn;
 use Sylament\Tests\Fixtures\Schemas\Record\Memo;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\SwatchTone;
@@ -80,7 +79,7 @@ describe('its cell', function (): void {
         $root = fn (ColorColumn $column): Crawler => $this->renderViewComponent($column->record(['paint' => ['#fff', 'teal']]))->filter(Selectors::COLOR_COLUMN);
 
         expect($root(ColorColumn::make('paint')->alignEnd()->inline()->wrap()->extraAttributes(['data-shelf' => 'top']))
-            ->matches(SupportSelectors::align('end') . SchemasSelectors::INLINE . SupportSelectors::WRAPPED . '[data-shelf="top"]'))->toBeTrue()
+            ->matches(SupportSelectors::align('end') . SupportSelectors::INLINE . SupportSelectors::WRAPPED . '[data-shelf="top"]'))->toBeTrue()
             ->and($root(ColorColumn::make('paint'))->matches(':not(' . SupportSelectors::WRAPPED . ')'))->toBeTrue();
     });
 

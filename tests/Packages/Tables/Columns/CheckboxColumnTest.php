@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\EditableCellLooksTable;
 use Sylament\Tests\Fixtures\Tables\EditableFlaggedSampleTable;
@@ -58,8 +57,8 @@ it('publishes its state on its root for the controller, and commits its box on c
 it('carries inline and its alignment on its root', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'ticked') . ' ' . Selectors::CHECKBOX_COLUMN . SchemasSelectors::INLINE . SupportSelectors::align('center'))
-        ->and($crawler)->toContainElement(Selectors::cell('north', 'unticked') . ' ' . Selectors::CHECKBOX_COLUMN . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
+    expect($crawler)->toContainElement(Selectors::cell('north', 'ticked') . ' ' . Selectors::CHECKBOX_COLUMN . SupportSelectors::INLINE . SupportSelectors::align('center'))
+        ->and($crawler)->toContainElement(Selectors::cell('north', 'unticked') . ' ' . Selectors::CHECKBOX_COLUMN . ':not(' . SupportSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
 });
 
 it('puts its extra input attributes on its box, not its root', function (): void {

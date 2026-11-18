@@ -66,11 +66,11 @@ describe('slots', function (): void {
 
         expect($render->filter(Selectors::LABEL_COLUMN)->text())->toBe('Above label Approve Before label Contact Explain ellipsis-vertical-20-solid Export Below label')
             ->and($render)
-            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')', 'Above label Approve')
-            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')', 'Below label')
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::NO_ALIGN, 'Before label')
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::align('end') . ' ' . SupportSelectors::SMALL_LINK, 'Explain')
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::align('end') . ' ' . SupportSelectors::SMALL_ICON_BUTTON . '[aria-label="More"]')
+            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SupportSelectors::INLINE . ')', 'Above label Approve')
+            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SupportSelectors::INLINE . ')', 'Below label')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE . SupportSelectors::NO_ALIGN, 'Before label')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE . SupportSelectors::align('end') . ' ' . SupportSelectors::SMALL_LINK, 'Explain')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE . SupportSelectors::align('end') . ' ' . SupportSelectors::SMALL_ICON_BUTTON . '[aria-label="More"]')
             ->toContainButtons(SupportSelectors::SMALL_LINK, ['Explain'])
             ->toContainButtons(SupportSelectors::BUTTON . SupportSelectors::MEDIUM, ['Approve']);
     });
@@ -84,10 +84,10 @@ describe('slots', function (): void {
 
         expect($render->filter(Selectors::CONTENT_COLUMN)->text())->toBe('Above content Before content First Code Below content')
             ->and($render)
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Above content')
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Below content')
-            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')', 'Before content')
-            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN, 'Code')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE, 'Above content')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE, 'Below content')
+            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SupportSelectors::INLINE . ')', 'Before content')
+            ->toContainElement(SchemasSelectors::SCHEMA . ':not(' . SupportSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN, 'Code')
             ->toContainElement(Selectors::FIELD_WRAPPER . ' ' . Selectors::HIDDEN_LABEL . '[for="schema.code"]', 'Code')
             ->toContainElement(Selectors::FIELD_WRAPPER . ' input[name="code"]')
             ->and($render->filter(Selectors::LABEL_COLUMN))->toHaveCount(0);
@@ -100,8 +100,8 @@ describe('slots', function (): void {
             ->toContainElement(Selectors::FUSED_GROUP . ' input[name="first"]')
             ->not->toContainElement(SchemasSelectors::TEXT)
             ->and($tester->fillForm(['first' => '123456', 'second' => ''])->call('save')->render()->crawler())
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Above the errors')
-            ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE, 'Below the errors')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE, 'Above the errors')
+            ->toContainElement(SchemasSelectors::SCHEMA . SupportSelectors::INLINE, 'Below the errors')
             ->and($tester->render()->crawler()->filter(Selectors::CONTENT_COLUMN)->text())->toBe('First Second Above the errors This value should not be blank. Below the errors');
     });
 });

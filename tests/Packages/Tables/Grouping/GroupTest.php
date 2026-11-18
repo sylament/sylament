@@ -12,6 +12,7 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\GroupableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\GroupedArrayRowsTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -44,7 +45,7 @@ it("puts a collapse button on a collapsible group's header, and drops the label 
     $header = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
     expect($header->filter(Selectors::GROUP_HEADING)->text())->toBe($heading)
-        ->and($header->filter(Selectors::GROUP_HEADER . '.sy-collapsible'))->toHaveCount($collapsible ? 1 : 0)
+        ->and($header->filter(Selectors::GROUP_HEADER . SupportSelectors::COLLAPSIBLE))->toHaveCount($collapsible ? 1 : 0)
         ->and($header->filter("button[aria-label=\"{$heading}\"][aria-expanded=\"true\"]"))->toHaveCount($collapsible ? 1 : 0);
 })->with([
     'collapsible, prefixed' => ['seal', 'Seal: wax', true],

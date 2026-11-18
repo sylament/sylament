@@ -214,9 +214,11 @@ final class Selectors
 
     public const string SUFFIX = '.sy-input-wrp-suffix';
 
-    public const string INLINE_PREFIX = '.sy-input-wrp-prefix.sy-inline';
+    public const string INLINE = '.sy-inline';
 
-    public const string INLINE_SUFFIX = '.sy-input-wrp-suffix.sy-inline';
+    public const string INLINE_PREFIX = self::PREFIX . self::INLINE;
+
+    public const string INLINE_SUFFIX = self::SUFFIX . self::INLINE;
 
     /**
      * The label text an input wrapper's side shows beside or in place of its icon.

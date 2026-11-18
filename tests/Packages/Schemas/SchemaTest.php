@@ -39,7 +39,7 @@ describe('gap and density', function (): void {
             ->and($this->renderViewComponent(Schema::make()->inline()->components([Text::make('a')])))
             ->toContainElement(Selectors::SCHEMA . Selectors::DENSE)
             ->and($this->renderViewComponent(Schema::make()->inline()->dense(false)->components([Text::make('a')])))
-            ->toContainElement(Selectors::SCHEMA . Selectors::INLINE . ':not(' . Selectors::DENSE . ')');
+            ->toContainElement(Selectors::SCHEMA . SupportSelectors::INLINE . ':not(' . Selectors::DENSE . ')');
     });
 });
 

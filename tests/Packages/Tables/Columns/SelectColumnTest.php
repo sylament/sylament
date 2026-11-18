@@ -7,7 +7,6 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\EditableCellLooksTable;
 use Sylament\Tests\Fixtures\Tables\EditableLarderJarTable;
@@ -146,8 +145,8 @@ describe('the cell', function (): void {
     it('carries inline and its alignment on its root', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::SELECT_COLUMN . SchemasSelectors::INLINE . SupportSelectors::align('end'))
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'size') . ' ' . Selectors::SELECT_COLUMN . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
+        expect($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::SELECT_COLUMN . SupportSelectors::INLINE . SupportSelectors::align('end'))
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'size') . ' ' . Selectors::SELECT_COLUMN . ':not(' . SupportSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
     });
 
     it('puts its extra input attributes on its select, not its root or its wrapper', function (): void {

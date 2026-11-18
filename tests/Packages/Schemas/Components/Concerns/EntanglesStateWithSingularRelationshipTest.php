@@ -18,7 +18,7 @@ use Sylament\Tests\Fixtures\Entity\LighthouseLog;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Wharf;
 use Sylament\Tests\Fixtures\Entity\WharfCrane;
-use Sylament\Tests\Fixtures\Schemas\Selectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 beforeEach(function (): void {
     $this->host = $this->validatingRecordMappingHost();
@@ -330,8 +330,8 @@ describe('the subtree', function (): void {
             ->belowContent([TextInput::make('openedOn')]));
 
         expect($seen)->toBe($lighthouse->getLog())
-            ->and($crawler->filter(Selectors::INLINE . ' [name="openedOn"]')->count())->toBe(1)
-            ->and($crawler->filter(Selectors::INLINE . ' [name="keeper"]')->count())->toBe(0);
+            ->and($crawler->filter(SupportSelectors::INLINE . ' [name="openedOn"]')->count())->toBe(1)
+            ->and($crawler->filter(SupportSelectors::INLINE . ' [name="keeper"]')->count())->toBe(0);
     });
 
     it('fills a hooked path from its hook, from any child schema, and leaves a path hooked only on the other edge to the leaf walk', function (): void {

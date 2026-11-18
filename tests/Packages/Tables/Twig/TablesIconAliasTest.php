@@ -35,7 +35,7 @@ it('swaps the icon of its own control for the one an application registers under
     "a group's collapse button" => [TablesIconAlias::GROUPING_COLLAPSE_BUTTON, GroupedLarderJarTable::class, ['defaultGroup' => 'label'], fn (): string => 'button[aria-label="Label: Plum"] svg'],
     'the default empty state' => [TablesIconAlias::EMPTY_STATE, ProductTable::class, [], fn (): string => Selectors::EMPTY_STATE . ' svg'],
     'the funnel of filters folded above the rows' => [TablesIconAlias::ACTIONS_FILTER, SealFlagShelfTable::class, [], fn (): string => Selectors::FILTERS_TRIGGER . ' svg'],
-    "the column manager's reorder handle" => [TablesIconAlias::REORDER_HANDLE, SealFlagShelfTable::class, [], fn (): string => 'button[data-sortable-handle][aria-label="Reorder sealed"] svg'],
+    "the column manager's reorder handle" => [TablesIconAlias::REORDER_HANDLE, SealFlagShelfTable::class, [], fn (): string => Selectors::columnManagerReorderHandle('sealed') . ' svg'],
     "a boolean icon column's true icon" => [TablesIconAlias::COLUMNS_ICON_COLUMN_TRUE, SealFlagShelfTable::class, [], fn (): string => Selectors::cell('plum', 'sealed') . ' svg'],
     "a boolean icon column's false icon" => [TablesIconAlias::COLUMNS_ICON_COLUMN_FALSE, SealFlagShelfTable::class, [], fn (): string => Selectors::cell('fig', 'sealed') . ' svg'],
 ]);

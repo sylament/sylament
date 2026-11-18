@@ -329,6 +329,6 @@ describe('filters chrome', function (): void {
         $crawler = $this->createLiveComponent(FilterableLarderJarTable::class)->filterTable('seal', JarSeal::Wax->value)->render()->crawler();
 
         expect($crawler->filter('.sy-ta-filters-dropdown' . SupportSelectors::TELEPORTED_DROPDOWN . ' ' . Selectors::FILTERS_TRIGGER))->toHaveCount(1)
-            ->and($crawler)->toContainElement('.sy-ta-filters-trigger-badge-ctn ' . SupportSelectors::BADGE . '.sy-size-xs', '1');
+            ->and($crawler)->toContainElement('.sy-ta-filters-trigger-badge-ctn ' . SupportSelectors::BADGE . SupportSelectors::size('xs'), '1');
     });
 });

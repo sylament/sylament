@@ -101,13 +101,13 @@ describe('rendering', function (): void {
 describe('layout', function (): void {
     it('lays its options out in a column-wise grid by default, in the columns and direction it is given, and in a wrapping row when inline', function (): void {
         expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])))
-            ->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::GRID_DIRECTION_COLUMN . SupportSelectors::columnWiseColumns('default', 1) . ':not(' . SchemasSelectors::INLINE . ')')
+            ->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::GRID_DIRECTION_COLUMN . SupportSelectors::columnWiseColumns('default', 1) . ':not(' . SupportSelectors::INLINE . ')')
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->columns(3)))
             ->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::GRID_DIRECTION_COLUMN . SupportSelectors::columnWiseColumns('lg', 3))
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->columns(3)->gridDirection(GridDirection::Row)))
             ->toContainElement('.sy-fo-toggle-buttons:not(' . SupportSelectors::GRID_DIRECTION_COLUMN . ')' . SupportSelectors::columns('lg', 3))
             ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low'])->inline()))
-            ->toContainElement('.sy-fo-toggle-buttons' . SchemasSelectors::INLINE . ':not(' . SupportSelectors::GRID . '):not([style])');
+            ->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::INLINE . ':not(' . SupportSelectors::GRID . '):not([style])');
     });
 });
 
@@ -141,9 +141,9 @@ describe('grouped', function (): void {
         $grouped = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->autofocus()->inline()->grouped());
 
         expect($default->filter('input[autofocus]')->each(static fn (Crawler $input): ?string => $input->attr('value')))->toBe(['low'])
-            ->and($default)->toContainElement('.sy-fo-toggle-buttons' . SchemasSelectors::INLINE)
+            ->and($default)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::INLINE)
             ->and($grouped->filter('input.sy-fo-toggle-buttons-input:not([autofocus])'))->toHaveCount(2)
-            ->and($grouped)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::BUTTON_GROUP . ':not(' . SchemasSelectors::INLINE . ')');
+            ->and($grouped)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::BUTTON_GROUP . ':not(' . SupportSelectors::INLINE . ')');
     });
 });
 

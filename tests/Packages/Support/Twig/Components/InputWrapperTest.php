@@ -59,9 +59,9 @@ it('reads action, icon and label before its content, and label, icon and action 
 it('puts an affix inside the border only on the side told', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '€', 'suffix' => 'per kg', 'inlinePrefix' => true])->crawler())
         ->toContainElement(SupportSelectors::INLINE_PREFIX, '€')
-        ->toContainElement(SupportSelectors::SUFFIX . ':not(.sy-inline)', 'per kg')
+        ->toContainElement(SupportSelectors::SUFFIX . ':not(' . SupportSelectors::INLINE . ')', 'per kg')
         ->and($this->renderTwigComponent('SylamentSupport:InputWrapper', ['prefix' => '€', 'suffix' => 'per kg', 'inlineSuffix' => true])->crawler())
-        ->toContainElement(SupportSelectors::PREFIX . ':not(.sy-inline)', '€')
+        ->toContainElement(SupportSelectors::PREFIX . ':not(' . SupportSelectors::INLINE . ')', '€')
         ->toContainElement(SupportSelectors::INLINE_SUFFIX, 'per kg');
 });
 

@@ -10,7 +10,6 @@ use Sylament\Support\Enums\TextSize;
 use Sylament\Support\Filesystem\FilesystemRegistry;
 use Sylament\Tables\Columns\ImageColumn;
 use Sylament\Tests\Fixtures\Schemas\Record\Memo;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\ExistenceBlindAdapter;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -172,7 +171,7 @@ describe('its cell', function (): void {
         $root = fn (ImageColumn $column): Crawler => $this->renderViewComponent($column->record(['photo' => 'https://img.example.com/lamp.png']))->filter(Selectors::IMAGE_COLUMN);
 
         expect($root(ImageColumn::make('photo')->alignEnd()->inline()->wrap()->extraAttributes(['data-shelf' => 'top']))
-            ->matches(SupportSelectors::align('end') . SchemasSelectors::INLINE . SupportSelectors::WRAPPED . '[data-shelf="top"]'))->toBeTrue()
+            ->matches(SupportSelectors::align('end') . SupportSelectors::INLINE . SupportSelectors::WRAPPED . '[data-shelf="top"]'))->toBeTrue()
             ->and($root(ImageColumn::make('photo'))->matches(':not(' . SupportSelectors::WRAPPED . ')'))->toBeTrue();
     });
 

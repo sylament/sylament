@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Sylament\Support\Colors\Color;
 use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
-use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\EditableCellLooksTable;
 use Sylament\Tests\Fixtures\Tables\EditableFlaggedSampleTable;
@@ -56,8 +55,8 @@ it('publishes its state on its root for the controller, and commits its switch o
 it('carries inline and its alignment on its root', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . SchemasSelectors::INLINE . SupportSelectors::align('center'))
-        ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::TOGGLE_COLUMN . ':not(' . SchemasSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
+    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . SupportSelectors::INLINE . SupportSelectors::align('center'))
+        ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::TOGGLE_COLUMN . ':not(' . SupportSelectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
 });
 
 describe('colours and icons', function (): void {

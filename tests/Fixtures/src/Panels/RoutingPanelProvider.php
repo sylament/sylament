@@ -10,7 +10,7 @@ use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Tests\Fixtures\Panels\Pages\AttributedSignInPage;
 use Sylament\Tests\Fixtures\Panels\Pages\MistypedWidthPage;
-use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
+use Sylament\Tests\Fixtures\Panels\Pages\SluggedSettingsPage;
 use Sylament\Tests\Fixtures\Panels\Pages\ThirdLayoutPage;
 use Sylament\Tests\Fixtures\Panels\Resources\SeparatedPathResource;
 
@@ -26,7 +26,7 @@ final class RoutingPanelProvider extends PanelProvider
         return $panel
             ->id('panel-routing')
             ->path('panel-routing')
-            ->pages([SettingsPage::class, Dashboard::class, AttributedSignInPage::class, ThirdLayoutPage::class, MistypedWidthPage::class])
+            ->pages([SluggedSettingsPage::class, Dashboard::class, AttributedSignInPage::class, ThirdLayoutPage::class, MistypedWidthPage::class])
             ->navigationItems([NavigationItem::make('Changelog')->group('Help')->url('/changelog')])
             ->resources([SeparatedPathResource::class]);
     }

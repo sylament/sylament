@@ -11,7 +11,7 @@ it('serves the dashboard at the panel root', function (): void {
 it('sorts the dashboard ahead of a page registered before it with no sort', function (): void {
     $labels = $this->visit('/panel-routing')->filter(Selectors::NAVIGATION_ITEM . ' ' . Selectors::NAVIGATION_ITEM_LABEL)->each(fn ($label): string => $label->text());
 
-    expect($labels)->toBe(['Dashboard', 'Settings Page', 'Changelog']);
+    expect($labels)->toBe(['Dashboard', 'Slugged Settings Page', 'Changelog']);
 });
 
 it('reads its title in the document title, the heading and its navigation label', function (string $uri, string $title): void {

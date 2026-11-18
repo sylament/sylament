@@ -6,7 +6,7 @@ use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
-use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
+use Sylament\Tests\Fixtures\Panels\Pages\SluggedSettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 
@@ -34,9 +34,9 @@ it('assembles the same navigation on every call, leaving the registered groups a
 });
 
 it('refuses resource navigation on a panel built with new, which assembles the rest', function (): void {
-    $pages = new Panel()->id('panel-new')->pages([SettingsPage::class]);
+    $pages = new Panel()->id('panel-new')->pages([SluggedSettingsPage::class]);
     $resources = new Panel()->id('panel-new')->resources([ArticleResource::class]);
 
-    expect(array_map(static fn (NavigationItem $item): string => $item->getLabel(), $pages->getNavigation()[0]->getItems()))->toBe(['Settings Page'])
+    expect(array_map(static fn (NavigationItem $item): string => $item->getLabel(), $pages->getNavigation()[0]->getItems()))->toBe(['Slugged Settings Page'])
         ->and(fn (): array => $resources->getNavigation())->toThrow(LogicException::class, 'Resource navigation needs the container-built panel — build panels through a PanelProvider.');
 });

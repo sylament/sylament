@@ -16,7 +16,7 @@ use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Panels\AdminPanelProvider;
-use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
+use Sylament\Tests\Fixtures\Panels\Pages\SluggedSettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListArticles;
@@ -36,7 +36,7 @@ it("mounts every page of a panel as a GET route at the panel's path, which PageC
 
     expect($settings?->getPath())->toBe('/panel-routing/settings')
         ->and($settings?->getMethods())->toBe(['GET'])
-        ->and($settings?->getDefaults())->toBe(['_controller' => PageController::class, '_sylament_panel' => 'panel-routing', '_sylament_page' => SettingsPage::class])
+        ->and($settings?->getDefaults())->toBe(['_controller' => PageController::class, '_sylament_panel' => 'panel-routing', '_sylament_page' => SluggedSettingsPage::class])
         ->and($routes->get('sylament.panel-routing.pages.dashboard')?->getPath())->toBe('/panel-routing');
 });
 

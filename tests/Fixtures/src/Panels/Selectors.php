@@ -130,6 +130,11 @@ final class Selectors
      */
     public const string RELATION_MANAGER = '.sy-pa-relation-manager';
 
+    /**
+     * The shell's sidebar (`Sidebar`), the drawer holding the logo header and the navigation landmark, by its stable landmark id.
+     */
+    public const string SIDEBAR = '#sy-pa-sidebar';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

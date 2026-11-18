@@ -10,6 +10,7 @@ use Sylament\Tests\Fixtures\Notifications\Selectors as NotificationsSelectors;
 use Sylament\Tests\Fixtures\Panels\Pages\MistypedWidthPage;
 use Sylament\Tests\Fixtures\Panels\Pages\ThirdLayoutPage;
 use Sylament\Tests\Fixtures\Panels\Selectors;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
 describe('document', function (): void {
@@ -34,6 +35,16 @@ describe('document', function (): void {
 
         expect($page->filter('head script')->reduce(fn ($script): bool => str_contains($script->text(), 'sylament.theme'))->count())->toBe(1)
             ->and($page->filter('body script')->count())->toBe(0);
+    });
+
+    it('writes the theme script ahead of the stylesheet, so the first paint is already themed', function (): void {
+        $this::bootKernel(['environment' => 'registered_colors']);
+
+        $head = $this->visit('/panel-routing')->filter('head > script, head > style')->each(
+            fn (Crawler $element): string => $element->nodeName() === 'style' ? 'style' : (str_contains($element->text(), 'sylament.theme') ? 'theme' : 'other script'),
+        );
+
+        expect(array_slice($head, 0, 2))->toBe(['theme', 'style']);
     });
 
     it("shows a toast flashed by an earlier request in the document's outlet beside the shell, once", function (): void {

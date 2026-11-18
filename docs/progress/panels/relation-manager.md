@@ -60,7 +60,7 @@ A manager rendered **inside** a request that carries the panel (the page's GET, 
 A manager's own live request (a sort, a page change, an action) hydrates the manager alone, stamps nothing, and `CurrentPanel::get()` answers null, so `PanelRegistry::getDefault()` answers instead.
 That is right for a single-panel application and for any resource mounted in the default panel, and wrong for a manager whose resource lives **only** in a non-default one: a manager declaring `$relatedResource` there mints, through `getDefaultActionUrl()`, a route name that exists only under the other panel, and `UrlGenerator` throws `RouteNotFoundException` on that request; a manager that declares no `$relatedResource` mints none and is unaffected.
 What is missing is the page's own fix on the manager: carry the panel id in a `LiveProp` and stamp it back onto the request at post-hydrate.
-No test drives a manager on a non-default panel.
+No test drives a manager declaring a `$relatedResource` on a non-default panel.
 
 ## Semantics
 

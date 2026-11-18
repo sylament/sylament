@@ -76,7 +76,8 @@ The tabs array **keeps the keys `getRelations()` used**.
 That is load-bearing twice over: [`Tabs::configureChildSchema()`](../schemas/tabs.md) re-keys every tab from the array key it sits under, and the tab bar decides which tab is active by comparing those keys against the host property.
 An `array_values()` anywhere in the builder would leave the tabs keyed `0`, `1`, … while `$activeRelationManager` still held `sections` — the bar would render, no tab would ever light up, and nothing would report an error.
 
-Every embed is keyed too, because an unkeyed embed cannot keep a stable child id across renders ([live-component.md](../schemas/live-component.md)): the plain arms key by the manager class, and a group's embeds by `"{class}-{groupKey}"`, so the same manager registered in two groups still keeps two identities.
+Every embed is keyed too, because an unkeyed embed cannot keep a stable child id across renders ([live-component.md](../schemas/live-component.md)): the plain arms key by the manager class, and a group's embeds by `"{class}-{groupKey}"`, the key the manager sits under in its group, so the same manager registered twice in one group still keeps two identities.
+Two groups holding it under the same key share one, where Filament's keep them apart, because a relation-manager tab's key does not join its embeds' keys ([why](../schemas/tabs.md#the-non-inheritable-key-is-what-keeps-a-childs-absolute-key-unchanged)).
 
 A **group's** embed array is the one place the keys are dropped rather than kept: Filament maps its group's managers through `collect()->map()->all()`, which preserves the registration keys, and ours builds a plain `list`.
 Nothing reads them — `HasComponents::components()` does not treat an array key as an identity, and the group key is already on every embed's explicit `->key()` — so this is a recorded departure rather than a defect.

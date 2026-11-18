@@ -217,6 +217,12 @@ final class Selectors
      */
     public const string GLOBAL_SEARCH_RESULT_HEADING = '.sy-pa-global-search-result-heading';
 
+    /**
+     * A tab of the bar a record page shows its relation managers in, by the id its `relationManagerTabs` key gives it, never a
+     * tab of a manager's own strip.
+     */
+    public const string RELATION_MANAGER_TAB = '[role="tab"][id^="content.relationManagerTabs."]';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";
@@ -253,5 +259,21 @@ final class Selectors
     public static function formSubmittingTo(string $method): string
     {
         return self::FORM . "[data-action~=\"submit->live#action:prevent\"][data-live-action-param=\"{$method}\"]";
+    }
+
+    /**
+     * The record page's relation-manager tab registered under a key.
+     */
+    public static function relationManagerTab(string $key): string
+    {
+        return "[role=\"tab\"][id=\"content.relationManagerTabs.{$key}-tab\"]";
+    }
+
+    /**
+     * A relation manager's live root by its class, through the live name `RelationManager::getComponentName()` derives from it.
+     */
+    public static function relationManager(string $class): string
+    {
+        return self::RELATION_MANAGER . '[data-live-name-value="' . str_replace('\\', ':', $class) . '"]';
     }
 }

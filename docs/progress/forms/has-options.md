@@ -31,7 +31,7 @@ The port renders them server-side ([why](select.md#the-template-renders-the-sele
 Every option template compares against this, never against raw `getState()`, and `Select::getOptionLabel()` resolves through it too so a label lookup and a `selected` attribute can never disagree.
 `normalizeOptionComparisonValue()` is the per-value half, which [`disableOptionsWhenSelectedInSiblingRepeaterItems()`](can-disable-options-when-selected-in-sibling-repeater-items.md) also runs over a sibling item's raw value.
 
-The comparison the templates then make stays deliberately loose (`==`), because the key may be `int 1` where the submitted state is the string `'1'` — the same mismatch [`getEnabledOptionValues()`](can-disable-options.md) answers on the validation side.
+The key may be `int 1` where the submitted state is the string `'1'` — the same mismatch [`getEnabledOptionValues()`](can-disable-options.md) answers on the validation side — so a template cannot compare the two strictly as they come: [`Select`'s](select.md#the-template-renders-the-selected-state-itself) casts both to strings and compares by identity, while the radio, toggle-buttons and checkbox-list templates compare loosely (`==`, `in`).
 Nothing is loosened security-wise: `selected` is presentation, and the strict `Choice` is what admits or rejects a value.
 
 ### An enum label stays `Markup` rather than being stringified

@@ -19,13 +19,14 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * One select per way a select reads, casts and guards its state: a static map with a
- * disabled option, a grouped map, a list with and without item bounds, a backed enum single and
- * multiple, `boolean()`, a static map beside a label closure, labels by closure only
- * (single and multiple, each disabling one), none of either (single, and a multiple
- * carrying only the single closure), a required searchable one, a search closure that
- * records what it was handed in the request's {@see HookLog} beside a label closure
- * capitalising the value, a map following a live field, and an `in()` list. A save
- * validates every field, so a case asserts the errors of the field it fills.
+ * disabled option, a grouped map, a list with and without item bounds, keys `01` and `1`
+ * that read as one number, single and multiple, a backed enum single and multiple,
+ * `boolean()`, a static map beside a label closure, labels by closure only (single and
+ * multiple, each disabling one), none of either (single, and a multiple carrying only the
+ * single closure), a required searchable one, a search closure that records what it was
+ * handed in the request's {@see HookLog} beside a label closure capitalising the value, a
+ * map following a live field, and an `in()` list. A save validates every field, so a case
+ * asserts the errors of the field it fills.
  */
 #[AsLiveComponent(name: 'Forms:SelectForm', template: '@Fixtures/forms/SelectForm.html.twig')]
 class SelectForm implements InteractsWithSchemas
@@ -64,6 +65,8 @@ class SelectForm implements InteractsWithSchemas
                     ->disableOptionWhen(static fn (int|string $value): bool => (string) $value === '3'),
                 Select::make('grouped')->options(['Ferns' => ['fern' => 'Fern', 'bracken' => 'Bracken'], 'moss' => 'Moss']),
                 Select::make('multiple')->multiple()->reorderable()->options(['a' => 'Apple', 'b' => 'Banana', 'c' => 'Cherry']),
+                Select::make('code')->options(['01' => 'Zero one', 1 => 'One']),
+                Select::make('codes')->multiple()->options(['01' => 'Zero one', 1 => 'One']),
                 Select::make('bounded')->multiple()->minItems(1)->maxItems(2)->options(['a' => 'Apple', 'b' => 'Banana', 'c' => 'Cherry']),
                 Select::make('enum')->enum(StringBackedLetter::class),
                 Select::make('letters')->multiple()->enum(StringBackedLetter::class),

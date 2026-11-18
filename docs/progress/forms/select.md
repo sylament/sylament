@@ -156,11 +156,12 @@ The `Type` check comes first, ahead of the item-count `Count` and the no-`option
 
 ### The template renders the selected state itself
 
-The **native** branch's template emits `selected` per option, comparing the option's key against [`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template) — `in` when the state is a list, a loose `==` otherwise.
+The **native** branch's template emits `selected` per option, comparing the option's key against [`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template), each member of a list or the one value.
 For a single select this is redundant with the live binding on a first render and becomes load-bearing on any server-rendered non-live one.
 The JS branch's hidden `<select>` renders the same option loop and, beside it, every `selectedOptions` entry the map does not carry as a `selected` option — so a non-preloaded searchable select's DOM holds its selection with a label and degrades to a readable value without JS — while the control itself paints from the `selectedOptions` value; the comparison below is the native branch's.
-The comparison is deliberately loose because the two sides speak different vocabularies — an option key is an `int` where the state may hold the `'1'` a browser submitted — the same mismatch [`getEnabledOptionValues()`](can-disable-options.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) answers on the validation side.
-Nothing is loosened security-wise: `selected` is presentation, and the strict `Choice` is what admits or rejects a value.
+The two sides speak different vocabularies — an option key is an `int` where the state may hold the `'1'` a browser submitted, the same mismatch [`getEnabledOptionValues()`](can-disable-options.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) answers on the validation side — so both are cast to strings and compared by identity, the string a browser matches an option by.
+A loose comparison would read the keys `01` and `1` as the number one and select both for a state of `1`; identity selects only the key the state spells.
+`selected` is presentation either way: the strict `Choice` is what admits or rejects a value.
 
 What the comparison never sees is a raw `getState()`: the normalization is one method on [`HasOptions`](has-options.md), so an enum-valued or boolean state reaches the template already spelled in the option vocabulary, and `getOptionLabel()` resolves through the same method rather than repeating the bool-to-int coercion.
 

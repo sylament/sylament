@@ -75,15 +75,17 @@ describe('native render', function (): void {
             ->and($plain->attr('autofocus'))->toBeNull();
     });
 
-    it('marks selected the option whose key loosely equals the state, one inside a group and each member of a list, and disables an option its condition disables', function (): void {
+    it('marks selected the option whose key spells the state, one inside a group and each member of a list, never another key that reads as the same number, and disables an option its condition disables', function (): void {
         $render = $this->createLiveComponent(SelectForm::class)
-            ->fillForm(['single' => '1', 'grouped' => 'bracken', 'multiple' => ['b', 'a']])
+            ->fillForm(['single' => '1', 'grouped' => 'bracken', 'multiple' => ['b', 'a'], 'code' => '1', 'codes' => ['1']])
             ->render()
             ->crawler();
 
         expect($render->filter('select[name="single"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['1'])
             ->and($render->filter('select[name="grouped"] optgroup option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['bracken'])
             ->and($render->filter('select[name="multiple"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['a', 'b'])
+            ->and($render->filter('select[name="code"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['1'])
+            ->and($render->filter('select[name="codes"] option[selected]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['1'])
             ->and($render->filter('select[name="single"] option[disabled]')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['3']);
     });
 

@@ -1,6 +1,7 @@
 {% set controller = 'sylament--forms--select' %}
 
 {% set state = component.getOptionComparisonState %}
+{% set selectedKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set isHtmlAllowed = component.isHtmlAllowed %}
 
 {% set prefixActions = component.getPrefixActions %}
@@ -75,7 +76,7 @@
                         {% for groupedValue, groupedLabel in label %}
                             <option {{ attrs({
                                 value: groupedValue,
-                                selected: state is iterable ? groupedValue in state : (state is not null and groupedValue == state),
+                                selected: selectedKeys has some (key => key is same as (groupedValue ~ '')),
                                 disabled: component.isOptionDisabled(groupedValue, groupedLabel),
                             }) }}>{{ isHtmlAllowed ? groupedLabel|striptags : groupedLabel }}</option>
                         {% endfor %}
@@ -83,7 +84,7 @@
                 {% else %}
                     <option {{ attrs({
                         value: value,
-                        selected: state is iterable ? value in state : (state is not null and value == state),
+                        selected: selectedKeys has some (key => key is same as (value ~ '')),
                         disabled: component.isOptionDisabled(value, label),
                     }) }}>{{ isHtmlAllowed ? label|striptags : label }}</option>
                 {% endif %}

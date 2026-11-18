@@ -456,7 +456,7 @@ The guard is Filament's own (`$this instanceof HasTable`, with `filament/actions
 Two things make the soft reference safe: the interface is only ever named in an `instanceof` and a `::class` constant, neither of which loads the class — an `instanceof` against a missing interface is `false`, not an error — and the host check comes **first** in the `elseif`, so a host without the contract falls through to generic resolution even when a client hands it a `table` context.
 
 It is the second instance of a pattern [`docs/internals/dependencies.md`](../../internals/dependencies.md#the-guarded-optionals-and-their-pins) names explicitly — the first is support's `isAssetMapperAvailable()` guard around each bundle's `prependExtension()` — and its cost is that composer checks nothing: rename or move the contract and the branch dead-ends in silence.
-That is what the table-host cases are for, a row action mounting through the table and binding the row's record beside a table context on a host that is not a table falling through to generic resolution; either fails loudly the moment the guard stops matching.
+That is what the table-host cases are for: a row action mounting through the table and binding the row's record fails loudly the moment the guard stops matching, and a table context on a host that is not a table pins the fall-through to generic resolution.
 The same file's `src`-mirror position is deliberately relaxed for the same reason: the branch lives in actions, but only a tables host can exercise it.
 
 ### A table context on a non-table host is a wiring bug, not a miss

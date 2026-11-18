@@ -78,7 +78,7 @@ Here the aggregate value never touches a query clone ([why](has-query.md#an-aggr
 A `records()` closure type-hinting a public service is asserted to receive the container's shared instance, which the fallback `Invoker`, built around an empty container, could not hand it, so the one case pins both halves.
 
 The `Invoker` holds `service_container`, and `Container::has()` on a compiled container answers for public ids only, so a private service, Symfony's default, does not resolve by type.
-That is support's rule ([component.md](../support/component.md#closure-resolution-lives-in-a-service)), and it is why a closure type-hinting a private service is handed none.
+That is support's rule ([component.md](../support/component.md#closure-resolution-lives-in-a-service)), and it is why a closure type-hinting a private service does not get it: the parameter takes its default, or `null` when it is optional or nullable, else the evaluation throws naming the parameter.
 
 ### The paginator is a return value, not a state holder
 

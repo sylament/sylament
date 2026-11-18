@@ -12,6 +12,7 @@ use Sylament\Tests\Fixtures\Panels\Pages\ThirdLayoutPage;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
+use Twig\Error\RuntimeError;
 
 describe('document', function (): void {
     it("renders an ordinary page inside the panel's shell, at the panel's default width", function (): void {
@@ -66,15 +67,17 @@ describe('props', function (): void {
 });
 
 describe('refusals', function (): void {
-    it('answers an HTTP exception the page throws at mount as itself, and any other as a server error', function (string $uri, int $status): void {
+    it('answers an HTTP exception the page throws at mount as itself, and any other as a server error, its template error rethrown untouched', function (): void {
         $client = $this::getContainer()->get('test.client');
-        $client->request('GET', $uri);
+        $client->request('GET', '/admin/articles/999999/edit');
 
-        expect($client->getResponse()->getStatusCode())->toBe($status);
-    })->with([
-        'a record no row holds' => ['/admin/articles/999999/edit', 404],
-        'a failure with no HTTP meaning' => ['/panel-branded/faulty', 500],
-    ]);
+        $missing = $client->getResponse()->getStatusCode();
+        $client->request('GET', '/panel-branded/faulty');
+
+        expect($missing)->toBe(404)
+            ->and($client->getResponse()->getStatusCode())->toBe(500)
+            ->and(fn (): mixed => $this->visit('/panel-branded/faulty'))->toThrow(RuntimeError::class, 'The page could not load its figures.');
+    });
 
     it('refuses a page that names a third layout or a width of no shipped type', function (string $uri, string $message): void {
         expect(fn () => $this->visit($uri))->toThrow(LogicException::class, $message);

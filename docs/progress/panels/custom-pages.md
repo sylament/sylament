@@ -225,7 +225,7 @@ Nothing reads the flag: page-level `CanUseDatabaseTransactions` is not ported, s
 It is carried rather than dropped so that porting the transactions concern is additive: the exception already tells it what to do.
 
 What the catch *does* fix is real: without it a `Halt` thrown from a `beforeSave` hook escapes `save()` and answers 500.
-The [`EditHookedArticle`](../../../packages/panels/tests/Fixtures/Resources/Pages/EditHookedArticle.php) fixture's `$haltsBeforeSave` arm pins the ladder stopping where the hook threw (no mutator, no write, no notification, no redirect, and the row untouched); the create page's arm is [its own row](create-record.md#no-test-halts-the-create-ladder).
+The [`EditHookedArticle`](../../../packages/panels/tests/Fixtures/Resources/Pages/EditHookedArticle.php) fixture's `$haltsBeforeSave` arm pins the ladder stopping where the hook threw (no mutator, no write, no notification, no redirect, and the row untouched); the create page's arm stops [its own ladder](create-record.md#create-runs-filaments-ladder-in-filaments-order-and-maps-after-the-mutator) the same way.
 
 ### Header actions are bound lazily rather than at boot
 

@@ -19,7 +19,7 @@ owns:
 | [`fillForm()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `fillForm()` | done | — | — |
 | [`form()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`schemas()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `form()` + `defaultForm()` | done | — | [diverges](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it) · [list-records.md](list-records.md#a-modals-schema-keeps-the-resource-forms-own-column-count) |
 | [`create()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `create()` | done | — | [semantics](#create-runs-filaments-ladder-in-filaments-order-and-maps-after-the-mutator) |
-| `create()`'s `catch (Halt)` | the same catch | in progress | — | [detail](#no-test-halts-the-create-ladder) |
+| `create()`'s `catch (Halt)` | the same catch | done | — | — |
 | `$isCreating` — the re-entry guard | `public bool $isCreating` | todo | — | — |
 | [`mutateFormDataBeforeCreate()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [diverges](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it) |
 | [`makeRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | no counterpart on the page | done | — | [diverges](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs) · [semantics](#a-key-field-the-constructor-sets-must-stay-visible-and-readable) |
@@ -38,11 +38,6 @@ owns:
 | `content()` / `getFormContentComponent()` | the same two | blocked | schemas' `Form` component | [form-actions.md](form-actions.md#the-form-element-stays-in-twig-because-the-schemas-form-component-is-unported) |
 
 ## Details
-
-### No test halts the create ladder
-
-`create()` wraps every step from `beforeValidate` to the write in `try { … } catch (Halt) { return null; }`, so a lifecycle hook calling [`halt()`](custom-pages.md#halts-rollback-flag-is-carried-and-ignored) stops the ladder where it threw: no mutator, no write, no notification and no redirect.
-What is missing is a test: only the edit page's arm is pinned, by `EditRecordTest`'s halted `beforeSave` hook, and no create fixture halts.
 
 ### No test reaches the mounted-schema record override
 
@@ -68,6 +63,7 @@ No shipped page builds such a frame, so no test calls this page's override; the 
 | redirect | `$this->redirect($this->getRedirectUrl())` | `return new RedirectResponse($this->getRedirectUrl())` |
 
 Validation is the `getState()` step and mapping is a separate step after the mutator, and that split is what makes the mutator possible.
+A hook calling [`halt()`](custom-pages.md#halts-rollback-flag-is-carried-and-ignored) stops the ladder where it threw, because `create()` wraps every step from `beforeValidate` to `afterCreate` in `catch (Halt) { return null; }`: nothing after it runs, so nothing is written, notified or redirected.
 `getState()` opens with `validate()`, so a failing submit throws `ValidationException` (a 422 `UnprocessableEntityHttpException`) before the mutator or the write hook runs; there is no `try`/`catch` for it, because ux-live-component's `LiveComponentSubscriber` re-renders the component for exactly that status and the client morphs the errors in.
 `Schema::getData($data)` then maps the already-validated, already-mutated array onto the new record, through [the schemas seam](../schemas/belongs-to-record.md) that takes the array rather than reading state back.
 The notification is sent before the redirect, so it lands in the flash bag and the notifications outlet in the [document](routing.md) drains it on the page the browser lands on.

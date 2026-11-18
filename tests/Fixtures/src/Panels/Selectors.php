@@ -246,4 +246,12 @@ final class Selectors
     {
         return $position === null ? self::PAGE . '.sy-pa-page-has-sub-navigation' : self::PAGE . ".sy-pa-page-has-sub-navigation-{$position}";
     }
+
+    /**
+     * A record page's `<form>` (`partials/Page/form.html.twig`) submitting, its default prevented, to the live action named.
+     */
+    public static function formSubmittingTo(string $method): string
+    {
+        return self::FORM . "[data-action~=\"submit->live#action:prevent\"][data-live-action-param=\"{$method}\"]";
+    }
 }

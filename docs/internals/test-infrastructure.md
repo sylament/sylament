@@ -213,7 +213,7 @@ Which packages reach a component follows whichever package needed it. Derive the
 ```bash
 for c in packages/support/templates/components/*/; do
   n=$(basename "$c")
-  echo "$n: $(grep -rlE "SylamentSupport:${n}([ />]|\$)" packages/*/templates tests/Packages \
+  echo "$n: $(grep -rlE "SylamentSupport:${n}([^A-Za-z0-9]|\$)" packages/*/templates tests/Packages \
     | sed -E 's#packages/([a-z]+)/templates/.*#\1:templates#; s#tests/Packages/([A-Za-z]+)/.*#\1:tests#' | sort -u | tr '\n' ' ')"
 done
 ```

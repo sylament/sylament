@@ -327,17 +327,15 @@ describe('a key still blank after persist()', function (): void {
 });
 
 describe('under a parent', function (): void {
-    beforeEach(function (): void {
-        $stored = new SatchelCharm(1, 'a', 'Old');
-        $this->satchel = new CharmSatchel('Leather');
-        $this->satchel->addCharm($stored);
-        $this->seed($stored, $this->satchel);
-    });
-
     it('takes a refused record back out of its many-to-many parent, so a later flush in the request succeeds', function (array $data, Closure $refuse): void {
-        $refuse($this->createLiveComponent(CreateUnvettedKeyCharm::class, ['panelId' => 'create-shapes', 'parentRecords' => ['charm_satchel' => (string) $this->satchel->id]])->set('data', $data));
+        $stored = new SatchelCharm(1, 'a', 'Old');
+        $satchel = new CharmSatchel('Leather');
+        $satchel->addCharm($stored);
+        $this->seed($stored, $satchel);
 
-        expect($this->entityManager()->find(CharmSatchel::class, $this->satchel->id)?->charms->map(static fn (SatchelCharm $charm): string => $charm->label)->getValues())->toBe(['Old']);
+        $refuse($this->createLiveComponent(CreateUnvettedKeyCharm::class, ['panelId' => 'create-shapes', 'parentRecords' => ['charm_satchel' => (string) $satchel->id]])->set('data', $data));
+
+        expect($this->entityManager()->find(CharmSatchel::class, $satchel->id)?->charms->map(static fn (SatchelCharm $charm): string => $charm->label)->getValues())->toBe(['Old']);
 
         $this->entityManager()->flush();
 
@@ -364,14 +362,20 @@ describe('under a parent', function (): void {
     ]);
 
     it('keeps a saved record in the many-to-many parent it was created under', function (): void {
-        $this->createLiveComponent(CreateUnvettedKeyCharm::class, ['panelId' => 'create-shapes', 'parentRecords' => ['charm_satchel' => (string) $this->satchel->id]])
+        $stored = new SatchelCharm(1, 'a', 'Old');
+        $satchel = new CharmSatchel('Leather');
+        $satchel->addCharm($stored);
+        $this->seed($stored, $satchel);
+
+        $this->createLiveComponent(CreateUnvettedKeyCharm::class, ['panelId' => 'create-shapes', 'parentRecords' => ['charm_satchel' => (string) $satchel->id]])
             ->set('data', ['tier' => '2', 'code' => 'd', 'label' => 'New'])
             ->call('create')
             ->assertRedirect();
 
-        expect($this->entityManager()->find(CharmSatchel::class, $this->satchel->id)?->charms->map(static fn (SatchelCharm $charm): string => $charm->label)->getValues())->toBe(['Old', 'New'])
+        expect($this->entityManager()->find(CharmSatchel::class, $satchel->id)?->charms->map(static fn (SatchelCharm $charm): string => $charm->label)->getValues())->toBe(['Old', 'New'])
             ->and($this->entityManager()->getConnection()->fetchAllAssociative('SELECT charm_tier, charm_code FROM charm_satchel_charm ORDER BY charm_tier'))->toBe([['charm_tier' => 1, 'charm_code' => 'a'], ['charm_tier' => 2, 'charm_code' => 'd']]);
     });
+
     it('joins its parent before the mapping, so a key the parent half-fills is filed taken under the field the form maps', function (): void {
         $larder = new Larder('Cellar');
         $larder->addCrock(new LarderCrock(shelf: 'top', label: 'Stored'));

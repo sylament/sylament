@@ -34,8 +34,8 @@ it('labels a group as declared, else by the second-to-last segment of its id, sp
 
     $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['defaultInstance']])->render()->crawler();
 
-    expect($crawler->filter('select[aria-label="Group by"]')->first()->filter('option')->each(static fn (Crawler $option): string => $option->text()))->toBe(['-', 'Seal', 'Sealed on', 'Supplier', 'Larder', 'Label'])
-        ->and($crawler->filter(Selectors::GROUP_HEADER_ROW . ' .sy-ta-group-heading')->text())->toBe('Shelf position: 3');
+    expect($crawler->filter(Selectors::GROUP_BY_SELECT)->first()->filter('option')->each(static fn (Crawler $option): string => $option->text()))->toBe(['-', 'Seal', 'Sealed on', 'Supplier', 'Larder', 'Label'])
+        ->and($crawler->filter(Selectors::GROUP_HEADER_ROW . ' ' . Selectors::GROUP_HEADING)->text())->toBe('Shelf position: 3');
 });
 
 it("puts a collapse button on a collapsible group's header, and drops the label from a heading not prefixed with it", function (string $grouping, string $heading, bool $collapsible): void {
@@ -43,7 +43,7 @@ it("puts a collapse button on a collapsible group's header, and drops the label 
 
     $header = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
-    expect($header->filter('.sy-ta-group-heading')->text())->toBe($heading)
+    expect($header->filter(Selectors::GROUP_HEADING)->text())->toBe($heading)
         ->and($header->filter('.sy-ta-group-header.sy-collapsible'))->toHaveCount($collapsible ? 1 : 0)
         ->and($header->filter("button[aria-label=\"{$heading}\"][aria-expanded=\"true\"]"))->toHaveCount($collapsible ? 1 : 0);
 })->with([
@@ -57,7 +57,7 @@ describe('keys and titles', function (): void {
 
         $headers = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => 'seal'])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
-        expect($headers->each(static fn (Crawler $header): array => [$header->attr('data-sy-group'), $header->filter('.sy-ta-group-heading')->text()]))->toBe([
+        expect($headers->each(static fn (Crawler $header): array => [$header->attr('data-sy-group'), $header->filter(Selectors::GROUP_HEADING)->text()]))->toBe([
             ['screw', 'Seal: screw'],
             ['wax', 'Seal: wax'],
         ])
@@ -67,7 +67,7 @@ describe('keys and titles', function (): void {
     it('heads a group by the label an enum gives itself, keyed by its backing value', function (): void {
         $headers = $this->createLiveComponent(GroupedArrayRowsTable::class, ['tableGrouping' => 'mode'])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
-        expect($headers->each(static fn (Crawler $header): string => $header->filter('.sy-ta-group-heading')->text()))->toBe(['Mode: Standard delivery', 'Mode: By courier'])
+        expect($headers->each(static fn (Crawler $header): string => $header->filter(Selectors::GROUP_HEADING)->text()))->toBe(['Mode: Standard delivery', 'Mode: By courier'])
             ->and($headers->first()->attr('id'))->toEndWith('.table.groups.standard')
             ->and($headers->last()->attr('id'))->toEndWith('.table.groups.courier');
     });
@@ -78,7 +78,7 @@ describe('keys and titles', function (): void {
         $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['closureGroups'], 'tableGrouping' => 'initial'])->render()->crawler();
         $headers = $crawler->filter(Selectors::GROUP_HEADER_ROW);
 
-        expect($headers->each(static fn (Crawler $header): string => $header->filter('.sy-ta-group-heading')->text()))->toBe(['Initial: Apple', 'Initial: Fig'])
+        expect($headers->each(static fn (Crawler $header): string => $header->filter(Selectors::GROUP_HEADING)->text()))->toBe(['Initial: Apple', 'Initial: Fig'])
             ->and($headers->first()->attr('id'))->toEndWith('.table.groups.A')
             ->and($crawler->filter(Selectors::ROW)->each(static fn (Crawler $row): ?string => $row->attr('data-sy-group')))->toBe(['Apple', 'Apple', 'Fig'])
             ->and(array_values(array_unique($this::getContainer()->get(HookLog::class)->hooks)))->toBe(['key label']);
@@ -89,7 +89,7 @@ describe('keys and titles', function (): void {
 
         $headers = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['closureGroups'], 'tableGrouping' => 'titled'])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
-        expect($headers->each(static fn (Crawler $header): string => $header->filter('.sy-ta-group-heading')->text()))->toBe(['Titled: Apple jar', 'Titled: Apricot jar', 'Titled: Fig jar'])
+        expect($headers->each(static fn (Crawler $header): string => $header->filter(Selectors::GROUP_HEADING)->text()))->toBe(['Titled: Apple jar', 'Titled: Apricot jar', 'Titled: Fig jar'])
             ->and(array_count_values($this::getContainer()->get(HookLog::class)->hooks)['title'])->toBe(3);
     });
 
@@ -125,7 +125,7 @@ describe('keys and titles', function (): void {
         $dated = [['Sealed on: Mar 1, 2024', '.table.groups.2024-03-01'], ['Sealed on: Mar 2, 2024', '.table.groups.2024-03-02']];
         $blank = ['Sealed on:', '.table.groups.'];
 
-        expect($headers->each(static fn (Crawler $header): array => [$header->filter('.sy-ta-group-heading')->text(), mb_strstr((string) $header->attr('id'), '.')]))->toBe(match (TestPlatform::current()) {
+        expect($headers->each(static fn (Crawler $header): array => [$header->filter(Selectors::GROUP_HEADING)->text(), mb_strstr((string) $header->attr('id'), '.')]))->toBe(match (TestPlatform::current()) {
             TestPlatform::Sqlite, TestPlatform::MySql => [$blank, ...$dated],
             TestPlatform::PostgreSql => [...$dated, $blank],
         });
@@ -141,7 +141,7 @@ describe('keys and titles', function (): void {
 
         $header = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => $variants, 'tableGrouping' => 'supplier.name'])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
-        expect($header->filter('.sy-ta-group-heading')->text())->toBe('Lamp')
+        expect($header->filter(Selectors::GROUP_HEADING)->text())->toBe('Lamp')
             ->and($header->filter('.sy-ta-group-description')->each(static fn (Crawler $paragraph): string => $paragraph->text()))->toBe($description === null ? [] : [$description]);
     })->with([
         'a description closure' => [['described'], 'Lamp by supplier.name, first Apple, grouped by supplier.name'],
@@ -255,6 +255,6 @@ it("answers every larder's heading on a page from the page's own query", functio
 
     $headers = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => 'larder.name'])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
-    expect($headers->each(static fn (Crawler $header): string => $header->filter('.sy-ta-group-heading')->text()))->toBe(['Larder: Attic', 'Larder: Cellar', 'Larder: Pantry'])
+    expect($headers->each(static fn (Crawler $header): string => $header->filter(Selectors::GROUP_HEADING)->text()))->toBe(['Larder: Attic', 'Larder: Cellar', 'Larder: Pantry'])
         ->and(preg_grep('/FROM Larder\b/', $this->statementsRun()))->toBe([]);
 });

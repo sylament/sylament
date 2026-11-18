@@ -217,6 +217,56 @@ final class Selectors
     public const string FILTERS_TRIGGER_BADGE = '.sy-ta-filters-trigger-badge';
 
     /**
+     * The dialog of the modal column manager layout.
+     */
+    public const string COLUMN_MANAGER_MODAL = 'dialog[id$=".table.column-manager"]';
+
+    /**
+     * The label of a column manager item, the column's label; its class is its one hook.
+     */
+    public const string COLUMN_MANAGER_ITEM_LABEL = '.sy-ta-col-manager-item-label';
+
+    /**
+     * A column manager item's checkbox, the column manager controller's target.
+     */
+    public const string COLUMN_MANAGER_CHECKBOX = 'input[type="checkbox"][data-sylament--tables--column-manager-target="checkbox"]';
+
+    /**
+     * The button applying the column manager's draft.
+     */
+    public const string COLUMN_MANAGER_APPLY = 'button[data-live-action-param="applyTableColumnManager"]';
+
+    /**
+     * The control resetting the column manager to the declared columns.
+     */
+    public const string COLUMN_MANAGER_RESET = '[data-live-action-param="resetTableColumnManager"]';
+
+    /**
+     * The footer of the column manager's dropdown panel, holding its apply button and a footer reset; its class is its one hook.
+     */
+    public const string COLUMN_MANAGER_PANEL_FOOTER = '.sy-ta-col-manager-actions-ctn';
+
+    /**
+     * The records table's header cells in their order, one per visible column on a table with no selection or record actions.
+     */
+    public const string HEADER_CELLS = 'thead th';
+
+    /**
+     * The heading of a group's header row, prefixed with the group's label unless the group turns that off.
+     */
+    public const string GROUP_HEADING = '.sy-ta-group-heading';
+
+    /**
+     * The select choosing the group a table is grouped by, in either copy of the grouping settings.
+     */
+    public const string GROUP_BY_SELECT = 'select[aria-label="Group by"]';
+
+    /**
+     * The select choosing the direction of the grouping, in either copy of the grouping settings.
+     */
+    public const string GROUP_DIRECTION_SELECT = 'select[aria-label="Group direction"]';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string
@@ -347,36 +397,6 @@ final class Selectors
     }
 
     /**
-     * The dialog of the modal column manager layout.
-     */
-    public const string COLUMN_MANAGER_MODAL = 'dialog[id$=".table.column-manager"]';
-
-    /**
-     * The label of a column manager item, the column's label; its class is its one hook.
-     */
-    public const string COLUMN_MANAGER_ITEM_LABEL = '.sy-ta-col-manager-item-label';
-
-    /**
-     * A column manager item's checkbox, the column manager controller's target.
-     */
-    public const string COLUMN_MANAGER_CHECKBOX = 'input[type="checkbox"][data-sylament--tables--column-manager-target="checkbox"]';
-
-    /**
-     * The button applying the column manager's draft.
-     */
-    public const string COLUMN_MANAGER_APPLY = 'button[data-live-action-param="applyTableColumnManager"]';
-
-    /**
-     * The control resetting the column manager to the declared columns.
-     */
-    public const string COLUMN_MANAGER_RESET = '[data-live-action-param="resetTableColumnManager"]';
-
-    /**
-     * The footer of the column manager's dropdown panel, holding its apply button and a footer reset; its class is its one hook.
-     */
-    public const string COLUMN_MANAGER_PANEL_FOOTER = '.sy-ta-col-manager-actions-ctn';
-
-    /**
      * A column manager item's checkbox, by the column's name.
      */
     public static function columnManagerCheckbox(string $column): string
@@ -391,9 +411,4 @@ final class Selectors
     {
         return 'button' . SupportSelectors::SORTABLE_HANDLE . "[aria-label=\"Reorder {$column}\"]";
     }
-
-    /**
-     * The records table's header cells in their order, one per visible column on a table with no selection or record actions.
-     */
-    public const string HEADER_CELLS = 'thead th';
 }

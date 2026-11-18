@@ -101,7 +101,7 @@ Both halves are Filament's.
 
 `getFilteredSortedTableQuery()` is `applySortingToTableQuery($this->applyGroupingToTableQuery($query))`, Filament's own order.
 The group's `addOrderBy` therefore lands ahead of the user's sort, the table's default sort and the identifier tiebreaker, all of which append after it, so the grouping is the outermost ordering and everything else orders rows *within* a group.
-Nothing replaces it: the only `orderBy()` in `packages/tables/src` is the reorder branch, and reordering nulls the grouping anyway.
+Nothing replaces it: the only builder `orderBy()` in `packages/tables/src` is the reorder branch, and reordering nulls the grouping anyway; the tiebreaker's `IdentifierConstraint::orderBy()` appends.
 
 ### The blank key is one `IS NULL` over the left join, the set Filament's `orWhereDoesntHave` pair selects
 

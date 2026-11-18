@@ -53,7 +53,7 @@ describe('the page', function (): void {
     });
 
     it("shows the empty state under the resource's plural label", function (): void {
-        expect($this->visit('/admin/articles'))->toContainElement(TablesSelectors::EMPTY_STATE . ' h2, ' . TablesSelectors::EMPTY_STATE . ' h3', 'No articles');
+        expect($this->visit('/resource-routes/scoped-articles'))->toContainElement(TablesSelectors::EMPTY_STATE . ' h2, ' . TablesSelectors::EMPTY_STATE . ' h3', 'No shortlisted articles');
     });
 });
 

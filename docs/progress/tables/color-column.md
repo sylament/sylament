@@ -78,7 +78,7 @@ The two arms stay mutually exclusive: a URL that does not read the state answers
 
 Filament hands the raw state item to `Str::sanitizeCssColor`, whose closure takes `string|BackedEnum|null`, unwraps a backed enum itself, and is called without strict types, so an `int` or a `Stringable` item is coerced to a string first.
 [`sanitize_css_color()`](../support/helpers.md#sanitize_css_color-is-the-second-macro-that-lands-as-a-helper) is typed `?string`, so `getSanitizedColor()` reads `->value` off a `BackedEnum` and hands the sanitizer `null` for every other non-string.
-A colour held as a backed enum case paints exactly as it does upstream: `Brand = '#4f46e5'` paints, `Brand = 'brand'` does not.
+A colour held as a backed enum case paints exactly as it does upstream: `Brand = '#4f46e5'` paints, `Brand = 'brand-blue'` is refused and paints nothing, and `Brand = 'brand'` passes as a bare keyword that the swatch is styled and named by and the browser then ignores.
 A `Stringable` value object holding `#4f46e5` paints upstream and renders an unpainted, unnamed swatch here; casting a `Stringable` before the sanitizer would close that.
 
 ### The copyable focus ring lives in support's sheet rather than this one

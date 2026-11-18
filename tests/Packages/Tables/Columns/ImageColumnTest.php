@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use League\Flysystem\Config;
+use League\Flysystem\Filesystem;
+use League\Flysystem\FilesystemOperator;
 use League\Flysystem\Visibility;
 use Sylament\Support\Enums\TextSize;
 use Sylament\Support\Filesystem\FilesystemRegistry;
@@ -10,7 +12,9 @@ use Sylament\Tables\Columns\ImageColumn;
 use Sylament\Tests\Fixtures\Schemas\Record\Memo;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Sylament\Tests\Fixtures\Tables\ExistenceBlindAdapter;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Markup;
 
@@ -37,6 +41,22 @@ describe('its sources', function (): void {
             ->and($source(ImageColumn::make('photo')->disk('secondary.storage')))->toBe('')
             ->and(fn (): ?string => ImageColumn::make('photo')->disk('missing.storage')->getImageUrl('lamp.png'))
             ->toThrow(LogicException::class, 'No flysystem storage is registered as "missing.storage"');
+    });
+
+    it('falls to the default image for a stored file whose existence its storage cannot check, and an empty source without one, until told not to check', function (): void {
+        $storage = new Filesystem(new ExistenceBlindAdapter(), ['public_url' => '/files']);
+        $storage->write('lamp.png', 'Lamp');
+
+        $registry = new FilesystemRegistry(new ServiceLocator(['blind.storage' => static fn (): FilesystemOperator => $storage]), defaultDiskName: 'blind.storage');
+        $source = function (ImageColumn $column) use ($registry): ?string {
+            $column->setFilesystemRegistry($registry);
+
+            return $this->renderViewComponent($column->record(['photo' => 'lamp.png']))->filter('img')->attr('src');
+        };
+
+        expect($source(ImageColumn::make('photo')))->toBe('')
+            ->and($source(ImageColumn::make('photo')->defaultImageUrl('https://img.example.com/default.png')))->toBe('https://img.example.com/default.png')
+            ->and($source(ImageColumn::make('photo')->checkFileExistence(false)))->toBe('/files/lamp.png');
     });
 
     it('draws a url state without a storage when built with new, and refuses a path state naming the column', function (): void {

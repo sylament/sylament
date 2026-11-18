@@ -13,7 +13,7 @@ use Twig\Markup;
 /**
  * A searched article dressed by every result hook: a marked-up title, details labelled for a title starting `Moon` and
  * a bare list otherwise, an action bound to the hit, one bound to a record of its own and a hidden one; it has a view
- * page, so a hit links there, and sorts after the panel's other resources.
+ * and an edit page, so a hit links to the view, and sorts after the panel's other resources.
  */
 final class AnnotatedArticleSearchResource extends Resource
 {
@@ -29,6 +29,7 @@ final class AnnotatedArticleSearchResource extends Resource
     {
         return [
             'view' => EditArticle::route('/{record}'),
+            'edit' => EditArticle::route('/{record}/edit'),
         ];
     }
 

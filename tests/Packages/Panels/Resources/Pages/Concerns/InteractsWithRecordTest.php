@@ -46,12 +46,13 @@ describe('the record key', function (): void {
         'an association plus a scalar' => ['/admin/invoice-lines/%s/edit', InvoiceLineResource::class, '7~9', '7'],
     ]);
 
-    it('resolves no record under a loose spelling of its key, and redirects nowhere', function (): void {
+    it('resolves no record under a loose spelling of its key, redirects nowhere, and resolves the canonical one in a single statement', function (): void {
         $this->seed($article = new Article('Draft'));
 
         expect(fn () => $this->visit("/admin/articles/0{$article->id}/edit"))->toThrow(NotFoundHttpException::class)
             ->and(fn () => $this->visit("/admin/articles/+{$article->id}/edit"))->toThrow(NotFoundHttpException::class)
-            ->and($this->visit("/admin/articles/{$article->id}/edit")->filter(Selectors::field('title'))->attr('value'))->toBe('Draft');
+            ->and($this->visit("/admin/articles/{$article->id}/edit")->filter(Selectors::field('title'))->attr('value'))->toBe('Draft')
+            ->and($this->statementsRun())->toHaveCount(1);
     });
 });
 

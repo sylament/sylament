@@ -15,7 +15,7 @@ describe('label', function (): void {
 
         expect($toggle->text())->toContain('Library')
             ->and([$toggle->attr('type'), $toggle->attr('aria-expanded'), $toggle->attr('aria-controls'), $toggle->attr('data-action')])
-            ->toBe(['button', 'true', 'sy-pa-sidebar-group-items-1', 'sylament--panels--sidebar#toggleGroup'])
+            ->toBe(['button', 'true', Selectors::navigationGroupItemsId(1), 'sylament--panels--sidebar#toggleGroup'])
             ->and($toggle->filter('svg')->each(fn (Crawler $icon): string => $icon->text()))->toBe(['Star, large', 'chevron-up-20-solid']);
     });
 

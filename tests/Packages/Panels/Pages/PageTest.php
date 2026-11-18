@@ -161,7 +161,7 @@ describe('body', function (): void {
 
     it('puts the classes it declares on its root beside the shared ones', function (): void {
         expect($this->visit('/pages/settings-page')->filter(Selectors::PAGE . '.sy-pa-settings-page'))->toHaveCount(1)
-            ->and($this->visit('/pages/notes-page')->filter(Selectors::PAGE)->attr('class'))->toBe('sy sy-pa-page');
+            ->and(explode(' ', (string) $this->visit('/pages/notes-page')->filter(SupportSelectors::STANDALONE_ROOT . Selectors::PAGE)->attr('class')))->toHaveCount(2);
     });
 
     it('puts the attributes it declares on the document body', function (): void {

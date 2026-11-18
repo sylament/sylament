@@ -9,10 +9,10 @@ use Symfony\Component\DomCrawler\Crawler;
 
 it('opens the sidebar from one toggle button and ends on the user menu, static throughout on a panel with nothing to search', function (): void {
     $page = $this->visit('/shell/shelf');
-    $toggle = $page->filter('[aria-controls="sy-pa-sidebar"]');
+    $toggle = $page->filter('[aria-controls="' . Selectors::SIDEBAR_ID . '"]');
 
     expect($toggle->count())->toBe(1)
-        ->and($page->filter(Selectors::TOPBAR . ' button[aria-controls="sy-pa-sidebar"][aria-expanded="false"][aria-label="Toggle sidebar"][data-sylament--panels--sidebar-target="toggleButton"]')->count())->toBe(1)
+        ->and($page->filter(Selectors::TOPBAR . ' button[aria-controls="' . Selectors::SIDEBAR_ID . '"][aria-expanded="false"][aria-label="Toggle sidebar"][data-sylament--panels--sidebar-target="toggleButton"]')->count())->toBe(1)
         ->and($toggle->attr('data-action'))->toBe('sylament--panels--sidebar#toggle')
         ->and($page->filter(Selectors::TOPBAR . ' .sy-pa-topbar-end ' . SupportSelectors::DROPDOWN . SupportSelectors::KEPT_DROPDOWN . ' ' . Selectors::USER_MENU_TRIGGER)->count())->toBe(1)
         ->and($page->filter(Selectors::GLOBAL_SEARCH)->count())->toBe(0)

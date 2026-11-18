@@ -16,7 +16,7 @@ it("numbers each group's item list by its position, a group without a label incl
     $page = $this->visit('/shell/shelf');
     $lists = $page->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP)->each(fn (Crawler $group): ?string => $group->filter('ul')->attr('id'));
 
-    expect($lists)->toBe(['sy-pa-sidebar-group-items-0', 'sy-pa-sidebar-group-items-1', 'sy-pa-sidebar-group-items-2', 'sy-pa-sidebar-group-items-3'])
+    expect($lists)->toBe(array_map(Selectors::navigationGroupItemsId(...), [0, 1, 2, 3]))
         ->and($page->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP_TOGGLE)->each(fn (Crawler $toggle): array => [$toggle->attr('aria-controls'), $toggle->closest(Selectors::NAVIGATION_GROUP)?->filter('ul')->attr('id')]))
-        ->toBe([['sy-pa-sidebar-group-items-1', 'sy-pa-sidebar-group-items-1'], ['sy-pa-sidebar-group-items-2', 'sy-pa-sidebar-group-items-2']]);
+        ->toBe([[Selectors::navigationGroupItemsId(1), Selectors::navigationGroupItemsId(1)], [Selectors::navigationGroupItemsId(2), Selectors::navigationGroupItemsId(2)]]);
 });

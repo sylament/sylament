@@ -18,10 +18,10 @@ namespace Sylament\Tests\Fixtures\Panels;
  * strip and the band's narrow-screen menu; the global search's live root, its field and
  * controller, its results panel, a category and its heading, and a result's link and heading;
  * the unsaved-changes guard; and a relation manager's root, any or by its class, with a tab of
- * the record page's bar for one, any or under its key. Each is named by its accessible name or
- * role, the `data-` hook or id it carries, or the `sy-pa-` class that is the template's one
- * hook on it, and a selector a sub-navigation band would also match is scoped to the landmark
- * it reads.
+ * the record page's bar for one, any or under its key; and the ids an `aria-controls` names, the
+ * sidebar's and a navigation group's item list. Each is named by its accessible name or role,
+ * the `data-` hook or id it carries, or the `sy-pa-` class that is the template's one hook on
+ * it, and a selector a sub-navigation band would also match is scoped to the landmark it reads.
  */
 final class Selectors
 {
@@ -165,9 +165,14 @@ final class Selectors
     public const string RELATION_MANAGER = '.sy-pa-relation-manager';
 
     /**
+     * The stable landmark id of the shell's sidebar (`Sidebar`), which the topbar's toggle names in its `aria-controls`.
+     */
+    public const string SIDEBAR_ID = 'sy-pa-sidebar';
+
+    /**
      * The shell's sidebar (`Sidebar`), the drawer holding the logo header and the navigation landmark, by its stable landmark id.
      */
-    public const string SIDEBAR = '#sy-pa-sidebar';
+    public const string SIDEBAR = '#' . self::SIDEBAR_ID;
 
     /**
      * Any navigation group (`SidebarGroup`), labelled or not, in the sidebar or a band; its class is its one hook.
@@ -279,6 +284,15 @@ final class Selectors
     public static function navigationGroup(string $label): string
     {
         return self::NAVIGATION . " [data-group-label=\"{$label}\"]";
+    }
+
+    /**
+     * The id of a navigation group's item list (`SidebarGroup`), numbered by the group's position (`0`, or `sub-0` in a band),
+     * which the group's disclosure names in its `aria-controls`.
+     */
+    public static function navigationGroupItemsId(int|string $position): string
+    {
+        return "sy-pa-sidebar-group-items-{$position}";
     }
 
     /**

@@ -12,7 +12,7 @@ it("wraps the page's live root in the one main landmark the skip link targets, t
     expect($page->filter('.sy-pa-body ' . Selectors::SKIP_LINK . '.sy-pa-skip-link')->text())->toBe('Skip to content')
         ->and($page->filter(Selectors::MAIN)->count())->toBe(1)
         ->and($page->filter(Selectors::MAIN . Selectors::SKIP_LINK_TARGET . ' ' . Selectors::PAGE)->count())->toBe(1)
-        ->and(array_map(fn (string $id): int => $page->filter("[id=\"{$id}\"]")->count(), ['sy-pa-topbar', 'sy-pa-sidebar', 'sy-pa-main']))->toBe([1, 1, 1])
+        ->and(array_map(fn (string $selector): int => $page->filter($selector)->count(), ['#sy-pa-topbar', Selectors::SIDEBAR, Selectors::SKIP_LINK_TARGET]))->toBe([1, 1, 1])
         ->and($page->filter(Selectors::THEME_SWITCHER)->count())->toBe(1)
         ->and($page->filter(TablesSelectors::LIVE_PROPS . ' ' . Selectors::THEME_SWITCHER)->count())->toBe(0)
         ->and($page->filter(TablesSelectors::LIVE_PROPS . ' ' . Selectors::TOPBAR)->count())->toBe(0)

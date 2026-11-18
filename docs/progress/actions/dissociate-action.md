@@ -110,15 +110,16 @@ Executed, through the real action:
 
 | Target | The statement |
 | --- | --- |
-| a mapped-by onto a scalar-pair owner (SQL) | `UPDATE ShortcutNote SET shortcut_host = NULL, shortcut_path = NULL WHERE id IN (?)` |
-| a mapped-by onto a derived-identity owner (SQL) | `UPDATE ResidencyRider SET residency_venue_id = NULL, residency_season = NULL WHERE id IN (?)` |
-| reserved words, quoted by the mapping (SQL) | `UPDATE "order" SET "select" = NULL, "from" = NULL WHERE "group" IN (?)` |
-| a single-table leaf (DQL) | `UPDATE Gauge SET depot_id = NULL WHERE (id IN (?)) AND kind IN ('dial')` |
-| a JOINED leaf whose root declares the mapped-by (DQL) | `UPDATE Appliance SET depot_id = NULL WHERE (appliance_id) IN (SELECT appliance_id FROM Appliance_id_tmp)`, after an `INSERT` into that temporary table selecting from `Toaster` joined to `Appliance` |
+| a mapped-by onto a scalar-pair owner (SQL) | `UPDATE Seedling SET terrace_estate = NULL, terrace_number = NULL WHERE id IN (?)` |
+| a mapped-by onto a derived-identity owner (SQL) | `UPDATE Seedling SET allotment_garden = NULL, allotment_number = NULL WHERE id IN (?)` |
+| a single-table leaf (DQL) | `UPDATE TramGauge SET depot_id = NULL WHERE (id IN (?)) AND kind IN ('dial')` |
+| a JOINED leaf whose root declares the mapped-by (DQL) | `UPDATE TramAppliance SET depot_id = NULL WHERE (id) IN (SELECT id FROM TramAppliance_id_tmp)`, after an `INSERT` into that temporary table selecting from `TramToaster` joined to `TramAppliance` |
+
+Recorded from the quoting rule, and executed by no test, because the quoting is Doctrine's `QuoteStrategy`: a mapped-by whose owner, join columns and identifier are reserved words the mapping quotes writes `UPDATE "order" SET "select" = NULL, "from" = NULL WHERE "group" IN (?)`.
 
 The keys either arm narrows by are **plucked** through the table's base query, which is DQL and so already discriminated and filtered, and a selected key naming a row that query excludes is written by nothing.
 That base query is the relationship's only while the table declares no `query()` of its own; declare both and the query wins, which is [what makes it a query table](../tables/has-query.md#the-mappings-order-is-the-relation-scoped-tables-default-sort), while the arm still reads the relationship for the mapping to null.
-Over a host declaring `query(Gauge)` beside `relationship()` on a depot's `dials`, with a dial of that depot, a plain `Gauge` of it and a dial of another depot selected, the DQL arm's `AND kind IN ('dial')` writes **two** rows and leaves the plain gauge owned, where the DBAL statement would write three.
+Over a host declaring a `query()` of the whole single-table hierarchy beside `relationship()` on a depot's dials, with a dial of that depot, a plain gauge of it and a dial of another depot selected, the DQL arm's `AND kind IN ('dial')` writes **two** rows and leaves the plain gauge owned, where the DBAL statement would write three.
 The other depot's dial is nulled either way, because the arm scopes by key and never by owner.
 Guarding the arm on `isRelationshipBaseQuery()` would refuse a declaration the table supports, so that exposure, and the SQL arm's missing discriminator and filter under the same declaration, is a known gap, left open rather than closed.
 

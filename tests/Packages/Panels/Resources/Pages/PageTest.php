@@ -155,3 +155,26 @@ describe('mounted action record', function (): void {
             ->toThrow(NotFoundHttpException::class);
     });
 });
+
+describe('a custom record page', function (): void {
+    it('mounts the record its route names, rendering it in a template of its own under its own crumb', function (): void {
+        $this->seed($alpha = new Article('Alpha'));
+
+        $page = $this->visit("/resource-routes/scoped-articles/{$alpha->id}/preview");
+
+        expect($page->filter(Selectors::PAGE . ' ' . Selectors::PAGE_CONTENT)->text())->toBe('Alpha')
+            ->and($page->filter(SupportSelectors::BREADCRUMB)->each(static fn ($crumb): string => $crumb->text()))->toBe(['Shortlisted Articles', 'Preview']);
+    });
+
+    it("fills a URL of its resource with its own record, but neither the listing's nor one naming a record of its own", function (): void {
+        $this->seed($alpha = new Article('Alpha'));
+
+        $header = $this->visit("/resource-routes/scoped-articles/{$alpha->id}/preview")->filter(Selectors::HEADER_ACTIONS);
+
+        expect($header->filter('a[href]')->each(static fn ($link): array => [$link->text(), $link->attr('href')]))->toBe([
+            ['Editor', "http://localhost/resource-routes/scoped-articles/{$alpha->id}/edit"],
+            ['Listing', 'http://localhost/resource-routes/scoped-articles'],
+            ['Featured', 'http://localhost/resource-routes/scoped-articles/featured/edit'],
+        ]);
+    });
+});

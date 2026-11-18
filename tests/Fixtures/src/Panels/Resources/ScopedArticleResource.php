@@ -17,10 +17,11 @@ use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateScopedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditScopedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListScopedArticles;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\PreviewScopedArticle;
 
 /**
  * Speaks only for the articles whose title starts with an `A`, through one record query it builds once,
- * under an alias of its own.
+ * under an alias of its own; beside its listing, create and edit pages, a custom record page previews one.
  */
 final class ScopedArticleResource extends Resource
 {
@@ -66,6 +67,7 @@ final class ScopedArticleResource extends Resource
             'index' => ListScopedArticles::route('/'),
             'create' => CreateScopedArticle::route('/create'),
             'edit' => EditScopedArticle::route('/{record}/edit'),
+            'preview' => PreviewScopedArticle::route('/{record}/preview'),
         ];
     }
 }

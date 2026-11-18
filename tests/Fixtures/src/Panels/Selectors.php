@@ -92,9 +92,15 @@ final class Selectors
     public const string ACTIVE_NAVIGATION_ITEM = self::NAVIGATION . ' a[aria-current="page"]';
 
     /**
+     * The label of a labelled navigation group (`SidebarGroup`), in the sidebar or a band: a disclosure button on a collapsible
+     * group, a plain element on a static one; its class is its one hook.
+     */
+    public const string NAVIGATION_GROUP_LABEL = '.sy-pa-sidebar-group-btn';
+
+    /**
      * The disclosure inside a navigation group (`SidebarGroup`) that collapses it, rendered only on a collapsible group.
      */
-    public const string NAVIGATION_GROUP_TOGGLE = 'button.sy-pa-sidebar-group-btn[aria-expanded]';
+    public const string NAVIGATION_GROUP_TOGGLE = 'button' . self::NAVIGATION_GROUP_LABEL . '[aria-expanded]';
 
     /**
      * The shell's topbar landmark (`Topbar`), holding the logo, the global search and the user menu.
@@ -194,12 +200,6 @@ final class Selectors
      * The narrow-screen dropdown `SubNavigationMobileMenu` renders ahead of every band, listing its items; its class is its one hook.
      */
     public const string SUB_NAVIGATION_MENU = '.sy-pa-sub-navigation-dropdown';
-
-    /**
-     * The label of a labelled navigation group (`SidebarGroup`), in the sidebar or a band: a disclosure button on a collapsible
-     * group, a plain element on a static one; its class is its one hook.
-     */
-    public const string NAVIGATION_GROUP_LABEL = '.sy-pa-sidebar-group-btn';
 
     /**
      * The container `Header` wraps its actions row in, rendered only when the header has actions; its class is its one hook.

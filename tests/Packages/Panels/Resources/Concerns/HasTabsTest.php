@@ -51,6 +51,16 @@ it('builds its tabs from the properties the page opened with, and renders the st
     expect($tester->render()->crawler()->filter(SchemasSelectors::TAB . '[aria-selected="true"]')->text())->toBe('All');
 });
 
+it('lists every record once a later request stops declaring the tab it had active', function (): void {
+    $this->seed($apple = new Article('Apple'), $bean = new Article('Draft Bean'));
+
+    $this->createLiveComponent(ListTabbedArticles::class, ['panelId' => 'list-pages', 'activeTab' => 'drafts'])
+        ->assertCanSeeTableRecords([$bean])
+        ->assertCanNotSeeTableRecords([$apple])
+        ->set('tabless', true)
+        ->assertCanSeeTableRecords([$apple, $bean], inOrder: true);
+});
+
 it('switches tab back on the first page, showing the rows the new tab scopes, and heals a blanked tab to the first in the same response', function (): void {
     $this->seed($apple = new Article('Apple'), $bean = new Article('Draft Bean'), $corn = new Article('Draft Corn'));
 

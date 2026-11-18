@@ -49,7 +49,7 @@ The `updated` bag a live request carries is **not** checksummed (only the origin
 Every read re-derives:
 
 - `normalizedSelectedTableRecordKeys()` runs on **every** read of either bag, dropping anything that is not a non-bool scalar, casting the rest to `string`, and re-listing with `array_values()`.
-  A nested array, a `true`, a keyed map — all gone before a key is compared.
+  A nested array and a `true` are gone, and a keyed map is down to its values, before a key is compared.
   The props are typed `list<string>` because that is what they are *meant* to hold; the normalizer is what makes the type true of client input.
 - `isTableRecordSelected()` and `hasSelectedTableRecords()` are tracking-aware: while tracking, the answer inverts and reads the deselection bag, and "something is selected" is true by definition — an inverted empty exclusion set means *everything*.
 - `getSelectedTableRecords()` re-applies the table's filters and search to the query it builds, and re-applies `checkIfRecordIsSelectableUsing()` to whatever comes back, in both universes.

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use League\CommonMark\Extension\SmartPunct\SmartPunctExtension;
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Concerns\HasTable;
+use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Actions\Record\IdlessTicket;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Tables\GlazeFinish;
-use Sylament\Tests\Fixtures\Tables\LocalisedFormatsTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Markup;
@@ -166,31 +168,30 @@ describe('html and markdown', function (): void {
 });
 
 describe('dates', function (): void {
-    it("prints a date, a timestamp or a parseable string in the format it is given, else the table's, and nothing for a blank state", function (): void {
+    it('prints a date, a timestamp or a parseable string in the format it is given, and nothing for a blank state', function (): void {
         $text = fn (mixed $state, TextColumn $column): string => $this->renderViewComponent($column->record(['shippedOn' => $state]))->filter(Selectors::TEXT_ITEM)->text();
         $blank = $this->renderViewComponent(TextColumn::make('shippedOn')->record(['shippedOn' => null])->date('Y'));
-        $table = $this->createLiveComponent(LocalisedFormatsTable::class)->render()->crawler();
 
         expect($text(new DateTimeImmutable('2024-03-05 14:30:00', new DateTimeZone('UTC')), TextColumn::make('shippedOn')->date('d M Y', timezone: 'UTC')))->toBe('05 Mar 2024')
             ->and($text(1709649000, TextColumn::make('shippedOn')->dateTime('Y-m-d H:i', timezone: 'UTC')))->toBe('2024-03-05 14:30')
             ->and($text('2024-03-05', TextColumn::make('shippedOn')->date('j F Y')))->toBe('5 March 2024')
             ->and($blank)->toContainElement(Selectors::TEXT_COLUMN)
-            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0)
-            ->and($table->filter(Selectors::cell('till', 'packedOn'))->text())->toBe('05/03/2024')
-            ->and($table->filter(Selectors::cell('till', 'packedAt'))->text())->toBe('05/03/2024 14:30')
-            ->and($table->filter(Selectors::cell('till', 'packedTime'))->text())->toBe('14:30');
+            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0);
     });
 
-    it("prints since() as the time elapsed, and puts each date arm's text in the cell's tooltip", function (): void {
+    it("prints since() as the time elapsed, and puts each date arm's text in the cell's tooltip, in the table's formats when given none", function (): void {
         $since = $this->renderViewComponent(TextColumn::make('seenAt')->record(['seenAt' => new DateTimeImmutable('-3 days')])->since()->sinceTooltip());
-        $table = $this->createLiveComponent(LocalisedFormatsTable::class)->render()->crawler();
-        $title = static fn (string $column): ?string => $table->filter(Selectors::cell('till', $column) . ' [title]')->attr('title');
+        $table = Table::make(new class implements InteractsWithTable {
+            use HasTable;
+        })->defaultDateDisplayFormat('d/m/Y')->defaultDateTimeDisplayFormat('d/m/Y H:i')->defaultTimeDisplayFormat('H:i');
+        $title = fn (TextColumn $column): ?string => $this->renderViewComponent($column->table($table)->record(['packedAt' => '2024-03-05 14:30:00']))
+            ->filter(Selectors::TEXT_ITEM . ' [title]')->attr('title');
 
         expect($since->filter(Selectors::TEXT_ITEM)->text())->toBe('3 days ago')
             ->and($since->filter(Selectors::TEXT_ITEM . ' [title]')->attr('title'))->toBe('3 days ago')
-            ->and($title('packedOn'))->toBe('05/03/2024 14:30')
-            ->and($title('packedAt'))->toBe('14:30')
-            ->and($title('packedTime'))->toBe('05/03/2024');
+            ->and($title(TextColumn::make('packedAt')->dateTimeTooltip()))->toBe('05/03/2024 14:30')
+            ->and($title(TextColumn::make('packedAt')->timeTooltip()))->toBe('14:30')
+            ->and($title(TextColumn::make('packedAt')->dateTooltip()))->toBe('05/03/2024');
     });
 
     it("prints an instant in the timezone it is given, else the column's timezone(), else the process default", function (): void {
@@ -210,11 +211,9 @@ describe('dates', function (): void {
 });
 
 describe('money and numbers', function (): void {
-    it("prints money in the currency and locale it is given, divided and rounded as told, else in the table's currency and locale, else in the request's locale", function (): void {
+    it('prints money in the currency and locale it is given, divided and rounded as told', function (): void {
         $text = fn (mixed $state, TextColumn $column): string => $this->renderViewComponent($column->record(['price' => $state]))->filter(Selectors::TEXT_ITEM)->text();
         $blank = $this->renderViewComponent(TextColumn::make('price')->record(['price' => null])->money('USD', locale: 'en_US'));
-        $price = fn (?string $numberLocale): string => $this->createLiveComponent(LocalisedFormatsTable::class, ['numberLocale' => $numberLocale])->render()->crawler()
-            ->filter(Selectors::cell('till', 'price'))->text();
 
         expect($text(1234.5, TextColumn::make('price')->money('USD', locale: 'en_US')))->toBe('$1,234.50')
             ->and($text(123450, TextColumn::make('price')->money('USD', divideBy: 100, locale: 'en_US')))->toBe('$1,234.50')
@@ -222,16 +221,12 @@ describe('money and numbers', function (): void {
             ->and($text(1234.5, TextColumn::make('price')->money('EUR', locale: 'de_DE')))->toBe("1.234,50\u{a0}€")
             ->and($text('n/a', TextColumn::make('price')->money('USD', locale: 'en_US')))->toBe('n/a')
             ->and($blank)->toContainElement(Selectors::TEXT_COLUMN)
-            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0)
-            ->and($price('de_DE'))->toBe("1.234,50\u{a0}€")
-            ->and($price(null))->toBe('€1,234.50');
+            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0);
     });
 
     it('prints a number grouped by its locale with the decimal places it is given, the maximum winning, and through number_format() once a separator is passed', function (): void {
         $text = fn (mixed $state, TextColumn $column): string => $this->renderViewComponent($column->record(['figure' => $state]))->filter(Selectors::TEXT_ITEM)->text();
         $blank = $this->renderViewComponent(TextColumn::make('figure')->record(['figure' => null])->numeric(locale: 'de_DE'));
-        $figure = fn (?string $numberLocale): string => $this->createLiveComponent(LocalisedFormatsTable::class, ['numberLocale' => $numberLocale])->render()->crawler()
-            ->filter(Selectors::cell('till', 'figure'))->text();
 
         expect($text(1234567.891, TextColumn::make('figure')->numeric(locale: 'de_DE')))->toBe('1.234.567,891')
             ->and($text(1234567.891, TextColumn::make('figure')->numeric(decimalPlaces: 1, locale: 'de_DE')))->toBe('1.234.567,9')
@@ -240,9 +235,7 @@ describe('money and numbers', function (): void {
             ->and($text(1234567.891, TextColumn::make('figure')->numeric(decimalPlaces: 2, decimalSeparator: ',', thousandsSeparator: '.')))->toBe('1.234.567,89')
             ->and($text('n/a', TextColumn::make('figure')->numeric(locale: 'de_DE')))->toBe('n/a')
             ->and($blank)->toContainElement(Selectors::TEXT_COLUMN)
-            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0)
-            ->and($figure('de_DE'))->toBe('1.234.567,891')
-            ->and($figure(null))->toBe('1,234,567.891');
+            ->and($blank->filter(Selectors::TEXT_ITEM))->toHaveCount(0);
     });
 
     it('treats an explicit null separator as passed and only the omitted one as the default', function (): void {

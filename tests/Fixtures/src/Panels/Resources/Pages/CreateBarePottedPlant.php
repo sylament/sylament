@@ -9,13 +9,17 @@ use Sylament\Tests\Fixtures\Panels\Resources\PottedPlantResource;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
- * A create page stripped to its form: it fills the form itself with {@see self::FILLED_NAME}, declares no button row and
- * announces nothing once it has created.
+ * A create page stripped to its form under a title and a crumb of its own: it fills the form itself with
+ * {@see self::FILLED_NAME}, declares no button row and announces nothing once it has created.
  */
 #[AsLiveComponent]
 final class CreateBarePottedPlant extends CreateRecord
 {
     public const string FILLED_NAME = 'Cutting';
+
+    protected static ?string $title = 'Pot a cutting';
+
+    protected static ?string $breadcrumb = 'Pot';
 
     protected static string $resource = PottedPlantResource::class;
 

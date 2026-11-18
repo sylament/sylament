@@ -56,6 +56,14 @@ describe('the page', function (): void {
             ->and($this->renderedLiveProps($page))->toHaveKey('data')->not->toHaveKey('record');
     });
 
+    it('shows a title and a crumb of its own', function (): void {
+        $page = $this->visit('/create-shapes/potted-plants/create-bare');
+
+        expect($page->filter(Selectors::DOCUMENT_TITLE)->text())->toStartWith('Pot a cutting')
+            ->and($page)->toContainElement(Selectors::PAGE_HEADING, 'Pot a cutting')
+            ->and($page)->toContainElement(SupportSelectors::CURRENT_BREADCRUMB, 'Pot');
+    });
+
     it("opens on every field's default", function (): void {
         $page = $this->visit('/create-shapes/potted-plants/create');
 

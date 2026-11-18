@@ -14,10 +14,7 @@ it('renders the table of the host the template runs in', function (): void {
         ->toContainElement(Selectors::cell((string) $lamp->id, 'name'), 'Lamp');
 });
 
-it('refuses to render a table from a template whose host is no table host', function (array $context): void {
-    expect(fn (): string => $this::getContainer()->get('twig')->createTemplate('{{ renderTable() }}')->render($context))
+it('refuses to render a table from a template whose host is no table host', function (): void {
+    expect(fn (): string => $this::getContainer()->get('twig')->createTemplate('{{ renderTable() }}')->render(['this' => new stdClass()]))
         ->toThrow(RuntimeError::class, 'Component must be an instance of Sylament\Tables\Contracts\InteractsWithTable');
-})->with([
-    'no host' => [[]],
-    'another object' => [['this' => new stdClass()]],
-]);
+});

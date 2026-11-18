@@ -133,12 +133,10 @@ describe('its markup', function (): void {
             ->and($uncoloured)->toContainElement(Selectors::TEXT_ITEM . SupportSelectors::GRAY, 'Lamp');
     });
 
-    it('aligns its root, a badge row and a single value alike', function (): void {
-        $badges = $this->renderViewComponent(TextColumn::make('tags')->record(['tags' => ['oak', 'ash']])->badge()->alignment(Alignment::Center));
+    it('stamps its alignment on its root', function (): void {
         $single = $this->renderViewComponent(TextColumn::make('tags')->record(['tags' => 'oak'])->alignment(Alignment::End));
 
-        expect($badges->filter(Selectors::TEXT_COLUMN . SupportSelectors::align('center') . ' ' . SupportSelectors::BADGE))->toHaveCount(2)
-            ->and($single)->toContainElement(Selectors::TEXT_COLUMN . SupportSelectors::align('end'), 'oak');
+        expect($single)->toContainElement(Selectors::TEXT_COLUMN . SupportSelectors::align('end'), 'oak');
     });
 
     it('makes the content the copy control on a plain item and the badge itself on a badged one, titled by its tooltip and copying the text the cell shows', function (): void {

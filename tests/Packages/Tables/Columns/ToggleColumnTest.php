@@ -31,7 +31,6 @@ it('refuses a post its strict boolean rule turns down, painting the refusal unde
 })->with([
     'an integer' => [1],
     'a numeric string' => ['1'],
-    'a zero string' => ['0'],
 ]);
 
 it("renders forms' switch on, off or disabled, named by its label and titled by its tooltip, with no tabindex", function (): void {

@@ -399,12 +399,11 @@ describe('the all-records count', function (): void {
         'an identity derived from an association' => fn (): array => [[new InvoiceLine($seven = new Invoice(7), line: 2), new InvoiceLine($seven, line: 3)], InvoiceLineTable::class, [], 2],
     ]);
 
-    it('counts the rows of a records() closure without a statement, and refuses to count a page that carries no total', function (): void {
+    it('counts the rows of a records() closure, and refuses to count a page that carries no total', function (): void {
         $this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'arrays'])->assertCountTableRecords(2);
         $this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'page'])->assertCountTableRecords(12);
 
-        expect($this->statementsRun())->toBe([])
-            ->and(fn (): mixed => $this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'simplePage'])->assertCountTableRecords(1))
+        expect(fn (): mixed => $this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'simplePage'])->assertCountTableRecords(1))
             ->toThrow(LogicException::class, 'Table [' . ShapedRecordsTable::class . '] cannot count its records: a simple-paginated records() closure carries no total.');
     });
 

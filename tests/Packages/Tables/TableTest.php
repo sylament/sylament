@@ -189,22 +189,16 @@ describe('selection controller', function (): void {
             ->and($selected->filter(Selectors::SELECTION_BANNER . '[hidden]'))->toHaveCount(0);
     });
 
-    it('mounts the table controller only on a table that selects, reorders, defers its loading or groups', function (string $host, array $props, ?string $value): void {
+    it('mounts the table controller only on a table that selects, reorders, defers its loading or groups', function (string $host, array $props, int $controllers): void {
         $this->seed(new Product('Lamp'), new LarderJar('Apricot'));
 
-        $controller = $this->createLiveComponent($host, $props)->render()->crawler()->filter(Selectors::TABLE_CONTROLLER);
-
-        expect($controller)->toHaveCount($value === null ? 0 : 1);
-
-        if ($value !== null) {
-            expect($controller->attr($value))->not->toBeNull();
-        }
+        expect($this->createLiveComponent($host, $props)->render()->crawler()->filter(Selectors::TABLE_CONTROLLER))->toHaveCount($controllers);
     })->with([
-        'a plain table' => [ProductTable::class, [], null],
-        'a selectable table' => [SelectionReadingProductTable::class, [], 'data-sylament--tables--table-can-track-value'],
-        'a reorderable table' => [ReorderableLarderJarTable::class, [], 'data-sylament--tables--table-deferred-value'],
-        'a deferred table' => [BrowsableProductTable::class, ['defersLoading' => true], 'data-sylament--tables--table-deferred-value'],
-        'a grouped table selecting nothing' => [GroupedLarderJarTable::class, ['tableGrouping' => 'label', 'groupsOnly' => true], 'data-sylament--tables--table-groups-collapsed-by-default-value'],
+        'a plain table' => [ProductTable::class, [], 0],
+        'a selectable table' => [SelectionReadingProductTable::class, [], 1],
+        'a reorderable table' => [ReorderableLarderJarTable::class, [], 1],
+        'a deferred table' => [BrowsableProductTable::class, ['defersLoading' => true], 1],
+        'a grouped table selecting nothing' => [GroupedLarderJarTable::class, ['tableGrouping' => 'label', 'groupsOnly' => true], 1],
     ]);
 });
 

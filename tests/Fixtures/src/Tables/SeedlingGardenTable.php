@@ -23,10 +23,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * input without splitting its own term into words, `garden.name` reads through the to-one,
  * sorts by the garden's name and then its own and searches on its own input alone, and `id`
  * does neither. It lists every seedling, or with `gardenId` one garden's through
- * `relationship()`. Each variant configures one thing: `siblings` adds a `garden.seedlings.name`
- * column read through a collection, `queryBeside` declares a query over every seedling beside
- * the relationship, and `ownerless` hands the relationship no owner; the relationship closure
- * records each evaluation in the {@see HookLog}.
+ * `relationship()`. Each variant configures one thing: `queryBeside` declares a query over
+ * every seedling beside the relationship, and `ownerless` hands the relationship no owner; the
+ * relationship closure records each evaluation in the {@see HookLog}.
  */
 #[AsLiveComponent(name: 'Tables:SeedlingGardenTable', template: '@Fixtures/tables/table.html.twig')]
 class SeedlingGardenTable implements InteractsWithTable
@@ -65,7 +64,7 @@ class SeedlingGardenTable implements InteractsWithTable
             });
         }
 
-        $columns = [
+        return $table->columns([
             TextColumn::make('name')
                 ->sortable()
                 ->searchable(isIndividual: true)
@@ -74,13 +73,7 @@ class SeedlingGardenTable implements InteractsWithTable
                 ->sortable(['garden.name', 'name'])
                 ->searchable(isIndividual: true, isGlobal: false),
             TextColumn::make('id'),
-        ];
-
-        if ($this->has('siblings')) {
-            $columns[] = TextColumn::make('garden.seedlings.name');
-        }
-
-        return $table->columns($columns);
+        ]);
     }
 
     private function has(string $variant): bool

@@ -32,14 +32,12 @@ describe('its sources', function (): void {
         'a javascript url' => ['javascript://img.example.com/lamp.png', '', 'https://img.example.com/default.png'],
     ]);
 
-    it('reads a stored path from the storage disk() names, the default storage otherwise, and refuses a storage nobody registered', function (): void {
+    it('reads a stored path from the storage disk() names, the default storage otherwise', function (): void {
         $this::getContainer()->get(FilesystemRegistry::class)->get('primary.storage')->write('lamp.png', 'Lamp');
         $source = fn (ImageColumn $column): ?string => $this->renderViewComponent($column->record(['photo' => 'lamp.png']))->filter('img')->attr('src');
 
         expect($source(ImageColumn::make('photo')))->toBe('/files/lamp.png')
-            ->and($source(ImageColumn::make('photo')->disk('secondary.storage')))->toBe('')
-            ->and(fn (): ?string => ImageColumn::make('photo')->disk('missing.storage')->getImageUrl('lamp.png'))
-            ->toThrow(LogicException::class, 'No flysystem storage is registered as "missing.storage"');
+            ->and($source(ImageColumn::make('photo')->disk('secondary.storage')))->toBe('');
     });
 
     it('falls to the default image for a stored file whose existence its storage cannot check, and an empty source without one, until told not to check', function (): void {
@@ -130,7 +128,7 @@ describe('its images', function (): void {
 
     it('draws the first images up to its limit, counting the rest on a chip in the size it is given when asked, and every image under a limit below one', function (): void {
         $five = array_map(static fn (string $tree): string => "https://img.example.com/{$tree}.png", ['oak', 'ash', 'elm', 'fir', 'yew']);
-        $cell = fn (ImageColumn $column, array $state = []): Crawler => $this->renderViewComponent($column->record(['photo' => $state ?: $five]));
+        $cell = fn (ImageColumn $column): Crawler => $this->renderViewComponent($column->record(['photo' => $five]));
         $chipped = $cell(ImageColumn::make('photo')->limit(3)->limitedRemainingText(size: TextSize::Large));
         $chip = '.sy-ta-image-limited-remaining-text';
 

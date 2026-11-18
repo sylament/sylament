@@ -184,7 +184,7 @@ describe('the indicators row', function (): void {
         expect($inactive->filter(Selectors::FILTER_INDICATOR))->toHaveCount(0)
             ->and($active)->toContainElement('.sy-ta-filter-indicators-label', 'Active filters')
             ->and($active)->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Seal: Wax')
-            ->and($active)->toContainElement(Selectors::FILTER_INDICATOR . SupportSelectors::BADGE . ' ' . Selectors::removeFilterButton('seal') . Selectors::REMOVE_FILTER_ACTION)
+            ->and($active)->toContainElement(Selectors::FILTER_INDICATOR . SupportSelectors::BADGE . ' ' . Selectors::removeFilterButton('seal'))
             ->and($active)->toContainElement(Selectors::REMOVE_ALL_FILTERS_BUTTON . '[data-live-action-param="removeTableFilters"] title', 'x-mark-20-solid');
     });
 

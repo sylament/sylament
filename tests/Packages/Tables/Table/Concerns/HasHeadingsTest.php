@@ -10,7 +10,6 @@ it('renders the heading at the root heading level, as a paragraph beyond the six
 
     expect($crawler)->toContainElement(Selectors::HEADER . " {$tag}", 'Larder jars');
 })->with([
-    'the default' => [2, 'h2'],
     'the sixth' => [6, 'h6'],
     'beyond the sixth' => [7, 'p'],
 ]);

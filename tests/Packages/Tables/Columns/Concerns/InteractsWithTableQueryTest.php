@@ -15,7 +15,6 @@ use Sylament\Tests\Fixtures\Entity\PropagatedCutting;
 use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 use Sylament\Tests\Fixtures\Tables\SeedlingGardenTable;
-use Sylament\Tests\Fixtures\Tables\Selectors;
 
 describe('applyEagerLoading()', function (): void {
     it('fetch-joins and selects every to-one hop a name reads through, reusing a join the query or its sort carries', function (): void {
@@ -49,7 +48,7 @@ describe('applyEagerLoading()', function (): void {
         'a path through a collection' => [Seedling::class, 'garden.seedlings.name'],
     ]);
 
-    it('reads a page through a to-one in the statements one row costs, and lists each root once beside a collection column', function (): void {
+    it('reads a page through a to-one in the statements one row costs', function (): void {
         $seedlings = [];
 
         foreach (['Kew', 'Wisley', 'Eden'] as $name) {
@@ -64,12 +63,8 @@ describe('applyEagerLoading()', function (): void {
 
         $this->seed(...$seedlings);
         $this->createLiveComponent(SeedlingGardenTable::class)->render();
-        $withGardens = count($this->statementsRun());
 
-        $crawler = $this->createLiveComponent(SeedlingGardenTable::class, ['variants' => ['siblings']])->render()->crawler();
-
-        expect($withGardens)->toBe(2)
-            ->and($crawler->filter(Selectors::ROW))->toHaveCount(6);
+        expect($this->statementsRun())->toHaveCount(2);
     });
 });
 

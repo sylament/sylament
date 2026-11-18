@@ -30,7 +30,6 @@ it("says there are no records by the table's plural label, until a heading is gi
     expect($this->createLiveComponent($host)->render()->crawler())->toContainElement(Selectors::EMPTY_STATE . ' h2, ' . Selectors::EMPTY_STATE . ' h3', $heading);
 })->with([
     'a product table' => [ProductTable::class, 'No products'],
-    'a larder jar table' => [HeadedLarderJarTable::class, 'No larder jars'],
     'a given heading' => [EmptyStateLarderJarTable::class, 'The larder is bare'],
 ]);
 

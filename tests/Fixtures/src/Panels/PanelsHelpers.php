@@ -27,13 +27,9 @@ trait PanelsHelpers
             throw new LogicException('The markup holds no live page root.');
         }
 
-        $props = json_decode((string) $root->attr('data-live-props-value'), true, flags: JSON_THROW_ON_ERROR);
-
-        if (!is_array($props)) {
-            throw new LogicException("The page's live props are not an object.");
-        }
-
         /** @var array<string, mixed> $props */
+        $props = self::liveProps($root);
+
         return $props;
     }
 

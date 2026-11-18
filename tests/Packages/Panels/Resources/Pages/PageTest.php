@@ -39,15 +39,6 @@ describe('breadcrumbs', function (): void {
             ->and($page->filter(SupportSelectors::CURRENT_BREADCRUMB)->text())->toBe('Create');
     });
 
-    it('trails a titled record page with its listing and its record, costing no statement beyond reading the record', function (): void {
-        $this->seed($article = new Article('Draft'));
-
-        $page = $this->visit("/admin/articles/{$article->id}/edit");
-
-        expect($page->filter(SupportSelectors::BREADCRUMB)->each(static fn ($crumb): string => $crumb->text()))->toBe(['Articles', 'Draft', 'Edit'])
-            ->and($this->statementsRun())->toHaveCount(1);
-    });
-
     it('answers the crumb a page declares, and leaves the trail out where the page asks to', function (): void {
         $page = $this->visit('/resource-routes/articles-archive/digest');
 

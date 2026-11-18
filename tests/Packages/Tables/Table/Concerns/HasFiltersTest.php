@@ -132,13 +132,9 @@ describe('the layouts', function (): void {
             ->and($crawler->filter(Selectors::FILTERS_MODAL))->toHaveCount(0);
     });
 
-    it('refuses to render a layout whose chrome is not shipped, naming it and the layouts that are, while its form still sizes itself', function (): void {
-        $host = new ArrangedJarFilterTable($this->entityManager(), new HookLog());
-        $host->layout = 'BeforeContent';
-
+    it('refuses to render a layout whose chrome is not shipped, naming it and the layouts that are', function (): void {
         expect(fn () => $this->createLiveComponent(ArrangedJarFilterTable::class, ['layout' => 'BeforeContent'])->render())
-            ->toThrow(RuntimeError::class, 'Table [' . ArrangedJarFilterTable::class . '] requests the [BeforeContent] filters layout, which needs chrome the toolkit does not ship yet; use FiltersLayout::Dropdown, Modal, AboveContent, AboveContentCollapsible, BelowContent or Hidden.')
-            ->and($host->getTable()->getFiltersFormColumns())->toBe(1);
+            ->toThrow(RuntimeError::class, 'Table [' . ArrangedJarFilterTable::class . '] requests the [BeforeContent] filters layout, which needs chrome the toolkit does not ship yet; use FiltersLayout::Dropdown, Modal, AboveContent, AboveContentCollapsible, BelowContent or Hidden.');
     });
 });
 

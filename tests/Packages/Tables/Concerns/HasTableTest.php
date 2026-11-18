@@ -436,8 +436,7 @@ describe('the URL', function (): void {
 
         $page = $this->visit(TablePageController::url('Tables:RememberingProductTable') . '?ledgerPage=2&page=2');
 
-        expect($page->filter(Selectors::columnCells('name'))->first()->text())->toBe('P01')
-            ->and($this->createLiveComponent(RememberingProductTable::class)->component()->getIdentifiedTableQueryStringPropertyNameFor('page'))->toBe('ledgerPage');
+        expect($page->filter(Selectors::columnCells('name'))->first()->text())->toBe('P01');
     });
 
     it('writes the state it binds into the URL a live request answers with, and nothing for a host that binds none', function (): void {

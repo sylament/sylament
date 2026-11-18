@@ -6,15 +6,14 @@ use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\TariffBand;
 use Sylament\Tests\Fixtures\Tables\Selectors;
-use Sylament\Tests\Fixtures\Tables\SummarizedJarTable;
 
-it("sums the page's values on the page row and every value on the all-table row, under its label", function (): void {
-    $this->seed(new LarderJar('Apricot', position: 1), new LarderJar('Bramble', position: 2), new LarderJar('Cherry', position: 4));
+it('sums the values under its label in one statement of its own', function (): void {
+    $this->seed(new LarderJar(position: 1), new LarderJar(position: 2), new LarderJar(position: 4));
 
-    $crawler = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['positionOnly']])->render()->crawler();
+    $crawler = $this->renderSummarizer(Sum::make());
 
-    expect($this::textSummaries($crawler->filter(Selectors::summaryRow('page'))))->toBe(['Sum 3'])
-        ->and($this::textSummaries($crawler->filter(Selectors::summaryRow('all'))))->toBe(['Sum 7']);
+    expect($this::textSummaries($crawler))->toBe(['Sum 7'])
+        ->and(preg_grep('/\bSUM\(/', $this->statementsRun()))->toHaveCount(1);
 });
 
 it('prints a decimal total as the number it is on every platform, a whole one without decimals', function (array $rates, string $total): void {

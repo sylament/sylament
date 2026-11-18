@@ -23,7 +23,7 @@ it('labels its chip with its indicator in place of its label', function (): void
 it('removes only the field a chip is keyed by', function (): void {
     $tester = $this->createLiveComponent(ShapedJarFilterTable::class)->filterTable('stocked', ['state' => 'shut', 'note' => 'Top shelf']);
 
-    expect($tester->render()->crawler())->toContainElement(Selectors::REMOVE_FILTER_BUTTON . '[data-live-filter-name-param="stocked"][data-live-field-param="note"]');
+    expect($tester->render()->crawler())->toContainElement(Selectors::removeFilterButton('stocked', 'note'));
 
     $tester->removeTableFilter('stocked', 'note');
 

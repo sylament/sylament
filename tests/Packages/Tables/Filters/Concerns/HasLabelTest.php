@@ -10,7 +10,7 @@ it('names its field and its chip by its label', function (): void {
     $tester = $this->createLiveComponent(ShapedJarFilterTable::class)->filterTable('sealed');
 
     expect($tester->render()->crawler())
-        ->toContainElement('label[for="tableFiltersForm.sealed.isActive"]', 'Sealed jars')
+        ->toContainElement(Selectors::filterFieldLabel('sealed', 'isActive'), 'Sealed jars')
         ->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Sealed jars');
 });
 

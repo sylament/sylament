@@ -45,7 +45,7 @@ it('shows no remove control on a chip that is not removable, whose filter outlas
 it("names the field it removes on its chip's remove control", function (): void {
     $tester = $this->createLiveComponent(IndicatingJarFilterTable::class)->filterTable('fielded');
 
-    expect($tester->render()->crawler())->toContainElement(Selectors::REMOVE_FILTER_BUTTON . '[data-live-filter-name-param="fielded"][data-live-field-param="isActive"]');
+    expect($tester->render()->crawler())->toContainElement(Selectors::removeFilterButton('fielded', 'isActive'));
 
     $tester->removeTableFilter('fielded', 'isActive');
 

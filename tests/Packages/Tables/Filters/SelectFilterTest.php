@@ -19,7 +19,7 @@ describe('the field', function (): void {
         $crawler = $this->createLiveComponent(DefaultedJarFilterTable::class)->render()->crawler();
 
         expect($crawler)
-            ->toContainElement('label[for="tableFiltersForm.seal.value"]', 'Seal')
+            ->toContainElement(Selectors::filterFieldLabel('seal', 'value'), 'Seal')
             ->toContainElement(Selectors::filterField('seal', 'value') . ' option[value="wax"][selected]', 'Wax')
             ->toContainElement(Selectors::filterField('seal', 'value') . ' option[value="screw"]:not([selected])', 'Screw');
     });

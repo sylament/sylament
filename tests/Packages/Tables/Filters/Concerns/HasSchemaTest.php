@@ -19,7 +19,7 @@ it('renders the components of its schema in place of its field, which no field m
 
 it('hands its field to a modifier, which may relabel it', function (): void {
     expect($this->createLiveComponent(ShapedJarFilterTable::class)->render()->crawler())
-        ->toContainElement('label[for="tableFiltersForm.owned.isActive"]', 'Mine only');
+        ->toContainElement(Selectors::filterFieldLabel('owned', 'isActive'), 'Mine only');
 });
 
 it('renders no field when it has neither a schema nor a field of its own', function (): void {

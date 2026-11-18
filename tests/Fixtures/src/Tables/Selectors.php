@@ -325,4 +325,22 @@ final class Selectors
     {
         return "[id=\"tableFiltersForm.{$filter}.{$field}\"]";
     }
+
+    /**
+     * The label of a filter's control in the filters form, by the filter's name and the field's, as `filterField()` takes them.
+     */
+    public static function filterFieldLabel(string $filter, string $field): string
+    {
+        return "label[for=\"tableFiltersForm.{$filter}.{$field}\"]";
+    }
+
+    /**
+     * The button removing an indicator's filter, by the filter's name and, for a chip keyed by a field, that field's.
+     */
+    public static function removeFilterButton(string $filter, ?string $field = null): string
+    {
+        $selector = self::REMOVE_FILTER_BUTTON . "[data-live-filter-name-param=\"{$filter}\"]";
+
+        return $field === null ? $selector : $selector . "[data-live-field-param=\"{$field}\"]";
+    }
 }

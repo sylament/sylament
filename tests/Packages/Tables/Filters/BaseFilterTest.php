@@ -23,7 +23,7 @@ it('is made by its default name when given none, then runs the configurations re
     SealedJarFilter::configureUsing(static fn (SealedJarFilter $filter): SealedJarFilter => $filter->label('Configured seal'));
 
     expect($this->createLiveComponent(ShapedJarFilterTable::class)->render()->crawler())
-        ->toContainElement('label[for="tableFiltersForm.sealed.isActive"]', 'Configured seal');
+        ->toContainElement(Selectors::filterFieldLabel('sealed', 'isActive'), 'Configured seal');
 });
 
 it('counts one active filter per chip it shows', function (): void {

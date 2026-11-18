@@ -13,9 +13,9 @@ it('renders a checkbox named by its label, a toggle in its place when told, and 
     $crawler = $this->createLiveComponent(ShapedJarFilterTable::class)->render()->crawler();
 
     expect($crawler)
-        ->toContainElement('label[for="tableFiltersForm.sealed.isActive"]', 'Sealed jars')
+        ->toContainElement(Selectors::filterFieldLabel('sealed', 'isActive'), 'Sealed jars')
         ->toContainElement(Selectors::filterField('sealed', 'isActive') . '[type="checkbox"]:not([role="switch"])')
-        ->toContainElement('label[for="tableFiltersForm.waxed.isActive"]', 'Waxed')
+        ->toContainElement(Selectors::filterFieldLabel('waxed', 'isActive'), 'Waxed')
         ->toContainElement(Selectors::filterField('waxed', 'isActive') . '[type="checkbox"][role="switch"]')
         ->toContainElement(Selectors::filterField('screwed', 'isActive') . '[type="checkbox"]:not([role="switch"])');
 });

@@ -192,6 +192,31 @@ final class Selectors
      */
     public const string UNSAVED_CHANGES_GUARD = '.sy-pa-unsaved-changes';
 
+    /**
+     * The results panel `GlobalSearch` renders only once a term is searched, holding the groups or the no-results message.
+     */
+    public const string GLOBAL_SEARCH_RESULTS = '.sy-pa-global-search-results-ctn';
+
+    /**
+     * One category of global search results, its heading and its results; its class is its one hook.
+     */
+    public const string GLOBAL_SEARCH_RESULT_GROUP = '.sy-pa-global-search-result-group';
+
+    /**
+     * The heading naming a category of global search results.
+     */
+    public const string GLOBAL_SEARCH_RESULT_GROUP_HEADING = '.sy-pa-global-search-result-group-header';
+
+    /**
+     * The link a global search result opens its record through, holding the result's heading and details.
+     */
+    public const string GLOBAL_SEARCH_RESULT_LINK = 'a.sy-pa-global-search-result-link';
+
+    /**
+     * The heading inside a global search result's link, the result's title.
+     */
+    public const string GLOBAL_SEARCH_RESULT_HEADING = '.sy-pa-global-search-result-heading';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

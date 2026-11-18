@@ -59,4 +59,21 @@ trait PanelsHelpers
             'guardActions' => $guard->attr('data-sylament--panels--unsaved-changes-guard-actions-value'),
         ];
     }
+
+    /**
+     * The categories a global search rendered, in order, each heading keyed to the titles of its results in order.
+     *
+     * @return array<string, list<string>>
+     */
+    protected static function globalSearchCategories(Crawler $search): array
+    {
+        $categories = [];
+
+        foreach ($search->filter(Selectors::GLOBAL_SEARCH_RESULT_GROUP) as $group) {
+            $group = new Crawler($group);
+            $categories[$group->filter(Selectors::GLOBAL_SEARCH_RESULT_GROUP_HEADING)->text()] = $group->filter(Selectors::GLOBAL_SEARCH_RESULT_HEADING)->each(fn (Crawler $heading): string => $heading->text());
+        }
+
+        return $categories;
+    }
 }

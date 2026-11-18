@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Fixtures\Tables;
 
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+
 /**
  * The markup tables render: the roots of its columns, named by the `sy-ta-` class that marks
  * each, for an area asserting what a trait puts on them, and a row's checkbox ticked for the

@@ -74,4 +74,4 @@ Each guard is a `LogicException` that spells out the repair rather than letting 
 ### The cast is general, and the Repeater is its only consumer
 
 Nothing in the class references the `Repeater`: `get()`/`set()` transform one value, and any subtree owner, or a leaf field over a single embedded array, could apply it.
-Its tests are the cast's Unit matrix plus the repeater Integration suite, and no other consumer is claimed, so a later consumer knows the seam is open and the proof is its own to add.
+It is pinned on its own and through the `Repeater`'s item mode, and no other consumer is claimed, so a later consumer knows the seam is open and the proof is its own to add.

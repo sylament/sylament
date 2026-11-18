@@ -248,7 +248,7 @@ Filament tracks `$previousRecordGroupKey` / `$previousRecordGroupTitle` across i
 The port builds `getTableRecordGroupBoundaries()` once per render (key, title, description, `isFirstOfGroup`, `isLastOfGroup` and `indexInGroup` per record key) and the partial does one lookup per row; the stripe restarts off `indexInGroup` rather than off a flag reset after each header.
 
 The Twig tracker pattern would have worked (a `{% set %}` before the loop survives `strict_variables`; only an unguarded first read of an uninitialised variable throws), so the map is chosen for what it buys rather than for what it avoids: it is asserted in Unit without rendering anything, it is where the [trailing-summary probe](summarizer.md#the-trailing-group-is-followed-past-the-page-break-with-a-record-not-a-scalar) folds in, and it is the shape `recordActionsByKey` hands the same loop.
-It is memoised for the request and invalidated with `cachedTableRecords`, because on a summarized table building it costs a statement and two readers ask for it.
+It is memoised for the request and invalidated with `cachedTableRecords`, because on a summarized table building it costs a statement, and a caller beyond the partial's one read would pay it again.
 
 ### The trigger drops vendor's force-enabled stamp
 

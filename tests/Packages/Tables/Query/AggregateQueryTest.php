@@ -17,6 +17,7 @@ use Sylament\Tests\Fixtures\Entity\HexCodedSwatch;
 use Sylament\Tests\Fixtures\Entity\HexCodedTile;
 use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Entity\Terrace;
+use Sylament\Tests\Fixtures\Tables\AggregatingAtelierTable;
 use Sylament\Tests\Infrastructure\Doctrine\DriverValues;
 use Symfony\Component\Uid\Uuid;
 
@@ -27,8 +28,8 @@ describe('fetch()', function (): void {
         $east = new Atelier('East');
         $this->seed($north, $south, $east, new AtelierEasel($north, 1), new AtelierEasel($north, 2), new AtelierEasel($north, 3), new AtelierEasel($south, 5));
 
-        $sum = static fn (?Closure $scope): array => DriverValues::numeric(AggregateQuery::fetch(
-            test()->entityManager(),
+        $sum = fn (?Closure $scope): array => DriverValues::numeric(AggregateQuery::fetch(
+            $this->entityManager(),
             Atelier::class,
             new AggregateDeclaration(function: 'SUM', relationshipPath: 'easels', column: 'position', scope: $scope, castToBool: false),
             [(string) $north->id, (string) $south->id, (string) $east->id],
@@ -180,5 +181,18 @@ describe('addHiddenSortSelect()', function (): void {
         expect($alias)->toBe('sy_agg1')
             ->and($ateliers)->toContainOnlyInstancesOf(Atelier::class)
             ->and(array_map(static fn (Atelier $atelier): string => $atelier->name, $ateliers))->toBe(['North', 'South', 'East']);
+    });
+
+    it('orders a live table by the figure through its paginated page and count', function (): void {
+        $east = new Atelier('East');
+        $north = new Atelier('North');
+        $this->seed($east, $north, new AtelierEasel($north, 1), new AtelierEasel($north, 2));
+
+        $this->createLiveComponent(AggregatingAtelierTable::class, ['columns' => ['easels_count']])
+            ->sortTable('easels_count', 'desc')
+            ->assertCanSeeTableRecords([$north, $east], inOrder: true)
+            ->assertCountTableRecords(2)
+            ->sortTable('easels_count', 'asc')
+            ->assertCanSeeTableRecords([$east, $north], inOrder: true);
     });
 });

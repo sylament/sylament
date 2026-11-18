@@ -120,9 +120,9 @@ A deprecated Filament member [is not ported](../renames.md#a-deprecated-filament
 
 ### The reset state clears the key the state actually uses
 
-Filament's `setUp()` calls `resetState(['value' => null])` **unconditionally**, so a `multiple()` select filter resets a key its state never writes and leaves `values` untouched — chip removal on a multi-select silently does nothing.
-Ours sets the reset state from a closure that reads `isMultiple()` at call time, so it is `['values' => []]` for a multiple filter and `['value' => null]` otherwise.
-A fix, not a mirror; recorded in the [renames table](../renames.md#renames).
+Filament's `setUp()` calls `resetState(['value' => null])` **unconditionally**, so a `multiple()` select filter's reset state names a key its state never writes.
+Ours sets the reset state from a closure that reads `isMultiple()` at call time, so `getResetState()` is `['values' => []]` for a multiple filter and `['value' => null]` otherwise; the [renames table](../renames.md#renames) carries the row.
+Removing the chip clears `values` either way, here and upstream, because the reset writes every field its reset state does not name back to the empty value of its state's type (`[]` for a list), so the difference shows only to code that reads `getResetState()`.
 
 ### The multi-value label follows selection order, and a blank option key still indicates
 

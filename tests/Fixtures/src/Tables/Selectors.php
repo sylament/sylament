@@ -205,6 +205,16 @@ final class Selectors
     public const string PLACEHOLDER = '.sy-ta-placeholder';
 
     /**
+     * The label of an active filter's indicator badge, which reads what the indicator says.
+     */
+    public const string FILTER_INDICATOR_LABEL = self::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL;
+
+    /**
+     * The badge on the filters trigger counting the active filters; its class is its one hook.
+     */
+    public const string FILTERS_TRIGGER_BADGE = '.sy-ta-filters-trigger-badge';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string
@@ -298,5 +308,21 @@ final class Selectors
     public static function recordCheckbox(string $key): string
     {
         return "input[type=\"checkbox\"][aria-label=\"Select/deselect record {$key} for bulk actions.\"]";
+    }
+
+    /**
+     * The group holding a filter's fields in the filters form, by the filter's name.
+     */
+    public static function filterGroup(string $filter): string
+    {
+        return "[id=\"tableFiltersForm.{$filter}\"]";
+    }
+
+    /**
+     * A filter's control in the filters form, by the filter's name and the field's (`isActive`, `value`, `values`), the id its label points at.
+     */
+    public static function filterField(string $filter, string $field): string
+    {
+        return "[id=\"tableFiltersForm.{$filter}.{$field}\"]";
     }
 }

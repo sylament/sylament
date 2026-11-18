@@ -65,10 +65,10 @@ describe('the layouts', function (): void {
         $crawler = $this->createLiveComponent(ColumnManagerProductTable::class, ['variants' => ['modal', $variant]])->render()->crawler();
 
         expect($crawler)->toContainElement(Selectors::COLUMN_MANAGER_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . $window . ' h2', 'Columns')
-            ->and($crawler->filter(Selectors::COLUMN_MANAGER_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . '[style*="max-width"]'))->toHaveCount($variant === 'sized' ? 1 : 0);
+            ->and($crawler->filter(Selectors::COLUMN_MANAGER_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . Selectors::modalWindowCap()))->toHaveCount($variant === 'sized' ? 1 : 0);
     })->with([
         'a width token' => ['wide', SupportSelectors::modalWidth('lg')],
-        'a CSS length' => ['sized', '[style*="max-width: 30rem"]'],
+        'a CSS length' => ['sized', Selectors::modalWindowCap('30rem')],
     ]);
 
     it('sizes the dropdown by the width and the max height it is given and lays the items out column-wise in the count it is given, and in one column at the stylesheet width without', function (array $variants, string $panel, int $columns): void {

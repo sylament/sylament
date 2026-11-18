@@ -86,10 +86,10 @@ describe('the layouts', function (): void {
         $crawler = $this->createLiveComponent(ArrangedJarFilterTable::class, ['layout' => 'Modal', 'variants' => [$variant]])->render()->crawler();
 
         expect($crawler)->toContainElement(Selectors::FILTERS_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . $window . ' h2', 'Filters')
-            ->and($crawler->filter(Selectors::FILTERS_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . '[style*="max-width"]'))->toHaveCount($variant === 'sized' ? 1 : 0);
+            ->and($crawler->filter(Selectors::FILTERS_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . Selectors::modalWindowCap()))->toHaveCount($variant === 'sized' ? 1 : 0);
     })->with([
         'a width token' => ['wide', SupportSelectors::modalWidth('lg')],
-        'a CSS length' => ['sized', '[style*="max-width: 30rem"]'],
+        'a CSS length' => ['sized', Selectors::modalWindowCap('30rem')],
     ]);
 
     it('seeds the collapsible panel open only while a filter is active, under a summary whose funnel is no button and carries the count', function (): void {

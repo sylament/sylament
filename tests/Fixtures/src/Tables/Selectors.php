@@ -11,13 +11,14 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
  * records table, its rows, cells and header cells, a column's root and its content wrapper, the
  * header and toolbar bands with their actions, the search fields and the per-column search row,
  * the selection checkboxes, banner and cells, the filters' trigger, panel, modal, form fields
- * and indicators, the column manager's trigger, dialog, items and controls, the grouping
- * settings and a group's header, checkbox and summary row, the summary band and a summarizer's
- * body, the reorder triggers and handles, the editable cells and their errors, and the empty,
- * loading, striped, bulleted and responsive looks; each named by the `sy-ta-` class that is its
- * one hook, by the id the table template gives it under its host id, by its accessible name, or
- * by the Stimulus controller, target, value or live action that wires it, with a static helper
- * for a family keyed by a record, a column or a value.
+ * and indicators, the column manager's trigger, dialog, items and controls, the length either
+ * modal caps its window at, the grouping settings and a group's header, checkbox and summary
+ * row, the summary band and a summarizer's body, the reorder triggers and handles, the editable
+ * cells and their errors, and the empty, loading, striped, bulleted and responsive looks; each
+ * named by the `sy-ta-` class that is its one hook, by the id the table template gives it under
+ * its host id, by its accessible name, or by the Stimulus controller, target, value or live
+ * action that wires it or the inline style that sizes it, with a static helper for a family
+ * keyed by a record, a column or a value.
  */
 final class Selectors
 {
@@ -584,5 +585,13 @@ final class Selectors
     public static function cellClass(string $column): string
     {
         return "[class~=\"sy-ta-cell-{$column}\"]";
+    }
+
+    /**
+     * The CSS length the filters or column manager modal caps its window at, or, without one, any cap.
+     */
+    public static function modalWindowCap(?string $length = null): string
+    {
+        return $length === null ? '[style*="max-width"]' : "[style*=\"max-width: {$length}\"]";
     }
 }

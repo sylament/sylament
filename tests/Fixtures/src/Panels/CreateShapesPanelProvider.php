@@ -6,6 +6,7 @@ namespace Sylament\Tests\Fixtures\Panels;
 
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
+use Sylament\Tests\Fixtures\Panels\Resources\AssignedSlugHeadlineResource;
 use Sylament\Tests\Fixtures\Panels\Resources\CaselessBollardResource;
 use Sylament\Tests\Fixtures\Panels\Resources\CrockCellarResource;
 use Sylament\Tests\Fixtures\Panels\Resources\LowercasedBadgeResource;
@@ -34,6 +35,7 @@ final class CreateShapesPanelProvider extends PanelProvider
                 CaselessBollardResource::class,
                 SecondManagerSpineResource::class,
                 UnkeyedLocketResource::class,
+                AssignedSlugHeadlineResource::class,
                 ManyToManySatchelResource::class,
                 UnvettedKeyCharmResource::class,
                 CrockCellarResource::class,

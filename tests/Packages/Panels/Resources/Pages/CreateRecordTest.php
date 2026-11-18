@@ -7,6 +7,7 @@ use Sylament\Actions\Testing\Testable;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Tests\Fixtures\Actions\Selectors as ActionsSelectors;
 use Sylament\Tests\Fixtures\Entity\Article;
+use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\CharmSatchel;
 use Sylament\Tests\Fixtures\Entity\ClaspedLocket;
 use Sylament\Tests\Fixtures\Entity\CodeKeyedSlate;
@@ -21,6 +22,7 @@ use Sylament\Tests\Fixtures\Entity\SatchelCharm;
 use Sylament\Tests\Fixtures\Entity\VolumeSpine;
 use Sylament\Tests\Fixtures\Notifications\Selectors as NotificationsSelectors;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateArticle;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateAssignedSlugHeadline;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateBarePottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateCaselessBollard;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateHookedPottedPlant;
@@ -35,6 +37,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\PottedPlantResource;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Symfony\Component\DomCrawler\Crawler;
 
 describe('the page', function (): void {
     it('opens the resource form empty under a "Create" title, crumb and page classes', function (): void {
@@ -203,6 +206,20 @@ describe('the record it builds', function (): void {
 
         expect($tester->render()->crawler()->text())->toContain('This value is already used.')
             ->and($this->entityManager()->getRepository(ConstructorCodedBadge::class)->findAll())->sequence(fn ($badge) => $badge->toBeRecord(code: 'moon', label: 'Stored'));
+    });
+
+    it("shows a refusal that names no field in the form's record errors", function (): void {
+        $this->seed(new CappedHeadline('old', 'Old', CreateAssignedSlugHeadline::SLUG));
+
+        expect($this->visit('/create-shapes/assigned-slug-headlines/create')->filter(ActionsSelectors::RECORD_ERRORS))->toHaveCount(0);
+
+        $tester = $this->createLiveComponent(CreateAssignedSlugHeadline::class, ['panelId' => 'create-shapes'])
+            ->fillForm(['code' => 'new', 'title' => 'News'])
+            ->call('create')
+            ->assertNoRedirect();
+
+        expect($tester->render()->crawler()->filter(Selectors::FORM . ' ' . ActionsSelectors::RECORD_ERROR)->each(static fn (Crawler $error): string => $error->text()))->toBe(['This value is already used.'])
+            ->and($this->entityManager()->getRepository(CappedHeadline::class)->count())->toBe(1);
     });
 
     it('redirects to the key the new row reads back, not the spelling typed', function (): void {

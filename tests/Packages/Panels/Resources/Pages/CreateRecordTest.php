@@ -255,7 +255,7 @@ describe('the record it builds', function (): void {
             ->call('create')
             ->assertRedirect('/create-shapes/second-manager-spines');
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . VolumeSpine::class . ' by the reader rebound to the second manager'])
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['key check on a ' . VolumeSpine::class . ' by the reader rebound to the second manager', 'blank-key read on a ' . VolumeSpine::class . ' by the reader rebound to the second manager'])
             ->and($this->entityManager()->getRepository(VolumeSpine::class)->findAll())->sequence(fn ($spine) => $spine->toBeRecord(code: 'moon', label: 'Moon'));
     });
 });

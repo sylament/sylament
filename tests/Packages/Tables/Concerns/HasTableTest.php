@@ -71,6 +71,22 @@ describe('records', function (): void {
             ->and($this->statementsRun())->toHaveCount(3);
     });
 
+    it('reads an aggregate column only while its cells render, none while only the groups of a grouping show', function (array $props, ?string $count, int $batches): void {
+        $cellar = new Larder('Cellar');
+        $cellar->addJar(new LarderJar('Apricot'));
+        $cellar->addJar(new LarderJar('Bramble'));
+        $this->seed($cellar);
+
+        $crawler = $this->createLiveComponent(JarredLarderTable::class, $props)->render()->crawler();
+        $cell = $crawler->filter(Selectors::cell((string) $cellar->id, 'jars_count'));
+
+        expect($cell->count() === 0 ? null : $cell->text())->toBe($count)
+            ->and(array_filter($this->statementsRun(), static fn (string $statement): bool => str_contains($statement, 'GROUP BY')))->toHaveCount($batches);
+    })->with([
+        'grouped, only the groups showing' => [['groupsOnly' => true, 'tableGrouping' => 'name'], null, 0],
+        'groups only, nothing grouped' => [['groupsOnly' => true], '2', 1],
+    ]);
+
     it('renders a pagination footer exactly when its records are a page', function (array $products, string $host, array $props, ?string $overview): void {
         $this->seed(...$products);
 

@@ -16,7 +16,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * Larders by name with the count of their jars, the larder's query fetch-joining the jars
- * when `fetchesJars` is set.
+ * when `fetchesJars` is set; with `groupsOnly` they are groupable by name, and only the
+ * groups show once a user groups them.
  */
 #[AsLiveComponent(name: 'Tables:JarredLarderTable', template: '@Fixtures/tables/table.html.twig')]
 class JarredLarderTable implements InteractsWithTable
@@ -26,6 +27,9 @@ class JarredLarderTable implements InteractsWithTable
 
     #[LiveProp]
     public bool $fetchesJars = false;
+
+    #[LiveProp]
+    public bool $groupsOnly = false;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -40,12 +44,18 @@ class JarredLarderTable implements InteractsWithTable
             $query->addSelect('jar')->leftJoin('larder.jars', 'jar');
         }
 
-        return $table
+        $table
             ->query($query)
             ->columns([
                 TextColumn::make('name'),
                 TextColumn::make('jars_count')->counts('jars'),
             ])
             ->defaultSort('name');
+
+        if ($this->groupsOnly) {
+            $table->groups(['name'])->groupsOnly();
+        }
+
+        return $table;
     }
 }

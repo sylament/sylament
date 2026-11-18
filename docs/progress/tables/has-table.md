@@ -337,7 +337,7 @@ Its one caller here is `HasBulkActions::getAllSelectableTableRecordsCount()`, wh
 ### Eager loading runs over the visible columns, on the page clone alone
 
 Eager loading is a loop over [`$table->getVisibleColumns()`](table.md#the-visible-set-asks-each-column-twice-and-is-memoised-until-columns-is-called-again), calling [`applyEagerLoading()`](interacts-with-table-query.md#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) on each, after `getFilteredSortedTableQuery()` returns and before the query is paginated.
-Filament loops over the same visible set, and skips the loop under `groupsOnly()` as the port does ([grouping.md](grouping.md#the-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not)), so a to-one column the developer hid or the user toggled off costs no `LEFT JOIN` in either, and the [global search loop](can-sort-records.md#sorting-and-global-search-both-skip-a-hidden-column) skips a hidden column the same way.
+Filament loops over the same visible set, and skips the loop under `groupsOnly()` as the port does ([grouping.md](grouping.md#three-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not)), so a to-one column the developer hid or the user toggled off costs no `LEFT JOIN` in either, and the [global search loop](can-sort-records.md#sorting-and-global-search-both-skip-a-hidden-column) skips a hidden column the same way.
 
 The delta is the clone.
 Filament's loop lives inside `filterTableQuery()`, so its eager loads land on the filtered query the count path also reads; ours run one step later, so they reach the page query and nothing else.
@@ -345,5 +345,5 @@ The count clone stays join-free, counting what the search matched, and record re
 A test pins both halves by asserting the standalone count and the record resolution each issue exactly one statement with no `LEFT JOIN`.
 
 The aggregate store is filled by `fillTableAggregateValues()`, called from `keyTableRecords()`, the funnel every arm passes through, because the batch needs the page's keys and those exist only once the records are keyed.
-It is a no-op off the query lane, for a page with no keys, and under `groupsOnly()`, where Filament fires its aggregate selects regardless.
+It is a no-op off the query lane, for a page with no keys, and under `groupsOnly()` while a grouping is in force, where Filament fires its aggregate selects regardless.
 Filament also applies its aggregates on record resolution, and the port does not, because a resolved record feeds a row-scoped action, not a rendered cell, and the store is keyed per column for cells; a consumer that reads aggregates off a resolved record, such as an export, would reverse it.

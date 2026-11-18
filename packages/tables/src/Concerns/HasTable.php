@@ -406,9 +406,9 @@ trait HasTable
      * the page query stays a plain entity read. A no-op off the query lane,
      * where there is no entity manager to batch against, and asked before the
      * declared query is reached at all, since a records closure wins over one
-     * that must then stay unevaluated. A no-op under `groupsOnly()` too, where
-     * the cells these values fill never render — a divergence, since Filament
-     * fires its own aggregate selects there regardless.
+     * that must then stay unevaluated. A no-op under `groupsOnly()` too while a
+     * grouping is in force, where the cells these values fill never render — a
+     * divergence, since Filament fires its own aggregate selects there regardless.
      *
      * @param list<string> $keys
      */
@@ -423,7 +423,7 @@ trait HasTable
         $entityManager = $table->getQueryEntityManager();
         $recordClass = $table->getRecordClass();
 
-        if ($entityManager === null || $recordClass === null || $keys === [] || $table->isGroupsOnly()) {
+        if ($entityManager === null || $recordClass === null || $keys === [] || ($table->isGroupsOnly() && $table->getGrouping() !== null)) {
             return;
         }
 

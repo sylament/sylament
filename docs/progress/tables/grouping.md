@@ -54,7 +54,7 @@ Read the **import**, never the bare `use`.
 | [`defaultGroup()` / `getDefaultGroup()` / `isDefaultGroupSelectable()`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) | [`Table\Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | done | — | [semantics](#a-selectable-default-is-seeded-into-the-property-and-a-non-selectable-one-is-resolved-on-every-read) |
 | `defaultGroup()`'s `$direction` + `getDefaultGroupDirection()` | [`Table\Concerns\CanGroupRecords::getDefaultGroupDirection()`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | todo | — | [detail](#a-default-group-has-no-declared-direction) |
 | `persistGroupInSession()` / `persistsGroupInSession()` + `getTableGroupingSessionKey()` and the session arms of the write and the mount | [`Table\Concerns\CanGroupRecords::persistGroupInSession()`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`Concerns\CanGroupRecords::getTableGroupingSessionKey()`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) | todo | — | [detail](#a-grouping-persists-in-no-session) |
-| [`getGrouping()` / `groupsOnly()` / `isGroupsOnly()`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) | [`Table\Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | done | — | [semantics](#the-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not) |
+| [`getGrouping()` / `groupsOnly()` / `isGroupsOnly()`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) | [`Table\Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | done | — | [semantics](#three-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not) |
 | [`groupingSettingsInDropdownOnDesktop()` / `groupingSettingsHidden()` / `groupingDirectionSettingHidden()` / `collapsedGroupsByDefault()` and their four getters](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) | [`Table\Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | done | — | — |
 | `groupsInDropdownOnDesktop()` | [`Table\Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | skipped | — | [deprecated for `groupingSettingsInDropdownOnDesktop()`](../renames.md#a-deprecated-filament-member-is-not-ported) |
 | [`groupRecordsTriggerAction()` / `getGroupRecordsTriggerAction()` + `resolveGroupingIcon()` and `ACTIONS_GROUP`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) | [`Table\Concerns\CanGroupRecords::getGroupRecordsTriggerAction()`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | done | — | [diverges](#the-trigger-drops-vendors-force-enabled-stamp) · [tables-bundle.md](tables-bundle.md#an-alias-lands-with-the-component-that-reads-it) |
@@ -172,9 +172,9 @@ The direction `<label>` is server-rendered `hidden` while `getTableGroupingColum
 The two differ in exactly one configuration, and it is the one a [non-selectable default](#a-selectable-default-is-seeded-into-the-property-and-a-non-selectable-one-is-resolved-on-every-read) creates: the table is grouped, the group select shows `-` because the group in force is not one it offers, and the direction field stays hidden.
 Reading the resolved group there would show a direction select whose change is inert, because the group select would still send `""`.
 
-### The PHP gates of `groupsOnly()` are unconditional where the template's are not
+### Three PHP gates of `groupsOnly()` are unconditional where the template's are not
 
-`Table::isGroupsOnly()` is read four times on the PHP side (the sort returns untouched, the eager-load loop is skipped, the aggregate batch early-returns and `isPaginated()` answers false) and none of those asks whether a grouping resolved.
+`Table::isGroupsOnly()` is read four times on the PHP side (the sort returns untouched, the eager-load loop is skipped, the aggregate batch early-returns and `isPaginated()` answers false), and only the aggregate batch asks whether a grouping resolved, because the record rows it fills render while nothing is grouped.
 The template's `isGroupsOnly` does: `component.isGroupsOnly and group is not null`, so the mode is inert in the markup until something is grouped.
 A table that calls `groupsOnly()` and has no grouping in force therefore renders its record rows **and** loses its pagination footer.
 Both halves are vendor-faithful (`Table\Concerns\CanPaginateRecords` against `index.blade.php`), the asymmetry is vendor's own, and it is only reachable by declaring `groupsOnly()` with nothing to group by.
@@ -185,7 +185,7 @@ That is parity: a groups-only table exists to show figures per group.
 ### `groupsOnly()` hydrates every record to find its groups
 
 Under `groupsOnly()` the port renders one summary row per group and no record rows, and it finds the groups by loading the records and walking their boundaries, as Filament does.
-The page is unpaginated (the [four PHP gates](#the-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not) see to that), so a groups-only table over ten thousand rows hydrates ten thousand records whose only product is one boundary and one summary query per group.
+The page is unpaginated (the [`isPaginated()` gate](#three-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not) sees to that), so a groups-only table over ten thousand rows hydrates ten thousand records whose only product is one boundary and one summary query per group.
 
 ### A `records()` table groups in PHP and is re-ordered by nobody
 
@@ -281,7 +281,7 @@ Both lanes here ask `Group::getStringKey()`, so the checkbox and the heading abo
 
 ### The aggregate batch is skipped under `groupsOnly()` where Filament still fires it
 
-`fillTableAggregateValues()` early-returns under `groupsOnly()`, because no record row renders and nothing reads a per-record aggregate.
+`fillTableAggregateValues()` early-returns under `groupsOnly()` while a grouping is in force, because no record row renders then and nothing reads a per-record aggregate; with nothing grouped the record rows render, and the batch fills their cells.
 Filament fires its aggregate selects regardless, for cells it will not draw.
 The port's batch is keyed by the page's record keys, and under `groupsOnly()` the page is the whole table, so the skip is worth more here than the same skip would be upstream.
 

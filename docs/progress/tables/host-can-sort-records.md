@@ -35,7 +35,7 @@ A **composite** identifier is tiebroken by all of its fields rather than by one.
 It no-ops when the builder names no root entity to read metadata from, the one case with no key to tiebreak by.
 
 Two early returns come first, in Filament's order.
-`isGroupsOnly()` skips sorting entirely — every ordering, the tiebreaker included ([grouping.md](grouping.md#the-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not)).
+`isGroupsOnly()` skips sorting entirely — every ordering, the tiebreaker included ([grouping.md](grouping.md#three-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not)).
 `isTableReordering()` replaces every ordering with the reorder column, resolved through [`ColumnPathResolver::resolveOrderable()`](../../../packages/tables/src/Query/ColumnPathResolver.php) rather than appended raw the way Filament's `orderBy($column)` is, because DQL needs the alias a bare property name does not carry.
 On the records lane none of this runs at all: the `sortColumn` / `sortDirection` injections are the whole application there, and the userland closure orders its own data.
 

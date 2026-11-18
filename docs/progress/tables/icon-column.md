@@ -25,7 +25,7 @@ Everything [`Column`](column.md) carries, from the name and the state read to th
 | [The boolean defaults — the two icon aliases and `success` / `danger`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`IconColumn::getTrueIcon()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [semantics](#the-alias-is-resolved-in-php-and-only-the-icons-have-one) |
 | [`getIcon()` / `getColor()` — the base getters with the boolean arm under them](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::getIcon()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [semantics](#a-null-state-is-not-false) |
 | [`icon()` / `icons()` / `color()` / `colors()` — the per-state maps and the state contracts](../../../packages/tables/src/Columns/Concerns/HasIcon.php) | [`Concerns\HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php) | done | — | [text-column.md](text-column.md#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [diverges](text-column.md#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
-| [`size()` / `getSize()`](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::size()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [semantics](#base-is-a-size-that-means-no-size-and-the-default-is-large) |
+| [`size()` / `getSize()`](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::size()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [semantics](#base-is-a-size-that-means-no-size-and-the-default-is-large) · [diverges](#a-size-string-that-names-no-iconsize-case-draws-a-medium-icon) |
 | [`listWithLineBreaks()` / `isListWithLineBreaks()`](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::listWithLineBreaks()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | — |
 | [`getStateItems()` — the cell's icon list](../../../packages/tables/src/Columns/IconColumn.php) | — (Sylament-only) | done | — | [semantics](#an-item-whose-icon-resolves-blank-contributes-nothing-its-name-included) |
@@ -109,3 +109,9 @@ Filament resolves the `dark:text` slot against `$gray[800]`; this one resolves i
 It is the identical correction [`TextColumnComponent\ItemComponent`](text-column.md#the-item-policy-measures-the-dark-surface-against-gray-900) makes, with the same reasoning: measuring against a surface the toolkit never paints understates the contrast of every dark cell.
 
 Both slots resolve at `Color::WCAG_AA_NON_TEXT` (3.0), which is Filament's choice and the right one: an icon is a non-text element, and it is the only content the cell has.
+
+### A size string that names no `IconSize` case draws a medium icon
+
+`getSize()` answers a string `IconSize::tryFrom()` cannot read, such as `'huge'`, as the string itself, as Filament's does, and the partial hands it to support's `generateIconHtml()`, which reads a size string it has no case for as `IconSize::Medium`.
+Filament's `generate_icon_html()` takes `?IconSize`, so the same string there is a `TypeError` that fails the cell.
+Support's renderer has no custom size class to emit, so it draws the icon at a size its stylesheet has a step for.

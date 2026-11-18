@@ -58,6 +58,19 @@ describe('reading the selection', function (): void {
             ->and(preg_grep('/\bIN\b/', $this->statementsRun()))->toHaveCount(1);
     });
 
+    it('hands a bulk action on a sorted table the selection as a query it can turn into a delete, which removes the selected rows alone', function (): void {
+        $this->seed($chair = new Product('Chair'), $lamp = new Product('Lamp'), $vase = new Product('Vase'));
+
+        $this->createLiveComponent(ConfiguredSelectionProductTable::class)
+            ->sortTable('name', 'desc')
+            ->selectTableRecords([$lamp, $vase])
+            ->callAction(TestAction::make('purge')->table()->bulk())
+            ->assertCanSeeTableRecords([$chair])
+            ->assertCanNotSeeTableRecords([$lamp, $vase]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['purge deleted 2']);
+    });
+
     it("resolves a records() table's selection off its rows, so a key they lack reads as nothing while the banner still shows it, and a tracked one as every row but the deselected", function (): void {
         $tester = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['records' => true])->selectTableRecords(['attic']);
 

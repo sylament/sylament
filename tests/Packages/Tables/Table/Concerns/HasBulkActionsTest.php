@@ -119,7 +119,7 @@ describe('selection settings', function (): void {
 
         $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['grouped' => true])->render()->crawler();
 
-        expect($crawler)->toContainButtons(Selectors::TOOLBAR_ACTIONS . ' ' . ActionsSelectors::BULK_ONLY . ' button', ['ellipsis-vertical-20-solidBulk actions', 'Archive', 'Archive by key', 'Recount'])
+        expect($crawler)->toContainButtons(Selectors::TOOLBAR_ACTIONS . ' ' . ActionsSelectors::BULK_ONLY . ' button', ['ellipsis-vertical-20-solidBulk actions', 'Archive', 'Archive by key', 'Recount', 'Purge'])
             ->and($crawler->filter(Selectors::TOOLBAR_ACTIONS . ' ' . SupportSelectors::DROPDOWN))->toHaveCount(1)
             ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(1);
     });
@@ -129,7 +129,7 @@ describe('selection settings', function (): void {
 
         $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['deprecated' => true])->render()->crawler();
 
-        expect($crawler)->toContainButtons(Selectors::TOOLBAR_ACTIONS . ' button', ['Archive', 'Archive by key', 'Recount'])
+        expect($crawler)->toContainButtons(Selectors::TOOLBAR_ACTIONS . ' button', ['Archive', 'Archive by key', 'Recount', 'Purge'])
             ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(1);
     });
 });

@@ -35,7 +35,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `pushBulkActions()`), `defersLoading`, `keepsSelectionWhenFiltered`, `simplePagination`
  * and `records` (six array rows instead of the products). Its bulk actions record what they
  * read in the {@see HookLog}, sorted: `archive` the selected records, `archiveByKey` their keys and
- * `recount` how many it reads before and after clearing the selection itself.
+ * `recount` how many it reads before and after clearing the selection itself; `purge` deletes the
+ * selection through its query, reading keys rather than records, and records how many rows that removed.
  */
 #[AsLiveComponent(name: 'Tables:ConfiguredSelectionProductTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class ConfiguredSelectionProductTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
@@ -173,6 +174,11 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
                 $this->deselectAllTableRecords();
 
                 $this->hookLog->record(sprintf('recount read %d, then %d', $before, count($this->getSelectedTableRecords())));
+            }),
+            BulkAction::make('purge')->fetchSelectedRecords(false)->action(function (BulkAction $action): void {
+                $deleted = $action->getSelectedRecordsQuery()->delete()->getQuery()->execute();
+
+                $this->hookLog->record('purge deleted ' . (is_int($deleted) ? $deleted : get_debug_type($deleted)));
             }),
         ];
     }

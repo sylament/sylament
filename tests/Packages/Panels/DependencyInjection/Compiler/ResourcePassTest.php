@@ -7,7 +7,6 @@ use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\BareResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Routing\RouterInterface;
 
 it('collects every concrete resource tagged as one into the registry, by class', function (): void {
     $container = new ContainerBuilder();
@@ -36,10 +35,6 @@ it('leaves a container with no registry as it found it', function (): void {
     expect(array_keys($container->getDefinitions()))->toBe($definitions);
 });
 
-it("resolves a resource no panel lists, while each panel's own list decides what it mounts", function (): void {
-    $routes = $this::getContainer()->get(RouterInterface::class)->getRouteCollection();
-
-    expect($this::getContainer()->get(ResourceRegistry::class)->has(BareResource::class))->toBeTrue()
-        ->and($routes->get('sylament.resource-routes.resources.scoped-articles.index')?->getPath())->toBe('/resource-routes/scoped-articles')
-        ->and($routes->get('sylament.admin.resources.scoped-articles.index'))->toBeNull();
+it('resolves a resource no panel lists', function (): void {
+    expect($this::getContainer()->get(ResourceRegistry::class)->has(BareResource::class))->toBeTrue();
 });

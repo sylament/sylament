@@ -13,7 +13,7 @@ use Sylament\Tests\Fixtures\Panels\Pages\SluggedSettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\OrderLineResource;
 
-it('accumulates pages and resources across calls, mounting a repeated entry once', function (): void {
+it('accumulates pages and resources across calls, mounting a repeated entry once and no registered resource it does not list', function (): void {
     $routes = new PanelRouteLoader(new PanelRegistry([new class extends PanelProvider {
         public function panel(Panel $panel): Panel
         {
@@ -29,5 +29,6 @@ it('accumulates pages and resources across calls, mounting a repeated entry once
         ->and($routes->get('sylament.panel-components.pages.dashboard')?->getPath())->toBe('/panel-components')
         ->and($routes->get('sylament.panel-components.pages.sign-in')?->getPath())->toBe('/panel-components/sign-in')
         ->and($routes->get('sylament.panel-components.resources.articles.index')?->getPath())->toBe('/panel-components/articles')
-        ->and($routes->get('sylament.panel-components.resources.order-lines.index')?->getPath())->toBe('/panel-components/order-lines');
+        ->and($routes->get('sylament.panel-components.resources.order-lines.index')?->getPath())->toBe('/panel-components/order-lines')
+        ->and($routes->get('sylament.panel-components.resources.scoped-articles.index'))->toBeNull();
 });

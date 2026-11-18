@@ -70,7 +70,7 @@ class PairedFieldJarFilterTable implements InteractsWithSchemas, InteractsWithTa
 
                         return $query;
                     }),
-                ShelvedJarFilter::make(),
+                SealedJarFilter::make(),
             ]);
     }
 }

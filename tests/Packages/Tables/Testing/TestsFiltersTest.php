@@ -10,7 +10,7 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Tables\FilterableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\PairedFieldJarFilterTable;
-use Sylament\Tests\Fixtures\Tables\ShelvedJarFilter;
+use Sylament\Tests\Fixtures\Tables\SealedJarFilter;
 
 it('turns on a ternary filter given only its name', function (): void {
     $this->seed($open = new LarderJar('Open'), new LarderJar('Plum', sealedOn: new DateTimeImmutable('2026-01-01')));
@@ -128,13 +128,13 @@ it("resets only the field of a filter's schema it is given, keeping the other fi
 });
 
 it('names a filter given as its class by the default name the class gives it', function (): void {
-    $this->seed($floor = new LarderJar('Plum'), $shelf = new LarderJar('Fig', position: 2));
+    $this->seed($open = new LarderJar('Plum'), $sealed = new LarderJar('Fig', seal: JarSeal::Wax));
 
     $this->createLiveComponent(PairedFieldJarFilterTable::class)
-        ->assertTableFilterExists(ShelvedJarFilter::class)
-        ->filterTable(ShelvedJarFilter::class)
-        ->assertCanSeeTableRecords([$shelf])
-        ->assertCanNotSeeTableRecords([$floor])
-        ->removeTableFilter(ShelvedJarFilter::class)
-        ->assertCanSeeTableRecords([$floor, $shelf]);
+        ->assertTableFilterExists(SealedJarFilter::class)
+        ->filterTable(SealedJarFilter::class)
+        ->assertCanSeeTableRecords([$sealed])
+        ->assertCanNotSeeTableRecords([$open])
+        ->removeTableFilter(SealedJarFilter::class)
+        ->assertCanSeeTableRecords([$open, $sealed]);
 });

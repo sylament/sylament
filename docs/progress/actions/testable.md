@@ -24,7 +24,7 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 | [`setRouteLocale()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) |
 | [`assertRedirect()` / `assertNoRedirect()`](../../../packages/actions/src/Testing/Testable.php) | — (Livewire's `TestsRedirects`) | done | — | [semantics](#a-redirect-is-a-3xx-response-and-its-location-is-compared-as-a-full-url) · [diverges](#assertnoredirect-names-the-location-it-failed-on) |
 | [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
-| [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
+| [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) · [diverges](#the-tester-mounts-its-component-outside-any-request) |
 | [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), a public `kernel.exception` listener | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
 | [`getRespondingComponent()`](../../../packages/actions/src/Testing/Testable.php), the host that answered the last request | — (Livewire's `Testable::instance()`) | done | — | [semantics](#the-error-assertions-read-the-component-that-answered-the-last-request) |
 
@@ -77,6 +77,13 @@ Each takes the list before it names `TestsNotifications`, because PHP resolves a
 The suite's one kernel has both the package and its bundle, so neither refusal runs there; the guard's condition is pinned by use instead, since a renamed recorder or matcher dead-ends every `assertNotified()`, which every toast the suite asserts then fails.
 
 ## Divergences
+
+### The tester mounts its component outside any request
+
+Filament's `Livewire::test()` mounts the component during a GET it sends to a route it registers, so a mount that reads the session reaches the test's session store.
+UX's `TestLiveComponent`, which `createLiveComponent()` builds, creates the component through the `ComponentFactory` in the test process before its first request, and every later request hydrates it without mounting it again.
+A mount-time read of the session or the request therefore sees none, so a host's mount through the tester never restores what an earlier request remembered, such as tables' [remembered state](../tables/can-persist-table-state.md#the-session-read-is-a-post-mount-hook-and-its-priority-is-the-precedence-rule), and a second tester on the same client reads nothing either.
+A test reads what a host's mount takes from the session by opening a page that renders the host with a GET on the tester's own client, which carries the session cookie the tester's requests left.
 
 ### `assertNoRedirect()` names the location it failed on
 

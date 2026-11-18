@@ -386,8 +386,7 @@ A schema built with `new` holds the manager-less fallback and so guards nothing,
 
 The blast radius is worth stating because it is wider than it looks.
 `BelongsToRecord` sits on the base `Component`, so **every** schemas component — and every component of every package built on schemas — consumes the reader service.
-The service's `EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason: the schemas bundle boots inside forms', actions' and tables' test kernels, none of which registers Doctrine, and the setter has to autowire cleanly there.
-A container-compile failure in one of those suites is the signal that the nullability wiring broke.
+The service's `EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason: in a container with no entity manager the argument resolves to `null` rather than failing the compile, so every component's setter still autowires, and the reader it receives answers `hasEntityManager()` false.
 
 ### `orphanRemoval` is a plain bool on the ORM 3 mapping object
 

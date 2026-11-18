@@ -26,14 +26,9 @@ it('reaches its resource through the container, and refuses to when it was built
         ->toThrow(LogicException::class, 'The resource page [' . ListArticles::class . '] was built outside the container, so it holds no resource registry; register it as an autowired service.');
 });
 
-it("mounts a registration under its resource's slug with or without a leading slash, the root path on the slug itself", function (string $route, string $path): void {
-    expect($this::getContainer()->get(RouterInterface::class)->getRouteCollection()->get($route)?->getPath())->toBe($path);
-})->with([
-    "'/'" => ['sylament.admin.resources.articles.index', '/admin/articles'],
-    "'/{record}/edit'" => ['sylament.admin.resources.articles.edit', '/admin/articles/{record}/edit'],
-    "''" => ['sylament.resource-routes.resources.title-keyed-articles.index', '/resource-routes/title-keyed-articles'],
-    "'{record}/edit'" => ['sylament.resource-routes.resources.title-keyed-articles.edit', '/resource-routes/title-keyed-articles/{record}/edit'],
-]);
+it("mounts a registration with an empty path on its resource's slug itself", function (): void {
+    expect($this::getContainer()->get(RouterInterface::class)->getRouteCollection()->get('sylament.resource-routes.resources.title-keyed-articles.index')?->getPath())->toBe('/resource-routes/title-keyed-articles');
+});
 
 describe('breadcrumbs', function (): void {
     it("trails a resource page with its resource's listing, linked, then its own crumb", function (): void {

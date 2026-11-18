@@ -421,7 +421,7 @@ describe('the all-records count', function (): void {
 
 describe('the URL', function (): void {
     it('seeds the sort, the search and the page its URL names, the seeded search keeping the seeded page', function (): void {
-        $this->seed(...array_map(static fn (int $number): Product => new Product(sprintf('P%02d', $number)), range(1, 12)));
+        $this->seed(new Product('A01'), ...array_map(static fn (int $number): Product => new Product(sprintf('P%02d', $number)), range(1, 12)));
         $names = static fn (Crawler $page): array => $page->filter(Selectors::columnCells('name'))->each(static fn (Crawler $cell): string => $cell->text());
 
         $bound = $this->visit(TablePageController::url('Tables:RememberingProductTable') . '?search=P&sort=name:desc&shelfPage=2');
@@ -429,7 +429,7 @@ describe('the URL', function (): void {
 
         expect($names($bound))->toBe(['P02', 'P01'])
             ->and($names($unbound))->toHaveCount(10)
-            ->and($names($unbound)[0])->toBe('P01');
+            ->and($names($unbound)[0])->toBe('A01');
     });
 
     it("prefixes only the page parameter, by its host's identifier and never its table's", function (): void {

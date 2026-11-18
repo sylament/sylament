@@ -79,7 +79,7 @@ it('lets the URL win over what the table remembers, and fills from it only what 
 });
 
 it('forgets a remembered sort once a URL names a sort the table does not offer', function (): void {
-    $this->seed(new Product('Lamp'), new Product('Desk'));
+    $this->seed(new Product('Desk'), new Product('Lamp'));
     $client = $this::getContainer()->get('test.client');
     $url = TablePageController::url('Tables:RememberingProductTable');
 

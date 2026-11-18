@@ -65,9 +65,11 @@ describe('its swatches', function (): void {
         $linked = $this->renderViewComponent(ColorColumn::make('paint')->record(['paint' => ['#fff', 'teal']])
             ->tooltip(fn (string $state): Markup => new Markup("<b>Paint</b> {$state}", 'UTF-8'))
             ->url(fn (string $state): string => '/paints/' . mb_ltrim($state, '#'), shouldOpenInNewTab: true));
+        $sameTab = $this->renderViewComponent(ColorColumn::make('paint')->record(['paint' => ['#fff', 'teal']])->url(fn (string $state): string => '/paints/' . mb_ltrim($state, '#')));
         $unlinked = $this->renderViewComponent(ColorColumn::make('paint')->record(['paint' => ['#fff', 'teal']])->url('/paints'));
 
-        expect($linked->filter('a[target="_blank"]')->each(static fn (Crawler $link): array => [$link->attr('href'), $link->filter('.sy-ta-color-item')->attr('title')]))
+        expect($sameTab->filter('a:not([target])'))->toHaveCount(2)
+            ->and($linked->filter('a[target="_blank"]')->each(static fn (Crawler $link): array => [$link->attr('href'), $link->filter('.sy-ta-color-item')->attr('title')]))
             ->toBe([['/paints/fff', 'Paint #fff'], ['/paints/teal', 'Paint teal']])
             ->and($unlinked->filter('.sy-ta-color-item'))->toHaveCount(2)
             ->and($unlinked->filter('a'))->toHaveCount(0);

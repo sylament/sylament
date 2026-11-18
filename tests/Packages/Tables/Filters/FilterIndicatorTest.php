@@ -18,5 +18,5 @@ it("removes a chip's filter through the live action its control sends, naming no
 
     $tester->removeTableFilter('waxed');
 
-    expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->not->toContain('Wax only');
+    expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->toBe(['Worded chip', 'Built chip', 'First chip', 'Second chip']);
 });

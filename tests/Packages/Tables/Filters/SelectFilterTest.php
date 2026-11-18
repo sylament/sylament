@@ -109,7 +109,8 @@ describe('the state', function (): void {
     it('counts the filter active while it holds a value, whether its options list it or not', function (): void {
         $tester = $this->createLiveComponent(FilterableLarderJarTable::class)->filterTable('seals', ['wax']);
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::FILTERS_TRIGGER_BADGE, '1');
+        expect($tester->render()->crawler())->toContainElement(Selectors::FILTERS_TRIGGER_BADGE, '1')
+            ->and($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR)->count())->toBe(1);
 
         $tester->filterTable('seals', [])->filterTable('seal', 'cork');
 

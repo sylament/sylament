@@ -18,19 +18,22 @@ describe('the trigger', function (): void {
             ->and($crawler)->toContainElement(SupportSelectors::DROPDOWN_PANEL . ' ' . Selectors::COLUMN_MANAGER);
     });
 
-    it('shows the trigger and its toolbar exactly while a visible column can be toggled or the columns reordered, unless the table turns it off, which still hides the columns hidden by default', function (array $variants, int $triggers, array $headers): void {
+    it('shows the trigger and its toolbar exactly while a visible column can be toggled or the columns reordered, unless the table turns it off, which still hides the columns hidden by default', function (array $variants, int $triggers, int $dialogs, array $headers): void {
         $this->seed(new Product('Lamp'));
 
         $crawler = $this->createLiveComponent(ColumnManagerProductTable::class, ['variants' => $variants])->render()->crawler();
 
         expect($crawler->filter(Selectors::COLUMN_MANAGER_TRIGGER))->toHaveCount($triggers)
             ->and($crawler->filter(Selectors::TOOLBAR))->toHaveCount($triggers)
+            ->and($crawler->filter(Selectors::COLUMN_MANAGER_MODAL))->toHaveCount($dialogs)
             ->and($crawler->filter(Selectors::HEADER_CELLS)->each(static fn (Crawler $cell): string => $cell->text()))->toBe($headers);
     })->with([
-        'toggleable columns' => [[], 1, ['ID', 'Name']],
-        'reorderable columns' => [['plain', 'reorderable'], 1, ['ID', 'Name', 'Code']],
-        'only a toggleable column the developer hid' => [['plain', 'hiddenToggleable'], 0, ['ID', 'Name', 'Code']],
-        'the manager turned off over toggleable columns' => [['managerOff'], 0, ['ID', 'Name']],
+        'toggleable columns' => [[], 1, 0, ['ID', 'Name']],
+        'toggleable columns in a dialog' => [['modal'], 1, 1, ['ID', 'Name']],
+        'reorderable columns' => [['plain', 'reorderable'], 1, 0, ['ID', 'Name', 'Code']],
+        'only a toggleable column the developer hid' => [['plain', 'hiddenToggleable'], 0, 0, ['ID', 'Name', 'Code']],
+        'the manager turned off over toggleable columns' => [['managerOff'], 0, 0, ['ID', 'Name']],
+        'the manager turned off in a dialog' => [['modal', 'managerOff'], 0, 0, ['ID', 'Name']],
     ]);
 
     it('rebuilds the trigger and the apply button through closures handed each action, keeping the modal command over the trigger attributes of its own', function (): void {

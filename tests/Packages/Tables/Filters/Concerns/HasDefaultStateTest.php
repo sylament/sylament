@@ -21,4 +21,8 @@ it('fills its field from its default and filters by it from the first render', f
     expect($tester->render()->crawler())
         ->toContainElement(Selectors::filterField('sealed', 'isActive') . '[checked]')
         ->toContainElement(Selectors::filterField('seal', 'value') . ' option[value="wax"][selected]');
+
+    $this->createLiveComponent(DefaultedJarFilterTable::class, ['chosenSeal' => false])
+        ->assertCanSeeTableRecords([$kept, $screwed])
+        ->assertCanNotSeeTableRecords([$unsealed]);
 });

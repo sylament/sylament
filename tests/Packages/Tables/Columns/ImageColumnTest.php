@@ -157,9 +157,11 @@ describe('its images', function (): void {
         $linked = $this->renderViewComponent(ImageColumn::make('photo')->record(['photo' => $photos])
             ->tooltip(fn (string $state): Markup => new Markup('<b>Photo</b> ' . basename($state, '.png'), 'UTF-8'))
             ->url(fn (string $state): string => '/photos/' . basename($state, '.png'), shouldOpenInNewTab: true));
+        $sameTab = $this->renderViewComponent(ImageColumn::make('photo')->record(['photo' => $photos])->url(fn (string $state): string => '/photos/' . basename($state, '.png')));
         $unlinked = $this->renderViewComponent(ImageColumn::make('photo')->record(['photo' => $photos])->url('/photos'));
 
-        expect($linked->filter('a[target="_blank"]')->each(static fn (Crawler $link): array => [$link->attr('href'), $link->filter('img')->attr('title')]))
+        expect($sameTab->filter('a:not([target])'))->toHaveCount(2)
+            ->and($linked->filter('a[target="_blank"]')->each(static fn (Crawler $link): array => [$link->attr('href'), $link->filter('img')->attr('title')]))
             ->toBe([['/photos/oak', 'Photo oak'], ['/photos/ash', 'Photo ash']])
             ->and($unlinked->filter('img'))->toHaveCount(2)
             ->and($unlinked->filter('a'))->toHaveCount(0);

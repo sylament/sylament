@@ -10,7 +10,7 @@ use Sylament\Tests\Fixtures\Tables\Selectors;
 it('renders a deferred table first as a loading status that reads no record, and a table that does not defer with its rows at once', function (): void {
     $this->seed(...array_map(static fn (int $number): LarderJar => new LarderJar(sprintf('Jar %02d', $number)), range(1, 11)));
 
-    $deferred = $this->createLiveComponent(PagedLarderJarTable::class, ['variants' => ['deferred', 'actions']])->render()->crawler();
+    $deferred = $this->createLiveComponent(PagedLarderJarTable::class, ['variants' => ['deferred', 'actions', 'summarized']])->render()->crawler();
     $deferredStatements = $this->statementsRun();
     $eager = $this->createLiveComponent(PagedLarderJarTable::class, ['variants' => ['actions']])->render()->crawler();
 

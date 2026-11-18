@@ -200,8 +200,16 @@ describe('dates', function (): void {
 
         expect($text($instant, TextColumn::make('openedAt')->time('H:i', timezone: 'Asia/Tokyo')))->toBe('23:30')
             ->and($text($instant, TextColumn::make('openedAt')->timezone('America/New_York')->time('H:i')))->toBe('09:30')
-            ->and($text($instant, TextColumn::make('openedAt')->timezone('America/New_York')->time('H:i', timezone: 'Asia/Tokyo')))->toBe('23:30')
-            ->and($text('2024-03-05 14:30:00', TextColumn::make('openedAt')->time('H:i')))->toBe('14:30');
+            ->and($text($instant, TextColumn::make('openedAt')->timezone('America/New_York')->time('H:i', timezone: 'Asia/Tokyo')))->toBe('23:30');
+
+        $processZone = date_default_timezone_get();
+        date_default_timezone_set('Asia/Tokyo');
+
+        try {
+            expect($text($instant, TextColumn::make('openedAt')->time('H:i')))->toBe('23:30');
+        } finally {
+            date_default_timezone_set($processZone);
+        }
     });
 
     it('refuses a state that is no date, timestamp or string, naming the column', function (): void {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
@@ -15,9 +16,9 @@ use Symfony\Component\DomCrawler\Crawler;
 
 it('sorts by a sortable column and by one the user toggled off, never by a hidden, unsortable or undeclared one', function (): void {
     $this->seed(
-        $cherry = new LarderJar('Cherry', sealedOn: new DateTimeImmutable('2024-03-01'), position: 2),
-        $apple = new LarderJar('Apple', position: 3),
-        $banana = new LarderJar('Banana', sealedOn: new DateTimeImmutable('2024-01-01'), position: 1),
+        $cherry = new LarderJar('Cherry', sealedOn: new DateTimeImmutable('2024-03-01'), seal: JarSeal::Wax, position: 2),
+        $apple = new LarderJar('Apple', seal: JarSeal::Screw, position: 3),
+        $banana = new LarderJar('Banana', sealedOn: new DateTimeImmutable('2024-01-01'), seal: JarSeal::Wax, position: 1),
     );
 
     $tester = $this->createLiveComponent(SortableLarderJarTable::class)

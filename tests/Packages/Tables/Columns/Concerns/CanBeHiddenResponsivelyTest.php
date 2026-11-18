@@ -13,6 +13,8 @@ it('hides a column from a breakpoint up, or shows it only from one, on its heade
         ->and($crawler->filter(Selectors::cell('lamp', 'note'))->matches(Selectors::hiddenFrom('md')))->toBeTrue()
         ->and($crawler->filter(Selectors::headerCell('summary'))->matches(Selectors::visibleFrom('lg')))->toBeTrue()
         ->and($crawler->filter(Selectors::cell('lamp', 'summary'))->matches(Selectors::visibleFrom('lg')))->toBeTrue()
+        ->and($crawler->filter(Selectors::headerCell('name')))->toHaveCount(1)
         ->and($crawler->filter(Selectors::headerCell('name'))->matches(Selectors::RESPONSIVE))->toBeFalse()
+        ->and($crawler->filter(Selectors::cell('lamp', 'name')))->toHaveCount(1)
         ->and($crawler->filter(Selectors::cell('lamp', 'name'))->matches(Selectors::RESPONSIVE))->toBeFalse();
 });

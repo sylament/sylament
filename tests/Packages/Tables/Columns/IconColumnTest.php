@@ -133,9 +133,11 @@ describe('its icons', function (): void {
         $linked = $this->renderViewComponent(IconColumn::make('trees')->record(['trees' => ['oak', 'ash']])->icon('support:star')
             ->tooltip(fn (string $state): Markup => new Markup("<b>About</b> {$state}", 'UTF-8'))
             ->url(fn (string $state): string => "/trees/{$state}", shouldOpenInNewTab: true));
+        $sameTab = $this->renderViewComponent(IconColumn::make('trees')->record(['trees' => ['oak', 'ash']])->icon('support:star')->url(fn (string $state): string => "/trees/{$state}"));
         $unlinked = $this->renderViewComponent(IconColumn::make('trees')->record(['trees' => ['oak', 'ash']])->icon('support:star')->url('/trees'));
 
-        expect($linked->filter('a[target="_blank"]')->each(static fn (Crawler $link): array => [$link->attr('href'), $link->filter('svg')->attr('title'), $link->filter('.sy-ta-sr-only')->text()]))
+        expect($sameTab->filter('a:not([target])'))->toHaveCount(2)
+            ->and($linked->filter('a[target="_blank"]')->each(static fn (Crawler $link): array => [$link->attr('href'), $link->filter('svg')->attr('title'), $link->filter('.sy-ta-sr-only')->text()]))
             ->toBe([['/trees/oak', 'About oak', 'About oak'], ['/trees/ash', 'About ash', 'About ash']])
             ->and($unlinked->filter('svg'))->toHaveCount(2)
             ->and($unlinked->filter('a'))->toHaveCount(0);

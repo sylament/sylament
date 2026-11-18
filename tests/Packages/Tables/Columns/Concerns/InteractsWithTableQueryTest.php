@@ -101,10 +101,11 @@ describe('applySort()', function (): void {
             ->and($query->getDQLPart('orderBy'))->toBe([]);
     });
 
-    it('orders an aggregate column by its aggregate, and by the columns it names once it names any', function (): void {
+    it('orders an aggregate column by its aggregate, an existence check by the raw count it tests, and by the columns it names once it names any', function (): void {
         $zulu = new Atelier('Zulu');
+        $mike = new Atelier('Mike');
         $alpha = new Atelier('Alpha');
-        $this->seed($zulu, $alpha, new AtelierEasel($alpha, 1), new AtelierEasel($alpha, 2));
+        $this->seed($zulu, $mike, $alpha, new AtelierEasel($mike, 1), new AtelierEasel($alpha, 1), new AtelierEasel($alpha, 2));
 
         $sorted = function (TextColumn $column): array {
             $query = $this->entityManager()->createQueryBuilder()->select('atelier')->from(Atelier::class, 'atelier');
@@ -113,8 +114,9 @@ describe('applySort()', function (): void {
             return array_map(static fn (Atelier $atelier): string => $atelier->name, $query->getQuery()->getResult());
         };
 
-        expect($sorted(TextColumn::make('easels_count')->counts('easels')->sortable()))->toBe(['Alpha', 'Zulu'])
-            ->and($sorted(TextColumn::make('easels_count')->counts('easels')->sortable(['name'])))->toBe(['Zulu', 'Alpha']);
+        expect($sorted(TextColumn::make('easels_count')->counts('easels')->sortable()))->toBe(['Alpha', 'Mike', 'Zulu'])
+            ->and($sorted(TextColumn::make('easels_exists')->exists('easels')->sortable()))->toBe(['Alpha', 'Mike', 'Zulu'])
+            ->and($sorted(TextColumn::make('easels_count')->counts('easels')->sortable(['name'])))->toBe(['Zulu', 'Mike', 'Alpha']);
     });
 });
 

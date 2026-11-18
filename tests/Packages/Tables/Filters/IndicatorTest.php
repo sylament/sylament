@@ -49,5 +49,5 @@ it("names the field it removes on its chip's remove control", function (): void 
 
     $tester->removeTableFilter('fielded', 'isActive');
 
-    expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->not->toContain('Field chip');
+    expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->toBe(['Worded chip', 'Built chip', 'First chip', 'Second chip']);
 });

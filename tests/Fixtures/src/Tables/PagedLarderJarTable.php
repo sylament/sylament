@@ -9,6 +9,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
+use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
@@ -27,8 +28,9 @@ use Symfony\UX\LiveComponent\Metadata\UrlMapping;
  * configures one more setting: `unpaginated`, `shortcut` (`paginated([5, 10])` after
  * `paginated(false)`), `extremeLinks`, `modeByClosure` (the mode handed over in a closure),
  * `whileReordering` (`paginatedWhileReordering()`), `deferred` (`deferLoading()`),
- * `pollByDefault` (`poll()` with no interval) and `actions` (an `open` record action and
- * an `archive` bulk action, so its rows carry actions and can be selected).
+ * `pollByDefault` (`poll()` with no interval), `actions` (an `open` record action and
+ * an `archive` bulk action, so its rows carry actions and can be selected) and `summarized`
+ * (a count under the labels).
  */
 #[AsLiveComponent(name: 'Tables:PagedLarderJarTable', template: '@Fixtures/tables/table.html.twig')]
 class PagedLarderJarTable implements InteractsWithActions, InteractsWithTable
@@ -68,7 +70,7 @@ class PagedLarderJarTable implements InteractsWithActions, InteractsWithTable
         $table
             ->query($this->entityManager->createQueryBuilder()->select('jar')->from(LarderJar::class, 'jar'))
             ->columns([
-                TextColumn::make('label'),
+                TextColumn::make('label')->summarize($this->has('summarized') ? [Count::make()] : []),
             ])
             ->defaultSort('label')
             ->reorderable('position')

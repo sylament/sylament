@@ -36,6 +36,7 @@ describe('the query lane', function (): void {
         expect($names($narrowed))->toBe(['Lamp'])
             ->and($names($table->getQuery() ?? throw new LogicException('The table has no query.')))->toBe(['Desk', 'Lamp'])
             ->and($table->getQueryEntityManager())->toBe($this->entityManager())
+            ->and($table->getRecordClass())->toBe(Product::class)
             ->and($runs)->toBe(1);
     });
 

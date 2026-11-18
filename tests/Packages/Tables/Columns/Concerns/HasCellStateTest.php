@@ -48,7 +48,7 @@ describe('on array rows', function (): void {
             ->and($note('pot'))->toBe('');
     });
 
-    it('splits a string state on its separator before the default, so a blank string reaches a default that runs once per row', function (): void {
+    it('splits a string state on its separator before the default, so a blank string reaches a default that runs once per row, and an empty separator splits nothing', function (): void {
         $crawler = $this->createLiveComponent(ColumnStateTable::class)->render()->crawler();
         $hooks = $this::getContainer()->get(HookLog::class)->hooks;
         $tags = static fn (string $key): Crawler => $crawler->filter(Selectors::cell($key, 'tags'));
@@ -56,6 +56,7 @@ describe('on array rows', function (): void {
         expect($tags('7')->filter('li')->each(static fn (Crawler $item): string => $item->text()))->toBe(['oak', 'ash'])
             ->and($tags('vase')->text())->toBe('none')
             ->and($tags('jug')->text())->toBe('none')
+            ->and($crawler->filter(Selectors::cell('7', 'unsplit'))->text())->toBe('oak,ash')
             ->and(array_values(array_filter($hooks, static fn (string $hook): bool => str_starts_with($hook, 'default '))))
             ->toBe(['default Vase', 'default Jug', 'default Cup', 'default Mug', 'default Pot']);
     });

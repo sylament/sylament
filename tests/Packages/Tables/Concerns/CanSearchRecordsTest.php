@@ -18,7 +18,7 @@ describe('the global term', function (): void {
         $this->seed($redLamp = new Larder('Red Lamp'), $redChair = new Larder('Red Chair'), $blueLamp = new Larder('Blue Lamp'));
         $wire = static fn (Testable $tester): mixed => json_decode($tester->render()->crawler()->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['tableSearch'];
 
-        $tester = $this->createLiveComponent(SearchableLarderTable::class)
+        $tester = $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['wholeTerm']])
             ->searchTable(' Red ')
             ->assertCanSeeTableRecords([$redChair, $redLamp])
             ->assertCanNotSeeTableRecords([$blueLamp]);

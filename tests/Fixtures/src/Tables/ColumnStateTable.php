@@ -17,7 +17,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A table of array rows, one keyed by a numeric string, whose cells read their state from the
  * row, from a literal or from a closure: blank, zero and false values meet a default, a string
- * meets a separator, a closure takes the column's injections and the row loop, and the closures
+ * meets a separator (an empty one splitting nothing), a closure takes the column's injections and the row loop, and the closures
  * that count record each evaluation in the `HookLog`.
  */
 #[AsLiveComponent(name: 'Tables:ColumnStateTable', template: '@Fixtures/tables/table.html.twig')]
@@ -35,7 +35,7 @@ class ColumnStateTable implements InteractsWithTable
     {
         return $table
             ->records(fn (): array => [
-                ['__key' => '7', 'name' => 'Lamp', 'shelf' => ['row' => 'Top'], 'note' => null, 'tags' => 'oak,ash'],
+                ['__key' => '7', 'name' => 'Lamp', 'shelf' => ['row' => 'Top'], 'note' => null, 'tags' => 'oak,ash', 'unsplit' => 'oak,ash'],
                 ['__key' => 'vase', 'name' => 'Vase', 'shelf' => [], 'note' => '', 'tags' => ''],
                 ['__key' => 'jug', 'name' => 'Jug', 'note' => '   ', 'tags' => '   '],
                 ['__key' => 'cup', 'name' => 'Cup', 'note' => 0],
@@ -53,6 +53,9 @@ class ColumnStateTable implements InteractsWithTable
                     ->separator()
                     ->listWithLineBreaks()
                     ->default($this->countDefault(...)),
+                TextColumn::make('unsplit')
+                    ->separator('')
+                    ->listWithLineBreaks(),
                 TextColumn::make('injected')
                     ->getStateUsing($this->describeInjections(...))
                     ->extraCellAttributes(fn (string $state): array => ['data-state' => $state]),

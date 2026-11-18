@@ -343,4 +343,50 @@ final class Selectors
 
         return $field === null ? $selector : $selector . "[data-live-field-param=\"{$field}\"]";
     }
+
+    /**
+     * The dialog of the modal column manager layout.
+     */
+    public const string COLUMN_MANAGER_MODAL = 'dialog[id$=".table.column-manager"]';
+
+    /**
+     * The label of a column manager item, the column's label; its class is its one hook.
+     */
+    public const string COLUMN_MANAGER_ITEM_LABEL = '.sy-ta-col-manager-item-label';
+
+    /**
+     * A column manager item's checkbox, the column manager controller's target.
+     */
+    public const string COLUMN_MANAGER_CHECKBOX = 'input[type="checkbox"][data-sylament--tables--column-manager-target="checkbox"]';
+
+    /**
+     * The button applying the column manager's draft.
+     */
+    public const string COLUMN_MANAGER_APPLY = 'button[data-live-action-param="applyTableColumnManager"]';
+
+    /**
+     * The control resetting the column manager to the declared columns.
+     */
+    public const string COLUMN_MANAGER_RESET = '[data-live-action-param="resetTableColumnManager"]';
+
+    /**
+     * The footer of the column manager's dropdown panel, holding its apply button and a footer reset; its class is its one hook.
+     */
+    public const string COLUMN_MANAGER_PANEL_FOOTER = '.sy-ta-col-manager-actions-ctn';
+
+    /**
+     * A column manager item's checkbox, by the column's name.
+     */
+    public static function columnManagerCheckbox(string $column): string
+    {
+        return self::COLUMN_MANAGER_CHECKBOX . "[value=\"{$column}\"]";
+    }
+
+    /**
+     * A column manager item's drag handle, by the column's name, while the columns are reorderable.
+     */
+    public static function columnManagerReorderHandle(string $column): string
+    {
+        return "button[data-sortable-handle][aria-label=\"Reorder {$column}\"]";
+    }
 }

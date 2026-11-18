@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Tests\Infrastructure\Concerns;
 
 use LogicException;
+use ReflectionProperty;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Components\ViewComponent;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpKernel\HttpKernelBrowser;
 use Twig\Environment;
 
 trait InteractsWithRendering
@@ -54,17 +56,32 @@ trait InteractsWithRendering
      * markup. The kernel catches no exception, so one the request throws reaches the
      * test, never an error page; a redirect is not followed, and its `Location` is named
      * instead.
+     *
+     * A given client opens the page with the session and cookies its earlier requests
+     * left, and catches exceptions afterwards as it did before.
      */
-    protected function visit(string $uri): Crawler
+    protected function visit(string $uri, ?KernelBrowser $client = null): Crawler
     {
-        $client = static::getContainer()->get('test.client');
+        $client ??= static::getContainer()->get('test.client');
 
         if (!$client instanceof KernelBrowser) {
             throw new LogicException('The kernel has no [test.client]: turn framework.test on.');
         }
 
+        $catchesExceptions = new ReflectionProperty(HttpKernelBrowser::class, 'catchExceptions')->getValue($client);
+
+        if (!is_bool($catchesExceptions)) {
+            throw new LogicException('The client keeps no [catchExceptions] flag to restore.');
+        }
+
         $client->catchExceptions(false);
-        $crawler = $client->request('GET', $uri);
+
+        try {
+            $crawler = $client->request('GET', $uri);
+        } finally {
+            $client->catchExceptions($catchesExceptions);
+        }
+
         $response = $client->getResponse();
 
         if ($response->isSuccessful()) {

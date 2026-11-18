@@ -161,6 +161,12 @@ final class Selectors
      */
     public const string SUB_NAVIGATION_MENU = '.sy-pa-sub-navigation-dropdown';
 
+    /**
+     * The label of a labelled navigation group (`SidebarGroup`), in the sidebar or a band: a disclosure button on a collapsible
+     * group, a plain element on a static one; its class is its one hook.
+     */
+    public const string NAVIGATION_GROUP_LABEL = '.sy-pa-sidebar-group-btn';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

@@ -24,7 +24,7 @@ final class BandedPlainPage extends Page
 
     protected static string|BackedEnum|null $navigationIcon = 'support:star';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationBadge(): string
     {

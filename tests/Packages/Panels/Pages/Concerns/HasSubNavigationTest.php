@@ -29,7 +29,7 @@ it('folds its band into groups, the ungrouped items first under no label and the
     ]);
 
     expect($groups)->toBe([
-        [null, ['Overview', 'Pinned', 'Drafts']],
+        [null, ['Pinned', 'Drafts', 'Overview']],
         ['Archive', ['Older', 'Old']],
         ['Reports', ['Quarterly', 'Monthly']],
     ]);

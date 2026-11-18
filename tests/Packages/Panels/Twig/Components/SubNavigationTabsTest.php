@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Navigation\NavigationGroup;
+use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -30,4 +32,12 @@ it("marks the tab of the page shown as the current page, and no other", function
     $tabs = $this->visit("/navigation-band/top-banded-articles/{$article->id}/edit")->filter(Selectors::SUB_NAVIGATION_TABS . ' a')->each(fn (Crawler $tab): array => [$tab->text(), $tab->attr('aria-current')]);
 
     expect($tabs)->toBe([['Edit Top Banded Article', 'page'], ['Notes', null]]);
+});
+
+it("leaves a group's tab plain while it holds no page shown", function (): void {
+    $navigation = [NavigationGroup::make('Reports')->items([NavigationItem::make('Monthly')->url('/monthly')])];
+
+    $trigger = $this->renderTwigComponent('SylamentPanels:SubNavigationTabs', ['navigation' => $navigation])->crawler()->filter(SupportSelectors::DROPDOWN_TRIGGER . ' button');
+
+    expect([$trigger->text(), $trigger->attr('aria-current')])->toBe(['Reports', null]);
 });

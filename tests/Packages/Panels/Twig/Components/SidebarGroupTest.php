@@ -21,7 +21,7 @@ describe('label', function (): void {
 
     it("renders a static group's label as a plain labelled element, with no disclosure to operate", function (): void {
         $page = $this->visit('/shell/shelf');
-        $label = $page->filter(Selectors::navigationGroup('Help') . ' .sy-pa-sidebar-group-btn');
+        $label = $page->filter(Selectors::navigationGroup('Help') . ' ' . Selectors::NAVIGATION_GROUP_LABEL);
 
         expect($label->nodeName())->toBe('div')
             ->and($label->text())->toBe('Help')
@@ -41,7 +41,7 @@ describe('label', function (): void {
         $group = $this->visit('/shell/shelf')->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP . ':not([data-group-label])');
 
         expect($group->filter(Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text()))->toBe(['Slugged Settings Page', 'Inbox'])
-            ->and($group->filter('.sy-pa-sidebar-group-btn')->count())->toBe(0);
+            ->and($group->filter(Selectors::NAVIGATION_GROUP_LABEL)->count())->toBe(0);
     });
 });
 

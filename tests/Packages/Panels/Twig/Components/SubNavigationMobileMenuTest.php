@@ -18,9 +18,9 @@ it('lists every band item in one menu under the label of the page shown, with no
             $item->attr('target'),
             $item->attr('aria-current'),
         ]))->toBe([
-            ['Overview', '/navigation-band/banded', null, 'page'],
             ['Pinned', '/pinned', null, null],
             ['Drafts', '/drafts', '_blank', null],
+            ['Overview', '/navigation-band/banded', null, 'page'],
             ['Older', '/older', null, null],
             ['Old', '/old', null, null],
             ['Quarterly', '/navigation-band/top-banded', null, null],

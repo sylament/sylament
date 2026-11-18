@@ -107,8 +107,8 @@ describe('the grouping settings', function (): void {
         'modified' => [['relabelledTrigger'], 'Regroup'],
     ]);
 
-    it('selects the group and the direction in force in both copies, hiding the direction while no group is chosen', function (?string $grouping, string $group, string $direction): void {
-        $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler();
+    it('selects the group and the direction the user chose in both copies, hiding the direction while the user has chosen no group, under a default they cannot select too', function (array $props, string $group, string $direction): void {
+        $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, $props)->render()->crawler();
         $selected = static fn (string $select): array => $crawler->filter("{$select} option[selected]")->each(static fn (Crawler $option): ?string => $option->attr('value'));
 
         expect($selected(Selectors::GROUP_BY_SELECT))->toBe([$group, $group])
@@ -116,9 +116,10 @@ describe('the grouping settings', function (): void {
             ->and($crawler->filter('label[data-sylament--tables--table-target="groupDirectionField"]'))->toHaveCount(2)
             ->and($crawler->filter('label[data-sylament--tables--table-target="groupDirectionField"][hidden]'))->toHaveCount($group === '' ? 2 : 0);
     })->with([
-        'descending' => ['label:desc', 'label', 'desc'],
-        'a bare group' => ['label', 'label', 'asc'],
-        'no group' => [null, '', 'asc'],
+        'descending' => [['tableGrouping' => 'label:desc'], 'label', 'desc'],
+        'a bare group' => [['tableGrouping' => 'label'], 'label', 'asc'],
+        'no group' => [['tableGrouping' => null], '', 'asc'],
+        'a default the user cannot select' => [['variants' => ['defaultPosition']], '', 'asc'],
     ]);
 
     it('paints the groups of a collapsible grouping collapsed by default, every row but the header row', function (string $grouping, int $groups, bool $collapsed): void {

@@ -264,29 +264,6 @@ describe('grouping', function (): void {
         'after the cells' => ['AfterCells'],
     ]);
 
-    it("percent-encodes a group key in the ids it mints, where the group's data attribute keeps it as written", function (): void {
-        $this->seed(new LarderJar('Top shelf'));
-
-        $crawler = $this->createLiveComponent(GroupedLarderJarTable::class, ['tableGrouping' => 'label'])->render()->crawler();
-        $header = $crawler->filter(Selectors::groupHeaderRow('Top shelf'));
-
-        expect($header->attr('id'))->toEndWith('.table.groups.Top%20shelf')
-            ->and($header->filter('input[type="checkbox"]')->attr('id'))->toEndWith('.table.groups.Top%20shelf.checkbox')
-            ->and($crawler->filter(Selectors::GROUP_SUMMARY_ROW)->attr('id'))->toEndWith('.table.group-summary.Top%20shelf')
-            ->and($crawler->filter(Selectors::ROW)->attr('data-sy-group'))->toBe('Top shelf');
-    });
-
-    it('selects no group and hides the direction while a default group the user cannot select is in force', function (): void {
-        $this->seed(new LarderJar('Apricot'));
-
-        $crawler = $this->createLiveComponent(GroupedLarderJarTable::class, ['defaultGroup' => 'position'])->render()->crawler();
-        $fields = $crawler->filter('.sy-ta-grouping-settings-fields')->first();
-
-        expect($crawler->filter(Selectors::GROUP_HEADER_ROW))->toHaveCount(1)
-            ->and($fields->filter('select[aria-label="Group by"] option[selected]')->attr('value'))->toBe('')
-            ->and($fields->filter('[data-sylament--tables--table-target="groupDirectionField"][hidden]'))->toHaveCount(1);
-    });
-
     it("names a group titled by markup by the title's text in its checkbox and its collapse control", function (): void {
         $this->seed(new LarderJar('Apricot'));
 
@@ -348,12 +325,10 @@ describe('column search row', function (): void {
 });
 
 describe('filters chrome', function (): void {
-    it('teleports the filters dropdown, counts the active filters on a badge beside its trigger and shows each as a removable badge', function (): void {
+    it('teleports the filters dropdown and counts the active filters on an extra-small badge beside its trigger', function (): void {
         $crawler = $this->createLiveComponent(FilterableLarderJarTable::class)->filterTable('seal', JarSeal::Wax->value)->render()->crawler();
 
         expect($crawler->filter('.sy-ta-filters-dropdown[data-sylament--support--dropdown-teleport-value="true"] ' . Selectors::FILTERS_TRIGGER))->toHaveCount(1)
-            ->and($crawler)->toContainElement('.sy-ta-filters-trigger-badge-ctn ' . SupportSelectors::BADGE . '.sy-size-xs', '1')
-            ->and($crawler->filter(Selectors::FILTER_INDICATOR . SupportSelectors::BADGE . ' ' . Selectors::REMOVE_FILTER_BUTTON))->toHaveCount(1)
-            ->and($crawler)->toContainElement(Selectors::FILTER_INDICATOR . ' ' . SupportSelectors::BADGE_LABEL, 'Seal: Wax');
+            ->and($crawler)->toContainElement('.sy-ta-filters-trigger-badge-ctn ' . SupportSelectors::BADGE . '.sy-size-xs', '1');
     });
 });

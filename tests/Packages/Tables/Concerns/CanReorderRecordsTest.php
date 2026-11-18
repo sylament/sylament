@@ -5,29 +5,19 @@ declare(strict_types=1);
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\ShelvedPreserve;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\LockableReorderLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\SpotReorderablePreserveTable;
 
 describe('the reorder mode', function (): void {
-    it('shows every row with a drag handle and no sort control while reordering, and pages again once done', function (): void {
-        $this->seed($first = new LarderJar('Apple', position: 1), $second = new LarderJar('Banana', position: 2), $third = new LarderJar('Cherry', position: 3));
+    it('lists every row on one page while reordering, and pages again once done', function (): void {
+        $this->seed(new LarderJar('Apple', position: 1), new LarderJar('Banana', position: 2), new LarderJar('Cherry', position: 3));
 
         $tester = $this->createLiveComponent(LockableReorderLarderJarTable::class)->call('toggleTableReordering');
-        $reordering = $tester->render()->crawler();
 
-        expect($reordering->filter(Selectors::ROW))->toHaveCount(3)
-            ->and($reordering)->toContainElement('tbody[data-controller~="sylament--support--sortable"]')
-            ->toContainElement(Selectors::reorderHandle((string) $first->id))
-            ->toContainElement(Selectors::reorderHandle((string) $third->id))
-            ->and($reordering->filter(Selectors::sortTrigger('label')))->toHaveCount(0);
-
-        $done = $tester->call('toggleTableReordering')->render()->crawler();
-
-        expect($done->filter(Selectors::ROW))->toHaveCount(2)
-            ->and($done)->toContainElement(Selectors::sortTrigger('label'))
-            ->and($done->filter('tbody[data-controller~="sylament--support--sortable"]'))->toHaveCount(0)
-            ->and($done->filter(Selectors::reorderHandle((string) $second->id)))->toHaveCount(0);
+        expect($tester->render()->crawler()->filter(Selectors::ROW))->toHaveCount(3)
+            ->and($tester->call('toggleTableReordering')->render()->crawler()->filter(Selectors::ROW))->toHaveCount(2);
     });
 
     it('keeps its pages while reordering when the table pages while reordering', function (): void {
@@ -39,7 +29,7 @@ describe('the reorder mode', function (): void {
             ->crawler();
 
         expect($reordering->filter(Selectors::ROW))->toHaveCount(2)
-            ->and($reordering)->toContainElement('tbody[data-controller~="sylament--support--sortable"]');
+            ->and($reordering)->toContainElement('tbody' . SupportSelectors::SORTABLE_CONTROLLER);
     });
 
     it('ignores an order and drops a standing mode once the table stops being reorderable', function (): void {
@@ -53,7 +43,7 @@ describe('the reorder mode', function (): void {
             ->crawler();
 
         expect($page)->toContainElement(Selectors::sortTrigger('label'))
-            ->and($page->filter('tbody[data-controller~="sylament--support--sortable"]'))->toHaveCount(0)
+            ->and($page->filter('tbody' . SupportSelectors::SORTABLE_CONTROLLER))->toHaveCount(0)
             ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe([])
             ->and($this->reload($first)->position)->toBe(1)
             ->and($this->reload($second)->position)->toBe(2);

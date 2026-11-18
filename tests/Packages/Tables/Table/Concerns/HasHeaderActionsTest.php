@@ -8,6 +8,7 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\ActionSetsProductTable;
 use Sylament\Tests\Fixtures\Tables\AlignedColumnsTable;
+use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 
 it('renders its visible actions in the header band of a table with no heading, replacing the set an earlier call named and the checkboxes its bulk action turned on', function (): void {
@@ -38,12 +39,13 @@ it('refuses a member that is neither an action nor a group', function (): void {
         ->toThrow(InvalidArgumentException::class, 'Table header actions must be an instance of [Sylament\Actions\Action] or [Sylament\Actions\ActionGroup], got [string].');
 });
 
-it('marks the header band for the adaptive actions position by default, and not once its actions sit at the bottom', function (string $setup, int $adaptive): void {
-    $crawler = $this->createLiveComponent(ActionSetsProductTable::class, ['setup' => $setup])->render()->crawler();
+it('marks the header band for the adaptive actions position while it holds header actions in their default place, and not without any or once they sit at the bottom', function (string $host, array $props, int $adaptive): void {
+    $crawler = $this->createLiveComponent($host, $props)->render()->crawler();
 
     expect($crawler->filter(Selectors::HEADER))->toHaveCount(1)
         ->and($crawler->filter(Selectors::HEADER . '.sy-ta-header-adaptive-actions-position'))->toHaveCount($adaptive);
 })->with([
-    'by default' => ['headerReplaced', 1],
-    'at the bottom' => ['headerBottom', 0],
+    'by default' => [ActionSetsProductTable::class, ['setup' => 'headerReplaced'], 1],
+    'a heading and no actions' => [HeadedLarderJarTable::class, ['creates' => false], 0],
+    'at the bottom' => [ActionSetsProductTable::class, ['setup' => 'headerBottom'], 0],
 ]);

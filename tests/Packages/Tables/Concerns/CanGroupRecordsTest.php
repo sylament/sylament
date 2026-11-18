@@ -182,16 +182,19 @@ describe('the group header rows', function (): void {
             ->and($crawler->filter(Selectors::ROW)->each(static fn (Crawler $row): ?string => $row->attr('data-sy-group')))->toBe(['North', 'North', 'South']);
     });
 
-    it('keeps the ids of two keys apart where they differ only by a space, encoding a slash and a colon too', function (): void {
+    it("keeps the ids of two keys apart where they differ only by a space, encoding a slash and a colon too, in the header row, its checkbox and the group's summary row, where the data attributes keep the key as written", function (): void {
         $this->seed(new LarderJar('Zero 7'), new LarderJar('Zero  7'), new LarderJar('A/B:C'));
 
-        $headers = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => 'label'])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
+        $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['selectable', 'summarized'], 'tableGrouping' => 'label'])->render()->crawler();
+        $suffix = static fn (?string $id): string => (string) mb_strstr((string) $id, '.');
 
-        expect($headers->each(static fn (Crawler $row): array => [$row->attr('data-sy-group'), mb_strstr((string) $row->attr('id'), '.')]))->toEqualCanonicalizing([
-            ['Zero 7', '.table.groups.Zero%207'],
-            ['Zero  7', '.table.groups.Zero%20%207'],
-            ['A/B:C', '.table.groups.A%2FB%3AC'],
-        ]);
+        expect($crawler->filter(Selectors::GROUP_HEADER_ROW)->each(static fn (Crawler $row): array => [$row->attr('data-sy-group'), $suffix($row->attr('id')), $suffix($row->filter('input[type="checkbox"]')->attr('id'))]))->toEqualCanonicalizing([
+            ['Zero 7', '.table.groups.Zero%207', '.table.groups.Zero%207.checkbox'],
+            ['Zero  7', '.table.groups.Zero%20%207', '.table.groups.Zero%20%207.checkbox'],
+            ['A/B:C', '.table.groups.A%2FB%3AC', '.table.groups.A%2FB%3AC.checkbox'],
+        ])
+            ->and($crawler->filter(Selectors::GROUP_SUMMARY_ROW)->each(static fn (Crawler $row): string => $suffix($row->attr('id'))))->toEqualCanonicalizing(['.table.group-summary.Zero%207', '.table.group-summary.Zero%20%207', '.table.group-summary.A%2FB%3AC'])
+            ->and($crawler->filter(Selectors::ROW)->each(static fn (Crawler $row): ?string => $row->attr('data-sy-group')))->toEqualCanonicalizing(['Zero 7', 'Zero  7', 'A/B:C']);
     });
 
     it('restarts the stripe at the first record of every group', function (?string $grouping, array $striped): void {

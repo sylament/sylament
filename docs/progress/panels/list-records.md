@@ -74,7 +74,8 @@ The template is a `partials/` file, not a `components/` one: it is rendered from
 A resource that registers only an `index` page still gets every prebuilt record action — that *is* what Filament calls a simple resource, the absence of registered pages rather than a feature.
 The URL hook answers null, the action mounts, and the schema inside the modal comes from `getDefaultActionSchemaResolver(Action)`: a `CreateAction` or `EditAction` takes `$this->form(...)`, a `ViewAction` `$this->infolist($this->form($schema))`, each over the seeded schema untouched ([the column count](#a-modals-schema-keeps-the-resource-forms-own-column-count)).
 `form(Schema)` and `infolist(Schema)` are public delegations to the resource that exist **for that resolver** and are deliberately not added to `schemas()`, which stays `[]`: that list is the de/hydration walk, and a modal's schema is built per mount by [the actions host](../actions/has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation), never persisted with the page.
-`getMountedActionSchemaRecord()` answers the resource's record **class**, which is what a page showing no single record can seed a mounted schema with — the row actions get their record from the table frame instead.
+A header action's modal is seeded with the resource's record class by the resource-page base's `getDefaultActionRecordClass()`, and a row action's with the row from the table frame, so no frame a list page builds asks `getMountedActionSchemaRecord()`.
+The override answers the resource's record **class**, as Filament's `getMountedActionSchemaModel()` answers its model, for the one frame [the seed chain](create-record.md#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) hands it: an action a schema component owns that carries neither a record nor a class, which no list page's schema holds.
 
 ### A list page has no Create button until it declares one
 

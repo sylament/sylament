@@ -10,8 +10,10 @@ use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Resources\Resource;
+use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Filters\SelectFilter;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
@@ -27,6 +29,8 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditPreserveJar;
 final class PreserveJarResource extends Resource
 {
     public const string UNEDITABLE_LABEL = 'Quince';
+
+    public const string VIEW_NOTE = 'Kept sealed until opened';
 
     protected static ?string $recordClass = LarderJar::class;
 
@@ -47,11 +51,22 @@ final class PreserveJarResource extends Resource
         ]);
     }
 
+    public function infolist(Schema $schema): Schema
+    {
+        return $schema->components([
+            ...$schema->getComponents(),
+            Text::make(self::VIEW_NOTE),
+        ]);
+    }
+
     public function table(Table $table): Table
     {
         return $table
             ->columns([
                 TextColumn::make('label')->sortable()->searchable(),
+            ])
+            ->filters([
+                SelectFilter::make('seal')->options(['wax' => 'Wax', 'screw' => 'Screw']),
             ])
             ->groups([Group::make('seal')])
             ->recordActions([

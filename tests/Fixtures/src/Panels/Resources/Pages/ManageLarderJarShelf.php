@@ -19,7 +19,7 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
  * A larder's jars with no resource speaking for them: the page names its own title, relationship
- * title, navigation label and icon, its own form, and its own table, two jars a page under a
+ * title and navigation icon, its own form, and its own table, two jars a page under a
  * query-string identifier the table names, with row actions to view (never the Apricot jar) and
  * edit; its header creates a jar.
  */
@@ -35,8 +35,6 @@ final class ManageLarderJarShelf extends ManageRelatedRecords
     protected static ?string $relationshipTitle = 'Jar shelf';
 
     protected static ?string $title = 'Pantry shelf';
-
-    protected static ?string $navigationLabel = 'Shelf';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicons:check-circle';
 

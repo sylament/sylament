@@ -55,11 +55,11 @@ it('heads the page "Manage <owner> <relationship title>", titles its document so
     'a breadcrumb' => ['bins', 'Manage Pantry Bins', 'Manage Larder Bins', 'Every bin'],
 ]);
 
-it("lists itself in its record's band under the association's name with the stack icon, never the related resource's, active on its own URL, unless it names its own label and icon", function (): void {
+it("lists itself in its record's band under the association's name with the stack icon, never the related resource's icon or its own relationship title, active on its own URL, unless it names its own label or icon", function (): void {
     $page = $this->visit("/related/stocked-larders/{$this->pantry->id}/jars");
     $items = $page->filter(Selectors::SUB_NAVIGATION . ' a');
 
-    expect($items->each(static fn (Crawler $item): string => $item->filter(Selectors::NAVIGATION_ITEM_LABEL)->text()))->toBe(['Jars', 'Shelf', 'Bins'])
+    expect($items->each(static fn (Crawler $item): string => $item->filter(Selectors::NAVIGATION_ITEM_LABEL)->text()))->toBe(['Jars', 'Jars', 'Bin store'])
         ->and($items->each(static fn (Crawler $item): string => $item->filter(SupportSelectors::ICON . ' title')->text()))->toBe(['rectangle-stack', 'check-circle', 'rectangle-stack'])
         ->and($page->filter(Selectors::ACTIVE_SUB_NAVIGATION_ITEM)->text())->toBe('rectangle-stack Jars')
         ->and($page->filter(Selectors::pageWithSubNavigation()))->toHaveCount(1);
@@ -75,7 +75,7 @@ it('shows its tab strip above the table on the first tab, and a page declaring n
         ->and($bins->filter(TablesSelectors::ROW))->toHaveCount(1);
 });
 
-it('opens sorted, searched and on the tab its URL names, and unsorted on a direction it does not know', function (string $query, array $labels, string $sortState): void {
+it('opens sorted, searched, filtered and on the tab its URL names, and unsorted on a direction it does not know', function (string $query, array $labels, string $sortState): void {
     $page = $this->visit("/related/stocked-larders/{$this->pantry->id}/jars?{$query}");
 
     expect(($this->labels)($page))->toBe($labels)
@@ -83,6 +83,7 @@ it('opens sorted, searched and on the tab its URL names, and unsorted on a direc
 })->with([
     'a tab and a sort' => ['tab=waxed&sort=label:desc', ['Quince', 'Apricot'], 'descending'],
     'a search' => ['search=ig', ['Fig'], 'none'],
+    'a filter' => ['filters[seal][value]=screw', ['Fig'], 'none'],
     'a direction it does not know' => ['sort=label:sideways', ['Apricot', 'Fig', 'Quince'], 'none'],
 ]);
 

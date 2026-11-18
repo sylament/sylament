@@ -11,7 +11,8 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
  * A larder's bins with no resource speaking for them and no form or table of the page's own, so
- * everything but its breadcrumb falls back to the association's name; its header creates a bin.
+ * everything but its breadcrumb and navigation label falls back to the association's name; its
+ * header creates a bin.
  */
 #[AsLiveComponent]
 final class ManageLarderBins extends ManageRelatedRecords
@@ -21,6 +22,8 @@ final class ManageLarderBins extends ManageRelatedRecords
     protected static string $relationship = 'bins';
 
     protected static ?string $breadcrumb = 'Every bin';
+
+    protected static ?string $navigationLabel = 'Bin store';
 
     public function getHeaderActions(): array
     {

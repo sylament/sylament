@@ -69,11 +69,12 @@ it('scopes the listing by the active tab', function (): void {
         ->assertCanNotSeeTableRecords([$this->fig]);
 });
 
-it("opens a row's view headed by that row's jar on the related resource's form, and a page with neither a related resource nor a form on an empty schema", function (): void {
+it("opens a row's view headed by that row's jar on the related resource's infolist over its form, and a page with neither a related resource nor a form on an empty schema", function (): void {
     $view = ($this->page)(ManageLarderJars::class)->mountAction(TestAction::make('view')->table($this->fig))->render()->crawler();
 
     expect($view)->toContainElement(SupportSelectors::MODAL_HEADING, 'View Fig')
-        ->and($view->filter(SupportSelectors::OPEN_MODAL . ' ' . FormsSelectors::INPUT)->attr('value'))->toBe('Fig');
+        ->and($view->filter(SupportSelectors::OPEN_MODAL . ' ' . FormsSelectors::INPUT)->attr('value'))->toBe('Fig')
+        ->and($view->filter(SupportSelectors::OPEN_MODAL)->text())->toContain(PreserveJarResource::VIEW_NOTE);
 
     $create = ($this->page)(ManageLarderBins::class)->mountAction('create')->assertActionMounted('create')->render()->crawler();
 

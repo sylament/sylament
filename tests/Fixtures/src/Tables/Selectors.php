@@ -115,6 +115,41 @@ final class Selectors
     public const string COLUMN_MANAGER = '[data-controller~="sylament--tables--column-manager"]';
 
     /**
+     * The root of a `TextInputColumn` cell; its class is its one hook beside the shared controller.
+     */
+    public const string TEXT_INPUT_COLUMN = '.sy-ta-text-input';
+
+    /**
+     * The root of a `SelectColumn` cell; its class is its one hook beside the shared controller.
+     */
+    public const string SELECT_COLUMN = '.sy-ta-select';
+
+    /**
+     * The root of a `CheckboxColumn` cell; its class is its one hook beside the shared controller.
+     */
+    public const string CHECKBOX_COLUMN = '.sy-ta-checkbox';
+
+    /**
+     * The root of a `ToggleColumn` cell; its class is its one hook beside the shared controller.
+     */
+    public const string TOGGLE_COLUMN = '.sy-ta-toggle';
+
+    /**
+     * An editable cell's root, by the Stimulus controller that commits its control and repaints it.
+     */
+    public const string EDITABLE_CELL = '[data-controller~="sylament--tables--editable-cell"]';
+
+    /**
+     * An editable cell's control, by the action committing it to the host on `change`.
+     */
+    public const string EDITABLE_CONTROL = '[data-action~="change->sylament--tables--editable-cell#commit"]';
+
+    /**
+     * The message a refused write paints under its cell's control; its class is its one hook.
+     */
+    public const string CELL_ERROR = '.sy-ta-cell-error';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string
@@ -184,5 +219,13 @@ final class Selectors
     public static function reorderHandle(string $key): string
     {
         return "button[data-sortable-handle][aria-label=\"Reorder item {$key}\"]";
+    }
+
+    /**
+     * An editable cell's root publishing this display state, the value its controller repaints the control from.
+     */
+    public static function editableCellState(string $state): string
+    {
+        return self::EDITABLE_CELL . "[data-sylament--tables--editable-cell-state-value=\"{$state}\"]";
     }
 }

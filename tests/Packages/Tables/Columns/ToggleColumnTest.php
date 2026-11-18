@@ -86,9 +86,9 @@ describe('colours and icons', function (): void {
     it('renders each icon in the span named for its state, and no span for an icon not given', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
         $spans = static fn (string $column): array => $crawler->filter(Selectors::cell('north', $column) . ' ' . FormsSelectors::TOGGLE_ICON_OFF . ', ' . Selectors::cell('north', $column) . ' ' . FormsSelectors::TOGGLE_ICON_ON)
-            ->each(static fn (Crawler $span): string => $span->attr('class') . ': ' . $span->filter('svg')->text());
+            ->each(static fn (Crawler $span): string => ($span->matches(FormsSelectors::TOGGLE_ICON_OFF) ? 'off' : 'on') . ': ' . $span->filter('svg')->text());
 
-        expect($spans('lit'))->toBe(['sy-fo-toggle-icon-off: Heart', 'sy-fo-toggle-icon-on: Star'])
+        expect($spans('lit'))->toBe(['off: Heart', 'on: Star'])
             ->and($spans('dim'))->toBe([]);
     });
 });

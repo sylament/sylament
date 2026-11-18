@@ -29,20 +29,13 @@ owns:
 | [`getRedirectUrl()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getRedirectUrl()` | done | — | [semantics](#the-redirect-mints-the-key-the-new-row-reads-back) |
 | `getRedirectUrlParameters()` | the same | todo | — | — |
 | [`getTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-create-and-save-notification-titles-are-literals-not-translation-keys) |
-| [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getMountedActionSchemaModel()` | in progress | — | [detail](#no-test-reaches-the-mounted-schema-record-override) · [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) |
+| [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [custom-pages.md](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
 | `getSubmitFormAction()` | the same | todo | — | — |
 | Create another — `$canCreateAnother`, `canCreateAnother()`, `disableCreateAnother()`, `createAnother()`, `preserveFormDataWhenCreatingAnother()`, `getCreateAnotherFormAction()` | the same six | todo | — | — |
 | `RecordCreated` / `RecordSaved` | the two `Event::dispatch()` calls in `create()` | todo | — | — |
 | `authorizeAccess()` / `hydrate()` | the same two | blocked | authorization | — |
 | `content()` / `getFormContentComponent()` | the same two | blocked | schemas' `Form` component | [form-actions.md](form-actions.md#the-form-element-stays-in-twig-because-the-schemas-form-component-is-unported) |
-
-## Details
-
-### No test reaches the mounted-schema record override
-
-`getMountedActionSchemaRecord()` answers the resource's record class, which is what `getDefaultActionRecordClass()` would have answered, for a frame whose action a schema component owns and whose component carries neither a record nor a record class.
-No shipped page builds such a frame, so no test calls this page's override; the hook's place at the end of the chain is pinned on a host that answers a record class for it, so a `unique()` field of an action naming no class checks against that class.
 
 ## Semantics
 
@@ -132,7 +125,8 @@ Nothing depends on the distinction.
 
 On a frame whose action belongs to no schema component, the hook is never asked: `resolveMountedActionSchemaRecord()` consults `$action->getRecordClass(withDefault: true)` first, which reaches `getDefaultActionRecordClass()`, and the resource-page base always answers the resource's record class there.
 The hook is reached only for an action a schema component owns, whose chain runs without the default (`HasActions::resolveMountedActionSchemaRecord()` sets `$withDefault` from the component) and finds neither a record nor a class on the component.
-The overrides on `ListRecords`, `EditRecord` and `CreateRecord` answer what the default would have answered, so such a frame lands on the resource's record class instead of `null`; no shipped page builds such a frame, so no test reaches them.
+The overrides on `ListRecords`, `EditRecord` and `CreateRecord` answer what the default would have answered, so such a frame lands on the resource's record class instead of `null`.
+On the create page a form-row action's modal is such a frame: the page's `formActions` schema carries no record, so the `Actions` component that owns the action has neither a record nor a class, and a `unique()` field of that modal, naming no class, checks against the resource's record class through this hook.
 
 The override is only *able* to read the mounted action because the seed's record is a closure.
 `getMountedActionSchema()` builds the schema with `->record(fn () => $this->resolveMountedActionSchemaRecord($mountedAction))` and caches it, and the closure runs when the schema is first asked for its record.

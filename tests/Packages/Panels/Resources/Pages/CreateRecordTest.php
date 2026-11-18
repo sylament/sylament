@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\Exception\EntityMissingAssignedId;
 use Sylament\Actions\Testing\Testable;
+use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Tests\Fixtures\Actions\Selectors as ActionsSelectors;
 use Sylament\Tests\Fixtures\Entity\Article;
@@ -25,6 +26,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateAssignedSlugHeadline;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateBarePottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateCaselessBollard;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateGroupedRowPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateHookedPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateLowercasedBadge;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateMonumentPlaque;
@@ -71,6 +73,20 @@ describe('the page', function (): void {
             ->and($page)->toContainButtons(Selectors::FORM_ACTIONS . ' ' . ActionsSelectors::TRIGGER, ['Create', 'Cancel'])
             ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' button[type="submit"]:not([data-action])', 'Create')
             ->and($page)->toContainElement(Selectors::FORM_ACTIONS . ' a[href="http://localhost/admin/articles"]' . SupportSelectors::GRAY, 'Cancel');
+    });
+
+    it("checks a form-row modal that names no record class against the resource's", function (): void {
+        $this->seed(new Plant('Fern'));
+
+        $repot = TestAction::make('repot')->schemaComponent('form-actions', schema: 'formActions');
+
+        $this->createLiveComponent(CreateGroupedRowPottedPlant::class, ['panelId' => 'create-shapes'])
+            ->callAction($repot, data: ['name' => 'Fern'])
+            ->assertHasActionErrors(['name'])
+            ->callAction($repot, data: ['name' => 'Ivy'])
+            ->assertHasNoActionErrors();
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['repot']);
     });
 });
 

@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use Sylament\Panels\DependencyInjection\Compiler\ResourcePass;
-use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\BareResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\Routing\RouterInterface;
 
 it('collects every concrete resource tagged as one into the registry, by class', function (): void {
     $container = new ContainerBuilder();
@@ -37,9 +37,9 @@ it('leaves a container with no registry as it found it', function (): void {
 });
 
 it("resolves a resource no panel lists, while each panel's own list decides what it mounts", function (): void {
-    $admin = $this::getContainer()->get(PanelRegistry::class)->get('admin');
+    $routes = $this::getContainer()->get(RouterInterface::class)->getRouteCollection();
 
     expect($this::getContainer()->get(ResourceRegistry::class)->has(BareResource::class))->toBeTrue()
-        ->and($admin?->getResources())->toContain(ArticleResource::class)
-        ->and($admin?->getResources())->not->toContain(BareResource::class);
+        ->and($routes->get('sylament.resource-routes.resources.scoped-articles.index')?->getPath())->toBe('/resource-routes/scoped-articles')
+        ->and($routes->get('sylament.admin.resources.scoped-articles.index'))->toBeNull();
 });

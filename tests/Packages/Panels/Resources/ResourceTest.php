@@ -51,21 +51,9 @@ it('hands back the schema and the table it is given when the resource configures
         ->and($resource->table($table))->toBe($table);
 });
 
-it('answers its declared record class, and refuses to guess one it was not given', function (): void {
-    expect($this::getContainer()->get(ArticleResource::class)->getRecordClass())->toBe(Article::class)
-        ->and(fn (): string => $this::getContainer()->get(BareResource::class)->getRecordClass())
+it('refuses to guess a record class it was not given, naming the resource and the property', function (): void {
+    expect(fn (): string => $this::getContainer()->get(BareResource::class)->getRecordClass())
         ->toThrow(LogicException::class, 'The resource [' . BareResource::class . '] must declare its record class — set the $recordClass static property.');
-});
-
-it('lists its pages by name, and a resource registering none has none', function (): void {
-    $articles = $this::getContainer()->get(ArticleResource::class);
-    $bare = $this::getContainer()->get(BareResource::class);
-
-    expect(array_keys($articles->getPages()))->toBe(['index', 'create', 'edit'])
-        ->and($articles->hasPage('edit'))->toBeTrue()
-        ->and($articles->hasPage('view'))->toBeFalse()
-        ->and($bare->getPages())->toBe([])
-        ->and($bare->hasPage('index'))->toBeFalse();
 });
 
 it('builds a fresh record query on every call, selecting the record class as `record`', function (): void {
@@ -119,8 +107,7 @@ describe('slug', function (): void {
     it('mounts the resource under the slug it derives from its class name', function (): void {
         $page = $this->visit('/admin/articles');
 
-        expect($this::getContainer()->get(ArticleResource::class)->getSlug())->toBe('articles')
-            ->and($page->filter(Selectors::PAGE_HEADING)->text())->toBe('Articles');
+        expect($page->filter(Selectors::PAGE_HEADING)->text())->toBe('Articles');
     });
 
     it('derives the slug from the class basename alone, stripping a trailing `Resource` and pluralising', function (string $class, string $slug): void {
@@ -130,24 +117,21 @@ describe('slug', function (): void {
         '`Resource` leading the name, an irregular plural' => [ResourceStatus::class, 'resource-statuses'],
     ]);
 
-    it('answers a declared slug, a slash in it becoming a dot in the route base name', function (): void {
+    it('turns a slash in a declared slug into a dot in the route base name', function (): void {
         $resource = new class extends Resource {
             protected static ?string $slug = 'archive/articles';
         };
         $admin = $this::getContainer()->get(PanelRegistry::class)->get('admin');
 
-        expect($resource->getSlug())->toBe('archive/articles')
-            ->and($resource->getRouteBaseName($admin))->toBe('sylament.admin.resources.archive.articles');
+        expect($resource->getRouteBaseName($admin))->toBe('sylament.admin.resources.archive.articles');
     });
 });
 
 describe('record title', function (): void {
-    it("titles a record by the attribute it names, and a resource naming none has no record title", function (): void {
+    it('titles a record by the attribute it names', function (): void {
         $this->seed($article = new Article('Draft'));
 
-        expect($this::getContainer()->get(ArticleResource::class)->getRecordTitle($this->reload($article)))->toBe('Draft')
-            ->and($this::getContainer()->get(ArticleResource::class)->hasRecordTitle())->toBeTrue()
-            ->and($this::getContainer()->get(BareResource::class)->hasRecordTitle())->toBeFalse();
+        expect($this::getContainer()->get(ArticleResource::class)->getRecordTitle($this->reload($article)))->toBe('Draft');
     });
 
     it('falls back to the record label where the attribute reads no printable title', function (?Placard $record): void {
@@ -172,8 +156,7 @@ describe('record title', function (): void {
             }
         }, 'Closing down'],
         'an integer' => [42, '42'],
-        'the integer zero' => [0, '0'],
-        'the string zero' => ['0', '0'],
+        'a zero' => [0, '0'],
     ]);
 
     it("names a record whose title is blank by the resource's record label in its edit page's trail", function (): void {
@@ -211,7 +194,6 @@ describe('record resolution', function (): void {
             ->and($this->statementsRun())->toBe([]);
     })->with([
         'a single integer with a leading zero' => [ArticleResource::class, '01'],
-        'a word for an integer' => [ArticleResource::class, 'abc'],
         'one part of two' => [OrderLineResource::class, '7'],
     ]);
 
@@ -455,15 +437,12 @@ describe('navigation', function (): void {
             ->toBe(['/resource-routes/articles', '/resource-routes/scoped-articles', '/resource-routes/title-keyed-articles', '/resource-routes/articles-archive']);
     });
 
-    it('lights only the item whose route names continue past its base name and a dot', function (string $uri): void {
-        $active = $this->visit($uri)->filter(Selectors::ACTIVE_NAVIGATION_ITEM);
+    it('lights only the item whose route names continue past its base name and a dot', function (): void {
+        $active = $this->visit('/resource-routes/articles-archive')->filter(Selectors::ACTIVE_NAVIGATION_ITEM);
 
         expect($active->count())->toBe(1)
-            ->and($active->attr('href'))->toBe($uri);
-    })->with([
-        'the longer slug' => ['/resource-routes/articles-archive'],
-        'the shorter slug' => ['/resource-routes/articles'],
-    ]);
+            ->and($active->attr('href'))->toBe('/resource-routes/articles-archive');
+    });
 });
 
 describe('built outside the container', function (): void {

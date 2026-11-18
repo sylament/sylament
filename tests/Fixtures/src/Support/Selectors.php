@@ -421,4 +421,29 @@ final class Selectors
     {
         return ".sy-vertical-align-{$value}";
     }
+
+    /**
+     * The breadcrumbs landmark (`Breadcrumbs`), which a panel page's header renders above its heading.
+     */
+    public const string BREADCRUMBS = 'nav[aria-label="Breadcrumbs"]';
+
+    /**
+     * Each crumb's label (`Breadcrumbs`), linked or not, read as the crumb's text; its class is its one hook.
+     */
+    public const string BREADCRUMB = self::BREADCRUMBS . ' .sy-breadcrumbs-item-label';
+
+    /**
+     * A crumb given a URL, which `Breadcrumbs` renders as a link.
+     */
+    public const string LINKED_BREADCRUMB = self::BREADCRUMBS . ' a[href]';
+
+    /**
+     * A crumb given an integer key in place of a URL, which `Breadcrumbs` renders as plain text.
+     */
+    public const string UNLINKED_BREADCRUMB = self::BREADCRUMBS . ' span.sy-breadcrumbs-item-label';
+
+    /**
+     * The last crumb, which `Breadcrumbs` marks as the current page, linked or not.
+     */
+    public const string CURRENT_BREADCRUMB = self::BREADCRUMBS . ' [aria-current="page"]';
 }

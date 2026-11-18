@@ -88,6 +88,7 @@
         "format:twig": "twig-cs-fixer fix",
         "test": [
             "@test:suites",
+            "@test:lint",
             "@test:rector",
             "@test:static",
             "@test:twig"

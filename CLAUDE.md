@@ -42,7 +42,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 
 | Task | Command |
 | --- | --- |
-| everything on SQLite: Pest per bundle and the root suite, Rector dry-run, PHPStan, Twig lint | `composer test` |
+| everything on SQLite: Pest per bundle and the root suite, PHP-CS-Fixer and Rector dry-runs, PHPStan, Twig lint | `composer test` |
 | the root suite, one package of it, one file of it | `composer test:pest`, `vendor/bin/pest tests/Packages/<Pkg>`, `vendor/bin/pest tests/Packages/<Pkg>/<path>Test.php` |
 | one bundle | `composer test:<bundle>` |
 | one file of a bundle's suite | `vendor/bin/pest -c packages/<pkg>/phpunit.dist.xml --test-directory=packages/<pkg>/tests <file>` |

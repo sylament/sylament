@@ -90,7 +90,7 @@
                 {% endif %}
             {% endfor %}
 
-            {%- for selected in selectedOptions|filter(option => option.value not in optionValues) %}
+            {%- for selected in selectedOptions|filter(option => not (optionValues has some (key => (key ~ '') is same as (option.value ~ '')))) %}
                 <option value="{{ selected.value }}" selected>{{ isHtmlAllowed ? selected.label|striptags : selected.label }}</option>
             {%- endfor %}
         </select>

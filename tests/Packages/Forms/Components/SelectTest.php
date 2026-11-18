@@ -168,12 +168,13 @@ describe('JS control render', function (): void {
             ->and($this->renderSchemaComponent(Select::make('plant')->options(['fern' => 'Fern'])->native(false))->filter(Selectors::JS_CONTROL)->attr('aria-required'))->toBeNull();
     });
 
-    it('hands the controller the selection with its labels, and holds a selected value the map lacks as a selected option', function (): void {
-        $render = $this->createLiveComponent(SelectForm::class)->fillForm(['chosen' => 'moss', 'searchable' => 'yew'])->render()->crawler();
+    it('hands the controller the selection with its labels, and holds a selected value the map lacks as a selected option, even beside a key that reads as the same number', function (): void {
+        $render = $this->createLiveComponent(SelectForm::class)->fillForm(['chosen' => 'moss', 'searchable' => 'yew', 'codes' => ['001']])->render()->crawler();
 
         expect($this->selectControllerValue($render->filter('select[name="chosen"]'), 'selectedOptions'))->toBe([['value' => 'moss', 'label' => 'Moss']])
             ->and($this->selectControllerValue($render->filter('select[name="searchable"]'), 'selectedOptions'))->toBe([['value' => 'yew', 'label' => 'Yew']])
-            ->and($render->filter('select[name="searchable"] option[selected]')->each(static fn (Crawler $option): array => [$option->attr('value'), $option->text()]))->toBe([['yew', 'Yew']]);
+            ->and($render->filter('select[name="searchable"] option[selected]')->each(static fn (Crawler $option): array => [$option->attr('value'), $option->text()]))->toBe([['yew', 'Yew']])
+            ->and($render->filter('select[name="codes"] option[selected]')->each(static fn (Crawler $option): array => [$option->attr('value'), $option->text()]))->toBe([['001', '001']]);
     });
 
     it('reads a scoped option map once per render, and pays the selected-record query on the JS branch alone', function (bool $isNative, int $statements): void {

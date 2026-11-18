@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Sylament\Actions\Action;
 use Sylament\Panels\GlobalSearch\GlobalSearchResult;
-use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\Garden;
@@ -31,26 +30,25 @@ use Twig\Markup;
 beforeEach(function (): void {
     $this::getContainer()->get('request_stack')->push(new Request(attributes: ['_sylament_panel' => 'search']));
 
-    $this->resource = fn (string $class): Resource => $this::getContainer()->get(ResourceRegistry::class)->get($class);
-    $this->titles = fn (array $results): array => array_map(fn (GlobalSearchResult $result): string => (string) $result->title, $results);
+    $this->resources = $this::getContainer()->get(ResourceRegistry::class);
 });
 
 it('searches a resource by its record title attribute while it stays searchable, and none naming no attribute or opting out', function (): void {
     $this->seed(new Article('Moon'));
 
-    expect(($this->resource)(ArticleResource::class)->getGloballySearchableAttributes())->toBe(['title'])
-        ->and(($this->resource)(ArticleResource::class)->canGloballySearch())->toBeTrue()
-        ->and(($this->titles)(($this->resource)(ArticleResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon'])
-        ->and(($this->resource)(UntitledArticleSearchResource::class)->getGloballySearchableAttributes())->toBe([])
-        ->and(($this->resource)(UntitledArticleSearchResource::class)->canGloballySearch())->toBeFalse()
-        ->and(($this->resource)(OptedOutArticleSearchResource::class)->getGloballySearchableAttributes())->toBe(['title'])
-        ->and(($this->resource)(OptedOutArticleSearchResource::class)->canGloballySearch())->toBeFalse();
+    expect($this->resources->get(ArticleResource::class)->getGloballySearchableAttributes())->toBe(['title'])
+        ->and($this->resources->get(ArticleResource::class)->canGloballySearch())->toBeTrue()
+        ->and($this->globalSearchTitles($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon'])
+        ->and($this->resources->get(UntitledArticleSearchResource::class)->getGloballySearchableAttributes())->toBe([])
+        ->and($this->resources->get(UntitledArticleSearchResource::class)->canGloballySearch())->toBeFalse()
+        ->and($this->resources->get(OptedOutArticleSearchResource::class)->getGloballySearchableAttributes())->toBe(['title'])
+        ->and($this->resources->get(OptedOutArticleSearchResource::class)->canGloballySearch())->toBeFalse();
 });
 
 it('answers a result per matching record, titled by the record and linked to its edit page, with no details or actions', function (): void {
     $this->seed($landing = new Article('Moon landing'), $harvest = new Article('Harvest moon'), new Article('Sunrise'));
 
-    $results = ($this->resource)(ArticleResource::class)->getGlobalSearchResults('moon');
+    $results = $this->resources->get(ArticleResource::class)->getGlobalSearchResults('moon');
 
     expect(array_map(fn (GlobalSearchResult $result): array => [$result->title, $result->url, $result->details, $result->actions], $results))->toEqualCanonicalizing([
         ['Moon landing', "http://localhost/search/articles/{$landing->id}/edit", [], []],
@@ -61,21 +59,21 @@ it('answers a result per matching record, titled by the record and linked to its
 it('stops at fifty results, or at a lower limit of its own, in the order its own query reads them', function (): void {
     $this->seed(...array_map(fn (int $number): Article => new Article(sprintf('Moon %02d', $number)), range(51, 1)));
 
-    expect(($this->resource)(ArticleResource::class)->getGlobalSearchResults('Moon'))->toHaveCount(50)
-        ->and(($this->titles)(($this->resource)(CuratedArticleSearchResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon 01', 'Moon 02']);
+    expect($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Moon'))->toHaveCount(50)
+        ->and($this->globalSearchTitles($this->resources->get(CuratedArticleSearchResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon 01', 'Moon 02']);
 });
 
 it('searches only what the record query and the search hook leave', function (): void {
     $this->seed(new Article('Moon'), new Article('Archived Moon'), new Article('Secret Moon'));
 
-    expect(($this->titles)(($this->resource)(CuratedArticleSearchResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon'])
-        ->and(($this->titles)(($this->resource)(ArticleResource::class)->getGlobalSearchResults('Moon')))->toEqualCanonicalizing(['Moon', 'Archived Moon', 'Secret Moon']);
+    expect($this->globalSearchTitles($this->resources->get(CuratedArticleSearchResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon'])
+        ->and($this->globalSearchTitles($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Moon')))->toEqualCanonicalizing(['Moon', 'Archived Moon', 'Secret Moon']);
 });
 
 it('spends its limit before it drops a hit with no URL, so fewer results come back', function (): void {
     $this->seed(new Article('Alpha draft'), new Article('Beta'), new Article('Gamma'));
 
-    $results = ($this->resource)(CuratedArticleSearchResource::class)->getGlobalSearchResults('a');
+    $results = $this->resources->get(CuratedArticleSearchResource::class)->getGlobalSearchResults('a');
 
     expect(array_map(fn (GlobalSearchResult $result): array => [$result->title, $result->url], $results))->toBe([['Beta', 'http://localhost/search/curated-article-searches']]);
 });
@@ -83,7 +81,7 @@ it('spends its limit before it drops a hit with no URL, so fewer results come ba
 it('links a hit to the view page, else the edit page, else the index, and drops it with no page at all', function (): void {
     $this->seed($moon = new Article('Moon'));
 
-    $url = fn (string $class): array => array_map(fn (GlobalSearchResult $result): string => $result->url, ($this->resource)($class)->getGlobalSearchResults('Moon'));
+    $url = fn (string $class): array => array_map(fn (GlobalSearchResult $result): string => $result->url, $this->resources->get($class)->getGlobalSearchResults('Moon'));
 
     expect($url(AnnotatedArticleSearchResource::class))->toBe(["http://localhost/search/annotated-article-searches/{$moon->id}"])
         ->and($url(ArticleResource::class))->toBe(["http://localhost/search/articles/{$moon->id}/edit"])
@@ -95,7 +93,7 @@ it('opens a composite-keyed hit on the edit page of its own record', function (s
     $this::getContainer()->get('request_stack')->push(new Request(attributes: ['_sylament_panel' => 'admin']));
     $this->seed($sibling, $line);
 
-    $results = ($this->resource)($resource)->getGlobalSearchResults('First');
+    $results = $this->resources->get($resource)->getGlobalSearchResults('First');
 
     expect($results)->toHaveCount(1)
         ->and($this->visit((string) parse_url($results[0]->url, PHP_URL_PATH))->filter(Selectors::field('note'))->attr('value'))->toBe('First');
@@ -107,7 +105,7 @@ it('opens a composite-keyed hit on the edit page of its own record', function (s
 it("titles, details and arms a hit through the resource's hooks, binding each action to the hit unless it has a record of its own", function (): void {
     $this->seed(new Article('Moon landing'), new Article('Harvest moon'));
 
-    $results = ($this->resource)(AnnotatedArticleSearchResource::class)->getGlobalSearchResults('moon');
+    $results = $this->resources->get(AnnotatedArticleSearchResource::class)->getGlobalSearchResults('moon');
     usort($results, fn (GlobalSearchResult $a, GlobalSearchResult $b): int => strcmp((string) $b->title, (string) $a->title));
 
     expect(array_map(fn (GlobalSearchResult $result): array => [
@@ -133,7 +131,7 @@ it('needs every word of the term to match one searchable attribute or another, a
     $ash->garden = $kew;
     $this->seed($kew, $wisley, $kewOak, $wisleyOak, $ash);
 
-    $urls = fn (string $search): array => array_map(fn (GlobalSearchResult $result): string => $result->url, ($this->resource)(SeedlingGardenSearchResource::class)->getGlobalSearchResults($search));
+    $urls = fn (string $search): array => array_map(fn (GlobalSearchResult $result): string => $result->url, $this->resources->get(SeedlingGardenSearchResource::class)->getGlobalSearchResults($search));
 
     expect($urls('oak KEW'))->toBe(["/seedlings/{$kewOak->id}"])
         ->and($urls('oak'))->toEqualCanonicalizing(["/seedlings/{$kewOak->id}", "/seedlings/{$wisleyOak->id}"])
@@ -143,8 +141,8 @@ it('needs every word of the term to match one searchable attribute or another, a
 it('searches the term whole with splitting off, and word by word otherwise', function (): void {
     $this->seed(new Article('Red oak'), new Article('Oak, red'));
 
-    expect(($this->titles)(($this->resource)(VerbatimArticleSearchResource::class)->getGlobalSearchResults('Red oak')))->toBe(['Red oak'])
-        ->and(($this->titles)(($this->resource)(ArticleResource::class)->getGlobalSearchResults('Red oak')))->toEqualCanonicalizing(['Red oak', 'Oak, red']);
+    expect($this->globalSearchTitles($this->resources->get(VerbatimArticleSearchResource::class)->getGlobalSearchResults('Red oak')))->toBe(['Red oak'])
+        ->and($this->globalSearchTitles($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Red oak')))->toEqualCanonicalizing(['Red oak', 'Oak, red']);
 });
 
 it("folds case where forced on, keeps it where forced off, and leaves it to the platform's own matching otherwise", function (): void {
@@ -152,7 +150,7 @@ it("folds case where forced on, keeps it where forced off, and leaves it to the 
 
     $search = function (string $class, string $term): array {
         $this->seed();
-        $titles = ($this->titles)(($this->resource)($class)->getGlobalSearchResults($term));
+        $titles = $this->globalSearchTitles($this->resources->get($class)->getGlobalSearchResults($term));
 
         return [$titles, str_contains($this->statementsRun()[0], 'LOWER(')];
     };
@@ -171,7 +169,7 @@ it("folds case where forced on, keeps it where forced off, and leaves it to the 
 it('refuses a dotted attribute whose head its query fetch-joins as a collection, before the first search runs a statement', function (): void {
     $this->seed(new Garden('Kew'));
 
-    expect(fn (): array => ($this->resource)(FetchJoinedGardenSearchResource::class)->getGlobalSearchResults('Kew'))
+    expect(fn (): array => $this->resources->get(FetchJoinedGardenSearchResource::class)->getGlobalSearchResults('Kew'))
         ->toThrow(LogicException::class, 'The searchable path [seedlings.name] begins with [seedlings], an alias the query fetch-joins as a collection')
         ->and($this->statementsRun())->toBe([]);
 });

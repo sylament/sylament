@@ -13,7 +13,7 @@ use Twig\Markup;
 /**
  * A searched article dressed by every result hook: a marked-up title, details labelled for a title starting `Moon` and
  * a bare list otherwise, an action bound to the hit, one bound to a record of its own and a hidden one; it has a view
- * page, so a hit links there, and sorts ahead of the panel's other resources.
+ * page, so a hit links there, and sorts after the panel's other resources.
  */
 final class AnnotatedArticleSearchResource extends Resource
 {
@@ -23,7 +23,7 @@ final class AnnotatedArticleSearchResource extends Resource
 
     protected static ?string $pluralRecordLabel = 'annotated articles';
 
-    protected static ?int $globalSearchSort = -1;
+    protected static ?int $globalSearchSort = 1;
 
     public function getPages(): array
     {

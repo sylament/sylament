@@ -10,7 +10,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 
 /**
  * A searched article whose term is searched whole, never split into words, with case folding forced off; it sorts
- * after the panel's other resources.
+ * ahead of the panel's other resources.
  */
 final class VerbatimArticleSearchResource extends Resource
 {
@@ -24,7 +24,7 @@ final class VerbatimArticleSearchResource extends Resource
 
     protected static ?bool $isGlobalSearchForcedCaseInsensitive = false;
 
-    protected static ?int $globalSearchSort = 1;
+    protected static ?int $globalSearchSort = -1;
 
     public function getPages(): array
     {

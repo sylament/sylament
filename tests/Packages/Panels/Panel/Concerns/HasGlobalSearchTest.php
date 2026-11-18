@@ -25,7 +25,7 @@ it("searches through the panel's provider: the default one over its resources, a
         ->and($search('search-off')->filter(Selectors::GLOBAL_SEARCH_RESULTS))->toHaveCount(0);
 });
 
-it('mounts the field on a panel that searches a resource, and on none with search off or nothing to search', function (): void {
+it('mounts the field on a panel that searches a resource, and on none with search off, no resource or no searchable one', function (): void {
     $field = function (string $uri): array {
         $page = $this->visit($uri);
 
@@ -34,7 +34,8 @@ it('mounts the field on a panel that searches a resource, and on none with searc
 
     expect($field('/search/articles'))->toBe([1, 1])
         ->and($field('/search-off/articles'))->toBe([1, 0])
-        ->and($field('/pages/notes-page'))->toBe([1, 0]);
+        ->and($field('/pages/notes-page'))->toBe([1, 0])
+        ->and($field('/search-none/notes-page'))->toBe([1, 0]);
 });
 
 it('tunes the field by its debounce, key bindings and suffix, and by a half-second debounce, no binding and no suffix otherwise', function (): void {

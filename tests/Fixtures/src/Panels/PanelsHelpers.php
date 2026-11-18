@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Panels;
 
 use LogicException;
+use Sylament\Panels\GlobalSearch\GlobalSearchResult;
+use Sylament\Panels\GlobalSearch\GlobalSearchResults;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -75,5 +77,27 @@ trait PanelsHelpers
         }
 
         return $categories;
+    }
+
+    /**
+     * The titles of global search results, in order, a marked-up title as its markup.
+     *
+     * @param array<GlobalSearchResult> $results
+     *
+     * @return list<string>
+     */
+    protected static function globalSearchTitles(array $results): array
+    {
+        return array_values(array_map(static fn (GlobalSearchResult $result): string => (string) $result->title, $results));
+    }
+
+    /**
+     * The URLs of a provider's results, each category's in order, keyed by the category's name.
+     *
+     * @return array<string, list<string>>
+     */
+    protected static function globalSearchUrls(GlobalSearchResults $results): array
+    {
+        return array_map(static fn (array $category): array => array_values(array_map(static fn (GlobalSearchResult $result): string => $result->url, $category)), $results->getCategories());
     }
 }

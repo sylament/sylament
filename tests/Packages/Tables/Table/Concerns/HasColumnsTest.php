@@ -8,15 +8,27 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\AlignedColumnsTable;
 use Sylament\Tests\Fixtures\Tables\ClickableCellsLarderJarTable;
+use Sylament\Tests\Fixtures\Tables\Selectors;
 
-it('keys its columns by name, a second set replacing the first and what was visible of it', function (): void {
+it('heads only the columns of the last set it is given', function (array $props, string $present, string $absent): void {
+    $this->seed(new LarderJar('Apricot'));
+
+    $crawler = $this->createLiveComponent(ClickableCellsLarderJarTable::class, $props)->render()->crawler();
+
+    expect($crawler->filter(Selectors::headerCell($present)))->toHaveCount(1)
+        ->and($crawler->filter(Selectors::headerCell($absent)))->toHaveCount(0);
+})->with([
+    'one set' => [[], 'label', 'note'],
+    'a second set' => [['replacesColumns' => true], 'note', 'label'],
+]);
+
+it('forgets which columns of a set it replaces were visible', function (): void {
     $table = new AlignedColumnsTable()->getTable()->columns([TextColumn::make('name'), TextColumn::make('sku')]);
     $visibleBefore = array_keys($table->getVisibleColumns());
 
     $table->columns([TextColumn::make('note')]);
 
     expect($visibleBefore)->toBe(['name', 'sku'])
-        ->and(array_keys($table->getColumns()))->toBe(['note'])
         ->and(array_keys($table->getVisibleColumns()))->toBe(['note']);
 });
 

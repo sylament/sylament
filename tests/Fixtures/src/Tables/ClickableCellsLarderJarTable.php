@@ -15,6 +15,7 @@ use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Twig\Markup;
 
@@ -23,7 +24,7 @@ use Twig\Markup;
  * differently: a sortable label linking elsewhere in a new tab, a position that mounts
  * an action, a shelf that calls a closure, a maker linking by its own state, a seal
  * date that clicks nothing, and a seal under a sortable markup label that keeps the
- * row's link.
+ * row's link; a mount prop sets its columns a second time, to a note alone.
  */
 #[AsLiveComponent(name: 'Tables:ClickableCellsLarderJarTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class ClickableCellsLarderJarTable implements InteractsWithActions, InteractsWithTable
@@ -31,6 +32,9 @@ class ClickableCellsLarderJarTable implements InteractsWithActions, InteractsWit
     use DefaultActionTrait;
     use HasActions;
     use HasTable;
+
+    #[LiveProp]
+    public bool $replacesColumns = false;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -40,7 +44,7 @@ class ClickableCellsLarderJarTable implements InteractsWithActions, InteractsWit
 
     public function table(Table $table): Table
     {
-        return $table
+        $table
             ->query($this->entityManager->createQueryBuilder()->select('jar')->from(LarderJar::class, 'jar'))
             ->columns([
                 TextColumn::make('label')
@@ -64,5 +68,7 @@ class ClickableCellsLarderJarTable implements InteractsWithActions, InteractsWit
             ])
             ->defaultSort('label')
             ->recordUrl(static fn (LarderJar $record): string => "/jars/{$record->id}");
+
+        return $this->replacesColumns ? $table->columns([TextColumn::make('note')->state('Fragile')]) : $table;
     }
 }

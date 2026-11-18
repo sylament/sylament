@@ -31,12 +31,6 @@ beforeEach(function (): void {
     $this->resources = $this::getContainer()->get(ResourceRegistry::class);
 });
 
-it('searches a resource by its record title attribute', function (): void {
-    $this->seed(new Article('Moon'), new Article('Sunrise'));
-
-    expect($this->globalSearchTitles($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon']);
-});
-
 it('answers a result per matching record, titled by the record and linked to its edit page, with no details or actions', function (): void {
     $this->seed($landing = new Article('Moon landing'), $harvest = new Article('Harvest moon'), new Article('Sunrise'));
 

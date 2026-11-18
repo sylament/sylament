@@ -24,7 +24,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * The jars at a non-negative position, each cell editing one of their properties: the
  * label (at most twelve characters, locked on a wax-sealed jar, its before hook recording
  * the state it replaces and its after hook the row as stored), the position (which must be
- * given), the sealing date, the seal, the supplier's name (in letters), and the larder's
+ * given), the sealing date, the seal, the supplier's name (any scalar), and the larder's
  * jars, a collection no cell can hold; the larder's name opens the jar.
  */
 #[AsLiveComponent(name: 'Tables:EditableLarderJarTable', template: '@Fixtures/tables/table.html.twig')]
@@ -62,7 +62,7 @@ class EditableLarderJarTable implements InteractsWithTable
                 TextInputColumn::make('position')->constraint(new NotBlank(message: 'Number the jar.')),
                 TextInputColumn::make('sealedOn'),
                 SelectColumn::make('seal')->enum(JarSeal::class),
-                TextInputColumn::make('supplier.name')->constraint(new Type(type: 'alpha', message: 'Spell the supplier in letters.')),
+                TextInputColumn::make('supplier.name')->constraint(new Type(type: 'scalar', message: 'Name the supplier plainly.')),
                 TextInputColumn::make('larder.jars'),
                 TextColumn::make('larder.name')->action(function (LarderJar $record): void {
                     $this->hookLog->record("open {$record->label}");

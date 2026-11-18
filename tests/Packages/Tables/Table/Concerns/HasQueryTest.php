@@ -130,14 +130,21 @@ describe('the relation-scoped table', function (): void {
         }],
     ]);
 
-    it("searches, sorts and counts within the owner's rows, and resolves no key outside them", function (): void {
+    it("searches, sorts, counts and selects all within the owner's rows, and resolves no key outside them", function (): void {
         $kew = new Garden('Kew');
         [$oak, $olive, $ash, $orange] = [new Seedling('Oak'), new Seedling('Olive'), new Seedling('Ash'), new Seedling('Orange')];
         [$oak->garden, $olive->garden, $ash->garden] = [$kew, $kew, $kew];
         $this->seed($kew, $oak, $olive, $ash, $orange);
 
         $tester = $this->createLiveComponent(SeedlingGardenTable::class, ['gardenId' => $kew->id])
-            ->assertCountTableRecords(3)
+            ->assertCountTableRecords(3);
+
+        $selectable = $tester->component()->getAllSelectableTableRecordKeys();
+        sort($selectable);
+
+        expect($selectable)->toBe([(string) $oak->id, (string) $olive->id, (string) $ash->id]);
+
+        $tester
             ->searchTable('O')
             ->sortTable('name', 'desc')
             ->assertCanSeeTableRecords([$olive, $oak], inOrder: true)

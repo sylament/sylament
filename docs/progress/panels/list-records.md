@@ -27,18 +27,13 @@ owns:
 | [`form()` / `infolist()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | the same two | done | — | [semantics](#a-page-with-only-an-index-still-gets-every-record-action-as-a-modal) |
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getDefaultActionSchemaResolver()` | done | — | [diverges](#a-modals-schema-keeps-the-resource-forms-own-column-count) |
 | [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#renames) |
-| [`getDefaultActionRecordTitle()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `InteractsWithActions::getDefaultActionRecordTitle()`, which `ListRecords` leaves at `null` | in progress | — | [detail](#the-header-action-record-title-is-untested) · [diverges](#a-header-actions-record-title-comes-from-the-resource) |
+| [`getDefaultActionRecordTitle()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `InteractsWithActions::getDefaultActionRecordTitle()`, which `ListRecords` leaves at `null` | done | — | [diverges](#a-header-actions-record-title-comes-from-the-resource) |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getPageClasses()` | done | — | [custom-pages.md](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
 | `getSubNavigation()`, the cluster arm | `ListRecords::getSubNavigation()` | skipped | — | [diverges](has-sub-navigation.md#the-cluster-arms-are-not-ported-so-the-resource-page-hard-override-is-moot) |
 | `content()`: the tabs, the table render hooks and the `EmbeddedTable` | `ListRecords::content()` | blocked | schemas' `EmbeddedTable` | [detail](#content-waits-on-embeddedtable) |
 | `getTableQuery()` / `getPluralModelLabel()` | the two deprecated seeding hooks | skipped | — | [diverges](#the-deprecated-seeding-hooks-are-not-ported) |
 
 ## Details
-
-### The header-action record title is untested
-
-`getDefaultActionRecordTitle()` exists and answers [the resource's record title](#a-header-actions-record-title-comes-from-the-resource) for an action the page owns.
-No test mounts a header action holding an object record on a list page, so the arm that returns `Resource::getRecordTitle($record)` is unexercised.
 
 ### `content()` waits on `EmbeddedTable`
 

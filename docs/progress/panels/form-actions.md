@@ -99,7 +99,7 @@ The record-level error outlet inside `form_errors` is required rather than decor
 ### The cancel action links to the index where Filament goes back in history
 
 Filament's `getCancelFormAction()` is `alpineClickHandler('document.referrer ? window.history.back() : (window.location.href = …)')` — a client-side arm that returns the user to wherever they came from.
-The port has no seam for an inline JS click handler on an action, so both record pages hand the cancel action a plain `url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]))` instead: an ordinary `<a>` to the resource's listing, parent keys threaded so a nested page lands on the nested listing.
+The port has no seam for an inline JS click handler on an action, so both record pages hand the cancel action a plain `url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]))` instead: an ordinary `<a>` to the resource's index URL, parent keys threaded, so a nested page lands where [`getIndexUrl()`'s parent arms](nested-resources.md#the-parent-arms-carry-no-relation-parameter) point: a page of its parent when the parent registers one, else the resource's own index under its parent.
 Filament's `previousUrl` prop, the other half of the same idea, [is not ported anywhere](manage-related-records.md#previousurl-is-not-ported-anywhere-in-the-port).
 
 The visible consequence is narrow: cancelling from a create page reached through a modal or a deep link goes to the listing rather than back one step.

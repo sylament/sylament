@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tables\Testing\Testable;
+use Sylament\Tests\Fixtures\Entity\Allotment;
+use Sylament\Tests\Fixtures\Entity\Garden;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Entity\TariffBand;
+use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\BatchedSelectionLineTable;
 use Sylament\Tests\Fixtures\Tables\ConfiguredSelectionProductTable;
 use Sylament\Tests\Fixtures\Tables\FetchJoinedLarderTable;
+use Sylament\Tests\Fixtures\Tables\FetchJoinedSeedlingOwnerTable;
 use Sylament\Tests\Fixtures\Tables\GroupedSelectionLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 
@@ -257,6 +262,38 @@ describe('selecting all', function (): void {
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(["archive read {$cellar->id}, {$attic->id}"]);
     });
+
+    it('selects one key per record keyed by several fields off a query fetch-joining a to-many, in one statement', function (Closure $owners): void {
+        [$ownerClass, $seeded] = $owners();
+        $this->seed(...$seeded);
+
+        $tester = $this->createLiveComponent(FetchJoinedSeedlingOwnerTable::class, ['ownerClass' => $ownerClass])->call('selectAllTableRecords');
+        $crawler = $tester->render()->crawler();
+
+        expect(preg_grep('/^SELECT \w+\.\w+ AS \w+, \w+\.\w+ AS \w+ FROM \w+ \w+ LEFT JOIN Seedling \w+ ON [\w.= ]+$/', $this->statementsRun()))->toHaveCount(1)
+            ->and($crawler->filter(Selectors::SELECTED_RECORD))->toHaveCount(2)
+            ->and(json_decode($crawler->filter(Selectors::LIVE_PROPS)->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR)['selectedTableRecords'])->toHaveCount(2);
+
+        $tester->callAction(TestAction::make('archive')->table()->bulk());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['archive read 2 keys, 2 distinct']);
+    })->with([
+        'scalar fields' => [static function (): array {
+            [$twice, $once] = [new Terrace(1, 1), new Terrace(1, 2)];
+            [$leek, $kale, $chard] = [new Seedling('Leek'), new Seedling('Kale'), new Seedling('Chard')];
+            [$leek->terrace, $kale->terrace, $chard->terrace] = [$twice, $twice, $once];
+
+            return [Terrace::class, [$twice, $once, $leek, $kale, $chard]];
+        }],
+        'an association plus a scalar' => [static function (): array {
+            $garden = new Garden('Ash');
+            [$twice, $once] = [new Allotment($garden, 1), new Allotment($garden, 2)];
+            [$leek, $kale, $chard] = [new Seedling('Leek'), new Seedling('Kale'), new Seedling('Chard')];
+            [$leek->allotment, $kale->allotment, $chard->allotment] = [$twice, $twice, $once];
+
+            return [Allotment::class, [$garden, $twice, $once, $leek, $kale, $chard]];
+        }],
+    ]);
 });
 
 describe('grouped selection', function (): void {

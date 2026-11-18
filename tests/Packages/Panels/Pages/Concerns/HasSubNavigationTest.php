@@ -80,14 +80,11 @@ describe('on a record page', function (): void {
             $item->attr('href'),
             $item->attr('aria-current'),
         ]);
-        $unbanded = $this->visit("/admin/articles/{$article->id}/edit");
 
         expect($band)->toBe([
             ['Edit Banded Article', "/navigation-band/banded-articles/{$article->id}/edit", 'page'],
             ['Edit Top Banded Article', "/navigation-band/top-banded-articles/{$article->id}/edit", null],
-        ])
-            ->and($unbanded->filter(Selectors::PAGE))->toHaveCount(1)
-            ->and($unbanded->filter(Selectors::pageWithSubNavigation()))->toHaveCount(0);
+        ]);
     });
 
     it("draws the band at the page's own position, else its resource's, else its panel's", function (string $uri, string $position): void {

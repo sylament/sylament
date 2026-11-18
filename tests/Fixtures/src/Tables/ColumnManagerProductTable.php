@@ -26,7 +26,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `columnManager()` explicitly, `live` applies each change at once, `reorderable` lets the
  * columns be dragged, `modal` opens the manager in a modal, `resetInFooter` moves its reset
  * beside the apply button, `sized` lays its items out in two columns in a `30rem` wide
- * dropdown at most `20rem` high, `customized` relabels and recolours the trigger and gives
+ * dropdown at most `20rem` high, `wide` gives it the `lg` width token, `customized` relabels and recolours the trigger and gives
  * it attributes of its own and relabels the apply button, `plain` makes `name` and `code`
  * untoggleable, `hiddenToggleable` adds a toggleable `secret` column the developer hid,
  * `blankLabel` blanks the `name` label, `codeDropped` drops `code`, `noteAdded` declares a
@@ -99,6 +99,10 @@ class ColumnManagerProductTable implements InteractsWithTable
 
         if ($this->has('sized')) {
             $table->columnManagerColumns(2)->columnManagerWidth('30rem')->columnManagerMaxHeight('20rem');
+        }
+
+        if ($this->has('wide')) {
+            $table->columnManagerWidth('lg');
         }
 
         if ($this->has('customized')) {

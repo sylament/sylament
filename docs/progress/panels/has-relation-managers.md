@@ -116,7 +116,7 @@ The signature is otherwise Filament's, including the union of what an entry may 
 
 A group keys each embed by the key the manager sits under in that group, as Filament's does, so two groups holding one manager under the same in-group key give its two embeds one identity, where Filament's keep them apart.
 Filament re-keys each tab with an inheritable key, so the tab's key joins its embeds' keys; schemas' `Tabs` re-keys it non-inheritably, so a relation-manager tab's key joins none ([why](../schemas/tabs.md#the-re-keying-hook-must-run-before-any-key-is-read)).
-Only a browser shows the shared identity, across a switch between the two groups' tabs.
+A live switch between the two groups' tabs renders the manager under one live id, and an embed's id is what keeps a manager's state across the page's re-renders ([live-component.md](../schemas/live-component.md)), so the manager keeps one state for both tabs.
 
 ### The defaulting is folded into the builder, and casts the key to a string
 

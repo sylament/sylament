@@ -36,7 +36,7 @@ beforeEach(function (): void {
     $this->labels = static fn (Crawler $page): array => $page->filter(TablesSelectors::columnCells('label'))->each(static fn (Crawler $cell): string => $cell->text());
 });
 
-it('refuses a page naming no relationship, a related resource or not, naming the page and the property', function (): void {
+it('refuses a page naming no relationship even with a related resource, naming the page and the property', function (): void {
     $unnamed = new class extends ManageRelatedRecords {
         protected static ?string $relatedResource = PreserveJarResource::class;
     };

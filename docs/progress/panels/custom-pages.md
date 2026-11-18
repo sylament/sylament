@@ -27,7 +27,7 @@ Every member this file describes is inherited by the resource base and by every 
 | --- | --- | --- | --- | --- |
 | [`Page implements InteractsWithActions`](../../../packages/panels/src/Pages/Page.php) + the aliased `use HasActions` | `BasePage implements HasActions` + `InteractsWithActions` | done | — | [semantics](page.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method) |
 | [`Page implements InteractsWithSchemas`](../../../packages/panels/src/Pages/Page.php) + `use HasSchemas` + [`schemas(): []`](../../../packages/panels/src/Pages/Page.php) | `BasePage implements HasSchemas` + `InteractsWithSchemas` | done | — | [semantics](#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf) |
-| [`content(Schema): Schema`](../../../packages/panels/src/Pages/Page.php) | [`Page::content()`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#content-resolves-by-bare-name-so-an-empty-body-costs-a-live-request-nothing) |
+| [`content(Schema): Schema`](../../../packages/panels/src/Pages/Page.php) | [`Page::content()`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#content-resolves-by-bare-name-so-a-live-request-that-does-not-render-builds-no-body) |
 | The `header` / `content` / `footer` blocks on [`partials/Page/index.html.twig`](../../../packages/panels/templates/partials/Page/index.html.twig) | the `header` / `footer` slots of `page/index.blade.php` and Filament's `getHeader()`/`getFooter()` | done | — | [semantics](#the-block-contract-is-the-page-bodys-public-api) · [renamed](../renames.md#renames) |
 | [`Pages\Concerns\InteractsWithHeaderActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) — `getHeaderActions()`, `getCachedHeaderActions()`, `$cachedHeaderActions` | [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | done | — | [diverges](#header-actions-are-bound-lazily-rather-than-at-boot) · [diverges](#getheaderactions-is-public-so-a-page-copying-filaments-protected-override-fatals) |
 | `getActions()` (`@deprecated` for `getHeaderActions()`) | [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | skipped | — | [renames.md](../renames.md#a-deprecated-filament-member-is-not-ported) |
@@ -89,7 +89,7 @@ That is what makes `renderSchema()`, `renderTable()` and `live_action()` legal i
 A child template that `{% extends %}` the chrome inherits them, which is why the table and form variants fill a block rather than repeating the skeleton.
 The `partials/Page/` templates reach Twig only through the page's `getTemplate()`, never as a `<twig:>` tag, for the reason [the block contract](#the-block-contract-is-the-page-bodys-public-api) gives: inside a `<twig:>` component's block body `this` is that component rather than the page.
 
-### `content` resolves by bare name, so an empty body costs a live request nothing
+### `content` resolves by bare name, so a live request that does not render builds no body
 
 `content` is deliberately **not** listed in `schemas()`.
 `HasSchemas::getSchema('content')` resolves the name against a same-named method at render time, while the list in `schemas()` is what the de/hydration hooks force-build on every live request.

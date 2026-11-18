@@ -56,7 +56,7 @@ Three separate mechanics force that shape:
 - **A mounted row action resolves back through the schema's name.**
   The trigger's context reads `schemaComponent: formActions.form-actions`, which `HasActions::resolveSchemaComponentAction()` splits into the schema `formActions` and the nested key `form-actions`.
   A standalone `Actions` keyed `form-actions` would stamp `schemaComponent: form-actions`, name a schema that does not exist, and mount nothing — silently.
-- **`formActions` is resolved by bare name, and never listed in `schemas()`** — the same arrangement [`content`](custom-pages.md#content-resolves-by-bare-name-so-an-empty-body-costs-a-live-request-nothing) uses, so the row costs a live request nothing when a page declares none.
+- **`formActions` is resolved by bare name, and never listed in `schemas()`** — the same arrangement [`content`](custom-pages.md#content-resolves-by-bare-name-so-a-live-request-that-does-not-render-builds-no-body) uses, so the row costs a live request nothing when a page declares none.
 
 Binding is separate from all three and comes first: `getCachedFormActions()` stamps `liveComponent($this)` and registers each action through `cacheAction()` before the component is built, and that explicit binding survives the `schemaContainer` stamp the child schema applies.
 An `Actions::make([...])` built inside a template would bind to nothing at all, which is why the component is minted in PHP.

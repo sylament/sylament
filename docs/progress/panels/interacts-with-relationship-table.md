@@ -75,7 +75,7 @@ The three sources are Filament's: `static::$relationshipTitle`, else the related
 
 The consequence is that the **static** title chain does not gain the related arm.
 `RelationManager::getTitle(object $ownerRecord, string $pageClass)` is static (the tab bar reads it off the class before any instance exists) and `ManageRelatedRecords::getNavigationLabel()` is static; both fall back to the humanized name, so a manager or page with a related resource and no `$title` or `$navigationLabel` shows the humanized relationship name where Filament would show the related resource's plural label.
-Every **instance** path — the MRR page's title, its breadcrumb, the table heading — does use the related arm.
+Every **instance** path — the MRR page's title and its breadcrumb — does use the related arm; the page's table carries no heading, as Filament's carries none, and the manager heads its table with the static title above.
 Making the static chain instance-side would ripple through the tab component and the whole `getRelations()` read; the narrow divergence is the cheaper half, and it disappears if that chain ever moves.
 
 ### `getRelationshipName()` stays two-arm: a related resource is not a fallback

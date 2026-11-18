@@ -127,6 +127,7 @@ The icon alias itself is `PanelsIconAlias::RESOURCES_PAGES_MANAGE_RELATED_RECORD
 
 `getTitle()` is `static::$title ?? sprintf('Manage %s %s', $recordTitle, $relationshipTitle)` — *Manage Apollo Tasks* — where Filament reads `filament-panels::resources/pages/manage-related-records.title` with the same two placeholders.
 The same call [the create and save notification titles](create-record.md#the-create-and-save-notification-titles-are-literals-not-translation-keys) and `EditRecord::getTitle()`'s `'Edit %s'` made: i18n is parked, and the English literal is what the key resolves to.
+The document `<title>` is read off the un-mounted page, so it carries the owner resource's record label where the heading carries the record's title (*Manage Project Tasks* above *Manage Apollo Tasks*), as [the edit page's does](edit-record.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
 
 ### `getPageClass()` has no reader here
 

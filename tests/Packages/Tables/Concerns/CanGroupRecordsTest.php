@@ -166,7 +166,7 @@ describe('the group header rows', function (): void {
             ->and(json_decode((string) $tick->attr('data-sy-group-keys'), true))->toBe([(string) $apple->id, (string) $cherry->id])
             ->and($tick->attr('checked'))->not->toBeNull()
             ->and($crawler->filter(Selectors::groupHeaderRow('screw') . ' input[data-sylament--tables--table-target="groupCheckbox"]')->attr('checked'))->toBeNull()
-            ->and($wax->filter('.sy-ta-group-header')->attr('data-action'))->toBe('click->sylament--tables--table#toggleGroup')
+            ->and($wax->filter(Selectors::GROUP_HEADER)->attr('data-action'))->toBe('click->sylament--tables--table#toggleGroup')
             ->and($wax->filter('button[aria-label="Seal: wax"][aria-expanded="true"]')->attr('data-action'))->toBe('click->sylament--tables--table#toggleGroup')
             ->and($crawler->filter(Selectors::GROUP_BY_SELECT . '[data-sylament--tables--table-target="groupColumn"][data-action="change->sylament--tables--table#group"]'))->toHaveCount(2)
             ->and($crawler->filter(Selectors::GROUP_DIRECTION_SELECT . '[data-sylament--tables--table-target="groupDirection"][data-action="change->sylament--tables--table#group"]'))->toHaveCount(2);

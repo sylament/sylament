@@ -40,7 +40,7 @@ describe('the groups', function (): void {
         $crawler = $tester->render()->crawler();
 
         expect($crawler->filter(Selectors::GROUP_HEADING)->each(static fn (Crawler $heading): string => $heading->text()))->toBe(["{$heading}: 1", "{$heading}: 2"])
-            ->and($crawler->filter(Selectors::GROUP_BY_SELECT . ' option[value="position"]'))->toHaveCount(0);
+            ->and($crawler->filter(Selectors::GROUP_BY_SELECT)->first()->filter('option')->each(static fn (Crawler $option): ?string => $option->attr('value')))->toBe(['', 'seal', 'sealedOn', 'supplier.name', 'larder.name', 'label']);
 
         $tester->assertCanSeeTableRecords([$fig, $apple], inOrder: true)->call('groupTable', ['group' => 'label']);
 
@@ -127,7 +127,7 @@ describe('the grouping settings', function (): void {
         $crawler = $this->createLiveComponent(GroupableLarderJarTable::class, ['variants' => ['collapsed'], 'tableGrouping' => $grouping])->render()->crawler();
 
         expect($crawler->filter(Selectors::GROUP_HEADER_ROW))->toHaveCount($groups)
-            ->and($crawler->filter(Selectors::GROUP_HEADER_ROW . ' .sy-ta-group-header.sy-collapsed'))->toHaveCount($collapsed ? $groups : 0)
+            ->and($crawler->filter(Selectors::GROUP_HEADER_ROW . ' ' . Selectors::GROUP_HEADER . '.sy-collapsed'))->toHaveCount($collapsed ? $groups : 0)
             ->and($crawler->filter(Selectors::GROUP_HEADER_ROW . ' button[aria-expanded="false"]'))->toHaveCount($collapsed ? $groups : 0)
             ->and($crawler->filter(Selectors::ROW . '.sy-collapsed'))->toHaveCount($collapsed ? 3 : 0)
             ->and($crawler->filter(Selectors::GROUP_HEADER_ROW . '.sy-collapsed'))->toHaveCount(0)

@@ -257,6 +257,11 @@ final class Selectors
     public const string GROUP_HEADING = '.sy-ta-group-heading';
 
     /**
+     * The clickable block inside a group's header row that holds its heading and description, collapsible or collapsed by its `sy-` state classes.
+     */
+    public const string GROUP_HEADER = '.sy-ta-group-header';
+
+    /**
      * The select choosing the group a table is grouped by, in either copy of the grouping settings.
      */
     public const string GROUP_BY_SELECT = 'select[aria-label="Group by"]';

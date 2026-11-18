@@ -44,7 +44,7 @@ it("puts a collapse button on a collapsible group's header, and drops the label 
     $header = $this->createLiveComponent(GroupableLarderJarTable::class, ['tableGrouping' => $grouping])->render()->crawler()->filter(Selectors::GROUP_HEADER_ROW);
 
     expect($header->filter(Selectors::GROUP_HEADING)->text())->toBe($heading)
-        ->and($header->filter('.sy-ta-group-header.sy-collapsible'))->toHaveCount($collapsible ? 1 : 0)
+        ->and($header->filter(Selectors::GROUP_HEADER . '.sy-collapsible'))->toHaveCount($collapsible ? 1 : 0)
         ->and($header->filter("button[aria-label=\"{$heading}\"][aria-expanded=\"true\"]"))->toHaveCount($collapsible ? 1 : 0);
 })->with([
     'collapsible, prefixed' => ['seal', 'Seal: wax', true],

@@ -9,6 +9,8 @@ use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Tables\FilterableLarderJarTable;
+use Sylament\Tests\Fixtures\Tables\PairedFieldJarFilterTable;
+use Sylament\Tests\Fixtures\Tables\ShelvedJarFilter;
 
 it('turns on a ternary filter given only its name', function (): void {
     $this->seed($open = new LarderJar('Open'), new LarderJar('Plum', sealedOn: new DateTimeImmutable('2026-01-01')));
@@ -111,4 +113,28 @@ it("fails asserting a filter's configuration it does not have", function (): voi
 
     expect(fn () => $tester->assertTableFilterExists('seal', $isMultiple))
         ->toThrow(AssertionFailedError::class, 'Failed asserting that a table filter with name [seal] and provided configuration exists on the [' . FilterableLarderJarTable::class . '] component.');
+});
+
+it("resets only the field of a filter's schema it is given, keeping the other field's narrowing", function (): void {
+    $this->seed($low = new LarderJar('Plum', position: 1), $high = new LarderJar('Plum', position: 4), $fig = new LarderJar('Fig', position: 4));
+
+    $this->createLiveComponent(PairedFieldJarFilterTable::class)
+        ->filterTable('shelf', ['label' => 'Plum', 'lowestPosition' => '3'])
+        ->assertCanSeeTableRecords([$high])
+        ->assertCanNotSeeTableRecords([$low, $fig])
+        ->removeTableFilter('shelf', 'label')
+        ->assertCanSeeTableRecords([$high, $fig])
+        ->assertCanNotSeeTableRecords([$low]);
+});
+
+it('names a filter given as its class by the default name the class gives it', function (): void {
+    $this->seed($floor = new LarderJar('Plum'), $shelf = new LarderJar('Fig', position: 2));
+
+    $this->createLiveComponent(PairedFieldJarFilterTable::class)
+        ->assertTableFilterExists(ShelvedJarFilter::class)
+        ->filterTable(ShelvedJarFilter::class)
+        ->assertCanSeeTableRecords([$shelf])
+        ->assertCanNotSeeTableRecords([$floor])
+        ->removeTableFilter(ShelvedJarFilter::class)
+        ->assertCanSeeTableRecords([$floor, $shelf]);
 });

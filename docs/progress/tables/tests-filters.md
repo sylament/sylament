@@ -17,17 +17,10 @@ owns:
 | [`filterTable()` for a ternary, a select, a multiple select and any other filter, with a record object or an enum](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | done | — | [semantics](#the-data-is-shaped-by-the-filters-class) · [semantics](#a-record-object-is-selected-by-the-key-the-host-mints) · [diverges](#filtertable-writes-the-whole-applied-filter-state) |
 | [`resetTableFilters()` / `removeTableFilters()`](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | done | — | — |
 | [`removeTableFilter()` with a filter name](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | done | — | — |
-| [`removeTableFilter()` with a `$field`](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | in progress | — | [detail](#a-field-and-a-filter-class-wait-for-a-test-that-needs-them) |
+| [`removeTableFilter()` with a `$field`](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | done | — | — |
 | [`assertTableFilterExists()` with `$checkFilterUsing`](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | done | — | — |
-| [`filterTable()` / `removeTableFilter()` / `assertTableFilterExists()` given a filter class](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | in progress | — | [detail](#a-field-and-a-filter-class-wait-for-a-test-that-needs-them) |
+| [`filterTable()` / `removeTableFilter()` / `assertTableFilterExists()` given a filter class](../../../packages/tables/src/Testing/TestsFilters.php) | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | done | — | — |
 | `assertTableFilterVisible()` / `assertTableFilterHidden()` | [`Testing/TestsFilters.php`](../../../vendor/filament/tables/src/Testing/TestsFilters.php) | todo | — | — |
-
-## Details
-
-### A field and a filter class wait for a test that needs them
-
-`removeTableFilter()` sends its `$field` to the host's `removeTableFilter()` under the `field` argument, which resets only that field of the filter's schema, and every helper here turns a filter class into its default name through the host's `parseTableFilterName()`; both are ported, and no test passes either yet.
-Each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Semantics
 

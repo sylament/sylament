@@ -15,15 +15,8 @@ The record assertions read the last response's render, as Filament's do, and tak
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`assertCanSeeTableRecords()` / `assertCanNotSeeTableRecords()` with record objects, and `$inOrder`](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | done | — | [semantics](#a-record-is-seen-when-a-rendered-row-carries-its-whole-key) · [diverges](#the-failure-messages-name-the-row-key) · [diverges](#records-are-any-iterable) |
-| [`assertCanSeeTableRecords()` / `assertCanNotSeeTableRecords()` with a key or an array record](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | in progress | — | [detail](#a-key-and-an-array-record-wait-for-a-test-that-needs-them) |
+| [`assertCanSeeTableRecords()` / `assertCanNotSeeTableRecords()` with a key or an array record](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | done | — | — |
 | [`assertCountTableRecords()` / `loadTable()`](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | done | — | [semantics](#the-count-is-the-hosts-total) |
-
-## Details
-
-### A key and an array record wait for a test that needs them
-
-A record given as a key is compared as that string, and an array record is keyed by the host as an object is, through its `ArrayRecord` key; both are ported, and no test passes either yet.
-Each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Semantics
 

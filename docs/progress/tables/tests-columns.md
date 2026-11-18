@@ -19,7 +19,7 @@ Its driving helpers send the host's own live action or prop write, under the hos
 | [`toggleAllTableColumns()`](../../../packages/tables/src/Testing/TestsColumns.php) | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | done | — | [semantics](#toggling-every-column-applies-the-column-managers-draft) |
 | [`callTableColumnAction()` with a record object or a key](../../../packages/tables/src/Testing/TestsColumns.php) | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | done | — | [semantics](#a-record-object-is-sent-as-the-key-the-host-mints) |
 | [`assertTableColumnExists()` with `$checkColumnUsing` and a record object](../../../packages/tables/src/Testing/TestsColumns.php) | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | done | — | [semantics](#a-record-object-is-sent-as-the-key-the-host-mints) · [semantics](#a-column-is-checked-against-a-record-the-table-has) · [diverges](#a-record-the-table-does-not-have-is-refused-by-name) |
-| [`assertTableColumnExists()` with a key or an array record](../../../packages/tables/src/Testing/TestsColumns.php) | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | in progress | — | [detail](#a-key-and-an-array-record-wait-for-a-test-that-needs-them) |
+| [`assertTableColumnExists()` with a key or an array record](../../../packages/tables/src/Testing/TestsColumns.php) | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | done | — | — |
 | `assertTableColumnDoesNotExist()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableColumnVisible()` / `assertTableColumnHidden()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertCanRenderTableColumn()` / `assertCanNotRenderTableColumn()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
@@ -29,13 +29,6 @@ Its driving helpers send the host's own live action or prop write, under the hos
 | `assertTableColumnHasExtraAttributes()` / `assertTableColumnDoesNotHaveExtraAttributes()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableColumnHasDescription()` / `assertTableColumnDoesNotHaveDescription()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableSelectColumnHasOptions()` / `assertTableSelectColumnDoesNotHaveOptions()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
-
-## Details
-
-### A key and an array record wait for a test that needs them
-
-`assertTableColumnExists()` given a key looks the record up by that key, and given an array record by its `ArrayRecord` key, as Filament's does; both are ported, and no test passes either yet.
-Each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Semantics
 

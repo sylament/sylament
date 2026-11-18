@@ -76,9 +76,9 @@ it('checks a column against a record given as its key or as an array record', fu
 
     $tester = $this->createLiveComponent(RecordsLaneDeletingTable::class)
         ->assertTableColumnExists('name', $isLamp, 'lamp')
-        ->assertTableColumnExists('name', $isLamp, ['__key' => 'lamp', 'name' => 'Lamp']);
+        ->assertTableColumnExists('name', $isLamp, ['__key' => 'lamp', 'name' => 'Vase']);
 
-    expect(fn () => $tester->assertTableColumnExists('name', $isLamp, ['__key' => 'vase', 'name' => 'Vase']))
+    expect(fn () => $tester->assertTableColumnExists('name', $isLamp, ['__key' => 'vase', 'name' => 'Lamp']))
         ->toThrow(AssertionFailedError::class, 'Failed asserting that a column with the name [name] and provided configuration exists on the [' . RecordsLaneDeletingTable::class . '] component.')
         ->and(fn () => $tester->assertTableColumnExists('name', $isLamp, 'urn'))
         ->toThrow(LogicException::class, 'The [' . RecordsLaneDeletingTable::class . '] table has no record with key [urn].');

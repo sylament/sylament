@@ -7,8 +7,10 @@ use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
+use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\SummarizedJarTable;
 use Sylament\Tests\Fixtures\Tables\SummarizerMountHost;
@@ -34,6 +36,15 @@ it('hides a summarizer on the hosts hiddenOn() names, and shows one only on the 
     ]);
 
     expect(array_keys($column->getSummarizers($this->entityManager()->createQueryBuilder()->select('jar')->from(LarderJar::class, 'jar'))))->toBe(['hiddenElsewhere', 'visibleHere']);
+});
+
+it("asks a predicate once per query a render summarizes, once each for the page, the whole set and every group", function (): void {
+    $this->seed(new LarderJar('Apricot', seal: JarSeal::Wax, position: 1), new LarderJar('Bramble', seal: JarSeal::Screw, position: 2), new LarderJar('Cherry', seal: JarSeal::Wax, position: 4));
+
+    $crawler = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['predicateHidden'], 'tableGrouping' => 'seal'])->render()->crawler();
+
+    expect($crawler->filter(Selectors::GROUP_SUMMARY_ROW))->toHaveCount(1)
+        ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(['hidden?', 'hidden?', 'hidden?']);
 });
 
 it('asks a predicate again for a query binding an equal but distinct record, never for the same one twice', function (): void {

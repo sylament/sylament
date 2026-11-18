@@ -369,7 +369,7 @@ it('reads a to-one relation column off one join it reuses', function (): void {
     $state = $host->getTableSummarySelectedState($query);
 
     expect(DriverValues::numeric($state))->toBe(['sy_summary_0' => 6, 'sy_summary_1' => 6])
-        ->and(mb_substr_count($query?->getDQL() ?? '', 'LEFT JOIN song.artist'))->toBe(1);
+        ->and(mb_substr_count($query?->getDQL() ?? '', 'LEFT JOIN song.artist'))->toBe(0);
 });
 
 it('reads an embeddable path off the root alias', function (): void {

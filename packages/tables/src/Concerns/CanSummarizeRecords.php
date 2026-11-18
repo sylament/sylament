@@ -171,7 +171,8 @@ trait CanSummarizeRecords
      * of the query. The column's expression is resolved only once one of its
      * summarizers has passed all three *and* is visible here, so a path the qualifier
      * refuses is refused for the summarizers that would have aggregated it and for
-     * nobody else.
+     * nobody else. A to-one path is joined onto a clone the batch reads, never onto the
+     * row's own builder, whose key the visibility cache answers by for the whole render.
      *
      * @return array<string, mixed> alias ⇒ raw driver value, empty when nothing batches
      */
@@ -183,6 +184,7 @@ trait CanSummarizeRecords
 
         $selects = [];
         $ordinal = 0;
+        $read = clone $query;
 
         foreach ($this->getTable()->getVisibleColumns() as $column) {
             $visibleSummarizers = $column->getSummarizers($query);
@@ -205,7 +207,7 @@ trait CanSummarizeRecords
                     continue;
                 }
 
-                $attribute ??= SummaryQuery::qualifyAttribute($query, $column->getName());
+                $attribute ??= SummaryQuery::qualifyAttribute($read, $column->getName());
 
                 foreach ($summarizer->selectAlias($alias)->getSelectStatements($attribute) as $statementAlias => $statement) {
                     $selects[] = "{$statement} AS {$statementAlias}";
@@ -213,7 +215,7 @@ trait CanSummarizeRecords
             }
         }
 
-        return $selects === [] ? [] : SummaryQuery::readRow($query, $selects);
+        return $selects === [] ? [] : SummaryQuery::readRow($read, $selects);
     }
 
     /**

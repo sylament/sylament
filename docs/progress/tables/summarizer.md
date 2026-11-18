@@ -152,6 +152,7 @@ Each of the three is load-bearing.
 A leftover `ORDER BY` over an aggregate is a PostgreSQL error.
 A leftover `LIMIT` bounds the aggregate's own **result row** rather than the aggregated set, so a page summary written that way silently reports the all-table figure.
 And the clone is what keeps the stored builder untouched, so the row that asks first does not narrow the row that asks next.
+The batch qualifies a to-one column's path on a clone of its own for the same reason: the join it adds stays off the builder a row hands its summarizers, which keeps the key the [visibility cache](#the-visibility-cache-is-keyed-by-the-query-with-a-doctrine-key) answers that row by, so a predicate is asked once per row.
 
 `readRow()` reads a single result rather than a guarded list because an ungrouped aggregate returns exactly one row over any set, the empty one included.
 

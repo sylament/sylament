@@ -77,12 +77,13 @@ it("loads support's core controller eagerly, autoimporting the toolkit styleshee
 });
 
 /**
- * The unsaved-changes guard runs only where StimulusBundle loads this controller up front: a lazy or disabled block
- * leaves every page rendering and saving with no prompt, and no error says so.
+ * The shell's drawer, theme switcher, global search keys and unsaved-changes guard each run only where StimulusBundle
+ * loads their controller up front: a lazy or disabled block leaves the page rendering without that behaviour, and no
+ * error says so.
  */
-it("loads panels' unsaved-changes controller eagerly", function (): void {
-    expect(PackageManifest::assets('panels')['symfony']['controllers']['unsaved-changes'] ?? null)->toMatchArray([
-        'fetch' => 'eager',
-        'enabled' => true,
-    ]);
+it("loads every panels controller eagerly", function (): void {
+    $controllers = PackageManifest::assets('panels')['symfony']['controllers'] ?? [];
+
+    expect($controllers)->toHaveKey('unsaved-changes')
+        ->and(array_keys(array_filter($controllers, static fn (array $controller): bool => ($controller['fetch'] ?? null) !== 'eager' || ($controller['enabled'] ?? null) !== true)))->toBe([]);
 });

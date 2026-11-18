@@ -97,5 +97,6 @@ it('renders its content schema after the form, never inside it', function (): vo
 
     expect($page->filter(Selectors::PAGE)->text())->toContain(EditPottedPlant::CONTENT)
         ->and($page->filter(Selectors::FORM)->text())->not->toContain(EditPottedPlant::CONTENT)
+        ->and($page->filter(Selectors::FORM . ' ~ *')->text())->toContain(EditPottedPlant::CONTENT)
         ->and($page->filter(Selectors::FORM . ' ' . Selectors::field('name'))->attr('value'))->toBe('Fern');
 });

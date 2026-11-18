@@ -32,7 +32,7 @@ it('shows only its visible actions, and nothing at all when it is hidden or ever
 
 it('stretches its row across its width when told, over its alignment, and aligns it again when told not to', function (): void {
     expect($this->renderSchemaComponent(Actions::make([Action::make('save')])->alignment(Alignment::Center)->fullWidth()))
-        ->toContainElement(Selectors::ACTIONS . ' .sy-sc-actions-ctn.sy-width-full' . SupportSelectors::NO_ALIGN, 'Save')
+        ->toContainElement(Selectors::ACTIONS . ' ' . Selectors::FULL_WIDTH_ACTIONS_CONTAINER . SupportSelectors::NO_ALIGN, 'Save')
         ->and($this->renderSchemaComponent(Actions::make([Action::make('save')])->alignment(Alignment::Center)->fullWidth()->fullWidth(false)))
         ->toContainElement(Selectors::ACTIONS . ' .sy-sc-actions-ctn' . SupportSelectors::align('center') . ':not(.sy-width-full)', 'Save');
 });

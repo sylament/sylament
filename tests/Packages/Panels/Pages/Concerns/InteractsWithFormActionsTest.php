@@ -12,6 +12,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateCustomRowPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateGroupedRowPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 afterEach(function (): void {
@@ -59,7 +60,7 @@ it('mounts a row action back through the formActions schema its trigger names', 
 it('spans the row across the page in place of aligning it', function (): void {
     $page = $this->visit('/create-shapes/potted-plants/create-custom-row');
 
-    expect($page->filter(Selectors::FORM_ACTIONS . ' .sy-width-full' . SupportSelectors::NO_ALIGN))->toHaveCount(1);
+    expect($page->filter(Selectors::FORM_ACTIONS . ' ' . SchemasSelectors::FULL_WIDTH_ACTIONS_CONTAINER . SupportSelectors::NO_ALIGN))->toHaveCount(1);
 });
 
 it('drives the form element and its submit button from one method name', function (): void {

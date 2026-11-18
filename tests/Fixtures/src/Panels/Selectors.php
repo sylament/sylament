@@ -135,6 +135,22 @@ final class Selectors
      */
     public const string SIDEBAR = '#sy-pa-sidebar';
 
+    /**
+     * Any navigation group (`SidebarGroup`), labelled or not, in the sidebar or a band; its class is its one hook.
+     * Unscoped, so compose it under `NAVIGATION` for the sidebar's groups.
+     */
+    public const string NAVIGATION_GROUP = '.sy-pa-sidebar-group';
+
+    /**
+     * The light rendition of a brand logo that has a dark-mode one beside it (`Logo`), which the stylesheet hides in dark mode.
+     */
+    public const string LOGO_LIGHT = self::LOGO . '.sy-pa-logo-light';
+
+    /**
+     * The dark-mode rendition of a brand logo (`Logo`), which the stylesheet shows only in dark mode.
+     */
+    public const string LOGO_DARK = self::LOGO . '.sy-pa-logo-dark';
+
     public static function field(string $name): string
     {
         return "input[name=\"{$name}\"]";

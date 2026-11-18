@@ -38,7 +38,7 @@ describe('label', function (): void {
     });
 
     it('renders no label for a group without one, only its items', function (): void {
-        $group = $this->visit('/shell/shelf')->filter(Selectors::NAVIGATION . ' .sy-pa-sidebar-group:not([data-group-label])');
+        $group = $this->visit('/shell/shelf')->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP . ':not([data-group-label])');
 
         expect($group->filter(Selectors::NAVIGATION_ITEM_LABEL)->each(fn (Crawler $label): string => $label->text()))->toBe(['Slugged Settings Page', 'Inbox'])
             ->and($group->filter('.sy-pa-sidebar-group-btn')->count())->toBe(0);
@@ -46,7 +46,7 @@ describe('label', function (): void {
 });
 
 it('marks the group holding the page shown as active', function (): void {
-    $active = fn (string $uri): array => $this->visit($uri)->filter(Selectors::NAVIGATION . ' .sy-pa-sidebar-group')->each(fn (Crawler $group): array => [$group->attr('data-group-label'), $group->matches(SupportSelectors::ACTIVE)]);
+    $active = fn (string $uri): array => $this->visit($uri)->filter(Selectors::NAVIGATION . ' ' . Selectors::NAVIGATION_GROUP)->each(fn (Crawler $group): array => [$group->attr('data-group-label'), $group->matches(SupportSelectors::ACTIVE)]);
 
     expect($active('/shell/shelf'))->toBe([[null, false], ['Library', true], ['Archive', false], ['Help', false]])
         ->and($active('/shell/settings'))->toBe([[null, true], ['Library', false], ['Archive', false], ['Help', false]]);

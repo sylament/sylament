@@ -28,6 +28,6 @@ it('falls back to the brand name without a logo, and to nothing without a name e
 it('renders a light and a dark rendition at the height set when a dark-mode logo is set', function (): void {
     $logos = $this->renderTwigComponent('SylamentPanels:Logo', ['brandName' => 'Acme', 'brandLogo' => '/brand/acme.svg', 'darkModeBrandLogo' => '/brand/acme-dark.svg', 'brandLogoHeight' => '2rem'])->crawler();
 
-    expect($logos->filter(Selectors::LOGO)->each(fn (Crawler $logo): array => [$logo->attr('src'), $logo->matches('.sy-pa-logo-light'), $logo->matches('.sy-pa-logo-dark'), $logo->attr('style')]))
+    expect($logos->filter(Selectors::LOGO)->each(fn (Crawler $logo): array => [$logo->attr('src'), $logo->matches(Selectors::LOGO_LIGHT), $logo->matches(Selectors::LOGO_DARK), $logo->attr('style')]))
         ->toBe([['/brand/acme.svg', true, false, 'height: 2rem'], ['/brand/acme-dark.svg', false, true, 'height: 2rem']]);
 });

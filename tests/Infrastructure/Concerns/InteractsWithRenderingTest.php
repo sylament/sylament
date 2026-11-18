@@ -9,6 +9,7 @@ use Sylament\Tests\Fixtures\Notifications\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
+use Sylament\Tests\Fixtures\Tables\TablePageController;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
@@ -47,8 +48,8 @@ it("renders a tables host as a page that remembers the page size the client's li
     $client = $this::getContainer()->get('test.client');
     $this->createLiveComponent(ProductTable::class, client: $client)->set('tableRecordsPerPage', '5');
 
-    $remembered = $this->visit('/tables/page/Tables:ProductTable', client: $client);
-    $fresh = $this->visit('/tables/page/Tables:ProductTable');
+    $remembered = $this->visit(TablePageController::url('Tables:ProductTable'), client: $client);
+    $fresh = $this->visit(TablePageController::url('Tables:ProductTable'));
 
     expect($remembered->filter(TablesSelectors::ROW))->toHaveCount(5)
         ->and($remembered)->toContainElement(SupportSelectors::PER_PAGE_SELECT . ' option[value="5"][selected]')

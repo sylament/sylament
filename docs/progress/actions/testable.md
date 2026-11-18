@@ -82,7 +82,7 @@ The suite's one kernel has both the package and its bundle, so neither refusal r
 
 Filament's `Livewire::test()` mounts the component during a GET it sends to a route it registers, so a mount that reads the session reaches the test's session store.
 UX's `TestLiveComponent`, which `createLiveComponent()` builds, creates the component through the `ComponentFactory` in the test process before its first request, and every later request hydrates it without mounting it again.
-A mount-time read of the session or the request therefore sees none, so a host's mount through the tester never restores what an earlier request remembered, such as tables' [remembered state](../tables/can-persist-table-state.md#the-session-read-is-a-post-mount-hook-and-its-priority-is-the-precedence-rule), and a second tester on the same client reads nothing either.
+A mount-time read of the session or the request therefore sees none, so a host's mount through the tester never restores what an earlier request remembered, such as tables' [remembered state](../tables/can-persist-table-state.md#the-session-read-is-a-post-mount-hook-and-its-priority-is-the-precedence-rule), and a second tester's mount on the same client reads none either, though its later live requests carry the client's session.
 A test reads what a host's mount takes from the session by opening a page that renders the host with a GET on the tester's own client, which carries the session cookie the tester's requests left.
 
 ### `assertNoRedirect()` names the location it failed on

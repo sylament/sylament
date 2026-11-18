@@ -31,6 +31,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateMonumentPlaque;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreatePottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateSecondManagerSpine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateShelflessCrock;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateShelvedCrock;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateUnkeyedLocket;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateUnvettedKeyCharm;
 use Sylament\Tests\Fixtures\Panels\Resources\PottedPlantResource;
@@ -278,7 +279,7 @@ describe('a key still blank after persist()', function (): void {
         expect(fn () => $tester->call('create'))->toThrow(LogicException::class, 'The resource page [' . CreateUnkeyedLocket::class . '] built a [' . ClaspedLocket::class . '] whose identifier is still blank after persist(), so it was not saved.');
 
         expect(array_map(get_class(...), array_values($this->entityManager()->getUnitOfWork()->getScheduledEntityInsertions())))->toContain(ClaspedLocket::class)
-            ->and($this->statementsRun())->each->not->toStartWith('INSERT')
+            ->and($this->statementsRun())->toBe([])
             ->and($this->entityManager()->getRepository(ClaspedLocket::class)->count())->toBe(0);
     });
 
@@ -338,6 +339,21 @@ describe('under a parent', function (): void {
         expect($this->entityManager()->find(CharmSatchel::class, $this->satchel->id)?->charms->map(static fn (SatchelCharm $charm): string => $charm->label)->getValues())->toBe(['Old', 'New'])
             ->and($this->entityManager()->getConnection()->fetchAllAssociative('SELECT charm_tier, charm_code FROM charm_satchel_charm ORDER BY charm_tier'))->toBe([['charm_tier' => 1, 'charm_code' => 'a'], ['charm_tier' => 2, 'charm_code' => 'd']]);
     });
+    it('joins its parent before the mapping, so a key the parent half-fills is filed taken under the field the form maps', function (): void {
+        $larder = new Larder('Cellar');
+        $larder->addCrock(new LarderCrock(shelf: 'top', label: 'Stored'));
+        $this->seed($larder);
+
+        $tester = $this->createLiveComponent(CreateShelvedCrock::class, ['panelId' => 'create-shapes', 'parentRecords' => ['larder' => (string) $larder->id]])
+            ->fillForm(['shelf' => 'top', 'label' => 'Jam'])
+            ->call('create')
+            ->assertHasFormErrors(['shelf'])
+            ->assertNoRedirect();
+
+        expect($tester->render()->crawler()->text())->toContain('This value is already used.')
+            ->and($this->entityManager()->getRepository(LarderCrock::class)->findAll())->sequence(fn ($crock) => $crock->toBeRecord(shelf: 'top', label: 'Stored'));
+    });
+
     it("builds a child whose constructor takes the page's own parent, which both attaches leave alone", function (): void {
         $this->seed($monument = new Monument('Tower'));
 

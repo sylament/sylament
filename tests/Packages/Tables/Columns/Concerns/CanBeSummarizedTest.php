@@ -11,7 +11,7 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\SummarizedJarTable;
 
-it('keeps every summarizer two summarize() calls give a column, one or a list, rendering the visible ones', function (): void {
+it('keeps every summarizer two summarize() calls give a column, rendering the visible ones', function (): void {
     $this->seed(new LarderJar('Apricot', position: 1), new LarderJar('Bramble', position: 2));
 
     $crawler = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['positionOnly', 'summarizedTwice']])->render()->crawler();

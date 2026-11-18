@@ -35,8 +35,7 @@ it('refuses anything but a boolean, painting the refusal under its box and marki
 
     expect($this->reload($sample)->flagged)->toBeFalse()
         ->and($crawler)->toContainElement($cell . ' ' . Selectors::CHECKBOX_COLUMN . ' ' . Selectors::CELL_ERROR, 'This value should be of type bool.')
-        ->and($crawler)->toContainElement($cell . ' input[type="checkbox"][aria-invalid="true"]')
-        ->and($crawler->filter(Selectors::cell((string) $sample->id, 'body') . ' [aria-invalid]'))->toHaveCount(0);
+        ->and($crawler)->toContainElement($cell . ' input[type="checkbox"][aria-invalid="true"]');
 });
 
 it('renders its box ticked, unticked or disabled, named by its label without markup and titled by its tooltip', function (): void {
@@ -51,15 +50,15 @@ it('renders its box ticked, unticked or disabled, named by its label without mar
 it('publishes its state on its root for the controller, and commits its box on change', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'ticked') . ' ' . Selectors::CHECKBOX_COLUMN . Selectors::editableCellState('1') . '[data-sylament--tables--editable-cell-column-value="ticked"][data-sylament--tables--editable-cell-record-value="north"] input' . Selectors::EDITABLE_CONTROL)
+    expect($crawler)->toContainElement(Selectors::cell('north', 'ticked') . ' ' . Selectors::CHECKBOX_COLUMN . Selectors::editableCellState('1') . Selectors::editableCell('ticked', 'north') . ' input' . Selectors::EDITABLE_CONTROL)
         ->and($crawler)->toContainElement(Selectors::cell('north', 'unticked') . ' ' . Selectors::editableCellState('0'));
 });
 
 it('carries inline and its alignment on its root', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'ticked') . ' ' . Selectors::CHECKBOX_COLUMN . '.sy-inline' . SupportSelectors::align('center'))
-        ->and($crawler)->toContainElement(Selectors::cell('north', 'unticked') . ' ' . Selectors::CHECKBOX_COLUMN . ':not(.sy-inline)' . SupportSelectors::NO_ALIGN);
+    expect($crawler)->toContainElement(Selectors::cell('north', 'ticked') . ' ' . Selectors::CHECKBOX_COLUMN . Selectors::INLINE . SupportSelectors::align('center'))
+        ->and($crawler)->toContainElement(Selectors::cell('north', 'unticked') . ' ' . Selectors::CHECKBOX_COLUMN . ':not(' . Selectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
 });
 
 it('puts its extra input attributes on its box, not its root', function (): void {

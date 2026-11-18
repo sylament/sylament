@@ -55,7 +55,7 @@ describe('the input', function (): void {
 
     it('publishes its state on its root for the controller, and commits its input on change', function (): void {
         expect($this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler())
-            ->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::TEXT_INPUT_COLUMN . Selectors::editableCellState('Plum') . '[data-sylament--tables--editable-cell-column-value="name"][data-sylament--tables--editable-cell-record-value="north"] ' . FormsSelectors::INPUT . Selectors::EDITABLE_CONTROL);
+            ->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::TEXT_INPUT_COLUMN . Selectors::editableCellState('Plum') . Selectors::editableCell('name', 'north') . ' ' . FormsSelectors::INPUT . Selectors::EDITABLE_CONTROL);
     });
 
     it("paints a refused write under its input, marks the input invalid and echoes the post in it, and rings the wrapper", function (): void {
@@ -74,8 +74,8 @@ describe('the input', function (): void {
     it('carries inline and its alignment on its root', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::TEXT_INPUT_COLUMN . '.sy-inline' . SupportSelectors::align('end'))
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'email') . ' ' . Selectors::TEXT_INPUT_COLUMN . ':not(.sy-inline)' . SupportSelectors::NO_ALIGN);
+        expect($crawler)->toContainElement(Selectors::cell('north', 'name') . ' ' . Selectors::TEXT_INPUT_COLUMN . Selectors::INLINE . SupportSelectors::align('end'))
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'email') . ' ' . Selectors::TEXT_INPUT_COLUMN . ':not(' . Selectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
     });
 
     it('keeps its cell out of the record link a clickable row wraps its other cells in', function (): void {

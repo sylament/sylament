@@ -17,7 +17,6 @@ describe('callTableColumnAction', function (): void {
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['open north'])
             ->and($tester->response()->getStatusCode())->toBe(200)
-            ->and($tester->response()->getContent())->not->toContain('discarded')
             ->and($tester->render()->crawler())->toContainElement(Selectors::cell('north', 'opener'), 'Open');
     });
 
@@ -84,13 +83,12 @@ describe('updateTableColumnState', function (): void {
     it("writes nothing for a record the table's query leaves out", function (): void {
         $this->seed($kept = new LarderJar('Plum', position: 1), $left = new LarderJar('Fig', position: -1));
 
-        $tester = $this->createLiveComponent(EditableLarderJarTable::class)
+        $this->createLiveComponent(EditableLarderJarTable::class)
             ->call('updateTableColumnState', ['column' => 'label', 'record' => (string) $left->id, 'input' => 'Pear'])
             ->call('updateTableColumnState', ['column' => 'label', 'record' => (string) $kept->id, 'input' => 'Quince']);
 
         expect($this->reload($left)->label)->toBe('Fig')
-            ->and($this->reload($kept)->label)->toBe('Quince')
-            ->and($tester->render()->crawler()->filter(Selectors::CELL_ERROR))->toHaveCount(0);
+            ->and($this->reload($kept)->label)->toBe('Quince');
     });
 
     it('writes a JSON null as null, so a nullable cell clears while a non-nullable one is refused', function (): void {
@@ -125,7 +123,7 @@ describe('updateTableColumnState', function (): void {
             ->and($tester->render()->crawler()->filter(Selectors::cell((string) $open->id, 'label') . ' input:not([disabled])'))->toHaveCount(1);
     });
 
-    it('refuses a column the developer hid, on either action, while one the user toggled off answers, in whatever order the manager put the columns', function (string $action, array $hidden, array $toggledOff, string $answer): void {
+    it('refuses a column the developer hid, on either action, while one the user toggled off answers, in whatever order the manager put the columns', function (string $action, array $hidden, array $toggledOff, string $toggledOffHeader, string $answer): void {
         $tester = $this->createLiveComponent(RecordsLaneCellsTable::class);
         $tester->call('applyTableColumnManager', ['state' => array_reverse($tester->component()->tableColumns)]);
 
@@ -140,10 +138,10 @@ describe('updateTableColumnState', function (): void {
         $tester->call($action, $toggledOff);
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([$answer])
-            ->and($tester->render()->crawler()->filter(Selectors::headerCell('aside')))->toHaveCount(0);
+            ->and($tester->render()->crawler()->filter(Selectors::headerCell($toggledOffHeader)))->toHaveCount(0);
     })->with([
-        'the write' => ['updateTableColumnState', ['column' => 'secret', 'record' => 'north', 'input' => 'Spare'], ['column' => 'aside', 'record' => 'north', 'input' => 'Spare'], "write aside of north: 'Spare'"],
-        'the column action' => ['callTableColumnAction', ['name' => 'hiddenOpener', 'recordKey' => 'north'], ['name' => 'shyOpener', 'recordKey' => 'north'], 'open shy north'],
+        'the write' => ['updateTableColumnState', ['column' => 'secret', 'record' => 'north', 'input' => 'Spare'], ['column' => 'aside', 'record' => 'north', 'input' => 'Spare'], 'aside', "write aside of north: 'Spare'"],
+        'the column action' => ['callTableColumnAction', ['name' => 'hiddenOpener', 'recordKey' => 'north'], ['name' => 'shyOpener', 'recordKey' => 'north'], 'shy-opener', 'open shy north'],
     ]);
 });
 

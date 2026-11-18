@@ -138,15 +138,15 @@ describe('the cell', function (): void {
     it('publishes its state on its root for the controller, a backed enum by its value, and commits its select on change', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::SELECT_COLUMN . Selectors::editableCellState('square') . '[data-sylament--tables--editable-cell-column-value="shape"][data-sylament--tables--editable-cell-record-value="north"] ' . FormsSelectors::SELECT . Selectors::EDITABLE_CONTROL)
+        expect($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::SELECT_COLUMN . Selectors::editableCellState('square') . Selectors::editableCell('shape', 'north') . ' ' . FormsSelectors::SELECT . Selectors::EDITABLE_CONTROL)
             ->and($crawler)->toContainElement(Selectors::cell('north', 'seal') . ' ' . Selectors::editableCellState('screw') . ' option[value="screw"][selected]', 'Screw');
     });
 
     it('carries inline and its alignment on its root', function (): void {
         $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-        expect($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::SELECT_COLUMN . '.sy-inline' . SupportSelectors::align('end'))
-            ->and($crawler)->toContainElement(Selectors::cell('north', 'size') . ' ' . Selectors::SELECT_COLUMN . ':not(.sy-inline)' . SupportSelectors::NO_ALIGN);
+        expect($crawler)->toContainElement(Selectors::cell('north', 'shape') . ' ' . Selectors::SELECT_COLUMN . Selectors::INLINE . SupportSelectors::align('end'))
+            ->and($crawler)->toContainElement(Selectors::cell('north', 'size') . ' ' . Selectors::SELECT_COLUMN . ':not(' . Selectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
     });
 
     it('puts its extra input attributes on its select, not its root or its wrapper', function (): void {

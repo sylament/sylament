@@ -150,6 +150,11 @@ final class Selectors
     public const string CELL_ERROR = '.sy-ta-cell-error';
 
     /**
+     * A column's root laid out inline by `inline()`; the class is the behaviour the stylesheet reads.
+     */
+    public const string INLINE = '.sy-inline';
+
+    /**
      * The row of the record with this key.
      */
     public static function row(string $key): string
@@ -227,5 +232,13 @@ final class Selectors
     public static function editableCellState(string $state): string
     {
         return self::EDITABLE_CELL . "[data-sylament--tables--editable-cell-state-value=\"{$state}\"]";
+    }
+
+    /**
+     * An editable cell's root, by the column and the record key its controller posts back.
+     */
+    public static function editableCell(string $column, string $record): string
+    {
+        return self::EDITABLE_CELL . "[data-sylament--tables--editable-cell-column-value=\"{$column}\"][data-sylament--tables--editable-cell-record-value=\"{$record}\"]";
     }
 }

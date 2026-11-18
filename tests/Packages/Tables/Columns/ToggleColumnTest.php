@@ -48,15 +48,15 @@ it("renders forms' switch on, off or disabled, named by its label and titled by 
 it('publishes its state on its root for the controller, and commits its switch on change', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . Selectors::editableCellState('1') . '[data-sylament--tables--editable-cell-column-value="lit"][data-sylament--tables--editable-cell-record-value="north"] input[role="switch"]' . Selectors::EDITABLE_CONTROL)
+    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . Selectors::editableCellState('1') . Selectors::editableCell('lit', 'north') . ' input[role="switch"]' . Selectors::EDITABLE_CONTROL)
         ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::editableCellState('0'));
 });
 
 it('carries inline and its alignment on its root', function (): void {
     $crawler = $this->createLiveComponent(EditableCellLooksTable::class)->render()->crawler();
 
-    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . '.sy-inline' . SupportSelectors::align('center'))
-        ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::TOGGLE_COLUMN . ':not(.sy-inline)' . SupportSelectors::NO_ALIGN);
+    expect($crawler)->toContainElement(Selectors::cell('north', 'lit') . ' ' . Selectors::TOGGLE_COLUMN . Selectors::INLINE . SupportSelectors::align('center'))
+        ->and($crawler)->toContainElement(Selectors::cell('north', 'dim') . ' ' . Selectors::TOGGLE_COLUMN . ':not(' . Selectors::INLINE . ')' . SupportSelectors::NO_ALIGN);
 });
 
 describe('colours and icons', function (): void {

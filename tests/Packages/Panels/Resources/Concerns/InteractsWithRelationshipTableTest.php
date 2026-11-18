@@ -44,12 +44,12 @@ it('refuses a page naming no relationship even with a related resource, naming t
     expect(fn (): string => $unnamed::getRelationshipName())->toThrow(LogicException::class, 'The relationship table [' . $unnamed::class . '] names no relationship — set the $relationship static property');
 });
 
-it("titles its relationship by the title it names, else by its related resource's plural label, else by the relationship's name", function (string $page, string $title): void {
-    expect(($this->page)($page)->component()->getRelationshipTitle())->toBe($title);
+it("titles its relationship by the title it names, else by its related resource's plural label, else by the relationship's name", function (string $page, string $selector, string $title): void {
+    expect($this->visit("/related/stocked-larders/{$this->pantry->id}/{$page}")->filter($selector)->last()->text())->toBe($title);
 })->with([
-    'a title' => [ManageLarderJarShelf::class, 'Jar shelf'],
-    'a related resource' => [ManageLarderJars::class, 'Preserve Jars'],
-    'neither' => [ManageLarderBins::class, 'Bins'],
+    'a title, in the last crumb' => ['shelf', SupportSelectors::BREADCRUMB, 'Jar shelf'],
+    'a related resource, in the last crumb' => ['jars', SupportSelectors::BREADCRUMB, 'Preserve Jars'],
+    'neither, in the heading' => ['bins', Selectors::PAGE_HEADING, 'Manage Pantry Bins'],
 ]);
 
 it("lists the owner's association, searched and sorted inside it, for whichever owner the page is mounted on, and on a page leaving its table to the trait", function (): void {

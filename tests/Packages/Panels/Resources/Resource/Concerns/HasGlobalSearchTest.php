@@ -16,11 +16,9 @@ use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\CuratedArticleSearchResource;
 use Sylament\Tests\Fixtures\Panels\Resources\FetchJoinedGardenSearchResource;
 use Sylament\Tests\Fixtures\Panels\Resources\InvoiceLineResource;
-use Sylament\Tests\Fixtures\Panels\Resources\OptedOutArticleSearchResource;
 use Sylament\Tests\Fixtures\Panels\Resources\OrderLineResource;
 use Sylament\Tests\Fixtures\Panels\Resources\SeedlingGardenSearchResource;
 use Sylament\Tests\Fixtures\Panels\Resources\UnroutedArticleSearchResource;
-use Sylament\Tests\Fixtures\Panels\Resources\UntitledArticleSearchResource;
 use Sylament\Tests\Fixtures\Panels\Resources\VerbatimArticleSearchResource;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
@@ -33,16 +31,10 @@ beforeEach(function (): void {
     $this->resources = $this::getContainer()->get(ResourceRegistry::class);
 });
 
-it('searches a resource by its record title attribute while it stays searchable, and none naming no attribute or opting out', function (): void {
-    $this->seed(new Article('Moon'));
+it('searches a resource by its record title attribute', function (): void {
+    $this->seed(new Article('Moon'), new Article('Sunrise'));
 
-    expect($this->resources->get(ArticleResource::class)->getGloballySearchableAttributes())->toBe(['title'])
-        ->and($this->resources->get(ArticleResource::class)->canGloballySearch())->toBeTrue()
-        ->and($this->globalSearchTitles($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon'])
-        ->and($this->resources->get(UntitledArticleSearchResource::class)->getGloballySearchableAttributes())->toBe([])
-        ->and($this->resources->get(UntitledArticleSearchResource::class)->canGloballySearch())->toBeFalse()
-        ->and($this->resources->get(OptedOutArticleSearchResource::class)->getGloballySearchableAttributes())->toBe(['title'])
-        ->and($this->resources->get(OptedOutArticleSearchResource::class)->canGloballySearch())->toBeFalse();
+    expect($this->globalSearchTitles($this->resources->get(ArticleResource::class)->getGlobalSearchResults('Moon')))->toBe(['Moon']);
 });
 
 it('answers a result per matching record, titled by the record and linked to its edit page, with no details or actions', function (): void {

@@ -63,7 +63,8 @@ it('renders the managers after the form, never inside it', function (): void {
 
     expect($page->filter(Selectors::FORM))->toHaveCount(1)
         ->and($page->filter(Selectors::RELATION_MANAGER))->toHaveCount(1)
-        ->and($page->filter(Selectors::FORM . ' ' . Selectors::RELATION_MANAGER))->toHaveCount(0);
+        ->and($page->filter(Selectors::FORM . ' ' . Selectors::RELATION_MANAGER))->toHaveCount(0)
+        ->and($page->filter(Selectors::FORM . ', ' . Selectors::RELATION_MANAGER)->first()->matches(Selectors::FORM))->toBeTrue();
 });
 
 it('mounts a lone registration bare, with no tab bar, and activates its list index as a string', function (): void {

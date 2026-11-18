@@ -10,6 +10,7 @@ use Sylament\Tests\Fixtures\Entity\Plant;
 use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditGarden;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditTwinBedGarden;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\SeedlingsRelationManager;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\TaggedPlantsRelationManager;
 use Sylament\Tests\Fixtures\Panels\Selectors;
@@ -90,6 +91,17 @@ it("mounts a lone group's managers together with no tab bar, one identity per en
     expect($managers->each(static fn (Crawler $manager): string => $manager->filter(TablesSelectors::columnCells('name'))->text()))->toBe(['Leek', 'Leek'])
         ->and(array_unique($managers->each(static fn (Crawler $manager): ?string => $manager->attr('id'))))->toHaveCount(2)
         ->and($page->filter(Selectors::RELATION_MANAGER_TAB))->toHaveCount(0);
+});
+
+it('renders a manager two groups hold under one key with one live id across a switch between their tabs', function (): void {
+    $tester = $this->createLiveComponent(EditTwinBedGarden::class, ['record' => $this->garden->id, 'panelId' => 'relations']);
+    $east = $tester->render()->crawler();
+    $west = $tester->set('activeRelationManager', 'west')->render()->crawler();
+
+    expect($east->filter(Selectors::RELATION_MANAGER_TAB . '[aria-selected="true"]')->attr('data-tab-key'))->toBe('east')
+        ->and($west->filter(Selectors::RELATION_MANAGER_TAB . '[aria-selected="true"]')->attr('data-tab-key'))->toBe('west')
+        ->and($east->filter(Selectors::relationManager(SeedlingsRelationManager::class))->attr('id'))->toStartWith('sy-live-')
+        ->and($west->filter(Selectors::relationManager(SeedlingsRelationManager::class))->attr('id'))->toBe($east->filter(Selectors::relationManager(SeedlingsRelationManager::class))->attr('id'));
 });
 
 it('renders no manager and no tab bar for a resource that registers none', function (): void {

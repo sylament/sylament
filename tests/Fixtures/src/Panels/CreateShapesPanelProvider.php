@@ -9,6 +9,7 @@ use Sylament\Panels\PanelProvider;
 use Sylament\Tests\Fixtures\Panels\Resources\AssignedSlugHeadlineResource;
 use Sylament\Tests\Fixtures\Panels\Resources\CaselessBollardResource;
 use Sylament\Tests\Fixtures\Panels\Resources\CrockCellarResource;
+use Sylament\Tests\Fixtures\Panels\Resources\ListenerStampedBulletinResource;
 use Sylament\Tests\Fixtures\Panels\Resources\LowercasedBadgeResource;
 use Sylament\Tests\Fixtures\Panels\Resources\ManyToManySatchelResource;
 use Sylament\Tests\Fixtures\Panels\Resources\MonumentPlaqueResource;
@@ -42,6 +43,7 @@ final class CreateShapesPanelProvider extends PanelProvider
                 ShelflessCrockResource::class,
                 MonumentResource::class,
                 MonumentPlaqueResource::class,
+                ListenerStampedBulletinResource::class,
             ]);
     }
 }

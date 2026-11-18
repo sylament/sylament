@@ -20,6 +20,7 @@ use Sylament\Tests\Fixtures\Entity\MonumentPlaque;
 use Sylament\Tests\Fixtures\Entity\Plant;
 use Sylament\Tests\Fixtures\Entity\QuayBollard;
 use Sylament\Tests\Fixtures\Entity\SatchelCharm;
+use Sylament\Tests\Fixtures\Entity\StampedBulletin;
 use Sylament\Tests\Fixtures\Entity\VolumeSpine;
 use Sylament\Tests\Fixtures\Notifications\Selectors as NotificationsSelectors;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateArticle;
@@ -28,6 +29,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateBarePottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateCaselessBollard;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateGroupedRowPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateHookedPottedPlant;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateListenerStampedBulletin;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateLowercasedBadge;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateMonumentPlaque;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreatePottedPlant;
@@ -297,6 +299,19 @@ describe('a key still blank after persist()', function (): void {
         expect(array_map(get_class(...), array_values($this->entityManager()->getUnitOfWork()->getScheduledEntityInsertions())))->toContain(ClaspedLocket::class)
             ->and($this->statementsRun())->toBe([])
             ->and($this->entityManager()->getRepository(ClaspedLocket::class)->count())->toBe(0);
+    });
+
+    it('is saved once a prePersist listener fills it, since the read runs after persist()', function (): void {
+        $this->createLiveComponent(CreateListenerStampedBulletin::class, ['panelId' => 'create-shapes'])
+            ->fillForm(['scope' => 'news', 'label' => 'Morning'])
+            ->call('create')
+            ->assertRedirect('/create-shapes/listener-stamped-bulletins');
+
+        $saved = new StampedBulletin();
+        $saved->scope = 'news';
+        $saved->stamp = 'auto';
+
+        expect($this->reload($saved))->toBeRecord(label: 'Morning');
     });
 
     it('is saved once the page sets it before the default write', function (): void {

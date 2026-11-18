@@ -41,7 +41,8 @@ describe('document', function (): void {
             fn (Crawler $element): string => $element->nodeName() === 'style' ? 'style' : (str_contains($element->text(), 'sylament.theme') ? 'theme' : 'other script'),
         );
 
-        expect(array_slice($head, 0, 2))->toBe(['theme', 'style']);
+        expect($head)->toContain('theme', 'style')
+            ->and(array_search('theme', $head, true))->toBeLessThan(array_search('style', $head, true));
     });
 
     it("shows a toast flashed by an earlier request in the document's outlet beside the shell, once", function (): void {

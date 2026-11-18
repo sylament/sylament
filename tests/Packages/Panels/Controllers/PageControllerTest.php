@@ -8,6 +8,7 @@ use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Notifications\NotifyingHost;
 use Sylament\Tests\Fixtures\Notifications\Selectors as NotificationsSelectors;
 use Sylament\Tests\Fixtures\Panels\Pages\MistypedWidthPage;
+use Sylament\Tests\Fixtures\Panels\Pages\NotesPage;
 use Sylament\Tests\Fixtures\Panels\Pages\ThirdLayoutPage;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
@@ -85,6 +86,16 @@ describe('refusals', function (): void {
     })->with([
         'a third layout' => ['/panel-routing/kiosk', sprintf('The page %s names the layout "App:KioskLayout"; only SylamentPanels:Layout and SylamentPanels:SimpleLayout ship', ThirdLayoutPage::class)],
         'a width of no shipped type' => ['/panel-routing/mistyped-width', sprintf('The page %s names a int under `maxContentWidth` in its layout data;', MistypedWidthPage::class)],
+    ]);
+
+    it('refuses a request whose route names no panel, or a page that is no Page, naming the default to add', function (array $attributes, string $message): void {
+        $request = new Request(attributes: $attributes);
+        $this::getContainer()->get('request_stack')->push($request);
+
+        expect(fn () => $this::getContainer()->get(PageController::class)($request))->toThrow(LogicException::class, $message);
+    })->with([
+        'no panel' => [['_sylament_page' => NotesPage::class], 'Panel page routes must carry a `_sylament_panel` default that resolves to a registered panel.'],
+        'no page' => [['_sylament_panel' => 'panel-routing', '_sylament_page' => Article::class], 'Panel page routes must carry a `_sylament_page` default naming a Page subclass.'],
     ]);
 
     it('refuses a page that is no registered service, naming the registration to add', function (): void {

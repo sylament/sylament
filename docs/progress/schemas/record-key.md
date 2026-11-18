@@ -87,7 +87,7 @@ So through `keyOf()` alone a lenient type would offer options under `0`, fill ag
 `keyOfHydrated()` is the reader for those rows: it takes every field value as the hydrator handed it and converts only the indexes `IdentifierFields` marks as associations, since an `IDENTITY()` half arrives raw under every hydrator.
 The four consumers read through it, and tables' by-key selection pluck, which reads `getScalarResult()`, keeps `keyOf()`.
 A converting association half stays covered — a key through `IDENTITY()` onto a converting target keys from an array row as its record does.
-Pinned over both types, and the lenient one behind an association too, and at the four consumers in tables' [`AggregateQueryTest`](../../../packages/tables/tests/Unit/Query/AggregateQueryTest.php), [`FetchJoinPageQueryTest`](../../../packages/tables/tests/Unit/Query/FetchJoinPageQueryTest.php) and [`HexKeyAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/HexKeyAttachAssociateActionsTest.php).
+Pinned over both types, and the lenient one behind an association too, and at tables' two consumers, the aggregate batch and the two-step page; actions' attach and associate option projections have no case over a lenient key.
 
 ### A malformed key never reaches the database
 

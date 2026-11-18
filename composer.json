@@ -65,7 +65,6 @@
         "psr-4": {
             "Sylament\\Infolists\\Tests\\": "packages/infolists/tests/",
             "Sylament\\Panels\\Tests\\": "packages/panels/tests/",
-            "Sylament\\Tables\\Tests\\": "packages/tables/tests/",
             "Sylament\\Tests\\": "tests/",
             "Sylament\\Tests\\Fixtures\\": "tests/Fixtures/src/",
             "Sylament\\Widgets\\Tests\\": "packages/widgets/tests/"
@@ -96,7 +95,6 @@
         "test:suites": [
             "@test:infolists",
             "@test:panels",
-            "@test:tables",
             "@test:widgets",
             "@test:pest"
         ],
@@ -107,10 +105,6 @@
         "test:panels": [
             "@putenv XDEBUG_MODE=off",
             "pest -c packages/panels/phpunit.dist.xml --test-directory=packages/panels/tests"
-        ],
-        "test:tables": [
-            "@putenv XDEBUG_MODE=off",
-            "pest -c packages/tables/phpunit.dist.xml --test-directory=packages/tables/tests"
         ],
         "test:mysql": [
             "@putenv SYLAMENT_TEST_DATABASE_URL=mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4",

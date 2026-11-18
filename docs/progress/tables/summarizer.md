@@ -129,7 +129,7 @@ What it counts is the **declared** summarizers of every visible column, not the 
 That distinction is the whole of it, because one render fires several batches: the partial computes the page and all-table states in its preamble, the record loop then fires one batch per group on the page, and only afterwards does the band draw the page and all-table rows from the states it computed first.
 A `hidden(fn ($query) => …)` summarizer — a supported, documented predicate — is visible in one of those batches and not in another, so an ordinal counted over the visible set alone would re-mint a later batch's aliases onto the names an earlier batch's row is about to read, and a labelled cell would publish its neighbour's figure.
 Filament cannot hit this because its alias is `$this->selectAlias ??= Str::random()`, minted once per instance; the port's answer is the same identity by construction rather than by chance.
-The [all-table row's figures](../../../packages/tables/tests/Integration/SummaryRenderingTest.php) under exactly that configuration are what pin it.
+The all-table row's figures under exactly that configuration are what pin it.
 
 ### `getSummarizers()` re-points every summarizer, and that mutation is the mechanism
 

@@ -274,7 +274,7 @@ For an association identifier field the type is the **target's** identifier fiel
 
 ### The operations and their DQL
 
-Three classes stand in below, all real fixtures: `Song` (`#[Id] int $id`) for the single-identifier lane that must not move; `Shortcut` (`#[Id] string $host`, `#[Id] string $path`) for a scalar pair; and `Residency` (`#[Id]` ManyToOne `Venue`, `#[Id] string $season`) for a derived identity, whose `Venue` is itself keyed on a `Handle` value object through a custom DBAL type — so the association arm is exercised with a type that actually converts.
+Three classes stand in below: `Song` (`#[Id] int $id`) for the single-identifier lane that must not move; `Shortcut` (`#[Id] string $host`, `#[Id] string $path`) for a scalar pair; and `Residency` (`#[Id]` ManyToOne `Venue`, `#[Id] string $season`) for a derived identity, whose `Venue` is itself keyed on a `Handle` value object through a custom DBAL type — so the association arm is exercised with a type that actually converts.
 
 | Operation | Single identifier | Scalar pair | Derived identity |
 | --- | --- | --- | --- |
@@ -299,7 +299,7 @@ Conversely a bare association path is a semantical error in a `SELECT` list, whi
 The plain path is also what [`ColumnPathResolver::resolveOrderable()`](../tables/has-query.md#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) emits, which is what keeps the sort tiebreak's string dedupe honest.
 
 **The single-identifier emission is the plain one-column DQL.**
-`alias.id = :base` and `alias.id IN (:base)`, bound under the field's binding type, are what a single-identifier class emits, and the DQL-text assertions in `HasBulkActionsTest` and `CanSortRecordsTest` pin that text.
+`alias.id = :base` and `alias.id IN (:base)`, bound under the field's binding type, are what a single-identifier class emits, and the executed statements pin it, a table's default sort ordering by the one `id` column and a reorder too wide for one statement narrowing each chunk by `IN`.
 That is the property that makes this a foundation rather than a rewrite.
 The by-key dissociate's statement is DQL wherever its foreign key is one column; only a mapped-by spanning several join columns writes through [`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table).
 

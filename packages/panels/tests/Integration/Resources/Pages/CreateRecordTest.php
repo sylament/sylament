@@ -19,7 +19,7 @@ uses(InteractsWithLiveComponents::class);
  * Kernel reboot is disabled for every flow here: the fixture database is an
  * in-memory SQLite built by a container service, and the created record has to
  * survive from the live `create` request into the redirect the browser follows —
- * the shape `ListRecordsTest` and the tables suite established. The same client
+ * the shape `ListRecordsTest` established. The same client
  * is also what carries the session, which is what makes the flashed toast
  * readable on the next page load.
  */

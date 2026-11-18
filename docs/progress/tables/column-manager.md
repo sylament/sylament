@@ -184,7 +184,7 @@ The memo is droppable because it has no invalidation seam of its own and the tab
 
 `persistTableColumns()` writes only while `persistsColumnsInSession()` is on, as Filament's does, but `mountTableColumnManager()` reads the stored `columns` entry whatever the flag says.
 Filament gates both halves: its `loadTableColumnsFromSession()` returns the default state when the flag is off.
-So `persistColumnsInSession(false)` here means "stop writing", not "stop reading", and a state stored before the flag was turned off keeps applying; a case in `TableSessionPersistenceTest` pins that by seeding a key for the opted-out fixture and reading it back.
+So `persistColumnsInSession(false)` here means "stop writing", not "stop reading", and a state stored before the flag was turned off keeps applying; a columns state stored for a table that does not persist its columns is pinned to apply at mount all the same.
 Nothing chose this deviation: it rests on a reading of Filament's read as ungated, and gating the read in `mountTableColumnManager()` on `persistsColumnsInSession()` would reverse it.
 
 ### The trigger drops vendor's modal-footer machinery, because the chrome is the partial's

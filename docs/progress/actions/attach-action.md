@@ -15,7 +15,7 @@ It only makes sense on a [relation-scoped table](../tables/table.md): `Table::re
 
 Its undo, [`DetachAction`](detach-action.md), is a file of its own, with [`DetachBulkAction`](detach-action.md#surface--detachbulkaction) riding along in it.
 
-The class is pinned end to end on a relation table, record select included, and the tables suite's [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) runs it too.
+The class is pinned end to end on a relation table, record select included.
 
 ## Surface
 
@@ -70,7 +70,7 @@ The fetch runs one statement per batch of `IdentifierConstraint::batch()`: the w
 A forged `multiple()` submission therefore costs time linear in its length.
 The batches' records merge in PHP, each record once: two spellings of one key that the database compares equal (a decimal `1` and `1.0`, or a case variant under a case-insensitive collation) can land in different batches and resolve the same managed record twice.
 The count check then compares them against every submitted key, so a doubly spelled or unknown key is refused as one statement refused it; a duplicated key meets the select's validation first, so on a stock submit only a doubly spelled one reaches the count check.
-Pinned by [`CompositeAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/CompositeAttachAssociateActionsTest.php), which also attaches and associates a 501-key submission whole.
+Pinned for both classes by two spellings of one key landing in different statements, beside a 501-key submission each attaches and associates whole.
 
 ### The title fast path projects the attribute
 

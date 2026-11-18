@@ -190,4 +190,3 @@ Anything else that references a selected row makes the `DELETE` fail whole: the 
 The hydrating arm is unaffected: `remove()` deletes a record's many-to-many join rows itself.
 The by-key arm does not clear join rows first, because it keeps Filament's mass-delete semantics, whose `delete()` leaves pivot rows to the database too.
 A join table whose columns pointing at the record declare `ON DELETE CASCADE` is cleared by the database; any other is a reason to leave the fetching arm on.
-The relation-scoped delete pins ([`RelationshipTableTest`](../../../packages/tables/tests/Integration/RelationshipTableTest.php) over [`ArtistSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/ArtistSongsTable.php)) delete `Song`s through `Artist.songs`, whose rows own their own foreign key, rather than `Genre`s through `Song.genres`, a test-design choice that keeps those pins off the join table.

@@ -71,7 +71,7 @@ Symfony checks the kernel class and each compiler pass for changes by their sign
 
 ## Why are there no free helper functions?
 
-Every root-suite test file shares its namespace with the others (the global one, or the scans' `Sylament\Tests\Architecture`), and the per-package suites already define eight helper names in two or more places (`renderToHtml`, `registryWith`, …), which would collide. A function defined in one test file and called from another also breaks in a run of the calling file alone, which never loads the defining one. Helpers that need the container are methods of `TestCase` from traits, and pure ones are static methods, both of which PHPStan sees. The same reason puts a custom expectation in `tests/Expectations/` and a dataset several files share in `tests/Datasets/`: Pest loads both folders in every run before any test, so the run of one file finds them, and a dataset's name is global, so one file per area keeps two areas' names apart. Pest `include_once`s every file under `tests/Expectations/`, `tests/Helpers/` and `tests/Datasets/` at boot, and Composer autoloads a class again, so a class placed there is declared twice.
+Every root-suite test file shares its namespace with the others (the global one, or the scans' `Sylament\Tests\Architecture`), so two test files that each declare a helper function of one name would collide. A function defined in one test file and called from another also breaks in a run of the calling file alone, which never loads the defining one. Helpers that need the container are methods of `TestCase` from traits, and pure ones are static methods, both of which PHPStan sees. The same reason puts a custom expectation in `tests/Expectations/` and a dataset several files share in `tests/Datasets/`: Pest loads both folders in every run before any test, so the run of one file finds them, and a dataset's name is global, so one file per area keeps two areas' names apart. Pest `include_once`s every file under `tests/Expectations/`, `tests/Helpers/` and `tests/Datasets/` at boot, and Composer autoloads a class again, so a class placed there is declared twice.
 
 ## Why do the test scripts turn Xdebug off?
 
@@ -142,7 +142,7 @@ A recorder of the suite's own is not needed: DoctrineBundle's profiling already 
 
 ## Why does the Doctrine rig live in the root suite's infrastructure?
 
-Two suites run against Doctrine (`panels`, `tables`) and share one rig. It sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suites import it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed. The per-package suites' common base class, `LegacyTestCase`, sits in `tests/Infrastructure/PHPUnit/` for the same reason: each package's `TestCase` extends it, so no legacy suite depends on another's.
+One per-package suite runs against Doctrine (`panels`), on a rig that sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suite imports it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed. The per-package base class, `LegacyTestCase`, sits in `tests/Infrastructure/PHPUnit/` for the same reason: panels' `TestCase` extends it, so the legacy suite depends on no other package's tests.
 
 It is dev-only. The root `tests/` belongs to no package, so none of it ships in a split package, and nothing under any `src/` imports it. Two consequences follow:
 
@@ -165,7 +165,7 @@ The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastr
 | `DriverValues` | Canonicalises driver values: MySQL and PostgreSQL return `SUM` and `AVG` as decimal strings where SQLite returns numbers. |
 | `FailingWrite` | Makes the (n+1)-th row deleted from an entity's table or a many-to-many's join table, or updated in an entity's table, fail on every platform, through a counter and a trigger, so a test can watch a transaction roll back; a join table has no entity class to name, so it is reached through its owner and association, and an update counts in a table of its own. |
 
-Each Doctrine suite's `tests/Fixtures/Doctrine/EntityManagerFactory` is a thin shim over `TestEntityManagers`: its entity path, its custom types and a `seed()` helper. **tables** also passes a configuration callback that turns on an in-memory second-level cache, which caches only entities marked `#[ORM\Cache]`.
+Panels' `tests/Fixtures/Doctrine/EntityManagerFactory` is a thin shim over `TestEntityManagers`: its entity path, its custom types and a `seed()` helper.
 
 ## How does a server run give every test an empty, isolated database?
 
@@ -220,7 +220,7 @@ Keep that order if the list changes: putting the recorder first would record the
 
 ### Which suites render a support Twig component?
 
-The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. The two per-package suites whose kernels register TwigComponentBundle (`panels`, `tables`) render them too, through their own templates and tests, so a change to a support component also runs against those suites.
+The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. The per-package suite whose kernel registers TwigComponentBundle (`panels`) renders them too, through its own templates and tests, so a change to a support component also runs against that suite.
 
 Which per-package suites reach a component follows whichever package needed it. Derive the current map rather than trusting a written list:
 
@@ -234,7 +234,7 @@ done
 
 A hit under a package's `templates/` means that package's suite renders the component. So does every suite that renders that package's templates in turn: `panels` renders tables' `Table` partial and forms' controls.
 
-`InputWrapper` is the case to remember: tables' `TextInputColumn` and `SelectColumn` cells render it directly, and `panels` renders the forms controls that compose it, so a change to it runs against both suites.
+`InputWrapper` is the case to remember: tables' `TextInputColumn` and `SelectColumn` cells render it directly, and `panels` renders the forms controls that compose it, so a change to it runs against the root suite and panels' alike.
 
 ### Why does a test that asserts a toast run as a live request?
 
@@ -242,7 +242,7 @@ A notification is a session flash: `Notification::send()` reads the session off 
 
 ### Which fixtures carry a composite identifier?
 
-Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `CompositePair` (two scalar fields) and `Residency` (an association plus a scalar) sit in tables' `tests/Fixtures/Doctrine/Entity/`. A new by-key site is tested over both.
+Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `OrderLine` (two scalar fields) and `InvoiceLine` (an association plus a scalar) sit in the shared `tests/Fixtures/src/Entity/`. A new by-key site is tested over both.
 
 Panels has a family of its own: `Catalogue`, the single-identifier parent and owner; `Stamp`, that parent association plus a converting `string` code; `Colophon`, one identifier association alone — a single derived identity, the flavour an `isIdentifierComposite` check misses; `Imprint`, two strings seeded with `.`, `/`, a space, `~`, `=` and non-ASCII; and `Edition`, an `id` plus a `locale`. Their resources mount on a non-default `key` panel of their own (`tests/Fixtures/KeyPanelProvider.php`), because the navigation and global-search suites' enumerating assertions name the `admin` and `nest` panels, and a second default panel would reorder the one they resolve.
 

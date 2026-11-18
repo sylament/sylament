@@ -46,7 +46,7 @@ Fourteen members are the port's own, each the answer a shipped consumer needs wh
 `getTableColumnStateError()` is one: the refusal an editable cell paints lives on [`HasColumns`](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client), where vendor holds that error in the browser.
 
 `HasTable` supplies every member, so a trait-using host takes a new one without an edit.
-The [`BareTableHost`](../../../packages/tables/tests/Fixtures/Concerns/BareTableHost.php) fixture implements the interface **by hand**, to prove a host can satisfy the contract without the trait.
+A host may implement the interface **by hand**, without the trait; a filter bound to one that keeps no filter state is refused, naming the trait that does.
 
 ## Divergences
 

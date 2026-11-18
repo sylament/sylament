@@ -134,7 +134,7 @@ The three missing names:
   The port has `getParentAction()` but neither the setter nor the host stamp.
 - `schemaOperation`/`context`/`operation` would read [`getOperation()`](../schemas/has-operation.md) off the bound schema container, falling back to the component's container; both exist, and the arm has no caller.
 
-Pinned by a case per injection name and type, `liveComponent` included, and by the tables suite's [`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php), where a real host answers the two selected-record names.
+Pinned by a case per injection name and type, `liveComponent` included, a real table host answering the two selected-record names.
 
 ### The by-type resolver has no record arm
 
@@ -395,7 +395,7 @@ The two schema hops read through the schemas side's Sylament-only `getLiveCompon
 The chain itself lives in the Sylament-only `getLiveComponentOrNull()` peek (named after the schemas-side precedent), which `prepareModalAction()`/`prepareModalActionGroup()` use to bind footer actions without forcing an unbound owner to throw.
 
 The group hop is kept even though [`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php) eagerly propagates the host to child actions at set time: the eager push only fires at `liveComponent()`-call time, so an action added to an already-bound group afterwards resolves through this lazy hop and nothing else.
-Pinned for each hop, its own binding, its schema's, its component's, its table's and its group's, and by the tables suite's [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php).
+Pinned for each hop, its own binding, its schema's, its component's, its table's and its group's.
 
 ### `getContext()` drops the record model gate
 
@@ -429,7 +429,7 @@ The **`bulk` flag** is Filament's, in Filament's position and with Filament's do
 The **child-frame short-circuit** is Filament's: `if ($this->parentAction instanceof self) { return $context; }` runs after the `recordKey` branch and before the table and schema branches, so a modal action declared by another action carries its record identity up and nothing else, neither the schema binding it inherited from `prepareModalAction()` nor the table binding it inherited from its parent.
 Without it, a nested frame would carry a `schemaComponent` key up to the host and, but for the host's own [deeper-frame gate](has-actions.md#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache), try to resolve against the host's schema instead of its parent's declared modal actions.
 `parentAction()` is stamped by [`prepareModalAction()`](can-open-modal.md) on every action an action declares, and `nestingIndex()` by `resolveActions()` per frame.
-Pinned by the context a trigger puts on the wire, the record key per identifier shape, the schema key beside it and a declared modal action's record key alone, and by [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php) for the arms that need a real `Table`: the composite key, the `table` and `bulk` flags and their suppression on a nested frame.
+Pinned by the context a trigger puts on the wire, the record key per identifier shape, the schema key beside it and a declared modal action's record key alone, and over a real `Table` for the arms that need one: a row's composite key, which is the table's own, and the `table` and `bulk` flags.
 
 ### CanBeDisabled drops the authorization short-circuits
 

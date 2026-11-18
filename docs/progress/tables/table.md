@@ -273,7 +273,7 @@ It has to match or beat (0,2,0): re-scope it under `.sy-ta`, or double the class
 
 [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css) and the row rules of [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) are scoped under `.sy-ta` the same way and carry the same surcharge.
 The package's other stylesheets declare their roots at top level as vendor does, so a consumer overriding a toolbar, a filter or a column rule pays nothing extra.
-The other failure mode the extra class could introduce — a rule that silently never applies because the scope is absent — is closed at the render: the partial emits `sy sy-ta` unconditionally, and the Integration [`TableTest`](../../../packages/tables/tests/Integration/TableTest.php) selects `div.sy.sy-ta > div.sy-ta-ctn > table.sy-ta-table` with the child combinator, so a flattened or renamed root fails there rather than as an unstyled table.
+The other failure mode the extra class could introduce — a rule that silently never applies because the scope is absent — is closed at the render: the partial emits `sy sy-ta` unconditionally, and the render is asserted to put the table inside an `sy sy-ta` root, so a renamed or dropped root fails there rather than as an unstyled table.
 
 ### The morph key is an `id` attribute, not `wire:key`
 

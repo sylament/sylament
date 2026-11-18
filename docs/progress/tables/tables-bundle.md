@@ -43,7 +43,7 @@ This file also documents the two Twig-side pieces beside it, [`TableExtension`](
 An alias is overridable only once something resolves it, so each `TablesIconAlias` constant lands in the same change as the component or feature that renders its icon, the growth order [`SupportIconAlias`](../support/support-icon-alias.md#an-alias-constant-lands-with-the-template-that-reads-it) follows too.
 The absent constants wait on features the package does not build: the six `FILTERS_QUERY_BUILDER_CONSTRAINTS_*` belong to the query-builder filter, and `COLUMNS_COLLAPSE_BUTTON` collapses a `Columns\Layout\Stack`, which this package does not render.
 `ACTIONS_OPEN_BULK_ACTIONS` is the exception whose feature ships: Filament's actions package reads it from `BulkActionGroup::setUp()`, and the port keeps actions from reaching into tables for its icon ([action-group.md](../actions/action-group.md#bulkactiongroup-sets-its-icon-explicitly-and-keeps-the-label-a-literal)), so nothing would read the constant.
-Each new alias needs its default glyph in [the fixture icon set](../../../packages/tables/tests/Fixtures/assets/icons/heroicons), because ux-icons resolves a missing local icon by throwing rather than by rendering nothing.
+Each new alias needs its default glyph in [the fixture icon set](../../../tests/Fixtures/assets/icons/heroicons), because ux-icons resolves a missing local icon by throwing rather than by rendering nothing.
 
 ### The `Make*` commands and stub publishing are not ported
 
@@ -142,7 +142,7 @@ No cycle: `sylament/forms` requires `actions`, `schemas`, `support`, `doctrine/o
 The `require` also buys a set of **CSS classes**: `TextInputColumn` and `SelectColumn` render their controls inside support's `InputWrapper` wearing forms' `sy-fo-input` and `sy-fo-select` skins, and `ToggleColumn` wears forms' `sy-fo-toggle*`, rather than restating them.
 Reaching across a hard dependency for a class is not a package-boundary break — the styling contract's own test is whether the emitting package could be absent, and forms cannot be — but hoisting those skins into support under code-less names, the way `checkbox.css` already went, is the cleaner end state; it would touch forms files the tables port leaves alone ([forms/styles.md](../forms/styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too)).
 
-The test kernel registers `SylamentFormsBundle` (`tests/Fixtures/Kernel.php`), without which a filter form cannot be built in the Integration suite at all.
+The root suite's kernel registers `SylamentFormsBundle` with every other bundle, without which a filter form cannot be built at all.
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

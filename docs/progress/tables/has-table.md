@@ -75,10 +75,10 @@ Here the aggregate value never touches a query clone ([why](has-query.md#an-aggr
 
 `$table->evaluate($dataSource, [...])` passes eight named injections and nothing else, yet a `records()` closure type-hinting a repository is handed one.
 `SylamentTablesBundle::loadExtension()` registers `Table` as an autowired service, so `Table::newInstance()` resolves through `ComponentResolver`'s locator, the `#[Required] setInvoker()` setter fires, and the table evaluates through the container's `Invoker` rather than the fallback built around an empty container.
-[`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) pins both halves: the table's `Invoker` is the container's, and a closure type-hinting a fixture repository receives the container's shared instance.
+A `records()` closure type-hinting a public service is asserted to receive the container's shared instance, which the fallback `Invoker`, built around an empty container, could not hand it, so the one case pins both halves.
 
 The `Invoker` holds `service_container`, and `Container::has()` on a compiled container answers for public ids only, so a private service, Symfony's default, does not resolve by type.
-That is support's rule ([component.md](../support/component.md#closure-resolution-lives-in-a-service)), and it is why the fixture repository is `#[Autoconfigure(public: true)]`.
+That is support's rule ([component.md](../support/component.md#closure-resolution-lives-in-a-service)), and it is why a closure type-hinting a private service is handed none.
 
 ### The paginator is a return value, not a state holder
 
@@ -92,7 +92,7 @@ Both methods read the same `$cachedTableRecords`, so asking for the paginator be
 ### A host trait is analysed only through a class that composes it
 
 PHPStan skips a trait no analysed class uses, and the repo ignores `trait.unused` globally, so the skip is silent: a host trait carries no static-analysis coverage of its own and inherits whatever its consumers give it.
-Only a class inside an analysed path turns it on, and [`phpstan.neon.dist`](../../../phpstan.neon.dist) analyses `packages/*/src` and no tables test directory, so the fixture host [`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php) contributes nothing; panels' `ListRecords`, `ManageRelatedRecords` and `RelationManager` are what analyse this trait.
+Only a class inside an analysed path turns it on, and [`phpstan.neon.dist`](../../../phpstan.neon.dist) analyses `packages/*/src` and the root suite's fixtures, so panels' `ListRecords`, `ManageRelatedRecords` and `RelationManager` and the table hosts under `tests/Fixtures/src/Tables/` are what analyse this trait.
 A scoped run over the package that owns the trait cannot see errors that exist only in a using class's context, so only the unscoped `composer test:static` sees them.
 
 ### Private trait methods are called across the traits `HasTable` composes
@@ -119,7 +119,7 @@ So the query lane refuses it.
 Every render keys its rows there, so the first render refuses.
 An array row, every `records()` row and a query-lane row that is no instance of the record class, such as a `SELECT NEW` projection keyed by its `id`, are never compared.
 `getTableRecordKey()` is asked only where the codec answers null or the host overrides the method, detected by the method's declaring file being other than `HasTable.php`, so a table that does not override pays nothing.
-[`HasTableRecordKeyOverrideTest`](../../../packages/tables/tests/Unit/Concerns/HasTableRecordKeyOverrideTest.php) pins it over a fixture host whose override is a closure.
+It is pinned over a host whose override keys every row, a `records()` row and a query row alike, and whose key the table resolves back to the row.
 
 ## Divergences
 
@@ -135,7 +135,7 @@ Actions ships the same shape as [`getActionsHostId()`](../actions/modals.md#the-
 The getter/property name collision is what makes the lazy fill work.
 `AddLiveAttributesSubscriber::onPreRender` dehydrates every `#[LiveProp]` before the component's template body renders, so an id first minted while rendering the table partial would miss that pass, and the next request would hydrate null and mint a different id for every row.
 It does not happen, because `LiveComponentHydrator::dehydrate()` reads the prop through Symfony's `PropertyAccessor`, which prefers the same-named getter, so the read that dehydrates is the read that mints.
-Renaming either half breaks morph stability with nothing failing loudly, which is why the Integration [`HasTableTest`](../../../packages/tables/tests/Integration/Concerns/HasTableTest.php) asserts the dehydrated `tableHostId` against the id stamped on the rows.
+Renaming either half breaks morph stability with nothing failing loudly, which is why the ids stamped on the rows and cells are asserted to be the same on the next request.
 On a prop the client also writes, the same preference puts the getter's answer on the wire, which is what [the writable props bridge around](host-can-paginate-records.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary).
 
 A host rendered without being a live component, a plain Twig component or a unit fixture, still gets an id: the lazy read works with no hydration behind it, and the id is regenerated per request, which is right for a render that never morphs.
@@ -180,7 +180,7 @@ So a Filament table declaring both a `records()` closure and a `query()` resolve
 Sylament asks in the seam: no [`hasQuery()`](has-query.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set), no query, and `getFilteredSortedTableQuery()` answers null with it.
 
 The caller that needs it is [`getAllTableRecordsCount()`](#the-all-records-count-answers-four-ways-where-filaments-answers-two): the null sends a records-lane table to count what its closure returned, where a builder counted would run SQL for rows the render does not show, against a data source the table does not use.
-`resolveTableRecords()` takes the same branch either way, because it consults the data source first, so the gate is observable only through a direct read of the seam, which [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php) pins.
+`resolveTableRecords()` takes the same branch either way, because it consults the data source first, so the gate shows only where a caller reads the seam: a table declaring both counts its closure's rows and runs no statement for the builder, which is what pins it.
 Permanent while both lanes exist.
 
 ### The URL binding is a per-prop `LiveProp` modifier, opted into by the page
@@ -314,7 +314,7 @@ Doctrine's fetch join selects the relation in the same query, so a limit truncat
 It buys nothing in exchange.
 The identifier predicate admits at most one root, and object hydration returns one entity per identity however many rows the join produced, so `getOneOrNullResult()` cannot throw from row multiplication; a query that does return two roots raises Doctrine's `NonUniqueResultException` rather than answering with the first.
 Record resolution takes neither the [eager joins](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) nor the aggregate batch, so only a `query()` closure can fetch-join this clone, and the port cannot know whether the user's declaration does.
-Permanent; [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)'s fetch-join resolution case asserts all three of an `Artist`'s songs and fails the moment the limit comes back.
+Permanent; a record resolved through a query that fetch-joins a collection is asserted to carry every item of it, which fails the moment the limit comes back.
 
 ### The all-records count answers four ways where Filament's answers two
 

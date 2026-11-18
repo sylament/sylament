@@ -67,7 +67,7 @@ An already-built `Indicator` still passes through verbatim, same rule as the par
 
 Filament's `boolean()` and `nullable()` arms call `$query->where($this->getAttribute(), …)` with the raw attribute, while `SelectFilter::apply()` in the same package runs its column through `qualifyColumn()` — an inconsistency that produces an ambiguous column the moment the query joins.
 Ours routes both arm sets through `SelectFilter::getAttributePath()`, i.e. [`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php), so a bare name is qualified with the root alias and a dotted path is checked against the builder's aliases.
-A fix, not a mirror; recorded in the [renames table](../renames.md) and pinned by the DQL assertions in `TernaryFilterTest`.
+A fix, not a mirror; recorded in the [renames table](../renames.md) and pinned over a joined query, where a bare attribute filters by the root's field and a dotted one by its alias's.
 
 ### The arm labels are hardcoded English
 

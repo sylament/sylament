@@ -181,7 +181,7 @@ Filament splits the work in two: `applyGlobalSearchAttributeConstraints()` walks
 We keep only the plural method: every predicate goes into one `Orx` per word, so there is no first-versus-rest distinction to carry, and the per-attribute seam a subclass would want is [`SearchConstraint::forColumn()`](../../../packages/tables/src/Query/SearchConstraint.php), which is also what resolves a dot-path into a correlated `EXISTS` subselect rather than a join.
 It also refuses a dotted globally searchable attribute whose head is an alias the resource's global-search query fetch-joins as a collection: the first global search throws the `LogicException` a table search throws, naming the attribute and the alias ([has-query.md](../tables/has-query.md#a-searchable-dotted-path-and-a-fetch-join-alias-may-not-share-a-head-segment)).
 That message is worded for both its callers: it speaks of a *searchable path* and *the query*, leads with the way out that exists here — alias that join something the attribute does not begin with — and offers `searchable(query:)` only as what a **table column** can also do, since a globally searchable attribute has none.
-The message is pinned one tier down, in tables' [`FetchJoinedSearchAliasTest`](../../../packages/tables/tests/Integration/FetchJoinedSearchAliasTest.php) and `SearchConstraintTest`: global search reaches the same `SearchConstraint::forColumn()` a table search does, and no panels test quotes the message.
+The message is pinned one tier down, in tables' own search cases: global search reaches the same `SearchConstraint::forColumn()` a table search does, and no panels test quotes the message.
 
 ### The provider is resolved through a tagged registry rather than `app()`
 

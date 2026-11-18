@@ -15,7 +15,7 @@ owns:
 It works both of Filament's ways off one class.
 With a create page to link to it renders as a link; without one it opens a modal, fills a form from whatever [`HasSchema::getSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing) resolves, maps the validated state onto a new record of the action's class, persists it through Doctrine and reports `success()`.
 
-Both arms are pinned end to end, the relationship arm on a relation table and on hosts that name a relationship; tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php) runs the relationship arm too, as [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) runs the delete.
+Both arms are pinned end to end, the relationship arm on a relation table and on hosts that name a relationship.
 The tests that pin each rule are named in its entry below.
 
 ## Surface
@@ -80,7 +80,7 @@ Give every identifier field a field in the action's schema() — a Hidden one fo
 Nothing is flushed.
 Before the throw, a many-to-many owner gives the record back through the reader's `detach()`, as the mapping's own refusal does, and the record is detached from the manager, so a later flush in the same request does not insert it.
 Without the read, the row would be written with its blank key half.
-Pinned by a blank-key case, beside one where a `prePersist` callback filling the key lets the create save and one where a blank key field the modal maps on that class is the field error rather than this refusal; the many-to-many hand-back is pinned by a relationship-arm case and by tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
+Pinned by a blank-key case, beside one where a `prePersist` callback filling the key lets the create save and one where a blank key field the modal maps on that class is the field error rather than this refusal; the many-to-many hand-back is pinned by a relationship-arm case.
 
 Doctrine makes one exception to the detach.
 A record whose whole key flattens to `''` (a single derived identity whose target's single string key is still `''`) is filed under an identity hash of `''`, which Doctrine can neither detach nor remove, the shape [`ReplicateAction` meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) too.

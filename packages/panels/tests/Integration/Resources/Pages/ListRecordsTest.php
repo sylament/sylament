@@ -17,8 +17,7 @@ uses(InteractsWithLiveComponents::class);
 /*
  * Kernel reboot is disabled for every flow here: the fixture database is an
  * in-memory SQLite built by a container service, so a reboot between two
- * requests would hand the second one a freshly-migrated, empty database — the
- * shape `PrebuiltDeleteActionTest` established in the tables suite.
+ * requests would hand the second one a freshly-migrated, empty database.
  */
 
 /**

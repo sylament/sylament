@@ -228,7 +228,7 @@ A column that asked for markdown and silently got none is the failure this refus
 `markdown()` and `commonMarkOptions()` / `commonMarkExtensions()` themselves are unguarded, since they only assign, so configuring a markdown column on an install without the package is legal right up to the render.
 That is deliberate: the throw names the column, which a container-time failure could not.
 
-The absent branch cannot be exercised by uninstalling, so [`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php) reads the guard site itself and [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) asserts the manifest keeps the package a `suggest`, so deleting the guard or promoting the dependency fails the suite.
+The absent branch cannot be exercised by uninstalling, so the guard is pinned by use, every markdown case running its present arm, which a renamed converter class dead-ends, and the [manifest scan](../../../tests/Architecture/ManifestTest.php) keeps the package a `suggest`, so promoting the dependency fails the suite.
 
 ### The CommonMark pair is declared on `CanFormatState`, not composed from a support trait
 
@@ -359,7 +359,7 @@ Every closure Filament accepts works unchanged; a literal is the only addition.
 
 `AbstractString::truncate($length, $ellipsis)` counts the ellipsis *toward* `$length`: it slices to `$length` minus the ellipsis's length before appending it, so `truncate(30, '...')` returns 30 characters total.
 Laravel's `Str::limit()`, which Filament calls and whose semantics this port preserves, appends the ellipsis *after* the slice, so `limit(30)` returns 30 characters **plus** the ellipsis.
-Calling `truncate()` here would silently cost a migrating Filament user three characters per cell, so `truncateState()` composes `slice()` / `trimEnd()` / `append()` by hand instead, and [`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php) pins the difference.
+Calling `truncate()` here would silently cost a migrating Filament user three characters per cell, so `truncateState()` composes `slice()` / `trimEnd()` / `append()` by hand instead, and a case pins the difference.
 
 A second, inherited delta rides along.
 Laravel's `Str::limit()` truncates by *display width* (`mb_strwidth()`, where a fullwidth CJK character consumes two units of the limit), where Sylament's `u($state)->length()` / `slice()` count *grapheme clusters* (`grapheme_strlen()` / `grapheme_substr()`): one unit per user-perceived character regardless of display width, which is not a raw code-point count either.
@@ -391,7 +391,7 @@ Filament's `HasWeight` and `HasFontFamily` take `getWeight(mixed $state = null)`
 Support's ports [drop the `$state` argument](../support/has-weight.md#getweight-drops-the-state-argument) ([and for the font family](../support/has-font-family.md#getfontfamily-drops-the-state-parameter)), and the partial reads `getWeightClass()` / `getFontFamilyClass()` once per cell.
 
 So a closure named `fn ($state) => …` still compiles against both, but with no explicit injection to satisfy the name, `evaluate()` falls through to [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](column.md)'s ambient `'state'` resolver, which binds `$this->getState()`, the **column's** own state, not an item `getStateItems()` is iterating.
-On a badged multi-value column, `weight(fn ($state) => …)` receives the whole array `getState()` returns, once, never a single badge's value; [`TextColumnTest`](../../../packages/tables/tests/Unit/Columns/TextColumnTest.php)'s `'gives a weight closure the column state, not an item'` case pins it.
+On a badged multi-value column, `weight(fn ($state) => …)` receives the whole array `getState()` returns, once, never a single badge's value, and a case pins it.
 Reversing it means adding the `$state` parameter and the matching injection to both support traits, which touches every other consumer of `weight()` / `fontFamily()`, schemas' [`Text`](../schemas/text.md) included, and passing the item state from the partial.
 
 ### An explicit `true` colour or icon throws, where Filament lets it through and crashes

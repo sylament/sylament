@@ -15,7 +15,7 @@ The record select, its options and the submit's re-resolution are the same code 
 
 The relationship it writes is the **table's**: [`Table::relationship()`](../tables/table.md) is the only thing that supplies one, and the action refuses with a `LogicException` naming that when a host mounts it without one; a stock submit meets the same message first in the record select's label lookup, while the modal re-renders, so it surfaces wrapped in Twig's `RuntimeError` with the message intact.
 
-The class is pinned end to end on a relation table, and the tables suite's [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php) runs it too.
+The class is pinned end to end on a relation table.
 
 ## Surface
 

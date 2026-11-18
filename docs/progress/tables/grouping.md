@@ -234,7 +234,7 @@ What it never does is check the seeded value: a query string naming a group the 
 The port's `mountTableGrouping()` does two things in one pass, in this order.
 First the **heal**: a non-blank property whose id is not one the table offers, or whose direction reads as neither `asc` nor `desc`, is cleared to `null`, the mount edge of the check `groupTable()` runs at the other writer, since the query string is the one path that bypasses the action.
 Then the **seed**, of the bare id, into a blank property only.
-It runs at `#[PostMount(priority: 2)]`, after UX's URL seeding (which finishes before any component hook, whatever the priority) and after the session hook at 10, which has no grouping arm to run; the slot is its own because two hooks on one priority would resolve by reflection order over the flattened traits, and `HasTableLivePropsTest` pins the ladder.
+It runs at `#[PostMount(priority: 2)]`, after UX's URL seeding (which finishes before any component hook, whatever the priority) and after the session hook at 10, which has no grouping arm to run; the slot is its own because two hooks on one priority would resolve by reflection order over the flattened traits, and the ladder is pinned where its order shows, a URL-seeded value winning over a remembered one; the grouping slot's place in it shows nowhere, since the session hook has no grouping arm.
 
 ### A grouping change resets the page and flushes the record cache
 

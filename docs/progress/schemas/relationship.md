@@ -51,7 +51,7 @@ Both are Doctrine's own, neither errors, and the trap is [recorded on the codec]
 `MEMBER OF` is therefore not a later optimisation for bidirectional mappings; it is a shape that cannot be used at all.
 
 `SELECT 1` is legal DQL in a subselect — it parses to `SELECT 1 AS sclr_N` — so the projection needs no per-flavour branch, and it adds no parameter: under a **single-identifier owner** the builder carries exactly **one**, which keeps every consumer that mints an alias off `count($query->getParameters())` at a fixed offset.
-An owner keyed by several fields binds one parameter **per identifier field** (`sylament_relationship_owner_0`, `_1`, …), so those counted stems sit above the owner's width and shift by it — a relation-scoped table's per-column search mints `sy_x3` / `:sylament_search_3` under a scalar-pair owner where a single-`id` owner mints `sy_x2`, which tables' [`CompositeOwnerRelationshipTableTest`](../../../packages/tables/tests/Integration/CompositeOwnerRelationshipTableTest.php) pins as a literal.
+An owner keyed by several fields binds one parameter **per identifier field** (`sylament_relationship_owner_0`, `_1`, …), so those counted stems sit above the owner's width and shift by it — a relation-scoped table's per-column search mints `sy_x3` / `:sylament_search_3` under a scalar-pair owner where a single-`id` owner mints `sy_x2`.
 It is the **owner's** width that moves them and not the key's in general: the target's width binds nothing at all, because `IdentifierConstraint::correlate()` emits equalities between two aliases.
 `EXISTS` rather than `record.<id> IN (SELECT sy_related.<id> …)` returns the same single-identifier rows, plans the same for the related query, and plans better for the candidate one on PostgreSQL, where `NOT EXISTS` plans as a Hash Anti Join against `NOT IN`'s hashed sub-plan filter.
 
@@ -187,13 +187,13 @@ So there is no refusal of ours — the failure is loud, immediate and Doctrine's
 
 Under an owner keyed by several fields the scope is the correlated `EXISTS`, and its `JOIN sy_owner.<collection>` over a **JOINED leaf** whose mapped-by the **root** declares puts the root's foreign-key columns on the leaf's alias — `INNER JOIN Toaster t3_ ON d2_.region = t3_.depot_region`, a column the leaf's table does not have — so the query fails on read before anything else runs.
 Plain DQL reproduces it with no code of ours involved, so it is Doctrine's and recorded rather than refused.
-A single-identifier owner is unaffected, because its scope is the mapped-by equality and joins nothing, which is why tables' `Depot`, the owner of the `Toaster` leaf, is keyed by one field.
+A single-identifier owner is unaffected, because its scope is the mapped-by equality and joins nothing.
 
 ### A quoted single join column breaks the mapped-by scope of a single-identifier owner
 
 `SqlWalker::walkPathExpression()` writes a single-column to-one's join column unquoted even where the mapping quotes it, so a reserved-word column is a syntax error (`… WHERE o0_.select = ?`) and a relation-scoped query under a **single-identifier** owner with such a mapped-by fails on read.
 An owner keyed by several fields scopes through the correlated `EXISTS`, whose join the walker does quote.
-It is Doctrine's, recorded rather than worked around, and the reason tables' `Purchase`, whose join columns are quoted reserved words, hangs off `Bazaar`, an owner keyed by two fields.
+It is Doctrine's, recorded rather than worked around.
 
 ## Divergences
 

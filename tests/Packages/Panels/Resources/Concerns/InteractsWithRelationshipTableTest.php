@@ -44,6 +44,14 @@ it('refuses a page naming no relationship even with a related resource, naming t
     expect(fn (): string => $unnamed::getRelationshipName())->toThrow(LogicException::class, 'The relationship table [' . $unnamed::class . '] names no relationship — set the $relationship static property');
 });
 
+it("titles its relationship by the title it names, else by its related resource's plural label, else by the relationship's name", function (string $page, string $title): void {
+    expect(($this->page)($page)->component()->getRelationshipTitle())->toBe($title);
+})->with([
+    'a title' => [ManageLarderJarShelf::class, 'Jar shelf'],
+    'a related resource' => [ManageLarderJars::class, 'Preserve Jars'],
+    'neither' => [ManageLarderBins::class, 'Bins'],
+]);
+
 it("lists the owner's association, searched and sorted inside it, for whichever owner the page is mounted on, and on a page leaving its table to the trait", function (): void {
     ($this->page)(ManageLarderJars::class)
         ->assertCanSeeTableRecords([$this->apricot, $this->fig, $this->quince])

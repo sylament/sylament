@@ -39,16 +39,19 @@ it('lists each category under its heading, every result a link that closes the p
     $search = $this->createLiveComponent(GlobalSearch::class, ['panelId' => 'search'])->set('search', 'moon')->render()->crawler();
     $group = $search->filter(Selectors::GLOBAL_SEARCH_RESULT_GROUP)->reduce(fn (Crawler $group): bool => $group->filter(Selectors::GLOBAL_SEARCH_RESULT_GROUP_HEADING)->text() === 'annotated articles');
 
-    expect($group->filter('.sy-pa-global-search-result')->each(fn (Crawler $result): array => [
+    $results = $group->filter('.sy-pa-global-search-result')->each(fn (Crawler $result): array => [
         $result->filter(Selectors::GLOBAL_SEARCH_RESULT_LINK)->attr('href'),
         $result->filter(Selectors::GLOBAL_SEARCH_RESULT_LINK)->attr('data-action'),
         $result->filter(Selectors::GLOBAL_SEARCH_RESULT_HEADING . ' b')->text(),
         $result->filter('dt')->each(fn (Crawler $label): string => $label->text()),
         $result->filter('dd')->each(fn (Crawler $value): string => $value->text()),
         $result->filter('.sy-pa-global-search-result-actions ' . SupportSelectors::SMALL_LINK)->each(fn (Crawler $action): string => (string) $action->attr('href')),
-    ]))->toEqualCanonicalizing([
-        ["http://localhost/search/annotated-article-searches/{$landing->id}", 'sylament--panels--global-search#close', 'Moon landing', ['Title:', 'Words:'], ['Moon landing', '2'], ["/open/{$landing->id}", '/pinned/Pinned']],
+    ]);
+    usort($results, static fn (array $one, array $other): int => strcmp($one[2], $other[2]));
+
+    expect($results)->toBe([
         ["http://localhost/search/annotated-article-searches/{$harvest->id}", 'sylament--panels--global-search#close', 'Harvest moon', [], ['Harvest moon'], ["/open/{$harvest->id}", '/pinned/Pinned']],
+        ["http://localhost/search/annotated-article-searches/{$landing->id}", 'sylament--panels--global-search#close', 'Moon landing', ['Title:', 'Words:'], ['Moon landing', '2'], ["/open/{$landing->id}", '/pinned/Pinned']],
     ]);
 });
 

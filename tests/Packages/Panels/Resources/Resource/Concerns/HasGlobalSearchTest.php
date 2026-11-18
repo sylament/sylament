@@ -48,11 +48,12 @@ it('searches a resource by its record title attribute while it stays searchable,
 it('answers a result per matching record, titled by the record and linked to its edit page, with no details or actions', function (): void {
     $this->seed($landing = new Article('Moon landing'), $harvest = new Article('Harvest moon'), new Article('Sunrise'));
 
-    $results = $this->resources->get(ArticleResource::class)->getGlobalSearchResults('moon');
+    $results = array_map(fn (GlobalSearchResult $result): array => [$result->title, $result->url, $result->details, $result->actions], $this->resources->get(ArticleResource::class)->getGlobalSearchResults('moon'));
+    usort($results, static fn (array $one, array $other): int => strcmp((string) $one[0], (string) $other[0]));
 
-    expect(array_map(fn (GlobalSearchResult $result): array => [$result->title, $result->url, $result->details, $result->actions], $results))->toEqualCanonicalizing([
-        ['Moon landing', "http://localhost/search/articles/{$landing->id}/edit", [], []],
+    expect($results)->toBe([
         ['Harvest moon', "http://localhost/search/articles/{$harvest->id}/edit", [], []],
+        ['Moon landing', "http://localhost/search/articles/{$landing->id}/edit", [], []],
     ]);
 });
 

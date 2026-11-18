@@ -17,14 +17,16 @@ use Sylament\Tests\Fixtures\Panels\Resources\GreenhouseVentResource;
 use Sylament\Tests\Fixtures\Panels\Resources\GreenhouseVentSeedlingResource;
 use Sylament\Tests\Fixtures\Panels\Resources\LarderBinNoteResource;
 use Sylament\Tests\Fixtures\Panels\Resources\LarderBinResource;
+use Sylament\Tests\Fixtures\Panels\Resources\StockedCrockResource;
 use Sylament\Tests\Fixtures\Panels\Resources\StockedLarderResource;
 use Sylament\Tests\Fixtures\Panels\Resources\TerraceResource;
 use Sylament\Tests\Fixtures\Panels\Resources\TerraceSeedlingResource;
 
 /**
  * Resources nested under a parent: a garden's seedlings and plants, a larder's bins and their
- * notes three levels deep, seedlings under a terrace, an allotment and a greenhouse vent, one
- * parent of each key width, and a dock's arrivals under a dock listing nothing.
+ * notes three levels deep, its crocks listed by the larders' own listing, seedlings under a
+ * terrace, an allotment and a greenhouse vent, one parent of each key width, and a dock's arrivals
+ * under a dock listing nothing.
  */
 final class NestedPanelProvider extends PanelProvider
 {
@@ -40,6 +42,7 @@ final class NestedPanelProvider extends PanelProvider
                 StockedLarderResource::class,
                 LarderBinResource::class,
                 LarderBinNoteResource::class,
+                StockedCrockResource::class,
                 TerraceResource::class,
                 TerraceSeedlingResource::class,
                 AllotmentResource::class,

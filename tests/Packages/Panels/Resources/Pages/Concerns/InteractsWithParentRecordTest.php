@@ -12,6 +12,7 @@ use Sylament\Tests\Fixtures\Entity\GreenhouseVent;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderBin;
 use Sylament\Tests\Fixtures\Entity\LarderBinNote;
+use Sylament\Tests\Fixtures\Entity\LarderCrock;
 use Sylament\Tests\Fixtures\Entity\Plant;
 use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Entity\Terrace;
@@ -190,6 +191,22 @@ describe('the urls it mints', function (): void {
             ['B1', "/nested/stocked-larders/{$pantry->id}/larder-bins/B1/edit"],
             ['Notes', null],
             ['Use first', "/nested/stocked-larders/{$pantry->id}/larder-bins/B1/larder-bin-notes/{$note->id}/edit"],
+            ['Edit', null],
+        ]);
+    });
+
+    it("unlinks its listing where it falls back to a listing two crumbs back, leaving that crumb's label and link as they were", function (): void {
+        $pantry = new Larder('Pantry');
+        $pantry->addCrock(new LarderCrock(shelf: 'top', label: 'Honey'));
+        $this->seed($pantry);
+
+        $url = "/nested/stocked-larders/{$pantry->id}/stocked-crocks/{$pantry->id}~top/edit";
+
+        expect(($this->crumbs)($this->visit($url)))->toBe([
+            ['Larders', '/nested/stocked-larders'],
+            ['Pantry', null],
+            ['Larder Crocks', null],
+            ['Honey', $url],
             ['Edit', null],
         ]);
     });

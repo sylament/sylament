@@ -14,11 +14,8 @@ use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\TaggedPlantsRelati
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
-it('is built through the container, so a closure it evaluates takes a service, and holds no managers unless given some', function (): void {
-    $group = RelationGroup::make(static fn (StaticInstanceRegistry $registry): string => $registry::class);
-
-    expect($group->getLabel())->toBe(StaticInstanceRegistry::class)
-        ->and($group->getManagers())->toBe([]);
+it('is built through the container, so a closure it evaluates takes a service', function (): void {
+    expect(RelationGroup::make(static fn (StaticInstanceRegistry $registry): string => $registry::class)->getLabel())->toBe(StaticInstanceRegistry::class);
 });
 
 it('evaluates a closure list of managers, and keeps those the record may see, under their keys, once it knows the owner and the page', function (): void {

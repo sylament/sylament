@@ -45,6 +45,24 @@ it('keeps the two guarded integrations as suggestions', function (): void {
         ->not->toHaveKey('sylament/tables');
 });
 
+it("requires the extensions and packages tables' src calls unconditionally", function (): void {
+    expect(PackageManifest::of('tables')['require'])
+        ->toHaveKey('ext-intl')
+        ->toHaveKey('ext-mbstring')
+        ->toHaveKey('sylament/forms', 'self.version')
+        ->toHaveKey('symfony/html-sanitizer')
+        ->toHaveKey('symfony/validator');
+});
+
+it("keeps tables' markdown converter a suggestion, behind the guard markdown() throws from", function (): void {
+    $manifest = PackageManifest::of('tables');
+
+    expect($manifest['suggest'])
+        ->toHaveKey('league/commonmark')
+        ->and($manifest['require'])
+        ->not->toHaveKey('league/commonmark');
+});
+
 /**
  * The toolkit stylesheet reaches a page only through this entry: StimulusBundle loads an enabled, eager controller up
  * front with its autoimports, so a lazy or disabled `core`, or a moved stylesheet path, drops every package's styles

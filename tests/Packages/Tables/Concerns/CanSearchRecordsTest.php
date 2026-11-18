@@ -102,7 +102,8 @@ describe('resetTableSearch()', function (): void {
 
         $tester = $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['paged']])->searchTable('   ');
 
-        expect($chips($tester))->toBe([]);
+        expect($chips($tester))->toBe([])
+            ->and($chips($tester->searchTable("\u{a0}")))->toBe([]);
 
         $tester->searchTable(' a ')->call('gotoTablePage', ['page' => 2])->selectTableRecords([$blueLamp]);
 

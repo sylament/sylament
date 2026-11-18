@@ -10,6 +10,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
+use Sylament\Tables\Columns\Summarizers\Average;
 use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\Summarizers\Range;
 use Sylament\Tables\Columns\Summarizers\Sum;
@@ -36,10 +37,13 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * positions past 1, `ownCount` a count over the days that scopes nothing, `iconCount` counts
  * the days with icons, `sealedOnHidden` hides both of the days' summarizers, `predicateHidden`
  * counts the positions ahead of their sum, hidden over a set of more than two jars and
- * recording each time it asks in the {@see HookLog}), the band (`noPageRow`, `noAllRow`), the
- * lane (`records` lists two array rows instead of querying), and the rest of the table
- * (`unpaginated`, every jar on one page; `reorderable` by position; `actions`, a record action
- * at `actionsPosition` and a bulk action with its checkbox at `checkboxPosition`).
+ * recording each time it asks in the {@see HookLog}, `summarizedTwice` summarizes the
+ * positions a second time with an average keyed `mean` and a hidden count, `hostVisibility`
+ * adds four sums hidden or shown on this host or on {@see SummarizerMountHost}), the band
+ * (`noPageRow`, `noAllRow`), the lane (`records` lists two array rows instead of querying),
+ * and the rest of the table (`unpaginated`, every jar on one page; `reorderable` by position;
+ * `actions`, a record action at `actionsPosition` and a bulk action with its checkbox at
+ * `checkboxPosition`).
  */
 #[AsLiveComponent(name: 'Tables:SummarizedJarTable', template: '@Fixtures/tables/table.html.twig')]
 class SummarizedJarTable implements InteractsWithActions, InteractsWithTable
@@ -78,6 +82,13 @@ class SummarizedJarTable implements InteractsWithActions, InteractsWithTable
             }));
         }
 
+        if ($this->has('hostVisibility')) {
+            $positionSummarizers[] = Sum::make()->label('Hidden here')->hiddenOn(self::class);
+            $positionSummarizers[] = Sum::make()->label('Hidden elsewhere')->hiddenOn([SummarizerMountHost::class]);
+            $positionSummarizers[] = Sum::make()->label('Visible here')->visibleOn([SummarizerMountHost::class, self::class]);
+            $positionSummarizers[] = Sum::make()->label('Visible elsewhere')->visibleOn(SummarizerMountHost::class);
+        }
+
         if ($this->has('scoped')) {
             $positionSummarizers[] = Sum::make()->label('Past 1')->query(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere('jar.position > 1'));
         }
@@ -102,7 +113,8 @@ class SummarizedJarTable implements InteractsWithActions, InteractsWithTable
                     ->toggleable()
                     ->hidden($this->has('positionHidden'))
                     ->visibleFrom($this->has('responsive') ? 'md' : null)
-                    ->summarize($this->has('unsummarized') ? [] : $positionSummarizers),
+                    ->summarize($this->has('unsummarized') ? [] : $positionSummarizers)
+                    ->summarize($this->has('summarizedTwice') ? [Average::make('mean'), Count::make()->hidden()] : []),
                 TextColumn::make('sealedOn')->dateTime('Y-m-d H:i')->summarize($others ? $sealedOnSummarizers : []),
                 TextColumn::make('seal')->summarize($others ? Values::make() : []),
                 TextColumn::make('larder.name')->summarize($others ? Count::make() : []),

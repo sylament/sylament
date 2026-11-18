@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\Summarizers\Count;
-use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\TextColumn;
-use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\SummarizedJarTable;
-use Sylament\Tests\Fixtures\Tables\SummarizerMountHost;
 use Symfony\Component\DomCrawler\Crawler;
 
 it('renders no figure for a hidden summarizer, and leaves a column whose every summarizer is hidden unlabelled', function (): void {
@@ -28,14 +25,11 @@ it('renders no figure for a hidden summarizer, and leaves a column whose every s
 });
 
 it('hides a summarizer on the hosts hiddenOn() names, and shows one only on the hosts visibleOn() names', function (): void {
-    $column = TextColumn::make('position')->table(Table::make(new SummarizerMountHost()))->summarize([
-        Sum::make('hiddenHere')->hiddenOn(SummarizerMountHost::class),
-        Sum::make('hiddenElsewhere')->hiddenOn([SummarizedJarTable::class]),
-        Sum::make('visibleHere')->visibleOn([SummarizedJarTable::class, SummarizerMountHost::class]),
-        Sum::make('visibleElsewhere')->visibleOn(SummarizedJarTable::class),
-    ]);
+    $this->seed(new LarderJar('Apricot', position: 1), new LarderJar('Bramble', position: 2));
 
-    expect(array_keys($column->getSummarizers($this->entityManager()->createQueryBuilder()->select('jar')->from(LarderJar::class, 'jar'))))->toBe(['hiddenElsewhere', 'visibleHere']);
+    $crawler = $this->createLiveComponent(SummarizedJarTable::class, ['variants' => ['positionOnly', 'hostVisibility']])->render()->crawler();
+
+    expect($this::textSummaries($crawler->filter(Selectors::summaryRow('all'))))->toBe(['Sum 3', 'Hidden elsewhere 3', 'Visible here 3']);
 });
 
 it("asks a predicate once per query a render summarizes, once each for the page, the whole set and every group", function (): void {

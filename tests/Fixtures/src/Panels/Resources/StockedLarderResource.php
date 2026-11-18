@@ -12,6 +12,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\ManageLarderBins;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ManageLarderFlatJars;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ManageLarderJars;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ManageLarderJarShelf;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\ManageLarderViewableJars;
 
 /**
  * A larder titled by its name whose record pages are its managed listings, three of them in the
@@ -31,6 +32,7 @@ final class StockedLarderResource extends Resource
             'shelf' => ManageLarderJarShelf::route('/{record}/shelf'),
             'bins' => ManageLarderBins::route('/{record}/bins'),
             'flat-jars' => ManageLarderFlatJars::route('/{record}/flat-jars'),
+            'viewable-jars' => ManageLarderViewableJars::route('/{record}/viewable-jars'),
         ];
     }
 

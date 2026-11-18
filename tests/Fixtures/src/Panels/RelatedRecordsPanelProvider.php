@@ -9,11 +9,12 @@ use Sylament\Panels\PanelProvider;
 use Sylament\Tests\Fixtures\Panels\Resources\FlatJarResource;
 use Sylament\Tests\Fixtures\Panels\Resources\PreserveJarResource;
 use Sylament\Tests\Fixtures\Panels\Resources\StockedLarderResource;
+use Sylament\Tests\Fixtures\Panels\Resources\ViewableJarResource;
 
 /**
  * The pages that manage one larder's records: a larder whose jars, as a resource nested under it,
- * as a resource nesting under nothing and as no resource at all, and its bins each have a page of
- * their own.
+ * as a resource nesting under nothing, as one with a view page and as no resource at all, and its
+ * bins each have a page of their own.
  */
 final class RelatedRecordsPanelProvider extends PanelProvider
 {
@@ -22,6 +23,6 @@ final class RelatedRecordsPanelProvider extends PanelProvider
         return $panel
             ->id('related')
             ->path('related')
-            ->resources([StockedLarderResource::class, PreserveJarResource::class, FlatJarResource::class]);
+            ->resources([StockedLarderResource::class, PreserveJarResource::class, FlatJarResource::class, ViewableJarResource::class]);
     }
 }

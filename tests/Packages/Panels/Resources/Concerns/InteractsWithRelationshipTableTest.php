@@ -113,6 +113,13 @@ it("links each row to its related record's edit page, and with no page to open m
         ->and($cell($shelf, $this->apricot)->attr('data-live-name-param'))->toBe('edit');
 });
 
+it("links each row to its related record's view page ahead of its edit page, and its view action to that page", function (): void {
+    $jars = $this->visit("/related/stocked-larders/{$this->pantry->id}/viewable-jars");
+
+    expect($jars->filter(TablesSelectors::cell((string) $this->fig->id, 'label') . ' ' . TablesSelectors::CELL_WRAPPER)->attr('href'))->toBe("http://localhost/related/viewable-jars/{$this->fig->id}")
+        ->and($jars->filter(TablesSelectors::row((string) $this->fig->id) . ' ' . TablesSelectors::RECORD_ACTIONS . ' a')->each(static fn (Crawler $link): ?string => $link->attr('href')))->toBe(["http://localhost/related/viewable-jars/{$this->fig->id}/edit", "http://localhost/related/viewable-jars/{$this->fig->id}"]);
+});
+
 it("links the related create and edit actions to the related resource's pages, carrying the owner only where that resource nests under it, and leaves an action on another record or with no page a modal", function (): void {
     $jars = $this->visit("/related/stocked-larders/{$this->pantry->id}/jars");
     $flat = $this->visit("/related/stocked-larders/{$this->pantry->id}/flat-jars");

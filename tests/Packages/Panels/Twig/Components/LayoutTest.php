@@ -34,11 +34,11 @@ it("wires the drawer to the shell root, opened by the topbar's toggle and closed
         ->and($page->filter(Selectors::TOPBAR . ', ' . $overlay)->each(fn (Crawler $element): string => $element->matches(Selectors::TOPBAR) ? 'topbar' : 'overlay'))->toBe(['topbar', 'overlay']);
 });
 
-it("carries the panel's brand to the logo in the topbar and in the sidebar header", function (): void {
+it("carries the panel's brand to the logo at the topbar's start and in the sidebar header", function (): void {
     $page = $this->visit('/panel-branded');
     $logos = fn (string $scope): array => $page->filter($scope . ' ' . Selectors::LOGO)->each(fn (Crawler $logo): array => [$logo->attr('src'), $logo->attr('alt')]);
     $expected = [['/brand/acme.svg', 'Acme logo'], ['/brand/acme-dark.svg', 'Acme logo']];
 
-    expect($logos(Selectors::TOPBAR))->toBe($expected)
+    expect($logos(Selectors::TOPBAR . ' .sy-pa-topbar-start'))->toBe($expected)
         ->and($logos(Selectors::SIDEBAR))->toBe($expected);
 });

@@ -10,6 +10,7 @@ use Sylament\Tests\Fixtures\Panels\Pages\NotesPage;
 use Sylament\Tests\Fixtures\Panels\Pages\OrphanPage;
 use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
 use Sylament\Tests\Fixtures\Panels\Selectors;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -144,6 +145,18 @@ describe('body', function (): void {
     it('renders the schema its content() builds inside the content area, which is empty otherwise', function (): void {
         expect($this->visit('/pages/settings-page')->filter(Selectors::PAGE . ' .sy-pa-page-content')->text())->toBe('Every setting applies to the whole site.')
             ->and($this->visit('/pages/notes-page')->filter(Selectors::PAGE . ' .sy-pa-page-content')->text())->toBe('');
+    });
+
+    it('builds its content only to render it, so a live request that redirects without rendering builds none', function (): void {
+        $this->visit('/pages/settings-page');
+        $onArrival = $this::getContainer()->get(HookLog::class)->hooks;
+
+        $this->createLiveComponent(SettingsPage::class, ['panelId' => 'pages'])
+            ->mountAction('leave')
+            ->assertRedirect('/pages/notes-page');
+
+        expect($onArrival)->toBe(['content'])
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(['leave']);
     });
 
     it('puts the classes it declares on its root beside the shared ones', function (): void {

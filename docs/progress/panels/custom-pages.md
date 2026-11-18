@@ -93,7 +93,7 @@ The `partials/Page/` templates reach Twig only through the page's `getTemplate()
 
 `content` is deliberately **not** listed in `schemas()`.
 `HasSchemas::getSchema('content')` resolves the name against a same-named method at render time, while the list in `schemas()` is what the de/hydration hooks force-build on every live request.
-So a page that never overrides `content()` renders `renderSchema('content')` into an empty schema at page load and builds nothing at all on a live round trip.
+So no de/hydration hook builds `content`: `renderSchema('content')` builds it where the page renders, at page load and on a live request that re-renders it, and a live request that answers without rendering, such as an action's redirect, builds none, whether or not the page overrides `content()`.
 [`EditRecord`](edit-record.md) is the one page that *does* list it, because its `content()` carries the relation managers and their tab state has to survive a re-render.
 
 ### The empty discovery list is mandatory, and so is its removal from every leaf

@@ -87,7 +87,11 @@ it('aligns the row of every page that keeps the static, by one call on any page 
     expect($this->visit('/admin/articles/create')->filter(Selectors::FORM_ACTIONS . ' ' . SupportSelectors::align('end')))->toHaveCount(1)
         ->and($this->visit("/admin/articles/{$article->id}/edit")->filter(Selectors::FORM_ACTIONS . ' ' . SupportSelectors::align('end')))->toHaveCount(1);
 
-    CreateArticle::formActionsAlignment(Alignment::Center);
+    CreateArticle::alignFormActionsCenter();
 
     expect($this->visit('/admin/articles/create')->filter(Selectors::FORM_ACTIONS . ' ' . SupportSelectors::align('center')))->toHaveCount(1);
+
+    CreateArticle::formActionsAlignment(Alignment::Justify);
+
+    expect($this->visit('/admin/articles/create')->filter(Selectors::FORM_ACTIONS . ' ' . SupportSelectors::align('justify')))->toHaveCount(1);
 });

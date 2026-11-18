@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Table;
+use Sylament\Tests\Fixtures\Entity\Garden;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
+use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Tables\AlignedColumnsTable;
+use Sylament\Tests\Fixtures\Tables\AssociableRelationTable;
 use Sylament\Tests\Fixtures\Tables\GroupedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\ReorderableLarderJarTable;
@@ -56,4 +61,31 @@ it("hands back the current page keyed by record key, and the page's carrier only
         ->and($paginated->getPaginator()?->getTotalRecordCount())->toBe(6)
         ->and($unpaginated->getRecords())->toHaveCount(6)
         ->and($unpaginated->getPaginator())->toBeNull();
+});
+
+describe('hasQuery()', function (): void {
+    it('stays on the query lane exactly while no records closure is set', function (): void {
+        $table = Table::make(new AlignedColumnsTable());
+        $bare = [$table->hasQuery(), $table->getQuery()];
+
+        $table->query($this->entityManager()->createQueryBuilder()->select('product')->from(Product::class, 'product'))->records(static fn (): array => []);
+        $beside = $table->hasQuery();
+
+        $table->records(null);
+
+        expect([...$bare, $beside, $table->hasQuery()])->toBe([true, null, false, true]);
+    });
+});
+
+describe('getRecordClass()', function (): void {
+    it('answers the first root entity of the base query, null without one', function (): void {
+        $this->seed($kew = new Garden('Kew'));
+        $table = fn (?QueryBuilder $query): Table => Table::make(new AlignedColumnsTable())->query($query);
+        $relation = $this->createLiveComponent(AssociableRelationTable::class, AssociableRelationTable::props($this->entityManager(), $kew, 'seedlings'))->component()->getTable();
+
+        expect($table($this->entityManager()->createQueryBuilder()->select('product', 'jar')->from(Product::class, 'product')->from(LarderJar::class, 'jar'))->getRecordClass())->toBe(Product::class)
+            ->and($table(null)->getRecordClass())->toBeNull()
+            ->and($table($this->entityManager()->createQueryBuilder()->select('1'))->getRecordClass())->toBeNull()
+            ->and($relation->getRecordClass())->toBe(Seedling::class);
+    });
 });

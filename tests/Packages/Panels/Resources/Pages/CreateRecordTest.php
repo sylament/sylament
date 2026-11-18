@@ -56,6 +56,10 @@ describe('the page', function (): void {
             ->and($this->renderedLiveProps($page))->toHaveKey('data')->not->toHaveKey('record');
     });
 
+    it("stamps its page root with its resource's slug, a slash in it a dash", function (): void {
+        expect($this->visit('/edit-shapes/binders/sheeted/create')->filter(Selectors::PAGE . '.sy-pa-resource-create-record-page.sy-pa-resource-binders-sheeted'))->toHaveCount(1);
+    });
+
     it('shows a title and a crumb of its own', function (): void {
         $page = $this->visit('/create-shapes/potted-plants/create-bare');
 

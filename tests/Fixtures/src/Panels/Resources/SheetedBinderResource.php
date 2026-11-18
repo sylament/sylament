@@ -10,6 +10,7 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\VettedBinder;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateSheetedBinder;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditSheetedBinder;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListSheetedBinders;
 
@@ -40,6 +41,7 @@ final class SheetedBinderResource extends Resource
     {
         return [
             'index' => ListSheetedBinders::route('/'),
+            'create' => CreateSheetedBinder::route('/create'),
             'edit' => EditSheetedBinder::route('/{record}/edit'),
         ];
     }

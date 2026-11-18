@@ -61,6 +61,12 @@ describe('the layouts', function (): void {
             ->and($crawler->filter('.sy-ta-col-manager, ' . SupportSelectors::DROPDOWN))->toHaveCount(0);
     });
 
+    it('caps the dialog at the CSS length it is given', function (): void {
+        $crawler = $this->createLiveComponent(ColumnManagerProductTable::class, ['variants' => ['modal', 'sized']])->render()->crawler();
+
+        expect($crawler)->toContainElement(Selectors::COLUMN_MANAGER_MODAL . ' ' . SupportSelectors::MODAL_WINDOW . '[style*="max-width: 30rem"] h2', 'Columns');
+    });
+
     it('sizes the dropdown by the width and the max height it is given and lays the items out column-wise in the count it is given, and in one column at the stylesheet width without', function (array $variants, string $panel, int $columns): void {
         $crawler = $this->createLiveComponent(ColumnManagerProductTable::class, ['variants' => $variants])->render()->crawler();
 

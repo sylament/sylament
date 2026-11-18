@@ -78,7 +78,8 @@ Vendor's group arm carries two class names, `fi-ta-col-manager-group` and `fi-ta
 ### The width is a CSS length, and the columns-to-width match is not ported
 
 Vendor's `getColumnManagerWidth()` is `Width | string | null` and falls back through a `match` on the column count (2 → `TwoExtraLarge`, 3 → `FourExtraLarge`, 4 → `SixExtraLarge`, else `ExtraSmall`), so it never actually returns null.
-Ours is `?string`, a raw CSS length handed to support's `Dropdown` and `Modal`, and it is genuinely nullable: with nothing set, the dropdown takes the `20rem` its own stylesheet declares and the modal takes `md`.
+Ours is `?string`, a raw CSS length, and it is genuinely nullable: with nothing set, the dropdown takes the `20rem` its own stylesheet declares and the modal takes `md`.
+The dropdown takes the length as its panel's width; support's `Modal` reads its `width` as a size token (`sy-modal-<value>`), so the partial hands the modal no token and caps its window with the length as an inline `max-width` instead, and a token such as `lg` passed here is no length to either.
 
 [`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php) exists, so nothing blocks the back-fill: it is retyping the property and the setter and porting the column-count match.
 It is the same gap [`filtersFormWidth()` records](has-filters.md#the-filters-form-columns-follow-the-layout-the-width-does-not), and the two setters land together.

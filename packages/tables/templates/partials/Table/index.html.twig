@@ -376,11 +376,13 @@
 
         {% if columnManagerModalVisible %}
             {% set columnManagerResetAttributes = stimulus_action('live', 'action', parameters: {action: 'resetTableColumnManager'}) %}
+            {% set columnManagerWidth = component.getColumnManagerWidth %}
 
             <twig:SylamentSupport:Modal
                 :id="component.getColumnManagerModalId"
                 heading="Columns"
-                :width="component.getColumnManagerWidth ?? 'md'"
+                :width="columnManagerWidth is null ? 'md' : null"
+                :extraWindowAttributes="columnManagerWidth is null ? {} : {style: ['max-width: ' ~ columnManagerWidth]}"
             >
                 <twig:block name="content">
                     <twig:SylamentTables:ColumnManagerContent

@@ -160,7 +160,10 @@ Emptying it puts the mount back on the `fill(null)` arm, so a hand-edited URL co
 ### A reset state that names a field with `null` is honoured
 
 Filament picks a field's reset value with `$filterResetState[$fieldName] ?? match (…)` ([`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) at `:103`), so a reset state that names a field **with a null value** falls through to the type-derived arm.
-The port tests `array_key_exists()`, so the named `null` is written as named; that is what makes `SelectFilter`'s `['value' => null]` do what it says when the field's current state is a bool.
+The port tests `array_key_exists()`, so the named `null` is written as named.
+For `SelectFilter`'s `['value' => null]` the two agree: the type-derived arm asks `hasNullableBooleanState()` first, which `Select` answers true, so it writes `null` as well.
+They part for a field that keeps a bool its state does not cast, such as a `Hidden` field holding `true`, which the port clears to the named `null` where Filament writes `false`.
+`Checkbox` and `Toggle` cast a written `null` back to `false`, and an array field such as a multiple `Select` or a `CheckboxList` casts it to `[]`, which is what Filament's `[]` arm writes too, so none of those shows the difference.
 
 ### `removeTableFilter()` carries no `$isRemovingAllFilters` parameter
 

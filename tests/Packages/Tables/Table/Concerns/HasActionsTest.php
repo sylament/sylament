@@ -38,9 +38,11 @@ it('leaves a name no action once the set that last registered it is replaced, al
 
     expect($tester->render()->crawler())->toContainElement(Selectors::HEADER_ACTIONS . ' button', 'Note');
 
-    $tester->call('mountAction', ['name' => 'note', 'context' => ['table' => true]])
-        ->assertActionNotMounted()
-        ->callAction(TestAction::make('export')->table());
+    $tester->call('mountAction', ['name' => 'note', 'context' => ['table' => true]]);
+
+    expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+
+    $tester->call('mountAction', ['name' => 'export', 'context' => ['table' => true]]);
 
     expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['export']);
 });

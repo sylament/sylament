@@ -43,14 +43,19 @@ describe('reading the selection', function (): void {
     });
 
     it('selects every row while tracking an empty exclusion, binding no key at all', function (): void {
-        $this->seed(new Product('Chair'), new Product('Lamp'));
+        $this->seed($chair = new Product('Chair'), new Product('Lamp'));
 
-        $this->createLiveComponent(ConfiguredSelectionProductTable::class)
+        $tester = $this->createLiveComponent(ConfiguredSelectionProductTable::class)
             ->set('isTrackingDeselectedTableRecords', true)
             ->callAction(TestAction::make('archive')->table()->bulk());
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['archive read Chair, Lamp'])
             ->and(preg_grep('/\bIN\b/', $this->statementsRun()))->toBe([]);
+
+        $tester->set('deselectedTableRecords', [(string) $chair->id])->callAction(TestAction::make('archive')->table()->bulk());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['archive read Lamp'])
+            ->and(preg_grep('/\bIN\b/', $this->statementsRun()))->toHaveCount(1);
     });
 
     it("resolves a records() table's selection off its rows, so a key they lack reads as nothing while the banner still shows it, and a tracked one as every row but the deselected", function (): void {
@@ -330,7 +335,7 @@ describe('a selection over several identifier fields', function (): void {
             ->and(array_values(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), preg_grep('/ WHERE /', $this->statementsRun()))))->toBe([1000, 2]);
     })->with('composite lines');
 
-    it('reads two spellings of one key that land in different batches as one record, and as one key', function (): void {
+    it('reads two spellings of one key that land in different batches as one record, and as one key, and excludes a row by either spelling', function (): void {
         $this->seed(...$bands = array_map(static fn (int $rate): TariffBand => new TariffBand("{$rate}.50", 'z', "Band {$rate}"), range(1, 500)));
 
         $tester = $this->createLiveComponent(BatchedSelectionLineTable::class, ['lineClass' => TariffBand::class])
@@ -343,6 +348,10 @@ describe('a selection over several identifier fields', function (): void {
         $tester->callAction(TestAction::make('readKeys')->table()->bulk());
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['read 500 keys, 500 distinct']);
+
+        $tester->set('isTrackingDeselectedTableRecords', true)->set('deselectedTableRecords', ['1=2E500~z'])->callAction(TestAction::make('readKeys')->table()->bulk());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['read 499 keys, 499 distinct']);
     });
 
     it('keeps a selection over one identifier field one statement past a batch', function (): void {

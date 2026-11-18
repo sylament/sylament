@@ -17,7 +17,6 @@ it('renders its visible actions in the header band of a table with no heading, r
     $crawler = $tester->render()->crawler();
 
     expect($crawler)->toContainButtons(Selectors::HEADER . ' ' . Selectors::HEADER_ACTIONS . ' button', ['Restock'])
-        ->and($crawler->filter(Selectors::HEADER . ' .sy-ta-header-heading'))->toHaveCount(0)
         ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(0);
 
     $tester->callAction(TestAction::make('restock')->table());

@@ -418,6 +418,10 @@ class Group extends Component
             $title = $title->getLabel();
         }
 
+        if ($title instanceof BackedEnum) {
+            $title = $title->value;
+        }
+
         if ($title instanceof Markup) {
             return $title;
         }

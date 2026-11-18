@@ -212,6 +212,7 @@ The port's [`getTable()`](../../../packages/tables/src/Grouping/Concerns/Belongs
 
 `getStringKey()` unwraps a `BackedEnum` to its backing value, formats a `DateTimeInterface` as `Y-m-d` under `date()`, and otherwise applies the scalar-or-`Stringable` guard `HasTable::toRecordKey()` uses for record keys, copied rather than shared, because that helper is `private static` on the host trait.
 Everything else answers `null`, which is a real group (the blank one) rather than an error, where Filament's `strval()` throws on an array and on a pure enum.
+`getTitle()` unwraps a `BackedEnum` that is not `HasLabel` the same way, where Filament's `resolveTitle()` returns it raw and its `string | Htmlable | null` return type refuses it, so the group is headed by the value it is keyed by rather than every value folding into one blank heading the break on the title cannot tell apart.
 
 One arm of that guard is load-bearing rather than defensive.
 A Doctrine `Collection` **is** `Stringable`, and what `ArrayCollection::__toString()` prints is `Class@hash`, a different string per instance, so without the explicit collection arm a to-many column would put every row in a group of its own, silently and plausibly.

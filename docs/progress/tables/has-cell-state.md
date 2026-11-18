@@ -14,7 +14,7 @@ The relationship members of Filament's trait are [column.md](column.md#relations
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
-| [`getStateFromRecord()` — object graph or array, by dotted path, fanning out over a collection](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [diverges](#a-to-one-chain-keeps-the-raw-read-where-filaments-relationship-arm-drops-blanks) · [diverges](#the-list-shape-is-metadata-derived-where-filaments-is-cached-off-the-first-row) |
+| [`getStateFromRecord()` — object graph or array, by dotted path, fanning out over a collection](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [diverges](#a-to-one-chain-keeps-the-raw-read-where-filaments-relationship-arm-drops-blanks) · [diverges](#the-list-shape-follows-each-rows-walk-where-filaments-is-cached-off-the-first-row) |
 | [`default()` / `getDefaultState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
 | [`separator()` / `getSeparator()` — split a string into a list](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
 | [`distinctList()` / `isDistinctList()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#distinctlist-dedupes-entity-values-by-value-not-by-identity) |
@@ -123,14 +123,13 @@ Filament can afford it because `getState()` immediately maps `blank($state)` ont
 `getState()` here runs the same blank-to-default step, so `''` and `null` collapse in the state exactly as they do upstream, and the two ports answer alike at the place a caller reads.
 What differs is one level down: `getStateFromRecord()` returns `''` where Filament's relationship arm returns `null`.
 
-### The list shape is metadata-derived, where Filament's is cached off the first row
+### The list shape follows each row's walk, where Filament's is cached off the first row
 
-Whether a cell answers a scalar or a list must be **stable across rows** — a column rendering `Alice` on one row and `[Alice]` on the next breaks any formatter that type-tests, and `TextColumn` badges a list where it prints a scalar.
+Whether a cell answers a scalar or a list must not depend on which row rendered first — a column rendering `Alice` on one row and `[Alice]` on the next breaks any formatter that type-tests, and `TextColumn` badges a list where it prints a scalar.
 Filament decides it per column with `hasMultipleRelationship()`, which walks the relationship values of the record **in hand** and memoises the answer: whichever row is rendered first decides the shape for the whole table.
 That is row-order-dependent by construction — a first row whose to-one hop is `null` never reaches the collection behind it, so `false` is cached and every later row is asked for a single value.
 
-Here the question is asked of the **mapping** instead: `isCollectionValuedAssociation()` per segment, from the table's record class through `getQueryEntityManager()`, so the answer is a property of the declaration and no row can shift it.
-The cache is still per column, but what it caches cannot depend on which record arrived first.
-A path with no mapping to consult — the records lane, a DTO, a plain array — falls back to the **value**-derived answer (did this walk cross a collection), which is the only thing there is to ask there, and is why the fallback is not a defect: without an entity manager the shape is per row by necessity.
-
-The cost is one metadata read per column per request, memoised in `$cachedPathTraversesToMany`; the gain is that the null-first-row case — the one a demo dataset produces the moment an optional relation exists — cannot silently change a column's type.
+Here each row's own walk decides, and nothing is cached off a row.
+A walk that crosses a `Collection` answers the list of what it reached, blanks dropped, so a row reaching one item reads a one-item list, never a scalar, and a row reaching none reads `null`, as a row whose to-one hop is `null` before the collection does.
+`pathTraversesToMany()` also asks the mapping — `isCollectionValuedAssociation()` per segment, from the table's record class through `getQueryEntityManager()`, memoised per column in `$cachedPathTraversesToMany` — and sends a to-many path whose walk crossed no collection down the list arm too; where the accessor hands back the mapped `Collection`, such a walk stopped at a blank hop, so it reads `null` on either arm.
+A path with no mapping to consult — the records lane, a DTO, a plain array — is decided by the walk alone.

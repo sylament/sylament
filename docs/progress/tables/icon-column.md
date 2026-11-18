@@ -91,7 +91,7 @@ Here the shade is resolved, because the icons are the cell's only content and ow
 ### The boolean auto-detect reads Doctrine metadata off the table's record class
 
 Filament's `isBoolean()` probes the **bound record** (`$record instanceof Model && $record->hasCast($name, ['bool', 'boolean'])`) and assigns the answer back onto `$this->isBoolean`, the same property `boolean()` writes.
-Eloquent's `$casts` map has no Doctrine twin at the attribute level, so the port asks the mapping instead: `ClassMetadata::getTypeOfField($name) === 'boolean'` over [`Table::getRecordClass()`](table.md) and `getQueryEntityManager()`, the pair [`HasCellState::pathTraversesToMany()`](has-cell-state.md#the-list-shape-is-metadata-derived-where-filaments-is-cached-off-the-first-row) uses for the same reason, memoised the same way in a private field rather than over the configuration property.
+Eloquent's `$casts` map has no Doctrine twin at the attribute level, so the port asks the mapping instead: `ClassMetadata::getTypeOfField($name) === 'boolean'` over [`Table::getRecordClass()`](table.md) and `getQueryEntityManager()`, the pair [`HasCellState::pathTraversesToMany()`](has-cell-state.md#the-list-shape-follows-each-rows-walk-where-filaments-is-cached-off-the-first-row) also reads, memoised the same way in a private field rather than over the configuration property.
 
 The probe reads `$this->table` rather than [`getTable()`](column.md#gettable-refuses-without-filaments-three-source-chain), because the getter throws for an unmounted column and `isBoolean()` has to *answer* for one: `IconColumn::make('flag')` built outside a table is not boolean, and it is not an error.
 

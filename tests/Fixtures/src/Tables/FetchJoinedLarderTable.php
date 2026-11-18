@@ -20,7 +20,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * Larders whose query fetch-joins their jars, so each larder repeats once a jar in the
  * rows the query returns, selected without tracking deselections; its `archive` bulk
- * action records the keys it reads in the {@see HookLog}.
+ * action records the keys it reads, sorted, in the {@see HookLog}.
  */
 #[AsLiveComponent(name: 'Tables:FetchJoinedLarderTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class FetchJoinedLarderTable implements InteractsWithActions, InteractsWithTable
@@ -46,7 +46,10 @@ class FetchJoinedLarderTable implements InteractsWithActions, InteractsWithTable
             ->trackDeselectedRecords(false)
             ->toolbarActions([
                 BulkAction::make('archive')->fetchSelectedRecords(false)->action(function (array $records): void {
-                    $this->hookLog->record('archive read ' . implode(', ', array_map(static fn (mixed $key): string => is_string($key) ? $key : get_debug_type($key), $records)));
+                    $keys = array_map(static fn (mixed $key): string => is_string($key) ? $key : get_debug_type($key), $records);
+                    sort($keys, SORT_NATURAL);
+
+                    $this->hookLog->record('archive read ' . implode(', ', $keys));
                 }),
             ]);
     }

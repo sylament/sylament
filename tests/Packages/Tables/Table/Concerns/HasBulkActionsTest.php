@@ -24,16 +24,18 @@ describe('selection chrome', function (): void {
             ->and($crawler->filter('th.sy-ta-header-cell')->each(static fn (Crawler $cell): bool => $cell->matches(Selectors::headerCell('name'))))->toBe([true]);
     });
 
-    it('offers a primary "Select all" with the ceiling, hidden until the controller reveals it, beside a danger "Deselect all", on a page past the end too', function (int $page): void {
+    it('offers a primary "Select all" with the ceiling, hidden until the controller reveals it, beside a danger "Deselect all", on a page past the end too', function (int $page, int $rows): void {
         $this->seed(new Product('Lamp'), new Product('Vase'));
 
-        $banner = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['tablePage' => $page])->render()->crawler()->filter(Selectors::SELECTION_BANNER);
+        $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['tablePage' => $page])->render()->crawler();
+        $banner = $crawler->filter(Selectors::SELECTION_BANNER);
 
-        expect($banner)->toContainElement(SupportSelectors::LINK . SupportSelectors::color('primary') . '[hidden]', 'Select all 2')
+        expect($crawler->filter(Selectors::ROW))->toHaveCount($rows)
+            ->and($banner)->toContainElement(SupportSelectors::LINK . SupportSelectors::color('primary') . '[hidden]', 'Select all 2')
             ->and($banner)->toContainElement(SupportSelectors::LINK . SupportSelectors::color('danger') . ':not([hidden])', 'Deselect all');
     })->with([
-        'the first page' => [1],
-        'a page past the end' => [3],
+        'the first page' => [1, 2],
+        'a page past the end' => [3, 0],
     ]);
 
     it("renders no banner while a deferred table's window is open", function (): void {

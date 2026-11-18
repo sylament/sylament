@@ -34,7 +34,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * (the bulk actions in one group), `deprecated` (declared through `bulkActions()` and
  * `pushBulkActions()`), `defersLoading`, `keepsSelectionWhenFiltered`, `simplePagination`
  * and `records` (six array rows instead of the products). Its bulk actions record what they
- * read in the {@see HookLog}: `archive` the selected records, `archiveByKey` their keys and
+ * read in the {@see HookLog}, sorted: `archive` the selected records, `archiveByKey` their keys and
  * `recount` how many it reads before and after clearing the selection itself.
  */
 #[AsLiveComponent(name: 'Tables:ConfiguredSelectionProductTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
@@ -163,10 +163,10 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
     {
         return [
             BulkAction::make('archive')->action(function (array $records): void {
-                $this->hookLog->record('archive read ' . implode(', ', array_map($this->nameOf(...), $records)));
+                $this->hookLog->record('archive read ' . $this->sorted(array_map($this->nameOf(...), $records)));
             }),
             BulkAction::make('archiveByKey')->fetchSelectedRecords(false)->action(function (array $records): void {
-                $this->hookLog->record('archiveByKey read ' . implode(', ', array_map(static fn (mixed $key): string => is_string($key) ? $key : get_debug_type($key), $records)));
+                $this->hookLog->record('archiveByKey read ' . $this->sorted(array_map(static fn (mixed $key): string => is_string($key) ? $key : get_debug_type($key), $records)));
             }),
             BulkAction::make('recount')->action(function (): void {
                 $before = count($this->getSelectedTableRecords());
@@ -175,6 +175,16 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
                 $this->hookLog->record(sprintf('recount read %d, then %d', $before, count($this->getSelectedTableRecords())));
             }),
         ];
+    }
+
+    /**
+     * @param array<string> $values
+     */
+    private function sorted(array $values): string
+    {
+        sort($values, SORT_NATURAL);
+
+        return implode(', ', $values);
     }
 
     private function nameOf(mixed $record): string

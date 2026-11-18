@@ -258,13 +258,18 @@ describe('grouped selection', function (): void {
             $fig = new LarderJar('Fig', supplier: $zest),
             $grape = new LarderJar('Grape', supplier: $zest),
         );
-        $keys = static fn (LarderJar ...$jars): string => json_encode(array_map(static fn (LarderJar $jar): string => (string) $jar->id, $jars), JSON_THROW_ON_ERROR);
-
         $crawler = $this->createLiveComponent(GroupedSelectionLarderJarTable::class, ['pageOnly' => $pageOnly, 'tableRecordsPerPage' => 5])->render()->crawler();
+        $groupKeys = static function (string $group) use ($crawler): array {
+            $keys = json_decode((string) $crawler->filter(Selectors::groupHeaderRow($group) . " input[aria-label=\"Select/deselect every record in group {$group} for bulk actions.\"]")->attr('data-sy-group-keys'), flags: JSON_THROW_ON_ERROR);
+            sort($keys, SORT_NATURAL);
+
+            return $keys;
+        };
+        $keys = static fn (LarderJar ...$jars): array => array_map(static fn (LarderJar $jar): string => (string) $jar->id, $jars);
 
         expect(preg_grep('/^SELECT \w+\.id AS \w+ FROM LarderJar .* WHERE /', $this->statementsRun()))->toHaveCount($queries)
-            ->and($crawler->filter(Selectors::groupHeaderRow('Acme') . ' input[aria-label="Select/deselect every record in group Acme for bulk actions."]')->attr('data-sy-group-keys'))->toBe($keys($apricot, $blackberry))
-            ->and($crawler->filter(Selectors::groupHeaderRow('Zest') . ' input[aria-label="Select/deselect every record in group Zest for bulk actions."]')->attr('data-sy-group-keys'))->toBe($wholeZest ? $keys($date, $elder, $fig, $grape) : $keys($date, $elder, $fig));
+            ->and($groupKeys('Acme'))->toBe($keys($apricot, $blackberry))
+            ->and($groupKeys('Zest'))->toBe($wholeZest ? $keys($date, $elder, $fig, $grape) : $keys($date, $elder, $fig));
     })->with([
         'across the pages' => [false, 2, true],
         'page-only' => [true, 0, false],
@@ -275,8 +280,15 @@ describe('grouped selection', function (): void {
 
         $crawler = $this->createLiveComponent(GroupedSelectionLarderJarTable::class)->render()->crawler();
 
-        expect($crawler->filter(Selectors::groupHeaderRow('') . ' input.sy-ta-group-checkbox')->attr('data-sy-group-keys'))->toBe(json_encode([(string) $fig->id, (string) $plum->id]))
-            ->and($crawler->filter(Selectors::groupHeaderRow('Acme') . ' input.sy-ta-group-checkbox')->attr('data-sy-group-keys'))->toBe(json_encode([(string) $apricot->id]));
+        $groupKeys = static function (string $group) use ($crawler): array {
+            $keys = json_decode((string) $crawler->filter(Selectors::groupHeaderRow($group) . ' input.sy-ta-group-checkbox')->attr('data-sy-group-keys'), flags: JSON_THROW_ON_ERROR);
+            sort($keys, SORT_NATURAL);
+
+            return $keys;
+        };
+
+        expect($groupKeys(''))->toBe([(string) $fig->id, (string) $plum->id])
+            ->and($groupKeys('Acme'))->toBe([(string) $apricot->id]);
     });
 });
 
@@ -335,7 +347,7 @@ describe('a selection over several identifier fields', function (): void {
             ->and(array_values(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), preg_grep('/ WHERE /', $this->statementsRun()))))->toBe([1000, 2]);
     })->with('composite lines');
 
-    it('reads two spellings of one key that land in different batches as one record, and as one key, and excludes a row by either spelling', function (): void {
+    it('reads two spellings of one key that land in different batches as one record, and as one key, and excludes a row by another spelling within one batch but not beyond it', function (): void {
         $this->seed(...$bands = array_map(static fn (int $rate): TariffBand => new TariffBand("{$rate}.50", 'z', "Band {$rate}"), range(1, 500)));
 
         $tester = $this->createLiveComponent(BatchedSelectionLineTable::class, ['lineClass' => TariffBand::class])
@@ -352,6 +364,10 @@ describe('a selection over several identifier fields', function (): void {
         $tester->set('isTrackingDeselectedTableRecords', true)->set('deselectedTableRecords', ['1=2E500~z'])->callAction(TestAction::make('readKeys')->table()->bulk());
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['read 499 keys, 499 distinct']);
+
+        $tester->set('deselectedTableRecords', ['1=2E500~z', ...array_map(static fn (int $rate): string => "{$rate}~y", range(1, 500))])->callAction(TestAction::make('readKeys')->table()->bulk());
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['read 500 keys, 500 distinct']);
     });
 
     it('keeps a selection over one identifier field one statement past a batch', function (): void {

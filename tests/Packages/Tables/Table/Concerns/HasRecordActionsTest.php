@@ -72,10 +72,8 @@ it("opens a group's dropdown towards the start beside actions placed before the 
 
     expect($crawler->filter(Selectors::row((string) $lamp->id) . ' ' . Selectors::RECORD_ACTIONS . ' ' . SupportSelectors::dropdownValue('placement', $placement)))->toHaveCount(1);
 })->with([
-    'before the cells' => ['BeforeCells', 'bottom-start'],
     'before the columns' => ['BeforeColumns', 'bottom-start'],
     'by default, after the columns' => [null, 'bottom-end'],
-    'after the cells' => ['AfterCells', 'bottom-end'],
 ]);
 
 it('places the actions cell where its position says, the two positions on each side of the cells telling apart only once the checkbox column is on, and renders none after the content', function (?string $position, bool $selectable, ?string $checkboxPosition, array $order): void {

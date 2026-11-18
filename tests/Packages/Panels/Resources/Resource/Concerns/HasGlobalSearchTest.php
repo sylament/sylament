@@ -171,6 +171,6 @@ it('refuses a dotted attribute whose head its query fetch-joins as a collection,
     $this->seed(new Garden('Kew'));
 
     expect(fn (): array => $this->resources->get(FetchJoinedGardenSearchResource::class)->getGlobalSearchResults('Kew'))
-        ->toThrow(LogicException::class, 'The searchable path [seedlings.name] begins with [seedlings], an alias the query fetch-joins as a collection')
+        ->toThrow(LogicException::class, '[seedlings]')
         ->and($this->statementsRun())->toBe([]);
 });

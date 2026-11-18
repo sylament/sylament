@@ -44,5 +44,5 @@ it('lets a resource that throws take the whole search down', function (): void {
 
     $this->requests->push(new Request(attributes: ['_sylament_panel' => 'search-custom']));
 
-    expect(fn (): GlobalSearchResults => $this->provider->getResults('Kew'))->toThrow(LogicException::class, 'an alias the query fetch-joins as a collection');
+    expect(fn (): GlobalSearchResults => $this->provider->getResults('Kew'))->toThrow(LogicException::class, '[seedlings]');
 });

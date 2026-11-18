@@ -229,7 +229,7 @@ describe('the nested list', function (): void {
             ->and($editLinks)->toEqualCanonicalizing([($this->seedlingUrl)($this->rose, $this->fern), ($this->seedlingUrl)($this->rose, $this->sage)]);
 
         $this->createLiveComponent(ListGardenSeedlings::class, ['parentRecords' => ['garden' => (string) $this->rose->id], 'panelId' => 'nested'])
-            ->searchTable('fe')
+            ->searchTable('Fe')
             ->assertCanSeeTableRecords([$this->fern])
             ->assertCanNotSeeTableRecords([$this->fennel, $this->sage])
             ->searchTable()

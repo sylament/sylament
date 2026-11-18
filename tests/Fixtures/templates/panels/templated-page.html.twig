@@ -1,0 +1,15 @@
+{% extends '@SylamentPanels/partials/Page/index.html.twig' %}
+
+{% set greeting = 'Welcome to ' ~ this.getEditionLabel %}
+
+{% block header %}
+    <p>{{ greeting }}</p>
+{% endblock header %}
+
+{% block content %}
+    <p>{{ this.getEditionLabel }}</p>
+{% endblock content %}
+
+{% block footer %}
+    <footer>Read {{ this.getTitle }} again next season.</footer>
+{% endblock footer %}

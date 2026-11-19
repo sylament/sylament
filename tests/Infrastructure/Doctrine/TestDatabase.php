@@ -55,8 +55,8 @@ final class TestDatabase
     private static array $handedOut = [];
 
     /**
-     * SQLite: the run's file; a server: SYLAMENT_TEST_DATABASE_URL naming the
-     * run's database instead of the one it names.
+     * SQLite: the process's file; a server: SYLAMENT_TEST_DATABASE_URL naming the
+     * process's database instead of the one it names.
      */
     public static function url(): string
     {
@@ -92,8 +92,8 @@ final class TestDatabase
 
     /**
      * Called before the kernel's connection connects. Once per test, it empties the
-     * database: SQLite copies a template over the run's file, a server has
-     * `ServerDatabase` wipe the run's database. The schema is built once per
+     * database: SQLite copies a template over the process's file, a server has
+     * `ServerDatabase` wipe the process's database. The schema is built once per
      * process, at the first preparation, from every manager `$doctrine` holds, on a
      * connection of its own, so neither the statement count nor the connecting
      * connection sees it.

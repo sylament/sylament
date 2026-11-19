@@ -23,8 +23,8 @@ final class FailingWrite
      * The ($allowed + 1)-th row deleted from the entity's table in this database
      * fails with a driver error, whatever order the rows go in. A counter each
      * row's delete increments inside the caller's transaction does it, so a
-     * rollback resets the counter too. On the run's server database, the counter
-     * and its trigger are dropped before another test takes the database.
+     * rollback resets the counter too. On the process's server database, the
+     * counter and its trigger are dropped before another test takes the database.
      * Runs its setup on the manager's own connection.
      *
      * @param class-string $entityClass

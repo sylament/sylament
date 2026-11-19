@@ -4,7 +4,7 @@ description: Use before landing anything that touches Doctrine, to run the MySQL
 ---
 # Server gates
 
-`composer test` runs the root suite on SQLite, one file per run. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
+`composer test` runs the root suite on SQLite, in parallel. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
 
 ## 1. Start the servers
 
@@ -21,7 +21,7 @@ composer test:mysql
 composer test:postgresql
 ```
 
-Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:pest`, the root suite, and not PHP-CS-Fixer, Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
+Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:pest`, the root suite in parallel, and not PHP-CS-Fixer, Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
 
 ## 3. Run one package on one server
 
@@ -30,12 +30,12 @@ XDEBUG_MODE=off SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0
 XDEBUG_MODE=off SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' vendor/bin/pest tests/Packages/<Pkg>
 ```
 
-With the variable unset or empty, the suite runs on SQLite. The URL must name a database (`…/sylament_test`): the run derives its own database's name from it. The run is one process, since `TestDatabaseExtension` refuses `--parallel`.
+With the variable unset or empty, the suite runs on SQLite. The URL must name a database (`…/sylament_test`): the run derives its own databases' names from it. Each runs in one process; add `--parallel` to split it across workers.
 
 ## 4. Keep server runs serial
 
-- Each run has one database, `<base>_<run>`, where `<run>` is `SYLAMENT_TEST_RUN` or `default`, so `SYLAMENT_TEST_RUN` keeps two runs' databases apart; the run lock guards one checkout only, so a server run from a worktree beside one from the main checkout also needs its own `SYLAMENT_TEST_RUN`, or each drops the other's database.
-- It separates databases, not connections: `ServerDatabase` keeps its own housekeeping connection to the database open for the life of the process, beside the connections the tests hold. A run holds about three.
+- A run in one process has one database, `<base>_<run>`, where `<run>` is `SYLAMENT_TEST_RUN` or `default`, and each parallel worker its own, `<base>_<run>-<TEST_TOKEN>`, so `SYLAMENT_TEST_RUN` keeps two runs' databases apart; the run lock guards one checkout only, so a server run from a worktree beside one from the main checkout also needs its own `SYLAMENT_TEST_RUN`, or each drops the other's databases.
+- It separates databases, not connections: `ServerDatabase` keeps a server connection and a housekeeping connection open for the life of each process, beside the connections the tests hold. A worker holds two or three, so `composer test:pest`'s cap of 8 workers keeps a run near 21.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 
 ## 5. Clean up run databases

@@ -101,7 +101,7 @@
         "test:pest": [
             "Composer\\Config::disableProcessTimeout",
             "@putenv XDEBUG_MODE=off",
-            "pest"
+            "pest --parallel --max-processes=8"
         ],
         "test:static": "phpstan analyse",
         "test:lint": "php-cs-fixer --dry-run --diff fix",

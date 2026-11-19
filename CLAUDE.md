@@ -42,7 +42,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 | Task | Command |
 | --- | --- |
 | everything on SQLite: the root suite, PHP-CS-Fixer and Rector dry-runs, PHPStan, Twig lint | `composer test` |
-| the root suite, one package of it, one file of it | `composer test:pest`, `vendor/bin/pest tests/Packages/<Pkg>`, `vendor/bin/pest tests/Packages/<Pkg>/<path>Test.php` |
+| the root suite in parallel, in one process; one package of it, one file of it | `composer test:pest`, `XDEBUG_MODE=off vendor/bin/pest`; `vendor/bin/pest tests/Packages/<Pkg>`, `vendor/bin/pest tests/Packages/<Pkg>/<path>Test.php` |
 | MySQL, PostgreSQL: `composer test:pest` on a server | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
 | one tool | `composer test:static` (PHPStan), `test:lint` (PHP-CS-Fixer), `test:rector`, `test:twig` |
 | apply Rector, PHP-CS-Fixer and Twig-CS-Fixer | `composer format` |

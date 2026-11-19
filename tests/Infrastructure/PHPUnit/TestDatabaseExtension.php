@@ -6,6 +6,7 @@ namespace Sylament\Tests\Infrastructure\PHPUnit;
 
 use LogicException;
 use Pest\Plugins\Parallel;
+use PHPUnit\Event\EventFacadeIsSealedException;
 use PHPUnit\Runner\Extension\Extension;
 use PHPUnit\Runner\Extension\Facade;
 use PHPUnit\Runner\Extension\ParameterCollection;
@@ -15,9 +16,10 @@ use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Throwable;
 
 /**
- * Refuses a parallel run, publishes the root suite's connection URL to the kernel
- * before any test is collected, claims the run's directory, and tells the database
- * where each test starts, on every platform.
+ * Publishes the root suite's connection URL to the kernel before any test is
+ * collected, claims the process's directory, and tells the database where each
+ * test starts, on every platform and in every parallel worker. Pest's parallel
+ * coordinator claims the run's directory and runs no test.
  */
 final class TestDatabaseExtension implements Extension
 {
@@ -36,14 +38,22 @@ final class TestDatabaseExtension implements Extension
 
     private function start(Facade $facade): void
     {
-        if (Parallel::isEnabled() || Parallel::isWorker()) {
-            throw new LogicException('The root suite runs in one process: drop --parallel.');
+        if (Parallel::isWorker() && WorkerDirectory::worker() === null) {
+            throw new LogicException(sprintf("A parallel worker needs ParaTest's %s to own a directory and a database: drop --no-test-tokens.", WorkerDirectory::TOKEN_VARIABLE));
         }
 
         $_ENV[TestDatabase::URL_VARIABLE] = $_SERVER[TestDatabase::URL_VARIABLE] = TestDatabase::url();
 
         WorkerDirectory::claim();
 
-        $facade->registerSubscriber(new TestDatabaseTestStarted());
+        try {
+            $facade->registerSubscriber(new TestDatabaseTestStarted());
+        } catch (EventFacadeIsSealedException $eventFacadeIsSealedException) {
+            // Pest's coordinator seals the facade before it bootstraps extensions; a `--parallel`
+            // run Pest falls back to running in series is no coordinator and registers.
+            if (!Parallel::isEnabled() || Parallel::isWorker()) {
+                throw $eventFacadeIsSealedException;
+            }
+        }
     }
 }

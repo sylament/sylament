@@ -9,9 +9,11 @@ use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- * The writable root of one test run, `var/tests/<run>`, where the run is the one
- * `SYLAMENT_TEST_RUN` names, or `default`. Every run's directory sits beside every
- * other's, never inside one, so two runs in one checkout never share a path.
+ * The writable root of one test process: `var/tests/<run>`, where the run is the one
+ * `SYLAMENT_TEST_RUN` names, or `default`, and in a parallel worker
+ * `var/tests/<run>/workers/<TEST_TOKEN>`. Every run's directory sits beside every
+ * other's, never inside one, and no run writes a `workers/` of its own, so no two
+ * processes share a path.
  */
 final class WorkerDirectory
 {
@@ -19,9 +21,14 @@ final class WorkerDirectory
 
     public const string DEFAULT_RUN = 'default';
 
+    public const string TOKEN_VARIABLE = 'TEST_TOKEN';
+
     public static function path(): string
     {
-        return dirname(__DIR__, 2) . '/var/tests/' . self::run();
+        $run = dirname(__DIR__, 2) . '/var/tests/' . self::run();
+        $worker = self::worker();
+
+        return $worker === null ? $run : $run . '/workers/' . $worker;
     }
 
     /**
@@ -43,6 +50,24 @@ final class WorkerDirectory
     }
 
     /**
+     * The parallel worker ParaTest's `TEST_TOKEN` numbers, or null in a process it did not start.
+     */
+    public static function worker(): ?string
+    {
+        $token = getenv(self::TOKEN_VARIABLE);
+
+        if ($token === false || $token === '') {
+            return null;
+        }
+
+        if (preg_match('/^[1-9][0-9]{0,3}$/', $token) !== 1) {
+            throw new LogicException(sprintf('%s is "%s"; ParaTest numbers its workers from 1.', self::TOKEN_VARIABLE, $token));
+        }
+
+        return $token;
+    }
+
+    /**
      * Locks the directory until the process ends, through a handle of its own, so a second
      * process given the same directory fails here instead of corrupting this one.
      */
@@ -57,7 +82,7 @@ final class WorkerDirectory
             fclose($handle);
 
             throw new RuntimeException($wouldBlock === 1
-                ? sprintf('Another test process holds %s. Give each concurrent run in one checkout its own %s, as in `%2$s=lane_a vendor/bin/pest`.', $directory, self::RUN_VARIABLE)
+                ? sprintf('Another test process holds %s. Give each concurrent run in one checkout its own %s, as in `%2$s=lane_a composer test:pest`.', $directory, self::RUN_VARIABLE)
                 : sprintf('Could not lock %s/.lock.', $directory));
         }
 

@@ -40,3 +40,23 @@ it("refuses a server url that names no database, since it derives the run's data
     'no path' => ['mysql://root:secret@127.0.0.1:33307'],
     'an empty path' => ['postgresql://postgres:secret@127.0.0.1:55433/'],
 ]);
+
+it("names a parallel worker's database apart from every run's and every other worker's", function (): void {
+    $before = ['SYLAMENT_TEST_RUN' => getenv('SYLAMENT_TEST_RUN'), 'TEST_TOKEN' => getenv('TEST_TOKEN')];
+    $name = static function (string $run, ?string $token): string {
+        putenv('SYLAMENT_TEST_RUN=' . $run);
+        putenv($token === null ? 'TEST_TOKEN' : 'TEST_TOKEN=' . $token);
+
+        return ServerDatabase::fromUrl('mysql://root:secret@127.0.0.1:33307/sylament_test')->name();
+    };
+
+    try {
+        $names = [$name('x_1', null), $name('x', '1'), $name('x_1', '1'), $name('x', '11')];
+    } finally {
+        foreach ($before as $variable => $value) {
+            putenv($value === false ? $variable : $variable . '=' . $value);
+        }
+    }
+
+    expect($names)->toBe(['sylament_test_x_1', 'sylament_test_x-1', 'sylament_test_x_1-1', 'sylament_test_x-11']);
+});

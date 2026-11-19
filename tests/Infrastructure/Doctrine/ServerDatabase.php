@@ -12,8 +12,10 @@ use LogicException;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
 
 /**
- * The run's database on a MySQL or PostgreSQL server, `<base>_<run>`: the database
- * the URL names, then the run's name. {@see prepare()} creates it at its first use
+ * The process's database on a MySQL or PostgreSQL server: `<base>_<run>`, the
+ * database the URL names, then the run's name, and in a parallel worker
+ * `<base>_<run>-<TEST_TOKEN>`, whose hyphen no run name holds, so no run's or
+ * worker's name is another's. {@see prepare()} creates it at its first use
  * and wipes it, identity counters included, before every later test, on a
  * connection of its own, so nothing it runs reaches a test's statement count.
  *
@@ -76,8 +78,13 @@ final class ServerDatabase
         }
 
         unset($params['dbname']);
+        $worker = WorkerDirectory::worker();
 
-        return new self(isset($params['driver']) && $params['driver'] === 'pdo_mysql' ? TestPlatform::MySql : TestPlatform::PostgreSql, $params, $base . '_' . WorkerDirectory::run());
+        return new self(
+            isset($params['driver']) && $params['driver'] === 'pdo_mysql' ? TestPlatform::MySql : TestPlatform::PostgreSql,
+            $params,
+            $base . '_' . WorkerDirectory::run() . ($worker === null ? '' : '-' . $worker),
+        );
     }
 
     public function name(): string

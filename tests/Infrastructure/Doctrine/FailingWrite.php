@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping\ManyToManyOwningSideMapping;
 use LogicException;
 
 /**
- * Makes a write fail on purpose, on every platform the suites run on, so a test
+ * Makes a write fail on purpose, on every platform the suite runs on, so a test
  * can watch what a transaction does when one of its later statements fails.
  */
 final class FailingWrite

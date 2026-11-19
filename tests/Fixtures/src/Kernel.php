@@ -102,7 +102,7 @@ class Kernel extends BaseKernel
         $parameters = $this->getMicroKernelParameters();
 
         // Without it FrameworkBundle skips dumping `reference.php` into the config directory,
-        // a source directory every worker and environment would rewrite.
+        // a source directory every run and environment would rewrite.
         unset($parameters['.kernel.config_dir']);
 
         return $parameters;

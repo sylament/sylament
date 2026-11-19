@@ -85,7 +85,7 @@ The two services are defined differently on purpose:
 - `ComponentManager` is `factory(ComponentManager::resolve(...))`, so the booted service and the lazily created outside-DI instance are the same object.
 - `ComponentResolver` is a plain `set()` whose `$components` defaults to `null`, and `ComponentResolverPass` replaces that argument with the locator. Only the container-built instance carries the locator, and `resolve()` is purely the fallback for code running outside a kernel.
 
-Tests reset the instances between cases. The root suite's `TestCase::tearDown()` unsets every loaded class implementing `StaticInstance` after every test, booted or not, so a new static instance needs no test wiring there ([test-infrastructure.md](test-infrastructure.md#why-does-teardown-reset-every-static-instance)). The per-package suites reset a test that booted the kernel through `StaticInstanceRegistry::unsetStaticInstances()` in `LegacyTestCase::tearDown()`, which reaches every service `StaticInstancePass` tagged, so a new static instance needs no wiring there either. Why the pattern replaces Laravel's scoped container is in [support-bundle.md](../progress/support/support-bundle.md#static-instance-boot-replaces-laravels-container-scoping).
+Tests reset the instances between cases. The root suite's `TestCase::tearDown()` unsets every loaded class implementing `StaticInstance` after every test, booted or not, so a new static instance needs no test wiring ([test-infrastructure.md](test-infrastructure.md#why-does-teardown-reset-every-static-instance)). Why the pattern replaces Laravel's scoped container is in [support-bundle.md](../progress/support/support-bundle.md#static-instance-boot-replaces-laravels-container-scoping).
 
 ## Global configuration
 

@@ -18,9 +18,9 @@ The root `composer.lock` is gitignored. This is a library monorepo: resolution f
 
 ## The split
 
-Each push to `main`, and each tag, is split into read-only per-package repositories under the `sylament` organisation by the `split-monorepo` job in `.github/workflows/ci.yml`. The job runs only after four gate jobs pass: `php`, `php-mysql` and `php-postgresql` (the suites on each platform), and `assets` (the committed `dist` against a fresh build).
+Each push to `main`, and each tag, is split into read-only per-package repositories under the `sylament` organisation by the `split-monorepo` job in `.github/workflows/ci.yml`. The job runs only after four gate jobs pass: `php`, `php-mysql` and `php-postgresql` (the suite on each platform), and `assets` (the committed `dist` against a fresh build).
 
-Every package must therefore be self-contained. It declares its own dependencies, because a split repository cannot inherit them through a sibling. Each package's `.gitattributes` export-ignores `/assets/src` and `/assets/scripts`, and `/tests` and `/phpunit.dist.xml` while the package keeps a suite of its own. Split-repository tests cannot run standalone, since the Pest bootstrap needs the root `vendor/`, and that is accepted.
+Every package must therefore be self-contained. It declares its own dependencies, because a split repository cannot inherit them through a sibling. Each package's `.gitattributes` export-ignores `/assets/src`, `/assets/tsconfig.json` and, where the package has one, `/assets/scripts`.
 
 ## Editing a package manifest
 

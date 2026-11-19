@@ -101,7 +101,7 @@ The relation layer decodes too: a relationship `Select`'s selected-record and op
 The **table** lane — row resolution, editable cells, selection, reorder and the by-key delete — and panels' default route arm decode too, so the one client-supplied key bound raw is `Resource`'s `$recordRouteKeyName` arm, deliberately.
 
 So `equals()` on a malformed key returns `null` and binds nothing, and the caller's contract is to answer "no such record" **without querying**.
-This is pinned by asserting the refusal — that no statement was executed, through a recording middleware — rather than by asserting a platform's leniency, which differs per driver and per prepare mode.
+This is pinned by asserting the refusal — that no statement was executed — rather than by asserting a platform's leniency, which differs per driver and per prepare mode.
 
 ### The batch is a balanced OR tree because SQLite counts expression depth, not terms
 

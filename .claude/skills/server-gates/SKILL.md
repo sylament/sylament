@@ -4,7 +4,7 @@ description: Use before landing anything that touches Doctrine, to run the MySQL
 ---
 # Server gates
 
-`composer test` runs on SQLite, a file per worker for the root suite; the placeholder suites of `infolists` and `widgets` open no database. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
+`composer test` runs the root suite on SQLite, a file per run. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
 
 ## 1. Start the servers
 
@@ -21,7 +21,7 @@ composer test:mysql
 composer test:postgresql
 ```
 
-Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:suites`, every per-bundle suite and the root suite, and not Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
+Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:pest`, the root suite, and not PHP-CS-Fixer, Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
 
 ## 3. Run one package on one server
 

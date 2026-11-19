@@ -9,13 +9,12 @@ A component's status is its row in the port trail; what to build next is decided
 | Path | Holds |
 | --- | --- |
 | `packages/<pkg>/src/` | `Sylament\<Pkg>\` (PSR-4) |
-| `packages/<pkg>/tests/` | `infolists`' and `widgets`' placeholder Pest suites, each on its own kernel |
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
 | `tests/Packages/` | each package's tests: `tests/Packages/<Pkg>/` mirrors `packages/<pkg>/src/` |
 | `tests/Fixtures/` | its kernel and per-area fixtures, laid out as a Symfony app: `src/`, `config/`, `templates/`, `assets/` |
-| `tests/Infrastructure/` | the machinery every test shares, and in `{Doctrine,PHPUnit}/` the Doctrine rig and the placeholder suites' base class (dev-only) |
+| `tests/Infrastructure/` | the machinery every test shares, and in `{Doctrine,PHPUnit}/` the Doctrine rig (dev-only) |
 | `tests/Architecture/` | the scans of the repository's files, the rule hook (`Rules/`) and the port-trail tools (`Trail/`) |
 | `vendor/filament/` | Filament's source: read it before designing anything |
 | `docs/progress/` | the port trail: status and reasoning per component (rules: `.claude/rules/trail.md`) |
@@ -42,12 +41,9 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 
 | Task | Command |
 | --- | --- |
-| everything on SQLite: Pest per bundle and the root suite, PHP-CS-Fixer and Rector dry-runs, PHPStan, Twig lint | `composer test` |
+| everything on SQLite: the root suite, PHP-CS-Fixer and Rector dry-runs, PHPStan, Twig lint | `composer test` |
 | the root suite, one package of it, one file of it | `composer test:pest`, `vendor/bin/pest tests/Packages/<Pkg>`, `vendor/bin/pest tests/Packages/<Pkg>/<path>Test.php` |
-| one bundle | `composer test:<bundle>` |
-| one file of a bundle's suite | `vendor/bin/pest -c packages/<pkg>/phpunit.dist.xml --test-directory=packages/<pkg>/tests <file>` |
-| the per-bundle suites and the root suite, no tools | `composer test:suites` |
-| MySQL, PostgreSQL: `composer test:suites` on a server | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
+| MySQL, PostgreSQL: `composer test:pest` on a server | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
 | one tool | `composer test:static` (PHPStan), `test:lint` (PHP-CS-Fixer), `test:rector`, `test:twig` |
 | apply Rector, PHP-CS-Fixer and Twig-CS-Fixer | `composer format` |
 | regenerate the port-trail indexes | `composer docs:index` |
@@ -76,7 +72,6 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `docs.md` | `/docs/progress/**`, `/docs/internals/**` | Where documentation lives, and the rules every docs file follows. |
 | `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
-| `legacy-tests.md` | `packages/*/tests/**` | What a mechanical edit to a placeholder per-package Pest suite needs, from its hooks to its base class. |
 | `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `test-database.md` | `/tests/Fixtures/src/Entity/**`, `/tests/Infrastructure/Doctrine/**`, `/tests/Fixtures/src/*/Doctrine/**`, `/tests/Fixtures/config/packages/*.php` | How the root suite prepares its database, where its entities and Doctrine fixtures live, and how it counts statements and cleans up after a server test. |

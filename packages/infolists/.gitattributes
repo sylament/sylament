@@ -2,5 +2,3 @@
 /.gitignore             export-ignore
 /assets/src             export-ignore
 /assets/tsconfig.json   export-ignore
-/tests                  export-ignore
-/phpunit.dist.xml       export-ignore

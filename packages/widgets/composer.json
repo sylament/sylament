@@ -20,10 +20,5 @@
         "psr-4": {
             "Sylament\\Widgets\\": "src/"
         }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Sylament\\Widgets\\Tests\\": "tests/"
-        }
     }
 }

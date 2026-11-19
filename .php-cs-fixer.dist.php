@@ -53,6 +53,5 @@ return new Config()
     ->setFinder(
         new Finder()
             ->in(__DIR__ . '/packages/*/src')
-            ->in(__DIR__ . '/packages/*/tests')
             ->in(__DIR__ . '/tests')
     );

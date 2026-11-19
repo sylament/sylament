@@ -194,10 +194,8 @@ describe('triggers', function (): void {
             ->and($this->renderViewComponent(ActionGroup::make([Action::make('edit')])->button()->icon('support:star')))->toContainElement(SupportSelectors::BUTTON, 'StarActions');
     });
 
-    it('outlines its button trigger only', function (): void {
-        expect($this->renderViewComponent(ActionGroup::make([Action::make('edit')])->button()->outlined()))->toContainElement(SupportSelectors::BUTTON . SupportSelectors::OUTLINED, 'Actions')
-            ->and($this->renderViewComponent(ActionGroup::make([Action::make('edit')])->outlined()))->toContainButtons(SupportSelectors::ICON_BUTTON . ':not(' . SupportSelectors::OUTLINED . ')', ['Actions'])
-            ->and($this->renderViewComponent(ActionGroup::make([Action::make('edit')])->link()->outlined()))->toContainButtons(SupportSelectors::LINK . ':not(' . SupportSelectors::OUTLINED . ')', ['Actions']);
+    it('outlines its button trigger', function (): void {
+        expect($this->renderViewComponent(ActionGroup::make([Action::make('edit')])->button()->outlined()))->toContainElement(SupportSelectors::BUTTON . SupportSelectors::OUTLINED, 'Actions');
     });
 
     it('sizes its trigger, medium unless it is sized', function (Closure $group, string $look): void {

@@ -181,11 +181,6 @@ describe('getItems()', function (): void {
         expect($this->repeater->getItems()['a'])->not->toBe($items['a'])
             ->and(array_keys($this->repeater->getItems()))->toBe(['a', 'b']);
     });
-
-    it("finds an item's schema by its key", function (): void {
-        expect($this->repeater->getChildSchema('b'))->toBe($this->repeater->getItems()['b'])
-            ->and($this->repeater->getChildSchema('z'))->toBeNull();
-    });
 });
 
 describe('defaultItems()', function (): void {

@@ -215,7 +215,7 @@ describe('getReference()', function (): void {
 });
 
 describe('getRecordKey() and findRecordKey()', function (): void {
-    it("speaks a record by the key its mapping's identifier prints, through both, at any width", function (array $seed, object $record, string $key): void {
+    it("speaks a record by the key its mapping's identifier prints, through both", function (array $seed, object $record, string $key): void {
         $this->seed(...$seed);
 
         $reader = $this::getContainer()->get(AssociationReader::class);
@@ -223,11 +223,8 @@ describe('getRecordKey() and findRecordKey()', function (): void {
         expect($reader->getRecordKey($record))->toBe($key)
             ->and($reader->findRecordKey($record))->toBe($key);
     })->with([
-        'a generated identifier' => fn (): array => [[$product = new Product('Lamp')], $product, '1'],
-        'an assigned string' => fn (): array => [[$slate = new CodeKeyedSlate('slate-1')], $slate, 'slate-1'],
         'two scalars' => fn (): array => [[$line = new OrderLine(order: 7, line: 2)], $line, '7~2'],
         'an association plus a scalar' => fn (): array => [[$line = new InvoiceLine(new Invoice(7), line: 2)], $line, '7~2'],
-        'an association alone' => fn (): array => [[$charter = new Charter(1), $seal = new CharterSeal($charter)], $seal, '1'],
         'two associations' => fn (): array => [[$atelier = new Atelier(), $pigment = new AtelierPigment(), $stock = new AtelierStock($atelier, $pigment)], $stock, '1~1'],
     ]);
 

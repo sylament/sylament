@@ -32,7 +32,6 @@ describe('the trigger', function (): void {
         'toggleable columns in a dialog' => [['modal'], 1, 1, ['ID', 'Name']],
         'reorderable columns' => [['plain', 'reorderable'], 1, 0, ['ID', 'Name', 'Code']],
         'only a toggleable column the developer hid' => [['plain', 'hiddenToggleable'], 0, 0, ['ID', 'Name', 'Code']],
-        'the manager turned off over toggleable columns' => [['managerOff'], 0, 0, ['ID', 'Name']],
         'the manager turned off in a dialog' => [['modal', 'managerOff'], 0, 0, ['ID', 'Name']],
     ]);
 

@@ -139,7 +139,7 @@ Pre-order traversal reaches `meta.seo` first.
 Without the sort the pass evaluates the descendant before the ancestor, so nulling `meta` afterwards writes over a decision already taken about a path underneath it, and the `$nulledPrefixes` short-circuit — which only skips branches it has *already* seen a prefix for — cannot save it.
 Sorting by depth restores the invariant the short-circuit assumes.
 
-That sibling-by-path shape is pinned through the refusal, so deleting the sort fails a test rather than a code review: the inner branch sits over a **non-nullable** property, which only survives the pass by being short-circuited under the nulled outer one, so an unsorted pass reaches it first and throws [the non-nullable refusal](#a-branch-the-record-cannot-null-is-refused-loudly) naming `meta.seo`.
+That sibling-by-path shape is pinned through the refusal, so deleting the sort fails a test rather than a code review: the inner branch sits over a **non-nullable** property, which only survives the pass by being short-circuited under the nulled outer one, so an unsorted pass reaches it first and throws [the non-nullable refusal](#a-branch-the-record-cannot-null-is-refused-loudly) naming `author.address`.
 
 PHP coerces a numeric-string array key to `int`, so a schema using `statePath('0')` keys its branch and its leaf by `0`, which `strict_types=1` rejects at a `string` parameter.
 The sort's callback hints `int|string`; `getData()` maps the path map's keys through `strval()` once and casts each branch key with `(string)`, and the fill walk, `readStateFromRecord()`, casts each key before `getFromRecord()`, so all three walks hand the accessor a `string` path.

@@ -10,7 +10,7 @@ A component's status is its row in the port trail; what to build next is decided
 | --- | --- |
 | `packages/<pkg>/src/` | `Sylament\<Pkg>\` (PSR-4) |
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
-| `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
+| `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>` (the placeholders' hold only a stylesheet); `dist/` is committed |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
 | `tests/Packages/` | each package's tests: `tests/Packages/<Pkg>/` mirrors `packages/<pkg>/src/` |
 | `tests/Fixtures/` | its kernel and per-area fixtures, laid out as a Symfony app: `src/`, `config/`, `templates/`, `assets/` |

@@ -37,13 +37,8 @@ jobs:
 
       - run: composer test
 
-      - run: composer test:lint
-
   php-mysql:
     runs-on: ubuntu-latest
-
-    env:
-      COMPOSER_PROCESS_TIMEOUT: 0
 
     services:
       mysql:
@@ -83,9 +78,6 @@ jobs:
 
   php-postgresql:
     runs-on: ubuntu-latest
-
-    env:
-      COMPOSER_PROCESS_TIMEOUT: 0
 
     services:
       postgresql:

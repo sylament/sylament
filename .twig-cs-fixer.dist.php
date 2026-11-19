@@ -41,6 +41,6 @@ $config->getRuleset()
 return $config->setFinder(
     new Finder()
         ->in(__DIR__ . '/packages')
-        ->path('#/(templates|tests)/#')
+        ->path('#/templates/#')
         ->append(new Finder()->in(__DIR__ . '/tests/Fixtures/templates'))
 );

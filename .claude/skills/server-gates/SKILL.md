@@ -26,15 +26,15 @@ Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:pest`, the root s
 ## 3. Run one package on one server
 
 ```sh
-SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8' vendor/bin/pest tests/Packages/<Pkg>
-SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' vendor/bin/pest tests/Packages/<Pkg>
+XDEBUG_MODE=off SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8' vendor/bin/pest tests/Packages/<Pkg>
+XDEBUG_MODE=off SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' vendor/bin/pest tests/Packages/<Pkg>
 ```
 
 With the variable unset or empty, the suite runs on SQLite. The URL must name a database (`…/sylament_test`): the run derives its own database's name from it. The run is one process, since `TestDatabaseExtension` refuses `--parallel`.
 
 ## 4. Keep server runs serial
 
-- Each run has one database, `<base>_<run>`, where `<run>` is `SYLAMENT_TEST_RUN` or `default`, so `SYLAMENT_TEST_RUN` keeps two runs' databases apart.
+- Each run has one database, `<base>_<run>`, where `<run>` is `SYLAMENT_TEST_RUN` or `default`, so `SYLAMENT_TEST_RUN` keeps two runs' databases apart; the run lock guards one checkout only, so a server run from a worktree beside one from the main checkout also needs its own `SYLAMENT_TEST_RUN`, or each drops the other's database.
 - It separates databases, not connections: `ServerDatabase` keeps its own housekeeping connection to the database open for the life of the process, beside the connections the tests hold. A run holds about three.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 

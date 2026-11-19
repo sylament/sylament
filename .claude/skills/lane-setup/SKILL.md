@@ -40,4 +40,4 @@ A lane agent starts in the main checkout, because an agent cannot be started in 
 ## 6. When PHPStan misbehaves in a worktree
 
 - **Internal errors naming another worktree's path:** the PHPStan cache under `$TMPDIR` is shared by every checkout, since `phpstan.neon.dist` sets no `tmpDir`. Clear `$TMPDIR/phpstan` and `$TMPDIR/cache/PHPStan`, then rerun.
-- **Errors naming a deleted worktree's path:** a stale `vendor/phpstan` install baked it in. Reinstall it with `composer install`.
+- **Errors naming a deleted worktree's path:** a stale `vendor/phpstan` install baked it in. Clone `vendor/` from the main checkout again (step 3.1).

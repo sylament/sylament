@@ -9,30 +9,30 @@ use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- * The writable root of one test process, under `TEST_TOKEN`, which only a parallel run sets,
- * or 0. A run that sets `SYLAMENT_TEST_RUN` gets a directory of its own above it, so two
- * runs in one checkout never share one.
+ * The writable root of one test run, `var/tests/<run>`, where the run is the one
+ * `SYLAMENT_TEST_RUN` names, or `default`. Every run's directory sits beside every
+ * other's, never inside one, so two runs in one checkout never share a path.
  */
 final class WorkerDirectory
 {
     public const string RUN_VARIABLE = 'SYLAMENT_TEST_RUN';
 
+    public const string DEFAULT_RUN = 'default';
+
     public static function path(): string
     {
-        $run = self::run();
-
-        return dirname(__DIR__, 2) . '/var/tests/' . ($run === null ? '' : $run . '/') . (getenv('TEST_TOKEN') ?: '0');
+        return dirname(__DIR__, 2) . '/var/tests/' . self::run();
     }
 
     /**
-     * The run `SYLAMENT_TEST_RUN` names, or null when it is unset or empty.
+     * The run `SYLAMENT_TEST_RUN` names, or `default` when it is unset or empty.
      */
-    public static function run(): ?string
+    public static function run(): string
     {
         $run = getenv(self::RUN_VARIABLE);
 
         if ($run === false || $run === '') {
-            return null;
+            return self::DEFAULT_RUN;
         }
 
         if (preg_match('/^[a-z0-9_]{1,16}$/', $run) !== 1) {

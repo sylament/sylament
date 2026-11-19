@@ -33,7 +33,7 @@ final class TestDatabase
 {
     /**
      * The environment variable the kernel's `default` connection reads its URL from
-     * at runtime, so a compiled container never freezes a worker's or a server's URL.
+     * at runtime, so a compiled container never freezes a run's or a server's URL.
      */
     public const string URL_VARIABLE = 'SYLAMENT_TEST_CONNECTION_URL';
 
@@ -55,8 +55,8 @@ final class TestDatabase
     private static array $handedOut = [];
 
     /**
-     * SQLite: the worker's file; a server: SYLAMENT_TEST_DATABASE_URL naming the
-     * pool's database for this process instead of the one it names.
+     * SQLite: the run's file; a server: SYLAMENT_TEST_DATABASE_URL naming the
+     * run's database instead of the one it names.
      */
     public static function url(): string
     {
@@ -66,7 +66,7 @@ final class TestDatabase
 
         $url = TestPlatform::url() ?? throw new LogicException(sprintf('%s names no server.', TestPlatform::URL_VARIABLE));
 
-        $renamed = preg_replace('#^([^:/?\#]+://[^/?\#]*)/[^?\#]*#', '$1/' . DatabasePool::instance()->worldName(), $url, count: $replaced)
+        $renamed = preg_replace('#^([^:/?\#]+://[^/?\#]*)/[^?\#]*#', '$1/' . ServerDatabase::instance()->name(), $url, count: $replaced)
             ?? throw new RuntimeException(preg_last_error_msg());
 
         if ($replaced !== 1) {
@@ -92,10 +92,11 @@ final class TestDatabase
 
     /**
      * Called before the kernel's connection connects. Once per test, it empties the
-     * database: SQLite copies a template over the worker's file, a server has the
-     * pool wipe the worker's database. The schema is built once per process, at the
-     * first preparation, from every manager `$doctrine` holds, on a connection of
-     * its own, so neither the recorder nor the connecting connection sees it.
+     * database: SQLite copies a template over the run's file, a server has
+     * `ServerDatabase` wipe the run's database. The schema is built once per
+     * process, at the first preparation, from every manager `$doctrine` holds, on a
+     * connection of its own, so neither the statement count nor the connecting
+     * connection sees it.
      *
      * @param Closure(): ManagerRegistry $doctrine
      */
@@ -123,7 +124,7 @@ final class TestDatabase
             if (TestPlatform::current() === TestPlatform::Sqlite) {
                 self::prepareSqlite($registry);
             } else {
-                DatabasePool::instance()->prepareWorld(static function (Connection $connection) use ($registry): void {
+                ServerDatabase::instance()->prepare(static function (Connection $connection) use ($registry): void {
                     self::createSchema($connection, $registry);
                 });
             }

@@ -16,7 +16,7 @@ use Throwable;
 
 /**
  * Refuses a parallel run, publishes the root suite's connection URL to the kernel
- * before any test is collected, claims the worker directory, and tells the database
+ * before any test is collected, claims the run's directory, and tells the database
  * where each test starts, on every platform.
  */
 final class TestDatabaseExtension implements Extension

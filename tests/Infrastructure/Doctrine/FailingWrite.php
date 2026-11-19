@@ -23,10 +23,9 @@ final class FailingWrite
      * The ($allowed + 1)-th row deleted from the entity's table in this database
      * fails with a driver error, whatever order the rows go in. A counter each
      * row's delete increments inside the caller's transaction does it, so a
-     * rollback resets the counter too. On a pooled server database, the counter
+     * rollback resets the counter too. On the run's server database, the counter
      * and its trigger are dropped before another test takes the database.
-     * Runs its setup, and on a server one SELECT naming the database, on the
-     * manager's own connection; a caller holding a recorder resets it afterwards.
+     * Runs its setup on the manager's own connection.
      *
      * @param class-string $entityClass
      */
@@ -106,7 +105,7 @@ final class FailingWrite
         }
 
         if ($cleanup !== []) {
-            DatabasePool::instance()->cleanUpBeforeNextWipe($connection->getDatabase() ?? throw new LogicException('A pooled connection names no database.'), $cleanup);
+            ServerDatabase::instance()->cleanUpBeforeNextWipe($cleanup);
         }
     }
 }

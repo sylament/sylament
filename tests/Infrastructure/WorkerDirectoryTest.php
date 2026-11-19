@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 use Sylament\Tests\Infrastructure\WorkerDirectory;
 
-it('puts a named run in a directory of its own, above the worker token', function (): void {
+it('puts every run beside the others, the unnamed one as default, so no name lands inside another run', function (): void {
     $before = getenv('SYLAMENT_TEST_RUN');
-    $token = getenv('TEST_TOKEN') ?: '0';
 
     try {
         putenv('SYLAMENT_TEST_RUN');
         $unnamed = WorkerDirectory::path();
 
-        putenv('SYLAMENT_TEST_RUN=lane_a');
+        putenv('SYLAMENT_TEST_RUN=cache');
 
-        expect(WorkerDirectory::path())->toBe(dirname(__DIR__, 2) . '/var/tests/lane_a/' . $token)
-            ->and($unnamed)->toBe(dirname(__DIR__, 2) . '/var/tests/' . $token);
+        expect(WorkerDirectory::path())->toBe(dirname(__DIR__, 2) . '/var/tests/cache')
+            ->and($unnamed)->toBe(dirname(__DIR__, 2) . '/var/tests/default');
     } finally {
         putenv($before === false ? 'SYLAMENT_TEST_RUN' : 'SYLAMENT_TEST_RUN=' . $before);
     }

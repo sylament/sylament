@@ -4,7 +4,7 @@ description: Use before landing anything that touches Doctrine, to run the MySQL
 ---
 # Server gates
 
-`composer test` runs the root suite on SQLite, a file per run. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
+`composer test` runs the root suite on SQLite, one file per run. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
 
 ## 1. Start the servers
 
@@ -30,17 +30,17 @@ SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylam
 SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' vendor/bin/pest tests/Packages/<Pkg>
 ```
 
-With the variable unset or empty, the suite runs on SQLite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The run is one process, since `TestDatabaseExtension` refuses `--parallel`.
+With the variable unset or empty, the suite runs on SQLite. The URL must name a database (`…/sylament_test`): the run derives its own database's name from it. The run is one process, since `TestDatabaseExtension` refuses `--parallel`.
 
 ## 4. Keep server runs serial
 
-- For the root suite the pool keeps one database per worker, `<base>_suite_<TEST_TOKEN>`; a run that sets `SYLAMENT_TEST_RUN` gets `_<run>` after `<base>`. `SYLAMENT_TEST_RUN` keeps two runs' databases apart.
-- It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold. A root-suite run holds about three.
+- Each run has one database, `<base>_<run>`, where `<run>` is `SYLAMENT_TEST_RUN` or `default`, so `SYLAMENT_TEST_RUN` keeps two runs' databases apart.
+- It separates databases, not connections: `ServerDatabase` keeps its own housekeeping connection to the database open for the life of the process, beside the connections the tests hold. A run holds about three.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 
-## 5. Clean up pool databases
+## 5. Clean up run databases
 
-Nothing drops a pool database at the end of a run; each run's `DROP DATABASE IF EXISTS` plus `CREATE DATABASE` makes leftovers harmless but lets them pile up. Clean them when you are done:
+Nothing drops a run's database at its end; each run's `DROP DATABASE IF EXISTS` plus `CREATE DATABASE` makes leftovers harmless but lets them pile up. Clean them when you are done:
 
 ```sh
 docker compose down -v

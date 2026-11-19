@@ -7,9 +7,8 @@ namespace Sylament\Tests\Infrastructure\Doctrine;
 use LogicException;
 
 /**
- * The database the test suites run on, read from SYLAMENT_TEST_DATABASE_URL:
- * unset or empty means SQLite, in memory for a manager `TestEntityManagers`
- * builds and a file per worker for the root suite.
+ * The database the root suite runs on, read from SYLAMENT_TEST_DATABASE_URL:
+ * unset or empty means SQLite, a file per run.
  */
 enum TestPlatform
 {

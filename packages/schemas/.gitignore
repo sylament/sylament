@@ -3,9 +3,13 @@
 /.fleet
 /.vscode
 
+# Framework
+/var
+
 # Composer
 /composer.lock
 /vendor
 
 # Frontend
 /assets/node_modules
+/assets/src/styles/*.generated.css

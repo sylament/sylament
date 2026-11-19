@@ -9,7 +9,6 @@
 
 # Frontend
 /node_modules
-packages/*/assets/src/styles/*.generated.css
 
 # Other
 /var

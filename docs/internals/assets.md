@@ -58,7 +58,7 @@ Support's `build` runs `clean → tsc --noEmit → build-js → build:css`. `bui
 3. `scope-vendor-css.mjs` regenerates forms' `src/styles/filepond.generated.css` (FilePond and two plugin sheets, under `.sy-fo-file-upload`, keyframes renamed `sy-fo-file-upload-*`) and `src/styles/cropper.generated.css` (Cropper.js, under `.sy-fo-file-upload-editor`, the editor dialog's class, since Cropper's DOM only lives inside it), each headed by a licence banner composed from the installed packages.
 4. `tailwindcss -i src/styles/index.css -o dist/styles/index.css --minify`.
 
-Steps 2 and 3 share the selector rewriter `scope-css.mjs`. All three generated sheets match the `.gitignore` pattern `packages/*/assets/src/styles/*.generated.css`, so they are never committed or hand-edited and always match the installed vendor version.
+Steps 2 and 3 share the selector rewriter `scope-css.mjs`. All three generated sheets match the `/assets/src/styles/*.generated.css` line of their package's own `.gitignore`, which the split keeps, so they are never committed or hand-edited and always match the installed vendor version.
 
 `scope-vendor-css.mjs` lives in support and writes into another workspace for two reasons: postcss is a support dev dependency, and support's `index.css` is the only Tailwind compile in the repository, raw-importing every package's `src/styles/index.css`. Because of `hoistPattern: []`, the vendor packages are installed under forms, so each entry resolves its sources through a `createRequire` rooted at forms' `package.json`. Build order between workspaces is not involved: `pnpm -r` runs support after actions, notifications, panels and schemas, and the sheets are both written and compiled inside support's own `build:css`.
 

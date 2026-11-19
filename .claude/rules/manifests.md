@@ -18,7 +18,7 @@ description: What each package manifest and ignore file declares, when a depende
 - **A cycle is allowed when each side's `src/` imports the other** (`actions`⇄`schemas`, `actions`⇄`forms`); pin a line no other test would miss with a manifest test, as `tests/Architecture/ManifestTest.php` does.
 - **Never push a dependency into `support` that support's own code does not use**; every other package would inherit it.
 - **Record a non-`symfony/*` grant in the third-party grants table of `docs/internals/dependencies.md`**, naming which manifests take it as `require`, `suggest` or root `require-dev`; that table is where the next change checks whether a vendor is already signed off.
-- **Keep every ignore a package's own files need in its `.gitignore`** (`/var`, `/assets/src/styles/*.generated.css`), never only in the root one, even while nothing in the monorepo writes that path: the split publishes each package with its own `.gitignore`, and a standalone checkout of it never sees the root's.
+- **Keep every ignore a package's own files need in its `.gitignore`** (`/assets/src/styles/*.generated.css`), never only in the root one: the split publishes each package with its own `.gitignore`, and a standalone checkout of it never sees the root's.
 - **Put a JS peer in both `peerDependencies` and `devDependencies`.** The workspace sets `autoInstallPeers: false` and `strictPeerDependencies: true`, so a peer nobody installs fails the build.
 
 ## Deliberate omissions

@@ -3,9 +3,6 @@
 /.fleet
 /.vscode
 
-# Framework
-/var
-
 # Composer
 /composer.lock
 /vendor

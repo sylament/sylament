@@ -117,6 +117,7 @@ No composite owner is ever bound as a query parameter, which Doctrine refuses fo
 
 The scope stays inside the `WHERE` for a further reason, and it binds any later re-shaping.
 A custom bulk action's `$selectedRecordsQuery` is the table's query, and a closure calling `->delete()` or `->update()` on it is supported: Doctrine's `QueryBuilder` builds a bulk `DELETE` or `UPDATE` from the `FROM`, `SET` and `WHERE` parts alone and drops every join, so the correlated `EXISTS` survives the conversion unchanged.
+MySQL refuses that statement (error 1093) wherever the scope is the correlated `EXISTS` — every many-to-many and every one-to-many under an owner keyed by several fields — because its subselect joins the table the statement writes; a single-identifier owner's one-to-many narrows by its mapped-by field and runs on every platform.
 A scope that narrowed by **joining** the owner would not survive it: a predicate carried in the join's `WITH` is dropped silently, and one in the `WHERE` over the joined alias is a parse error, on relation-scoped tables alone.
 
 ### A single-identifier owner binds its identifier value, typed by the field's own DBAL type

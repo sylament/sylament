@@ -5,11 +5,13 @@ declare(strict_types=1);
 use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Validation\RequiredValue;
+use Sylament\Tests\Fixtures\Forms\AddedItemForm;
 use Sylament\Tests\Fixtures\Forms\RedirectingForm;
 use Sylament\Tests\Fixtures\Forms\SelectBerthForm;
 use Sylament\Tests\Fixtures\Forms\TagFieldsForm;
 use Sylament\Tests\Fixtures\Forms\WithdrawnCardForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\RepeaterForm;
 use Sylament\Tests\Fixtures\Schemas\ScopedValidationForm;
 use Sylament\Tests\Fixtures\Schemas\StickyValidationForm;
@@ -95,6 +97,14 @@ describe('fillForm()', function (): void {
         'a dotted key' => [['members.grace.name' => 'Grace H'], 'Grace H'],
         'a key given twice' => [['members' => ['grace' => ['name' => 'Grace H']], 'members.grace.name' => 'Grace M'], 'Grace M'],
     ]);
+
+    it('adds an item under a key the repeater lacks with all its fields in one request, running their hooks in schema order, and leaves the existing items alone', function (): void {
+        $this->createLiveComponent(AddedItemForm::class)
+            ->fillForm(['items' => ['added' => ['unit' => 'kg', 'name' => 'Two']]])
+            ->assertFormSet(['items' => ['first' => ['name' => 'One', 'unit' => 'g'], 'added' => ['name' => 'Two', 'unit' => 'kg']]]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['name: Two', 'unit: kg']);
+    });
 
     it('replaces a list with the list it is given, a shorter or an empty one', function (array $tags): void {
         $this->createLiveComponent(TagFieldsForm::class, ['record' => ['tags' => ['php', 'twig', 'ux']]])

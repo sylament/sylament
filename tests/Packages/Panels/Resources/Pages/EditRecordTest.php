@@ -206,7 +206,7 @@ describe('a save', function (): void {
         $this->seed($binder);
 
         $tester = $this->createLiveComponent(EditSheetedBinder::class, ['record' => $binder->id, 'panelId' => 'edit-shapes'])
-            ->set('data.sheets.added', ['heading' => 'Two'])
+            ->fillForm(['sheets' => ['added' => ['heading' => 'Two']]])
             ->call('save')
             ->assertHasNoFormErrors()
             ->assertFormSet(['sheets' => ['record-1' => ['heading' => 'One'], 'record-2' => ['heading' => 'Two']]]);

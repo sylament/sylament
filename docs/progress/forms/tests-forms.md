@@ -17,22 +17,12 @@ owns:
 | --- | --- | --- | --- | --- |
 | [`fillForm()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#fillform-sends-one-live-request-per-key) |
 | `fillForm()`'s uploaded-file values | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
-| `fillForm()` adding a repeater item under a key the state lacks | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | [detail](#fillform-adds-a-new-repeater-item-empty) |
 | [`assertFormSet()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | — |
 | [`assertHasFormErrors()` / `assertHasNoFormErrors()`](../../../packages/forms/src/Testing/TestsForms.php): a key alone, a constraint class or a message | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#a-constraint-class-stands-where-filament-names-a-rule) · [diverges](#a-bare-call-reads-the-errors-of-the-form-under-test) · [semantics](#the-errors-are-the-ones-the-last-response-showed) |
 | `assertHasFormErrors()` / `assertHasNoFormErrors()`'s list and closure values | [`TestsValidation.php`](../../../vendor/livewire/livewire/src/Features/SupportValidation/TestsValidation.php) (Livewire) | todo | — | — |
 | `assertFormExists()` / `assertFormComponentExists()` / `assertFormComponentDoesNotExist()` | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
 | `assertFormFieldExists()` / `assertFormFieldDoesNotExist()` / `assertFormFieldDisabled()` / `assertFormFieldEnabled()` / `assertFormFieldReadOnly()` / `assertFormFieldHidden()` / `assertFormFieldVisible()` | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
 | `assertFormFieldIsDisabled()` / `…IsEnabled()` / `…IsReadOnly()` / `…IsHidden()` / `…IsVisible()` | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | skipped | — | [deprecated for `assertFormFieldDisabled()` and its siblings](../README.md#statuses) |
-
-## Details
-
-### `fillForm()` adds a new repeater item empty
-
-`fillForm()` writes a non-empty associative array key by key, so an item a relationship repeater's state does not hold yet arrives as one write per field, each under a key the repeater lacks, and lands as an empty item.
-`fillForm(['sheets' => ['added' => ['heading' => 'Two']]])` leaves `sheets.added` as `[]`, as the raw `set('data.sheets.added.heading', 'Two')` does.
-Filament's `fillFormDataForTesting()` sets each leaf in process with `data_set()`, which builds the missing item around it.
-A test adds such an item with one write of the whole item, `set('data.sheets.added', ['heading' => 'Two'])`, which the repeater keeps.
 
 ## Semantics
 
@@ -69,5 +59,5 @@ The host's bag is read one state path at a time, so the form's paths are the one
 Filament writes each key in process and runs that key's `afterStateUpdated` hooks before the next (`fillFormDataForTesting()`), so the hooks run in the order the keys are given and a filled value wins over what an earlier field's hook wrote.
 Here every write is a live request, `set()` on the key's path, one per key in the given order, which keeps both: the host runs a field's hooks after the request that changed it.
 One request carrying every key would not: the host runs every changed field's hooks after all the writes, in schema order, so an earlier field's hook overwrote a later filled value, and UX's multi-key form submission merged a list into the old one by index and dropped an empty list.
-A non-empty associative array is written key by key, so the keys it leaves out keep their state; a list or an empty array is one write that replaces what it lands on; and a numeric key the filled state leaves out is removed afterwards by writing back the array that held it, as Filament's `unsetMissingNumericArrayKeys()` removes it.
+A non-empty associative array is written key by key where the host's state holds an array at that path, so the keys it leaves out keep their state; a container the state lacks, such as a repeater item under a new key, is one write of the whole value, because UX's hydrator drops a write below a missing level ([why](../schemas/has-schemas.md#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array)), and inside it the hooks run in schema order after that one request, where Filament's run per leaf in the given order; a list or an empty array is one write that replaces what it lands on; and a numeric key the filled state leaves out is removed afterwards by writing back the array that held it, as Filament's `unsetMissingNumericArrayKeys()` removes it.
 The form's state path only prefixes the keys, so a form whose state sits at a list index (a mounted action's `mountedActionsData.0`) is written key by key too, and the keys the state leaves out keep their values, as Filament's per-key writes keep them.

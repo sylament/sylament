@@ -45,7 +45,7 @@ Read the **import**, never the bare `use`.
 | [`getDescriptionFromRecordUsing()` / `getDescription()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group::getDescription()`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | — |
 | `getDescriptionUsing()` | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | [deprecated for `getDescriptionFromRecordUsing()`](../renames.md#a-deprecated-filament-member-is-not-ported) |
 | [`orderQuery()` / `orderQueryUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [semantics](#the-group-order-is-appended-first-so-every-later-sort-breaks-ties-inside-a-group) · [has-query.md](has-query.md#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery) |
-| [`scopeQuery()` / `scopeQueryUsing()` / `scopeQueryByKey()` / `scopeQueryByKeyUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [semantics](#the-blank-key-is-one-is-null-over-the-left-join-the-set-filaments-orwheredoesnthave-pair-selects) · [diverges](#a-scopequerybykeyusing-return-is-honoured-on-both-paths-where-filament-drops-it-through-scopequery) · [semantics](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) |
+| [`scopeQuery()` / `scopeQueryUsing()` / `scopeQueryByKey()` / `scopeQueryByKeyUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [semantics](#the-blank-key-is-one-is-null-over-the-left-join-the-set-filaments-orwheredoesnthave-pair-selects) · [semantics](#a-blank-string-groups-with-null-and-the-groups-query-selects-only-the-nulls) · [diverges](#a-scopequerybykeyusing-return-is-honoured-on-both-paths-where-filament-drops-it-through-scopequery) · [semantics](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) |
 | [`applyEagerLoading()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group::applyEagerLoading()`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [interacts-with-table-query.md](interacts-with-table-query.md#surface) |
 | `groupQuery()` / `groupQueryUsing()` | [`Grouping\Group::groupQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | [diverges](#groupquery-is-superseded-by-the-per-group-scoped-query) |
 | `getRelationship()` / `getRelationshipName()` / `getRelationshipAttribute()` | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | [diverges](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) |
@@ -108,6 +108,12 @@ Nothing replaces it: the only builder `orderBy()` in `packages/tables/src` is th
 For a blank key on a relation path, Filament nests `whereHas($relationship, fn ($q) => $q->where($attribute, null))->orWhereDoesntHave($relationship)` inside one `where()` closure ([`Group::scopeQueryByKey()`](../../../vendor/filament/tables/src/Grouping/Group.php) at `:410-418`), so the pair is parenthesised and stays inside the query's other predicates.
 The port narrows with a single `andWhere("{$path} IS NULL")` over the left join the relation path mints, which selects the same rows: a row with no related row has a null there too.
 Every scope this class adds is `andWhere`, and every parameter is `sylament_group_<n>`, counter-suffixed, because `setParameter()` overwrites a same-named parameter in silence.
+
+### A blank string groups with null, and the group's query selects only the nulls
+
+`getStringKey()` answers `null` for `''` as for a null value, as Filament's `filled()` check does, so a `''` row and a null row carry the one blank group key.
+That group's checkbox takes its keys from the query arm unless the table selects the current page only.
+The query arm narrows by `IS NULL`, as Filament's `where($column, null)` does, so it selects the null rows and leaves the `''` rows out, while the page-only arm filters the page's records by string key, as Filament's does, and selects both.
 
 ### A `date()` group is a half-open day range bound with the field's own type
 

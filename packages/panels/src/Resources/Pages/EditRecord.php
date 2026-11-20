@@ -218,8 +218,7 @@ abstract class EditRecord extends Page
     }
 
     /**
-     * A create modal on a record page is anonymous — the page's record would
-     * otherwise open it as an edit of that record.
+     * A create modal on a record page is anonymous.
      *
      * @return object|array<string, mixed>|null
      */

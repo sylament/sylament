@@ -112,10 +112,9 @@ trait HasTabs
     }
 
     /**
-     * The strip is the only element that writes this property, so a write is
-     * the untrusted edge: a blanked key is healed here, where the healed value
-     * still reaches the wire, rather than only at the render that would
-     * otherwise carry a null `data-value` off the page.
+     * The strip is the property's only writer, so a write is the untrusted
+     * edge: a blanked key is healed here, before this response's props are
+     * dehydrated.
      */
     public function updatedActiveTab(): void
     {

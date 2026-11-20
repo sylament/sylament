@@ -183,8 +183,8 @@ trait HasRelationManagers
         foreach ($group->getManagers() as $groupKey => $manager) {
             $class = $this->normalizeRelationManagerClass($manager);
 
-            // The group key joins the class, so one manager registered in two
-            // groups still keeps two identities across renders.
+            // The in-group key joins the class, so one manager registered twice
+            // in one group keeps two identities across renders.
             $embeds[] = $this->makeRelationManagerEmbed($manager, $class, $class . '-' . $groupKey);
         }
 

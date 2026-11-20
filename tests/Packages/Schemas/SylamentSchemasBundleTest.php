@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Schemas\Colors\Components\IconComponent;
 use Sylament\Schemas\Colors\Components\TextComponent;
 use Sylament\Schemas\Components\Section;
@@ -15,8 +16,10 @@ use Sylament\Schemas\SylamentSchemasBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\DependencyInjection\Reference;
 
 it('registers every component, at each level under Components/, and the schema as services, so make() builds each through the container', function (): void {
     $root = dirname(__DIR__, 3) . '/packages/schemas/src/Components';
@@ -59,6 +62,17 @@ it('registers its property accessor, record type reader and association reader u
     expect($container->get('sylament_schemas.property_accessor'))->toBe($container->get(PropertyAccessor::class))
         ->and($container->get('sylament_schemas.record_type_reader'))->toBe($container->get(RecordTypeReader::class))
         ->and($container->get('sylament_schemas.association_reader'))->toBe($container->get(AssociationReader::class));
+});
+
+it('hands its association reader no entity manager in an application that registers none', function (): void {
+    $container = new ContainerBuilder(new ParameterBag(['kernel.environment' => 'test']));
+    new SylamentSchemasBundle()->getContainerExtension()?->load([], $container);
+
+    $manager = $container->getDefinition('sylament_schemas.association_reader')->getArgument(0);
+
+    expect($manager)->toBeInstanceOf(Reference::class)
+        ->and((string) $manager)->toBe(EntityManagerInterface::class)
+        ->and($manager->getInvalidBehavior())->toBe(ContainerInterface::NULL_ON_INVALID_REFERENCE);
 });
 
 it('prepends the built assets into AssetMapper only when FrameworkBundle ships it', function (): void {

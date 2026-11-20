@@ -121,7 +121,7 @@ This is [the same decision](notifications.md#live-delivery-appends-server-render
 ### Asset registration is an AssetMapper prepend, and the CSS rides support's build
 
 Filament registers one built bundle, `Js::make('notifications', __DIR__ . '/../dist/index.js')`, through `FilamentAsset`, and that bundle's `index.js` registers the `notificationComponent` Alpine plugin on `alpine:init`; its CSS reaches the page through the app's compiled theme.
-Sylament's translation is a [`prependExtension()`](../../../packages/notifications/src/SylamentNotificationsBundle.php) mapping `packages/notifications/assets/dist` to `@sylament/notifications`, guarded by `isAssetMapperAvailable()` exactly as support's is, so a consumer without AssetMapper is not forced to install it.
+Sylament's translation is a [`prependExtension()`](../../../packages/notifications/src/SylamentNotificationsBundle.php) calling the inherited [`SylamentBundle::prependAssetMapper()`](../../../packages/support/src/SylamentBundle.php), which maps `packages/notifications/assets/dist` to `@sylament/notifications` only when AssetMapper is available ([guard](../support/support-bundle.md#the-asset-prepend-is-guarded-and-the-built-directory-needs-only-stimulus-from-the-importmap)).
 
 The asset workspace behind it is **JS-only**: two Stimulus controllers declared in its `package.json` under `symfony.controllers`, so StimulusBundle picks them up with no consumer wiring.
 Both import only `@hotwired/stimulus`, the one runtime and peer dependency the workspace declares and the one entry its `symfony.importmap` block names, because it is a remote entry no PHP package of ours installs.

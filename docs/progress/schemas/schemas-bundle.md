@@ -62,7 +62,7 @@ Next step: port it with the translations subtree.
 ### The asset prepend needs the built `dist` to exist
 
 Filament's `packageBooted()` calls `FilamentAsset::register([...])` with the schemas `index.js` plus the `actions`/`tabs`/`wizard` `AlpineComponent`s.
-Sylament's translation is a `prependExtension()` that registers `packages/schemas/assets/dist` as `@sylament/schemas`, mirroring [`SylamentFormsBundle`](../../../packages/forms/src/SylamentFormsBundle.php)'s and guarded by [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) so a consumer without AssetMapper is not forced to install it.
+Sylament's translation is a [`prependExtension()`](../../../packages/schemas/src/SylamentSchemasBundle.php) calling the inherited [`SylamentBundle::prependAssetMapper()`](../../../packages/support/src/SylamentBundle.php), which registers `packages/schemas/assets/dist` as `@sylament/schemas` only when AssetMapper is available ([guard](../support/support-bundle.md#the-asset-prepend-is-guarded-and-the-built-directory-needs-only-stimulus-from-the-importmap)).
 The hook and the built `dist` must stay together: `AssetMapperRepository::getDirectories()` throws `InvalidArgumentException` in debug for an absolute path that does not exist, and in prod registers a bogus `0 => '@sylament/schemas'` entry — there is no skip-if-missing branch, and git cannot track an empty directory.
 
 ### The `expand` walk, and the two window events either side of it

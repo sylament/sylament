@@ -96,8 +96,7 @@ A host template's `{{ renderAction('delete') }}` renders the host's resolved act
 ### Asset registration is an AssetMapper prepend
 
 Filament's `packageBooted()` calls `FilamentAsset::register([...], 'filament/actions')` with a single `Js::make('actions', __DIR__ . '/../dist/index.js')`.
-Sylament's translation is a [`prependExtension()`](../../../packages/actions/src/SylamentActionsBundle.php) mapping `packages/actions/assets/dist` to `@sylament/actions`, guarded by `isAssetMapperAvailable()`, the same shape and the same guard support's and notifications' carry, so a consumer without AssetMapper is not forced to install it.
-The base [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) supplies only that guard; each bundle writes its own prepend.
+Sylament's translation is a [`prependExtension()`](../../../packages/actions/src/SylamentActionsBundle.php) calling the inherited [`SylamentBundle::prependAssetMapper()`](../../../packages/support/src/SylamentBundle.php), which maps `packages/actions/assets/dist` to `@sylament/actions` only when AssetMapper is available ([guard](../support/support-bundle.md#the-asset-prepend-is-guarded-and-the-built-directory-needs-only-stimulus-from-the-importmap)).
 
 Without it the failure is loud rather than silent, which is worth knowing because it lands nowhere near a click.
 StimulusBundle resolves a `controllers.json` entry by reading the PHP package's `assets/package.json` ([`UxPackageReader`](../../../vendor/symfony/stimulus-bundle/src/Ux/UxPackageReader.php) turns `@sylament/actions` back into the `sylament/actions` install path), then calls `assetMapper->getAssetFromSourcePath()` on `<packageDirectory>/` plus the controller's `main` and **throws** `Could not find an asset mapper path that points to the "…" controller` when the path sits outside every registered one ([`ControllersMapGenerator`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)).

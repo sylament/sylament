@@ -120,7 +120,7 @@ The **apply action is sized**, and vendor's is not.
 That is an addition rather than a port: the three sit two to a footer, and one rendering a size larger than its neighbour read as a mistake in the panel.
 `defaultSize()` is the [non-destructive setter](../actions/action.md), so a caller's own `size()` through `filtersApplyAction()` still wins — which is what keeps an addition from being a restriction.
 
-The icons resolve through a manager that a `#[Required] setFiltersIconManager()` of this trait's own name injects, since `Table` flattens [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)' `setIconManager()` into the same class; a table built outside the container falls back to a bare manager, which resolves no alias and answers the fallback glyph.
+The icons resolve through a manager that a `#[Required] setFiltersIconManager()` of this trait's own name injects, for the reason the [column manager's setter](column-manager.md#the-table-tiers-icon-manager-arrives-through-a-setter-of-its-own-name) gives; a table built outside the container falls back to a bare manager, which resolves no alias and answers the fallback glyph.
 
 ### The collapsible panel is a `<details>` element, and the modal opens through an invoker command
 

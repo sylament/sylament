@@ -73,7 +73,7 @@ UX's client throws `Invalid model name` for a `data-model` path the published pr
 That write is the one place the divergence costs something, so it is gated: Filament's `Arr::forget` is destructive only and cannot invent a key, while an always-write takes a **client-supplied** column name and would add one permanently — a merely global column's name accumulating in the bag, the session and the wire, and a dotted one (`title.x`) replacing a real leaf with a map.
 So the action resolves the name against the table first and returns silently unless the column is individually searchable, which is exactly the seed's own predicate: the bag's key set can only ever be the seed's.
 The seed runs again inside [the post-hydrate hook](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot), so a column that *became* individually searchable between two requests has its key before the render that binds an input to it.
-A flat dotted key, the form Filament's `getTableColumnSearches()` also reads (`['artist.name' => …]`), is folded into the nested slot before the seed reads it, so it searches as the nested form does.
+The seed folds a flat dotted key, the form Filament's `getTableColumnSearches()` also reads (`['artist.name' => …]`), into the nested slot and removes it, its term winning over a nested one beside it, so it searches as the nested form does.
 
 The reserved list is then unnecessary rather than merely unported: the bag holds a key for every searchable column whenever any column is searchable, so it never serialises as a JSON array in the first place, which is the collision the list exists to prevent.
 

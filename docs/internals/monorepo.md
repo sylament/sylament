@@ -14,6 +14,8 @@ Sub-package manifests carry production `require` entries only, meaning their rea
 
 The root `composer.lock` is gitignored. This is a library monorepo: resolution floats within the declared constraints, and CI resolves fresh, which is what consumers of the split packages do too. A consequence worth knowing is that two checkouts can resolve different dev-tool versions. CI failures that do not reproduce locally usually come from newer tools or runtime libraries.
 
+So a change runs `composer update` before it lands, not when work starts: an upgrade's fallout (a new Rector or PHPStan finding, a Filament file the trail links moving, a Doctrine feature moving to its own package) then shows up before CI sees it, and lands in a commit of its own rather than mixed into the feature, whose Filament source it would otherwise shift mid-port.
+
 `pnpm-lock.yaml` is committed, because the pinned JavaScript toolchain must rebuild the committed `assets/dist` byte-for-byte. CI checks that it does.
 
 ## The split

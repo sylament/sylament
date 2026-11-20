@@ -52,6 +52,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 
 ## Definition of done
 
+- `composer update` run before landing, its fallout fixed in a commit of its own: CI resolves fresh, so a stale `vendor/` hides what CI will fail on (`docs/internals/monorepo.md`).
 - `composer test` green.
 - `composer test:mysql` and `composer test:postgresql` green at landing; an inner loop may stay on SQLite.
 - `pnpm test:types` and `pnpm test:lint` green.

@@ -131,5 +131,4 @@ That is row-order-dependent by construction — a first row whose to-one hop is 
 
 Here each row's own walk decides, and nothing is cached off a row.
 A walk that crosses a `Collection` answers the list of what it reached, blanks dropped, so a row reaching one item reads a one-item list, never a scalar, and a row reaching none reads `null`, as a row whose to-one hop is `null` before the collection does.
-`pathTraversesToMany()` also asks the mapping — `isCollectionValuedAssociation()` per segment, from the table's record class through `getQueryEntityManager()`, memoised per column in `$cachedPathTraversesToMany` — and sends a to-many path whose walk crossed no collection down the list arm too; where the accessor hands back the mapped `Collection`, such a walk stopped at a blank hop, so it reads `null` on either arm.
-A path with no mapping to consult — the records lane, a DTO, a plain array — is decided by the walk alone.
+Nothing else decides it: the mapping is not consulted, so a to-many whose getter answers something other than its `Collection` (an array, one object, a scalar) is read as the walk finds it, never wrapped in a list.

@@ -8,10 +8,13 @@ use Sylament\Tests\Fixtures\Entity\LarderBin;
 use Sylament\Tests\Fixtures\Entity\LarderBinNote;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Entity\Trellis;
+use Sylament\Tests\Fixtures\Entity\TrellisVine;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\ColumnStateTable;
 use Sylament\Tests\Fixtures\Tables\LarderStateTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\TrellisVineTable;
 use Symfony\Component\DomCrawler\Crawler;
 
 describe('on array rows', function (): void {
@@ -125,6 +128,17 @@ describe('on entities', function (): void {
             ->and($jars($pantry))->toBe(['a', 'b', 'a'])
             ->and($crawler->filter(Selectors::cell((string) $cellar->id, 'jars.label'))->text())->toBe('cider')
             ->and($crawler->filter(Selectors::cell((string) $pantry->id, 'bins.notes.text'))->text())->toBe('dry');
+    });
+
+    it("reads a to-many whose getter answers a plain array as that array's items, not as a list holding it", function (): void {
+        $trellis = new Trellis('Arch');
+        $trellis->addVine($ivy = new TrellisVine('ivy'));
+        $trellis->addVine(new TrellisVine('hop'));
+        $this->seed($trellis);
+
+        $crawler = $this->createLiveComponent(TrellisVineTable::class)->render()->crawler();
+
+        expect($crawler->filter(Selectors::cell((string) $ivy->id, 'trellis.vines') . ' li')->each(static fn (Crawler $item): string => $item->text()))->toBe(['hop', 'ivy']);
     });
 
     it('reads a name the entity cannot answer, at any hop, as an empty cell', function (): void {

@@ -16,13 +16,13 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * One field of each boolean kind, so a save of the untouched form fails all but the last:
+ * One field of each boolean kind, so a save of the untouched form fails the first four:
  * a required `terms` checkbox, a required and accepted `notify` toggle, a required
  * `channels` multiple toggle-buttons field over `email` and `sms`, a required `size`
  * grouped toggle-buttons field over `s` and `l`, a `confirmed` `boolean()`
- * toggle-buttons field defaulting to yes, and a multiple and a grouped one over the keys
- * `01` and `1`, which read as one number. `mount()` fills the defaults; `save()`
- * validates the form.
+ * toggle-buttons field defaulting to yes, and the option-key fields `codes` (multiple)
+ * and `groupedCode` (grouped), whose keys `01` and `1` read as one number. `mount()`
+ * fills the defaults; `save()` validates the form.
  */
 #[AsLiveComponent(name: 'Forms:BoolFieldsForm', template: '@Fixtures/forms/BoolFieldsForm.html.twig')]
 final class BoolFieldsForm implements InteractsWithSchemas

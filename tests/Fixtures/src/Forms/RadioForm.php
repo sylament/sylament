@@ -16,10 +16,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * One radio per way a radio reads, casts and guards its state: a static map with a
- * description and a disabled option, int keys, keys `01` and `1` that read as one number, a
- * required `boolean()`, int keys a custom cast stores as booleans, a backed enum, an `in()`
- * list with no options, one with nothing to enumerate and one whose options name no enum. A save validates every field, so a
- * case asserts the errors of the field it fills.
+ * description and a disabled option, int keys, keys `01` and `1` that read as one number,
+ * a required `boolean()`, int keys a custom cast stores as booleans, a backed enum, an
+ * `in()` list with no options, one with nothing to enumerate and one whose options name
+ * no enum. A save validates every field, so a case asserts the errors of the field it
+ * fills.
  */
 #[AsLiveComponent(name: 'Forms:RadioForm', template: '@Fixtures/forms/RadioForm.html.twig')]
 class RadioForm implements InteractsWithSchemas

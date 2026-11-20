@@ -5,7 +5,7 @@ description: How a package's translation catalogues are named, keyed and written
 ---
 # Catalogue rules
 
-- **A package's messages live in `packages/<pkg>/translations/<domain>+intl-icu.en.xlf`,** XLIFF 1.2; FrameworkBundle loads every bundle's `translations/` with no wiring, and the `+intl-icu` suffix makes the translator format them as ICU.
+- **A package's messages live in `packages/<pkg>/translations/<domain>+intl-icu.en.xlf`,** XLIFF 1.2, which the bundle loads with no wiring (`bundles.md`), and the `+intl-icu` suffix makes the translator format them as ICU.
 - **The domain is Filament's Laravel namespace renamed:** `filament::` → `sylament` (support), `filament-schemas::` → `sylament-schemas`, `filament-actions::` → `sylament-actions`, `filament-forms::` → `sylament-forms`, `filament-tables::` → `sylament-tables`, `filament-notifications::` → `sylament-notifications`, `filament-panels::` → `sylament-panels`, so a Filament user finds each key under the matching domain.
 - **The key is Filament's key path verbatim** (`filament-actions::create.single.label` → `create.single.label` in `sylament-actions`), so importing Filament's locales stays mechanical.
 - **Write a unit as `<trans-unit id="<key>" resname="<key>">` with the key as its `<source>` and the English as its `<target>`;** the XLIFF loader keys a unit by `resname`, and a readable `id` keeps a diff reviewable.

@@ -238,7 +238,7 @@ describe('afterStateUpdated hooks', function (): void {
 describe('persistOldState()', function (): void {
     it('keeps the first value typed into a field below a container the host never filled', function (): void {
         $this->createLiveComponent(ReaderForm::class)
-            ->fillForm(['address' => ['city' => 'Paris']])
+            ->set('data.address.city', 'Paris')
             ->assertFormSet(['address' => ['city' => 'Paris']]);
     });
 
@@ -256,7 +256,7 @@ describe('persistOldState()', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['title:  -> First']);
 
         $tester
-            ->fillForm(['address' => ['city' => 'Paris']])
+            ->set('data.address.city', 'Paris')
             ->assertFormSet(['address' => ['city' => 'Paris']]);
     });
 });

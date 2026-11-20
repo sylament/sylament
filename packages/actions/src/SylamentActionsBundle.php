@@ -83,19 +83,4 @@ class SylamentActionsBundle extends SylamentBundle
             ->tag('kernel.reset', ['method' => 'reset'])
             ->tag(RemoveTestOnlyServicesPass::TAG);
     }
-
-    private function prependAssetMapper(ContainerBuilder $container): void
-    {
-        if (!$this->isAssetMapperAvailable($container)) {
-            return;
-        }
-
-        $container->prependExtensionConfig('framework', [
-            'asset_mapper' => [
-                'paths' => [
-                    __DIR__ . '/../assets/dist' => '@sylament/actions',
-                ],
-            ],
-        ]);
-    }
 }

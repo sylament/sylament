@@ -94,19 +94,4 @@ class SylamentPanelsBundle extends SylamentBundle
     {
         $this->prependAssetMapper($container);
     }
-
-    private function prependAssetMapper(ContainerBuilder $container): void
-    {
-        if (!$this->isAssetMapperAvailable($container)) {
-            return;
-        }
-
-        $container->prependExtensionConfig('framework', [
-            'asset_mapper' => [
-                'paths' => [
-                    __DIR__ . '/../assets/dist' => '@sylament/panels',
-                ],
-            ],
-        ]);
-    }
 }

@@ -232,19 +232,4 @@ class SylamentSupportBundle extends SylamentBundle
             ])
             ->alias(ComponentResolver::class, 'sylament_support.component_resolver');
     }
-
-    private function prependAssetMapper(ContainerBuilder $container): void
-    {
-        if (!$this->isAssetMapperAvailable($container)) {
-            return;
-        }
-
-        $container->prependExtensionConfig('framework', [
-            'asset_mapper' => [
-                'paths' => [
-                    __DIR__ . '/../assets/dist' => '@sylament/support',
-                ],
-            ],
-        ]);
-    }
 }

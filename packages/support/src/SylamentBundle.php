@@ -5,11 +5,27 @@ declare(strict_types=1);
 namespace Sylament\Support;
 
 use Symfony\Component\AssetMapper\AssetMapperInterface;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 abstract class SylamentBundle extends AbstractBundle
 {
+    protected function prependAssetMapper(ContainerBuilder $container): void
+    {
+        if (!$this->isAssetMapperAvailable($container)) {
+            return;
+        }
+
+        $container->prependExtensionConfig('framework', [
+            'asset_mapper' => [
+                'paths' => [
+                    $this->getPath() . '/assets/dist' => '@sylament/' . Container::underscore(mb_substr($this->getName(), mb_strlen('Sylament'), -mb_strlen('Bundle'))),
+                ],
+            ],
+        ]);
+    }
+
     protected function isAssetMapperAvailable(ContainerBuilder $container): bool
     {
         if (!interface_exists(AssetMapperInterface::class)) {

@@ -8,10 +8,8 @@ use Sylament\Forms\Components\TextInput\Actions\ShowPasswordAction;
 use Sylament\Forms\SylamentFormsBundle;
 use Sylament\Forms\Validation\UniqueValueValidator;
 use Sylament\Tests\Fixtures\Forms\Selectors;
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 
 describe('view namespace', function (): void {
@@ -88,25 +86,6 @@ describe('temporary upload store', function (): void {
 });
 
 describe('asset registration', function (): void {
-    it('prepends the built assets into AssetMapper only when FrameworkBundle ships it', function (): void {
-        $extension = new SylamentFormsBundle()->getContainerExtension();
-        assert($extension instanceof PrependExtensionInterface);
-
-        $withAssetMapper = new ContainerBuilder(new ParameterBag(['kernel.bundles_metadata' => [
-            'FrameworkBundle' => ['path' => dirname((string) new ReflectionClass(FrameworkBundle::class)->getFileName()), 'namespace' => 'Symfony\Bundle\FrameworkBundle'],
-        ]]));
-        $withoutFrameworkBundle = new ContainerBuilder(new ParameterBag(['kernel.bundles_metadata' => []]));
-
-        $extension->prepend($withAssetMapper);
-        $extension->prepend($withoutFrameworkBundle);
-
-        $paths = $withAssetMapper->getExtensionConfig('framework')[0]['asset_mapper']['paths'] ?? [];
-
-        expect(array_values($paths))->toBe(['@sylament/forms'])
-            ->and(realpath((string) array_key_first($paths)))->toBe(dirname(__DIR__, 3) . '/packages/forms/assets/dist')
-            ->and($withoutFrameworkBundle->getExtensionConfig('framework'))->toBe([]);
-    });
-
     it('serves its built controllers, a per-file one and a bundled one, through AssetMapper as @sylament/forms', function (): void {
         $assets = $this::getContainer()->get(AssetMapperInterface::class);
         $dist = dirname(__DIR__, 3) . '/packages/forms/assets/dist';

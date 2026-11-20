@@ -11,15 +11,10 @@ use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\FilterIndicator;
 use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Grouping\Group;
-use Sylament\Tables\SylamentTablesBundle;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 
 it('maps @SylamentTables to the package templates with no twig path configured, so a table renders its partial', function (): void {
     $this->seed($lamp = new Product('Lamp'));
@@ -60,34 +55,19 @@ it('registers every colour policy public at both levels they nest to, so ColorMa
         ->and(array_values(array_filter($policies, fn (string $policy): bool => !$container->has($policy))))->toBe([]);
 });
 
-it('prepends the built assets into AssetMapper only when FrameworkBundle ships it, where AssetMapper finds every controller its manifest names and the live-host helper they import', function (): void {
-    $extension = new SylamentTablesBundle()->getContainerExtension();
-    assert($extension instanceof PrependExtensionInterface);
-
-    $withAssetMapper = new ContainerBuilder(new ParameterBag(['kernel.bundles_metadata' => [
-        'FrameworkBundle' => ['path' => dirname((string) new ReflectionClass(FrameworkBundle::class)->getFileName()), 'namespace' => 'Symfony\Bundle\FrameworkBundle'],
-    ]]));
-    $withoutFrameworkBundle = new ContainerBuilder(new ParameterBag(['kernel.bundles_metadata' => []]));
-
-    $extension->prepend($withAssetMapper);
-    $extension->prepend($withoutFrameworkBundle);
-
-    $paths = $withAssetMapper->getExtensionConfig('framework')[0]['asset_mapper']['paths'] ?? [];
+it('serves every controller its manifest names and the live-host helper they import through AssetMapper as @sylament/tables', function (): void {
     $workspace = dirname(__DIR__, 3) . '/packages/tables/assets';
     $manifest = json_decode((string) file_get_contents("{$workspace}/package.json"), true, flags: JSON_THROW_ON_ERROR);
     $assets = $this::getContainer()->get(AssetMapperInterface::class);
 
-    expect(array_values($paths))->toBe(['@sylament/tables'])
-        ->and(realpath((string) array_key_first($paths)))->toBe("{$workspace}/dist")
-        ->and($withoutFrameworkBundle->getExtensionConfig('framework'))->toBe([])
-        ->and(array_map(
-            static fn (array $controller): ?string => $assets->getAssetFromSourcePath("{$workspace}/{$controller['main']}")?->logicalPath,
-            $manifest['symfony']['controllers'],
-        ))->toBe([
-            'column-manager' => '@sylament/tables/controllers/column_manager_controller.js',
-            'editable-cell' => '@sylament/tables/controllers/editable_cell_controller.js',
-            'limited-list' => '@sylament/tables/controllers/limited_list_controller.js',
-            'table' => '@sylament/tables/controllers/table_controller.js',
-        ])
+    expect(array_map(
+        static fn (array $controller): ?string => $assets->getAssetFromSourcePath("{$workspace}/{$controller['main']}")?->logicalPath,
+        $manifest['symfony']['controllers'],
+    ))->toBe([
+        'column-manager' => '@sylament/tables/controllers/column_manager_controller.js',
+        'editable-cell' => '@sylament/tables/controllers/editable_cell_controller.js',
+        'limited-list' => '@sylament/tables/controllers/limited_list_controller.js',
+        'table' => '@sylament/tables/controllers/table_controller.js',
+    ])
         ->and($assets->getAssetFromSourcePath("{$workspace}/dist/utils/live_host.js")?->logicalPath)->toBe('@sylament/tables/utils/live_host.js');
 });

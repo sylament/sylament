@@ -4,7 +4,7 @@ How a Sylament bundle class is put together, and why the wiring rules in `.claud
 
 ## Why is asset-mapper optional?
 
-`SylamentBundle::isAssetMapperAvailable()` returns true only when `AssetMapperInterface` exists and FrameworkBundle ships `Resources/config/asset_mapper.php`. Each bundle with an `assets/` workspace calls it from `prependExtension()` before prepending its `assets/dist` directory as `@sylament/<pkg>`. `infolists` and `widgets` have no workspace and no `prependExtension()`.
+`SylamentBundle::isAssetMapperAvailable()` returns true only when `AssetMapperInterface` exists and FrameworkBundle ships `Resources/config/asset_mapper.php`. `SylamentBundle::prependAssetMapper()` returns early when it is false, and otherwise prepends the bundle's `assets/dist` directory as `@sylament/<pkg>`, the path taken from `getPath()` and `<pkg>` from the `Sylament<Pkg>Bundle` class name. Each bundle with an `assets/` workspace calls it from `prependExtension()`, so the opt-in stays explicit per bundle rather than an `is_dir()` check that would skip a missing `dist/` in silence. `infolists` and `widgets` have no workspace and no `prependExtension()`.
 
 The guard lets a consuming application run without `symfony/asset-mapper`. The monorepo installs it only as a root dev dependency, so the root suite's test kernel exercises the prepended path while no package manifest requires it. See `docs/progress/support/support-bundle.md`, section "The asset prepend is guarded, and the built directory needs only Stimulus from the importmap".
 

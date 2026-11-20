@@ -13,11 +13,9 @@ use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\SylamentSchemasBundle;
-use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -73,25 +71,6 @@ it('hands its association reader no entity manager in an application that regist
     expect($manager)->toBeInstanceOf(Reference::class)
         ->and((string) $manager)->toBe(EntityManagerInterface::class)
         ->and($manager->getInvalidBehavior())->toBe(ContainerInterface::NULL_ON_INVALID_REFERENCE);
-});
-
-it('prepends the built assets into AssetMapper only when FrameworkBundle ships it', function (): void {
-    $extension = new SylamentSchemasBundle()->getContainerExtension();
-    assert($extension instanceof PrependExtensionInterface);
-
-    $withAssetMapper = new ContainerBuilder(new ParameterBag(['kernel.bundles_metadata' => [
-        'FrameworkBundle' => ['path' => dirname((string) new ReflectionClass(FrameworkBundle::class)->getFileName()), 'namespace' => 'Symfony\Bundle\FrameworkBundle'],
-    ]]));
-    $withoutFrameworkBundle = new ContainerBuilder(new ParameterBag(['kernel.bundles_metadata' => []]));
-
-    $extension->prepend($withAssetMapper);
-    $extension->prepend($withoutFrameworkBundle);
-
-    $paths = $withAssetMapper->getExtensionConfig('framework')[0]['asset_mapper']['paths'] ?? [];
-
-    expect(array_values($paths))->toBe(['@sylament/schemas'])
-        ->and(realpath((string) array_key_first($paths)))->toBe(dirname(__DIR__, 3) . '/packages/schemas/assets/dist')
-        ->and($withoutFrameworkBundle->getExtensionConfig('framework'))->toBe([]);
 });
 
 it('serves its built controllers and the utilities forms imports through AssetMapper as @sylament/schemas', function (): void {

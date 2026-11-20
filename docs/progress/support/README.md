@@ -85,7 +85,7 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | skipped | — | [input-wrapper.md](input-wrapper.md#support-ships-no-select-input-component-because-forms-select-emits-filaments-pair-inside-this-wrapper) |
 | [`views/components/toggle.blade.php`](../../../vendor/filament/support/resources/views/components/toggle.blade.php) | todo | — | — |
 | [`views/components/button/group.blade.php`](../../../vendor/filament/support/resources/views/components/button/group.blade.php) | todo | — | — |
-| [`resources/js/components/tooltip.js`](../../../vendor/filament/support/resources/js/components/tooltip.js) | todo | — | — |
+| [`resources/js/tooltip.js`](../../../vendor/filament/support/resources/js/tooltip.js) | todo | — | — |
 | [`resources/css/components/tooltip.css`](../../../vendor/filament/support/resources/css/components/tooltip.css) | todo | — | — |
 | [`resources/js/components/form-button.js`](../../../vendor/filament/support/resources/js/components/form-button.js) | todo | — | — |
 | [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | todo | — | — |

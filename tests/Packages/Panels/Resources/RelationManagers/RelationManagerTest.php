@@ -141,7 +141,7 @@ describe('its actions', function (): void {
         expect($this->entityManager()->getRepository(Seedling::class)->findBy(['name' => 'Kale']))->toBe([]);
     });
 
-    it('joins what a create action outside its table makes to the owner, and answers no relationship for another action', function (): void {
+    it('joins what a create action outside its table makes to the owner, tests its form by default after it, and answers no relationship for another action', function (): void {
         $tester = ($this->seedlings)()->callAction('sow', data: ['name' => 'Chard']);
 
         expect($tester->assertHasNoActionErrors())->toBe($tester)

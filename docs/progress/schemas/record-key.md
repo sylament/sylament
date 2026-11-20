@@ -265,10 +265,11 @@ A create cannot write such a row: a new record whose assigned key is still blank
 A reserved spelling for an empty component (a lone `=`, which is malformed) would let such legacy rows list.
 It is recorded, not built.
 
-### A single string identifier containing `.` or `/` stays broken
+### A single string identifier containing `/` stays broken
 
 [The grammar](record-key-contract.md#the-grammar) exempts a one-field identifier from escaping, so a single-identifier key is the identifier value itself — and that deliberately **leaves** a hole open rather than closing it.
-A record keyed on a single string `code` with the value `sy/0.1` breaks the `{record}` route (the `/`) and re-addresses a repeater item's state path (the `.`).
+A record keyed on a single string `code` with the value `sy/0.1` breaks the `{record}` route (the `/`).
+Its `.` would re-address a repeater item's state path, the one place a key enters a dotted path, so a relationship repeater [keys that item by the key's escape](../forms/repeater-relationship.md#a-record-key-holding-a-dot-keys-its-item-record-and-the-keys-escape), and the key itself stays verbatim everywhere.
 This is stated so the first user with a slug-keyed entity does not read the contract as a guarantee it does not make: **only a composite key carries the alphabet guarantee.**
 Closing it for single identifiers would move every URL and every pinned test in the repo, a breaking change of its own.
 

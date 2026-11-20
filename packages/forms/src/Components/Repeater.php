@@ -22,6 +22,7 @@ use Sylament\Schemas\Components\Concerns\HasContainerGridLayout;
 use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Contracts\HasExtraItemActions as HasExtraItemActionsContract;
 use Sylament\Schemas\Components\Contracts\HasKeyedItems;
+use Sylament\Schemas\Identity\IdentifierFields;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationTarget;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
@@ -67,6 +68,14 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
      * added.
      */
     private const string RECORD_ITEM_KEY_PREFIX = 'record-';
+
+    /**
+     * The item-key prefix of a record key holding a dot, which follows it in the
+     * record-key grammar's escape: every state path splits on dots, and a record
+     * key without one may spell any escaped form, so only a prefix of its own
+     * keeps the two apart.
+     */
+    private const string ESCAPED_RECORD_ITEM_KEY_PREFIX = 'record=';
 
     protected string|Closure|null $defaultTemplate = self::TEMPLATE;
 
@@ -1672,7 +1681,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
                 $accessor->setInArray($itemData, $itemStatePath, $value);
             }
 
-            $items[self::RECORD_ITEM_KEY_PREFIX . $reader->getRecordKey($child)] = $this->requireFilledItemData($itemData);
+            $items[$this->getRecordItemKey($reader->getRecordKey($child))] = $this->requireFilledItemData($itemData);
         }
 
         return $items;
@@ -1706,7 +1715,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
         foreach (is_iterable($related) ? $related : [] as $child) {
             if (is_object($child)) {
-                $existingRecords[$reader->getRecordKey($child)] = $child;
+                $existingRecords[$this->getRecordItemKey($reader->getRecordKey($child))] = $child;
             }
         }
 
@@ -1884,7 +1893,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
             return null;
         }
 
-        if ($this->hasRelationship() && str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX)) {
+        if ($this->hasRelationship() && $this->isRecordItemKey($itemKey)) {
             $itemSchema->record(fn (): object|string|null => $this->findItemRecordByKey($itemKey) ?? $this->getSoftRelationshipTargetClass());
         }
 
@@ -1920,7 +1929,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
      */
     private function findItemRecordByKey(string $itemKey): ?object
     {
-        if (! str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX)) {
+        if (! $this->isRecordItemKey($itemKey)) {
             return null;
         }
 
@@ -1937,11 +1946,12 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
             return null;
         }
 
-        $recordKey = mb_substr($itemKey, mb_strlen(self::RECORD_ITEM_KEY_PREFIX));
         $reader = $this->getAssociationReader();
 
         foreach (is_iterable($related) ? $related : [] as $child) {
-            if (is_object($child) && ($reader->findRecordKey($child) === $recordKey)) {
+            $recordKey = is_object($child) ? $reader->findRecordKey($child) : null;
+
+            if (($recordKey !== null) && ($this->getRecordItemKey($recordKey) === $itemKey)) {
                 return $child;
             }
         }
@@ -2040,25 +2050,40 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
      * The loaded child an item names, or null when the item is one the client
      * added.
      *
-     * @param array<string, object> $existingRecords
+     * @param array<string, object> $existingRecords by the item key each child mints
      *
      * @throws LogicException when the item names a child the association no
      *                        longer holds
      */
     private function findRelationshipItemRecord(string $itemKey, array $existingRecords): ?object
     {
-        if (! str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX)) {
+        if (! $this->isRecordItemKey($itemKey)) {
             return null;
         }
 
-        $recordKey = mb_substr($itemKey, mb_strlen(self::RECORD_ITEM_KEY_PREFIX));
-
-        return $existingRecords[$recordKey] ?? throw new LogicException(sprintf(
+        return $existingRecords[$itemKey] ?? throw new LogicException(sprintf(
             'The [%s] repeater carries item "%s", but the [%s] association no longer holds a record with that identifier — it was deleted or detached since the schema was filled. Fill the schema from the record again before saving.',
             (string) $this->getName(),
             $itemKey,
             $this->getRelationshipNameOrFail(),
         ));
+    }
+
+    /**
+     * The key of the item a loaded child fills. Every site that resolves an item
+     * compares this against the item's key rather than decoding the key, so a
+     * spelling no child mints names no child.
+     */
+    private function getRecordItemKey(string $recordKey): string
+    {
+        return str_contains($recordKey, '.')
+            ? self::ESCAPED_RECORD_ITEM_KEY_PREFIX . IdentifierFields::escape($recordKey)
+            : self::RECORD_ITEM_KEY_PREFIX . $recordKey;
+    }
+
+    private function isRecordItemKey(string $itemKey): bool
+    {
+        return str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX) || str_starts_with($itemKey, self::ESCAPED_RECORD_ITEM_KEY_PREFIX);
     }
 
     /**

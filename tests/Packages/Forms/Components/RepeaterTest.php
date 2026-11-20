@@ -1437,6 +1437,57 @@ describe('relationship()', function (): void {
 
             expect(fn (): object => $schema->getData())->toThrow(LogicException::class, 'The [sheets] repeater carries item "record-1", but the [sheets] association no longer holds a record with that identifier — it was deleted or detached since the schema was filled. Fill the schema from the record again before saving.');
         });
+
+        it('keys a child whose identifier holds a dot without one, apart from a child whose identifier spells that key, and hands and saves each item its own child', function (): void {
+            $larder = new Larder('Pantry');
+            $dotted = new LarderBin('dry.goods');
+            $dotted->addNote(new LarderBinNote('rice'));
+
+            $larder->addBin($dotted);
+            $larder->addBin(new LarderBin('dry=2Egoods'));
+            $this->seed($larder);
+            $larder = $this->reload($larder);
+            $handed = [];
+            $host = $this->validatingRecordMappingHost();
+            $schema = $host->mapping(Repeater::make('bins')->relationship()->components([
+                TextInput::make('code')->label(static function (TextInput $component, ?object $record) use (&$handed): string {
+                    $handed[$component->getStatePath()] = ($record instanceof LarderBin) ? $record->code : null;
+
+                    return 'Code';
+                }),
+                Repeater::make('notes')->relationship()->components([TextInput::make('text')]),
+            ]))->record($larder)->fill($larder);
+            $bins = $host->data['bins'];
+            ksort($bins);
+
+            expect($bins)->toBe([
+                'record-dry=2Egoods' => ['notes' => [], 'code' => 'dry=2Egoods'],
+                'record=dry=2Egoods' => ['notes' => ['record-1' => ['text' => 'rice']], 'code' => 'dry.goods'],
+            ]);
+
+            foreach ($schema->getComponent('bins')->getItems() as $item) {
+                $item->getComponents(withActions: false)[0]->getLabel();
+            }
+
+            ksort($handed);
+
+            expect($handed)->toBe(['data.bins.record-dry=2Egoods.code' => 'dry=2Egoods', 'data.bins.record=dry=2Egoods.code' => 'dry.goods']);
+
+            $host->data['bins']['record=dry=2Egoods']['notes']['record-1']['text'] = 'oats';
+            $host->data['bins']['record-dry=2Egoods']['notes']['added'] = ['text' => 'salt'];
+            $schema->getData();
+            $this->entityManager()->flush();
+            $this->entityManager()->clear();
+            $stored = [];
+
+            foreach ($this->reload($larder)->bins as $bin) {
+                $stored[$bin->code] = array_map(static fn (LarderBinNote $note): string => $note->text, $bin->notes->toArray());
+            }
+
+            ksort($stored);
+
+            expect($stored)->toBe(['dry.goods' => ['oats'], 'dry=2Egoods' => ['salt']]);
+        });
     });
 
     describe('an incomplete identifier', function (): void {

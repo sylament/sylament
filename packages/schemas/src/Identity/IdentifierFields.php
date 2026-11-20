@@ -156,7 +156,7 @@ final readonly class IdentifierFields
             return $components[0];
         }
 
-        return implode(RecordKey::SEPARATOR, array_map($this->escape(...), $components));
+        return implode(RecordKey::SEPARATOR, array_map(self::escape(...), $components));
     }
 
     /**
@@ -285,7 +285,7 @@ final readonly class IdentifierFields
 
             $component = preg_replace_callback('/=([0-9A-F]{2})/', static fn (array $match): string => pack('H2', $match[1]), $part);
 
-            if ($component === null || !mb_check_encoding($component, 'UTF-8') || $this->escape($component) !== $part) {
+            if ($component === null || !mb_check_encoding($component, 'UTF-8') || self::escape($component) !== $part) {
                 return null;
             }
 
@@ -295,7 +295,7 @@ final readonly class IdentifierFields
         return $components;
     }
 
-    private function escape(string $component): string
+    public static function escape(string $component): string
     {
         return preg_replace_callback('/[^A-Za-z0-9_-]/', static fn (array $match): string => sprintf('=%02X', ord($match[0])), $component)
             ?? throw new LogicException('A record key component could not be escaped.');

@@ -261,6 +261,7 @@ The [unlinked crumb below](#a-crumb-whose-url-the-trail-already-spends-renders-u
 
 When the parent resource registers none of the [four parent arms](#the-parent-arms-carry-no-relation-parameter), `getIndexUrl()` falls through to the resource's own index page with the parent's key still among its parameters, where Filament has already unset it.
 The resource's own index is mounted under its parent like every page of a nested resource, so without the key no URL can be minted for it.
+Filament's `getResourceUrl()` still mints it, because it guesses and the guess refills the parent from the request; the port's guessing walks records only and its callers pass the keys, so keeping the key is what lets them mint it, and only a direct call with guessing off differs: Filament's refuses it.
 
 ### The chain rides one `LiveProp` of keys, assigned inside `mount()`
 

@@ -15,7 +15,7 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) · [diverges](#modifyqueryusing-returns-the-builder-or-nothing-and-anything-else-is-refused) |
 | The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#ignorerecord-narrows-the-two-option-arms-and-neither-label-arm) · [diverges](#a-record-of-another-class-than-the-association-target-is-refused) |
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
@@ -207,6 +207,11 @@ And each added member is read before it is written: `N + 1` reads for `N` added 
 Adding to each related record's `PersistentCollection` directly would skip those reads, but it bypasses the entity's own adder, which is what this whole arm rests on, so it is not taken.
 
 Pinned over fixtures whose inverse adders deliberately heal nothing, since a healing adder would make the save pass without the reconcile too.
+
+### `modifyQueryUsing` returns the builder or nothing, and anything else is refused
+
+The scoping closure receives the option query as `$query` (and the term as `$search`, `null` outside a search) and returns it, or returns nothing to keep the one it was handed, as Filament's `?? $relationshipQuery` does.
+Any other value is refused with a `LogicException` naming the field and the type it returned, where Filament assigns it and fails on the next query call with PHP's `Error`, because a value that is not the builder would drop the scoping without a trace.
 
 ### A record of another class than the association target is refused
 

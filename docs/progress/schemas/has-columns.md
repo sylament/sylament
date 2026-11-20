@@ -19,15 +19,7 @@ It ports Filament's identically-named schemas concern method for method.
 | [`getAllColumns()` — null→default map, per-entry `evaluate()`, breakpoint/int-key resolution](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::getAllColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-breakpoint-loop-rebuilds-a-fresh-map-instead-of-filaments-seed-and-unset-and-gates-empty-keys-with---rather-than-blank) · [diverges](#the-schema-parent-fallback-lives-in-a-schema-override-not-an-instanceof-schema-branch-inside-the-trait) |
 | [`getColumns()` — no-arg full map (`Schema/index.html.twig` `grid()`)](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](../support/component-attribute-bag.md#the-sy-grid-cols-marker-class-is-emitted-unconditionally) |
 | [`getColumns(breakpoint)` — single-breakpoint lookup](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | — |
-| [`hasCustomColumns()` — has-user-set-columns predicate](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::hasCustomColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#hascustomcolumns-has-no-caller-and-no-test) |
-
-## Details
-
-### `hasCustomColumns()` has no caller and no test
-
-The predicate (`$this->columns !== null`) is ported, and nothing in `packages/` calls or tests it.
-Filament's callers are its resource pages, which give a schema without custom columns a `columns(2)` default.
-The port's resource pages do not guard that way, for the reason [list-records.md](../panels/list-records.md#a-modals-schema-keeps-the-resource-forms-own-column-count) records, so the row waits on a test of its own.
+| [`hasCustomColumns()` — has-user-set-columns predicate](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::hasCustomColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](../panels/list-records.md#a-modals-schema-keeps-the-resource-forms-own-column-count) |
 
 ## Divergences
 

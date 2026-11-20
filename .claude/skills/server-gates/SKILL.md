@@ -4,7 +4,7 @@ description: Use before landing anything that touches Doctrine, to run the MySQL
 ---
 # Server gates
 
-`composer test` runs the root suite on SQLite, in parallel. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
+`composer test` runs the root suite on SQLite, in parallel; `CLAUDE.md`'s definition of done also needs the two server gates below green at landing.
 
 ## 1. Start the servers
 

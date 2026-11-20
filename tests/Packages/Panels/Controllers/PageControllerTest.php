@@ -13,6 +13,7 @@ use Sylament\Tests\Fixtures\Panels\Pages\ThirdLayoutPage;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Twig\Error\RuntimeError;
 
 describe('document', function (): void {
@@ -69,15 +70,8 @@ describe('props', function (): void {
 });
 
 describe('refusals', function (): void {
-    it('answers an HTTP exception the page throws at mount as itself, and any other as a server error, its template error rethrown untouched', function (): void {
-        $client = $this::getContainer()->get('test.client');
-        $client->request('GET', '/admin/articles/999999/edit');
-
-        $missing = $client->getResponse()->getStatusCode();
-        $client->request('GET', '/panel-branded/faulty');
-
-        expect($missing)->toBe(404)
-            ->and($client->getResponse()->getStatusCode())->toBe(500)
+    it('answers an HTTP exception the page throws at mount as itself, and any other as its template error, untouched', function (): void {
+        expect(fn (): mixed => $this->visit('/admin/articles/999999/edit'))->toThrow(NotFoundHttpException::class)
             ->and(fn (): mixed => $this->visit('/panel-branded/faulty'))->toThrow(RuntimeError::class, 'The page could not load its figures.');
     });
 

@@ -26,8 +26,9 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 | [`getCachedSchemas()` — build every declared name, reuse cached](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getCachedSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
 | [`schemasHostId` `#[LiveProp]` + `getSchemasHostId()`](../../../packages/schemas/src/Concerns/HasSchemas.php) — the key prefix | [`Components/Concerns/HasKey::getLivewireKey()`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | done | — | [diverges](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id) |
 | [`makeSchema()` — `Schema::make($this)`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::makeSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
-| [`fill(object\|array\|null $state = null)` default schema](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) · [semantics](#a-host-fills-its-schemas-as-it-mounts) |
-| [`oldState` `#[LiveProp]` + `persistOldState()` `#[PreDehydrate]`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatingInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff) |
+| [`fill(object\|array\|null $state = null)` default schema](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array) |
+| [`oldState` `#[LiveProp]` + `persistOldState()` `#[PreDehydrate]`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatingInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff) · [diverges](#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array) |
+| Drop the missing-level write once Symfony UX creates them | — | blocked | a Symfony UX release whose hydrator creates a missing or null level under an array root | [diverges](#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array) |
 | [`callAfterSchemaStateUpdated()` `#[PostHydrate]` — diff snapshot, fire hooks](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatedInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-level-afterstateupdated-hook-is-renamed-to-callafterschemastateupdated) |
 | [`getOldSchemaState(?string)` — path-keyed pre-change lookup](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
 | [`<name>Schema` method-name fallback — bare name first, suffix second](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
@@ -53,17 +54,24 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 
 `getFilamentTranslatableContentDriver()` / `makeFilamentTranslatableContentDriver()` / `getActiveSchemaLocale()` — the per-locale content driver Filament threads through schema state — has no consumer and nothing blocking it, so it is plain **todo**.
 
-## Semantics
-
-### A host fills its schemas as it mounts
-
-A host fills each schema before the first render a user types into, and every shipped host does: panels' `CreateRecord` and `EditRecord` in `mount()`, a mounted action's form through its `mountUsing`, and tables' filters form as the table mounts.
-A fill creates every container a field's state path crosses, so a filled host never meets the gap below.
-A host that never fills loses the first write to a field under a container path its state lacks: typing into `data.address.city` leaves `address` as `[]`, and only the second write lands, because the first left that empty container behind.
-The write is lost inside UX's hydrator, before any `HasSchemas` hook runs: `LiveComponentHydrator::adjustPropertyPathForData()` stops bracketing the path once an intermediate value is missing, so `[address].city` reaches PropertyAccess as a property write on an array, and the `NoSuchPropertyException` it throws is swallowed as bad user data.
-Filament's Livewire starts the missing level as `[]` before it descends, so the same write lands there.
-
 ## Divergences
+
+### Every missing or null level a field's state path crosses starts as an empty array
+
+Before `persistOldState()` takes its snapshot, a separate pass walks the state path of every component in a cached schema and writes `[]` at each level below the host property that is missing or `null`, wherever that level's parent is an array.
+The levels it walks are the parent component's path and the inner segments of the component's own path, never a split of a repeater item's key, so an item key holding a dot gains no phantom item.
+It never writes the host property itself, into an object or over a scalar, so a record-backed bag and a state cast's object leaf are left as they are.
+The write works around UX's hydrator: `LiveComponentHydrator::adjustPropertyPathForData()` stops bracketing a path once an intermediate value is missing or `null`, so `data.address.city` on a `data` without `address` reaches PropertyAccess as `[address].city`, a property write on an array, and the exception it throws is swallowed as bad user data.
+Without the write, a host that never fills loses the first value typed below a container its state lacks, and a container a hook sets to `null` (`$set('address', null)`) loses every write below it, because PropertyAccess will not traverse `null`.
+Filament's Livewire starts a missing or `null` level as `[]` before it descends, so the same writes land there, and with the write they land here too.
+A host fills each schema before the first render a user types into, and every shipped host does: panels' `CreateRecord` and `EditRecord` in `mount()`, a mounted action's form through its `mountUsing`, and tables' filters form as the table mounts.
+A fill creates every container a field's state path crosses, so a filled host meets the gap only where its own code sets a container to `null`.
+The pass runs before the snapshot, so a container's snapshot already holds the `[]` the next request reads, and its `afterStateUpdated` hooks run for no request that leaves it alone.
+
+Two differences from Filament remain visible.
+A host that never fills gains the empty level on its first render (`address => []` in `$data`), where Filament's state lacks the key until the first write below it.
+A hook's `null` is replaced too: after `$set('address', null)`, `$get('address')` answers `null` for the rest of the hook's request and `[]` from that request's render on, where Filament keeps the `null` until the next write below it, because keeping it here would lose every such write.
+The write is dropped once a Symfony UX release's hydrator creates a missing or `null` level under an array root itself.
 
 ### Livewire's updating/updated state hooks become a PreDehydrate/PostHydrate snapshot-and-diff
 

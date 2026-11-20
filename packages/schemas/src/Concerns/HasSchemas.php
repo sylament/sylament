@@ -17,6 +17,7 @@ use Sylament\Schemas\Components\Contracts\AcceptsUploadedFiles;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\Validation\PresenceGate;
 use Sylament\Schemas\Validation\RecordKeyGuard;
 use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
@@ -340,6 +341,16 @@ trait HasSchemas
     #[PreDehydrate]
     public function persistOldState(): void
     {
+        foreach ($this->getCachedSchemas() as $schema) {
+            foreach ($schema->getFlatComponents(withActions: false) as $component) {
+                if (!$component->hasStatePath()) {
+                    continue;
+                }
+
+                $this->createMissingStateContainers($schema->getPropertyAccessor(), $component);
+            }
+        }
+
         $oldState = [];
 
         foreach ($this->getCachedSchemas() as $schema) {
@@ -353,6 +364,44 @@ trait HasSchemas
         }
 
         $this->oldState = $oldState;
+    }
+
+    /**
+     * Start every missing or `null` level the component's state path crosses below
+     * an array as `[]`, because UX's hydrator drops a client write below such a
+     * level. The levels are the parent component's path and the inner segments of
+     * the component's own, never a split of an item schema's key, which may hold a
+     * dot.
+     */
+    private function createMissingStateContainers(PropertyAccessor $propertyAccessor, Component $component): void
+    {
+        $container = $component->getContainer();
+        $path = (string) $container->getStatePath();
+        $levels = blank($container->getStatePath(isAbsolute: false)) ? [$path] : [];
+
+        $segments = explode('.', (string) $component->getStatePath(isAbsolute: false));
+        array_pop($segments);
+
+        foreach ($segments as $segment) {
+            $path = ($path === '') ? $segment : "{$path}.{$segment}";
+            $levels[] = $path;
+        }
+
+        foreach ($levels as $level) {
+            $parentLength = mb_strrpos($level, '.');
+
+            if ($parentLength === false) {
+                continue;
+            }
+
+            if (!is_array($propertyAccessor->get($this, mb_substr($level, 0, $parentLength)))) {
+                return;
+            }
+
+            if ($propertyAccessor->get($this, $level) === null) {
+                $propertyAccessor->set($this, $level, []);
+            }
+        }
     }
 
     #[PostHydrate(priority: -10)]

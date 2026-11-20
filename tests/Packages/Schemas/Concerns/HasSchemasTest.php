@@ -32,6 +32,7 @@ use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
+use Sylament\Tests\Fixtures\Schemas\ReaderForm;
 use Sylament\Tests\Fixtures\Schemas\Record\VettedCard;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\SchemaResolutionHost;
@@ -230,6 +231,26 @@ describe('afterStateUpdated hooks', function (): void {
             ->fillForm(['name' => 'Renamed']);
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['name: Renamed']);
+    });
+});
+
+describe('persistOldState()', function (): void {
+    it('keeps the first value typed into a field below a container the host never filled', function (): void {
+        $this->createLiveComponent(ReaderForm::class)
+            ->fillForm(['address' => ['city' => 'Paris']])
+            ->assertFormSet(['address' => ['city' => 'Paris']]);
+    });
+
+    it('keeps a value typed into a field below a container a hook set to null, whose hooks no request that leaves it alone runs', function (): void {
+        $tester = $this->createLiveComponent(ReactiveSchemaForm::class)
+            ->fillForm(['moved' => 'Yes'])
+            ->fillForm(['title' => 'First']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['title:  -> First']);
+
+        $tester
+            ->fillForm(['address' => ['city' => 'Paris']])
+            ->assertFormSet(['address' => ['city' => 'Paris']]);
     });
 });
 

@@ -144,7 +144,8 @@ describe('its actions', function (): void {
     it('joins what a create action outside its table makes to the owner, and answers no relationship for another action', function (): void {
         $tester = ($this->seedlings)()->callAction('sow', data: ['name' => 'Chard']);
 
-        expect($this->entityManager()->getRepository(Seedling::class)->findOneBy(['name' => 'Chard'])->garden->id)->toBe($this->garden->id)
+        expect($tester->assertHasNoActionErrors())->toBe($tester)
+            ->and($this->entityManager()->getRepository(Seedling::class)->findOneBy(['name' => 'Chard'])->garden->id)->toBe($this->garden->id)
             ->and($tester->component()->getDefaultActionRelationship(EditAction::make()))->toBeNull();
     });
 });

@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
+use Sylament\Actions\Testing\TestAction;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Tests\Fixtures\Actions\Selectors as ActionsSelectors;
+use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Pages\MonthlyReportPage;
 use Sylament\Tests\Fixtures\Panels\Pages\NotesPage;
 use Sylament\Tests\Fixtures\Panels\Pages\OrphanPage;
 use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListModalArticles;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -198,11 +201,21 @@ describe('shell', function (): void {
 });
 
 describe('hosts', function (): void {
-    it('round-trips a page that declares no schema, which has none to fill', function (): void {
+    it('round-trips a page that declares no schema, whose content its form helpers test by default', function (): void {
         $page = $this->createLiveComponent(NotesPage::class)->call('refresh');
 
         expect($page->render()->crawler()->filter(Selectors::PAGE_HEADING)->text())->toBe('Notes Page')
-            ->and(fn () => $page->fillForm(['title' => 'Draft']))->toThrow(LogicException::class, 'declares no schema to test');
+            ->and($page->assertHasNoFormErrors())->toBe($page);
+    });
+
+    it('has its form helpers test the form schema it resolves by default, whatever its schemas() declares', function (): void {
+        $this->seed($apple = new Article('Apple'));
+
+        $tester = $this->createLiveComponent(ListModalArticles::class, ['panelId' => 'list-pages'])
+            ->callAction(TestAction::make('edit')->table($apple), data: ['title' => 'Apricot']);
+
+        expect($tester->assertHasNoActionErrors())->toBe($tester)
+            ->and($this->reload($apple)->title)->toBe('Apricot');
     });
 
     it('redraws unchanged on refresh, called or dispatched, keeping a mounted action', function (): void {

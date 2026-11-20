@@ -183,6 +183,11 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
         return $schema;
     }
 
+    public function getDefaultTestingSchemaName(): ?string
+    {
+        return ($this->resolveSchemaByName('form') instanceof Schema) ? 'form' : 'content';
+    }
+
     public function hasUnsavedDataChangesAlert(): bool
     {
         return false;

@@ -93,6 +93,11 @@ trait HasSchemas
         ];
     }
 
+    public function getDefaultTestingSchemaName(): ?string
+    {
+        return array_first($this->schemas());
+    }
+
     public function getSchemasHostId(): string
     {
         return $this->schemasHostId ??= bin2hex(random_bytes(4));

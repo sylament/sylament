@@ -76,19 +76,11 @@ trait TestsSchemas
         return $this;
     }
 
-    /**
-     * The first schema the host declares: Filament's default answers the same on a host
-     * with no mounted action, the one case the helpers fall back to it.
-     */
     protected function getDefaultTestingSchemaName(): ?string
     {
         $host = $this->component();
 
-        if (!$host instanceof InteractsWithSchemas) {
-            return null;
-        }
-
-        return array_first($host->schemas()) ?? null;
+        return ($host instanceof InteractsWithSchemas) ? $host->getDefaultTestingSchemaName() : null;
     }
 
     protected function resolveTestedSchemaName(?string $schema): string

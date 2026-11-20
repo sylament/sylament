@@ -25,6 +25,7 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 | [`getSchema()` — build from matching method, cache, throw, key by name](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#schema-discovery-is-explicit-via-schemas-not-reflection-based) |
 | [`getCachedSchemas()` — build every declared name, reuse cached](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getCachedSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
 | [`schemasHostId` `#[LiveProp]` + `getSchemasHostId()`](../../../packages/schemas/src/Concerns/HasSchemas.php) — the key prefix | [`Components/Concerns/HasKey::getLivewireKey()`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | done | — | [diverges](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id) |
+| [`getDefaultTestingSchemaName()` — the first name `schemas()` declares](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-default-testing-schema-is-the-first-one-schemas-declares) |
 | [`makeSchema()` — `Schema::make($this)`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::makeSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
 | [`fill(object\|array\|null $state = null)` default schema](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array) |
 | [`oldState` `#[LiveProp]` + `persistOldState()` `#[PreDehydrate]`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatingInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff) · [diverges](#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array) |
@@ -103,6 +104,13 @@ Names resolved before dehydration — in `mount()`, in `#[PostHydrate]`, or in a
 `schemas()` therefore stays the declaration that works in every case.
 The reflection loop itself is todo: it arrives when a consumer needs the `default<Name>` seeding hook or the no-parameter `articleSchema(): Schema` shape.
 
+### The default testing schema is the first one `schemas()` declares
+
+`getDefaultTestingSchemaName()` answers the first name `schemas()` declares, where Filament's answers the first schema its cache holds, because the port keeps no discovered-name cache ([why](#schema-discovery-is-explicit-via-schemas-not-reflection-based)).
+The two name the same schema for a host that builds its declared schemas first, in the order it declares them.
+A host whose `schemas()` declares none answers `null`, so a testing helper called without a schema and with no action mounted throws "declares no schema to test", where Filament's host answers whichever schema its cache holds first.
+Panels' [`Page`](../panels/page.md#a-page-tests-its-form-schema-by-default-else-its-content-whatever-it-declares) and [`RelationManager`](../panels/relation-manager.md#the-managers-testing-helpers-default-to-its-form-where-filaments-default-to-its-content) override it, so no panel host answers `null`.
+
 ### cacheSchema() has no discovery arm and requires its second argument
 
 Filament's `cacheSchema(string $name, Schema | Closure | null $schema = null)` overloads a single call three ways via `func_num_args()`: pass a built schema to register it, pass nothing to run method-name discovery (mirroring `getSchema()`'s own resolution), or explicitly pass `null` to unset the cache entry — the last two are told apart only by argument count.
@@ -144,4 +152,4 @@ The rename is deliberate and permanent.
 ### The host carries no testing helpers
 
 Filament folds `fillFormDataForTesting()`, the hook toggles and `unsetMissingNumericArrayKeys()` into `InteractsWithSchemas`, beside the `#[Locked]` `$areSchemaStateUpdateHooksDisabledForTesting` flag, so its `fillForm()` can write state in process.
-Here [`fillForm()`](../forms/tests-forms.md#fillform-sends-one-live-request-per-key) writes through live requests and prunes numeric keys itself, so the host needs no method that exists only for tests.
+Here [`fillForm()`](../forms/tests-forms.md#fillform-sends-one-live-request-per-key) writes through live requests and prunes numeric keys itself, so the host's only method that exists for tests is the contract's `getDefaultTestingSchemaName()`.

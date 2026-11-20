@@ -37,7 +37,7 @@ owns:
 | `$navigationParentItem` / `getNavigationParentItem()` and the item `key()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | blocked | the `NavigationItem` nesting arm | [navigation-item.md](navigation-item.md) |
 | `getUrl()` / `getNavigationUrl()` / `getNavigationItemActiveRoutePattern()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | todo | — | [detail](#a-page-has-no-url-method-of-its-own) |
 | The `BasePage` split | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | todo | — | [detail](#the-basepage-split-waits-on-auth) |
-| `getDefaultTestingSchemaName()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | todo | — | — |
+| [`getDefaultTestingSchemaName()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#a-page-tests-its-form-schema-by-default-else-its-content-whatever-it-declares) |
 | The static setters `navigationGroup()` / `navigationIcon()` / `navigationLabel()` / `navigationSort()` / `navigationParentItem()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | skipped | — | [diverges](resource.md#nothing-is-memoised-in-a-static) |
 | `$isDiscovered` / `isDiscovered()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | skipped | — | [diverges](resource.md#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
 | _rest not audited yet_ | — | — | — | — |
@@ -67,6 +67,12 @@ Filament separates `BasePage` (the render and lifecycle half) from `Page` (the p
 The port has one `Pages\Page`, because the first consumer of a page that knows no panel is the auth pages, which are unported.
 
 ## Semantics
+
+### A page tests its form schema by default, else its content, whatever it declares
+
+`getDefaultTestingSchemaName()` answers `form` when the page resolves a `form` schema, and `content` otherwise, as Filament's `Page` does, without reading the page's `schemas()`.
+So a list, create, edit or manage page tests its form, and a plain page its content.
+A page that declares another schema before `form` still tests `form`, as Filament's does.
 
 ### A page lifecycle hook is a method name, not a registration
 

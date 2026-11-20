@@ -37,7 +37,7 @@ Every method it declares is supplied by that trait.
 | [`AcceptsUploadedFiles`](../../../packages/schemas/src/Components/Contracts/AcceptsUploadedFiles.php) — Sylament-only component contract | — | done | — | [diverges](#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `makeFilamentTranslatableContentDriver()` | [`Contracts\HasSchemas::makeFilamentTranslatableContentDriver()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#the-translatable-content-driver-method-is-not-declared) |
 | `currentlyValidatingSchema(?Schema)` | [`Contracts\HasSchemas::currentlyValidatingSchema()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | skipped | — | [diverges](#currentlyvalidatingschema-is-not-ported) |
-| `getDefaultTestingSchemaName()` | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#the-testing-contract-method-is-not-declared) |
+| [`getDefaultTestingSchemaName(): ?string`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [has-schemas.md](has-schemas.md#the-default-testing-schema-is-the-first-one-schemas-declares) |
 
 ## Details
 
@@ -46,12 +46,6 @@ Every method it declares is supplied by that trait.
 Filament's `makeFilamentTranslatableContentDriver(): ?TranslatableContentDriver` supplies the per-host driver for translatable field content.
 The port has no translatable-content layer and no driver type to return, so the method is absent.
 Next step: declare it with the translatable-content driver port, renamed off the `Filament` prefix per the systematic idiom translation.
-
-### The testing contract method is not declared
-
-`getDefaultTestingSchemaName()` names the schema Filament's testing helpers test when none is named.
-The ported helpers resolve that default themselves, as the first schema `schemas()` declares, which differs from Filament's for a host that declares none ([tests-schemas.md](tests-schemas.md#the-default-schema-is-the-first-one-schemas-declares)).
-Next step: declare it when a host needs to override the default, as Filament's panel `Page` does to prefer `form`.
 
 ## Divergences
 

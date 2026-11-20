@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Schemas\DefaultTestingSchemaForm;
 use Sylament\Tests\Fixtures\Schemas\EmptySchemaListForm;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
 use Sylament\Tests\Fixtures\Schemas\SchemalessLiveHost;
@@ -71,6 +72,12 @@ describe('default schema', function (): void {
             ->fillForm(['name' => 'Renamed'], 'mountedActionSchema0');
 
         expect($tester->assertSchemaStateSet(['name' => 'Renamed']))->toBe($tester);
+    });
+
+    it('tests the schema the host names as its default, over the first one it declares', function (): void {
+        $tester = $this->createLiveComponent(DefaultTestingSchemaForm::class);
+
+        expect($tester->assertSchemaStateSet(['theme' => 'dark']))->toBe($tester);
     });
 
     it('throws for a host whose schemas() declares none', function (): void {

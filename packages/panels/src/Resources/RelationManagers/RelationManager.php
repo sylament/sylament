@@ -246,6 +246,11 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
         return [];
     }
 
+    public function getDefaultTestingSchemaName(): ?string
+    {
+        return 'form';
+    }
+
     protected function makeTable(): Table
     {
         return $this->makeBaseRelationshipTable()

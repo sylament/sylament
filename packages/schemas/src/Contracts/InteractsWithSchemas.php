@@ -21,6 +21,11 @@ interface InteractsWithSchemas
     public function getSchema(string $name): Schema;
 
     /**
+     * The schema the testing helpers test when a call names none and no action is mounted.
+     */
+    public function getDefaultTestingSchemaName(): ?string;
+
+    /**
      * The identity every schema component of this host prefixes its
      * live-component key with — minted on first read and carried across
      * renders, so a child mounted from a schema keeps the same id. It stands

@@ -13,7 +13,11 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\UX\Icons\IconRendererInterface;
 
 it('registers the palettes under sylament.colors, a dashed name kept as written', function (): void {
     $this::bootKernel(['environment' => 'registered_colors']);
@@ -35,6 +39,17 @@ it('registers the icon overrides under sylament.icons, a dashed alias kept as wr
     $this::getContainer()->get(IconManager::class)->register(['modal.close-button' => 'support:star']);
 
     expect($modal())->toContainElement(SupportSelectors::MODAL_CLOSE_BUTTON . ' svg', 'Star');
+});
+
+it("wires its icon manager's renderer null-on-invalid", function (): void {
+    $container = new ContainerBuilder(new ParameterBag(['kernel.environment' => 'test']));
+    new SylamentSupportBundle()->getContainerExtension()?->load([], $container);
+
+    $renderer = $container->getDefinition('sylament_support.icon_manager')->getArgument('$renderer');
+
+    expect($renderer)->toBeInstanceOf(Reference::class)
+        ->and((string) $renderer)->toBe(IconRendererInterface::class)
+        ->and($renderer->getInvalidBehavior())->toBe(ContainerInterface::NULL_ON_INVALID_REFERENCE);
 });
 
 it('refuses a temporary file URL expiry under one minute', function (): void {

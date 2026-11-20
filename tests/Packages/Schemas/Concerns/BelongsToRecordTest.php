@@ -506,6 +506,13 @@ describe('the relationship hooks', function (): void {
         ],
     ]);
 
+    it('fills a schema bound only to a record class from defaults, and refuses the misplaced hook on getData()', function (): void {
+        $schema = $this->host->mapping(Section::make()->saveRelationshipsUsing(fn (): null => null))->record(CatalogueCard::class);
+
+        expect($schema->fill())->toBe($schema)
+            ->and(fn (): object => $schema->getData())->toThrow(LogicException::class, 'declares a relationship hook, but the record path map does not carry it');
+    });
+
     it('leaves a hook to the nearest owner that routes its path', function (): void {
         $card = new CatalogueCard();
         $card->meta = ['note' => 'First'];

@@ -67,6 +67,7 @@ An omission is safe only while a package the importer requires hard-requires the
 | `symfony/polyfill-php86` | `schemas`, `tables` (the global `SortDirection` enum) | `doctrine/orm` requires `^1.37` |
 | `psr/container` | `support`, `panels` | `symfony/service-contracts`, which support requires, requires `^1.1\|^2.0` |
 | `symfony/config` | `support`, `forms` (`DefinitionConfigurator`), `panels` (`FileResource`) | `symfony/stimulus-bundle`, which `support` and `forms` require, requires `^7.4\|^8.0` |
+| `symfony/twig-bridge` | every bundle's templates (the `trans` filter) | through `support`: its `symfony/ux-icons` requires `symfony/twig-bundle`, which requires `^7.4\|^8.0` |
 | `symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle` | every bundle | through `support`: its `symfony/stimulus-bundle` requires the first two and its `symfony/ux-icons` requires framework-bundle, all `^7.4\|^8.0` |
 | `league/flysystem` | `tables` (`Columns\ImageColumn`) | `sylament/forms` requires `^3` |
 
@@ -106,6 +107,7 @@ The rule is broken in a few places, and no decision covers these imports. Each i
 | `league/flysystem-bundle` | Turns configuration into named storages tagged `flysystem.storage`, which support's `FilesystemRegistry` collects; the consuming application's own wiring. | root `require-dev` (`^3.7`); `support` `suggest` |
 | `league/commonmark` | Converts `TextColumn::markdown()` and the summarizers' `markdown()` cells; a guarded optional that throws by name when absent. | `tables` `suggest` |
 | `filament/filament` | Filament's source under `vendor/filament/`, read before designing anything and diffed against; no shipped code imports it. | root `require-dev` (`^5.0`) |
+| `nikic/php-parser` | The PHP parser Symfony's `PhpAstExtractor` reads with, for the Architecture gate that diffs each package's message keys against its catalogue; no shipped code imports it. | root `require-dev` (`^5.0`) |
 | `@hotwired/stimulus` | The controller runtime every Stimulus controller extends; kept external in every build, so it resolves through the consuming application's importmap. | every `packages/*/assets/package.json` `peerDependencies` (`^3.0.0`) |
 | `@symfony/ux-live-component` | The JavaScript half of `symfony/ux-live-component`, which the live-aware controllers import; Symfony's own, so pre-approved, and kept external like Stimulus. | `actions`, `forms`, `panels`, `schemas`, `tables` asset `peerDependencies` (`^3.2.0`) |
 | `@floating-ui/dom` | Dropdown positioning: support's `dropdown` controller and the select engine forms' `select` controller inlines (Filament's `computePosition()` with `offset`, `shift` and `flip`, ported verbatim). Bundled into each owning dist, so no consumer importmap gains an entry. | `packages/support/assets/package.json` and `packages/forms/assets/package.json` `dependencies` (`^1.8.0`) |

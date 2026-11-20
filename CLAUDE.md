@@ -11,6 +11,7 @@ A component's status is its row in the port trail; what to build next is decided
 | `packages/<pkg>/src/` | `Sylament\<Pkg>\` (PSR-4) |
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>` (the placeholders hold only a stylesheet); `dist/` is committed |
+| `packages/<pkg>/translations/` | its catalogues: `<domain>+intl-icu.en.xlf` under Filament's keys, `validators.en.xlf` (rules: `.claude/rules/catalogues.md`) |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
 | `tests/Packages/` | each package's tests: `tests/Packages/<Pkg>/` mirrors `packages/<pkg>/src/` |
 | `tests/Fixtures/` | its kernel and per-area fixtures, laid out as a Symfony app: `src/`, `config/`, `templates/`, `assets/` |
@@ -28,7 +29,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 - **Symfony idiom behind Filament's API.** Keep what the user types, and build what is behind it the Symfony way: a dependency arrives through the constructor or `#[Required]`, never a facade, service locator, global or static reach into a service, and no API hides from PHPStan (`__call()`, magic properties), because a Laravel mechanism does not become acceptable by arriving through Filament; a Laravel name is fine.
 - **The ecosystem before invention.** Use a Symfony package, wrap it when its API differs from ours, or add only the piece it lacks beside it, because its maintainers then carry the rest; replace one only for a named, checkable gap.
 
-1. **Filament first.** Read `vendor/filament/<pkg>` before designing, and keep its public class, method and trait names and its closure-injection parameter names; translate only idioms (Eloquent → Doctrine, Livewire → UX LiveComponent, Blade → Twig, `Htmlable` → `Twig\Markup`). A rename passes the gate in `docs/progress/renames.md` first, and the two principles above outrank this rule.
+1. **Filament first.** Read `vendor/filament/<pkg>` before designing, and keep its public class, method and trait names and its closure-injection parameter names; translate only idioms (Eloquent → Doctrine, Livewire → UX LiveComponent, Blade → Twig, `Htmlable` → `Twig\Markup`, `__()` → an injected translator). A rename passes the gate in `docs/progress/renames.md` first, and the two principles above outrank this rule.
 2. **Dependencies.** Build on what the Symfony team maintains, the stack it sits on (Twig, Doctrine) and established tooling (Pest, PHPStan); outside that circle, write our own code rather than adopt a package. `symfony/*` packages are pre-approved; any other vendor needs explicit sign-off first. Each package declares what its own `src/` and `templates/` use, because the split publishes every package alone.
 3. **One Composer project.** Never run `composer install` inside `packages/*`: there is one root `vendor/`. Dev tools go in the root `composer.json`. After editing a package's `composer.json`, run `composer update sylament/<pkg>` in each checkout, since features gated on Composer's runtime metadata stay off until you do.
 4. **Static analysis.** PHPStan runs at level max and shipped `src/` carries no inline `@phpstan-ignore`: fix the cause, and put an error that genuinely cannot be fixed in a baseline file, where it is counted and reviewable.
@@ -68,6 +69,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | File | Paths | Covers |
 | --- | --- | --- |
 | `bundles.md` | `packages/*/src/*Bundle.php`, `packages/*/src/DependencyInjection/**` | How a bundle class wires its services, config tree, asset path and component registration. |
+| `catalogues.md` | `packages/*/translations/**` | How a package's translation catalogues are named, keyed and written, which domains a package may name, and how validator messages differ. |
 | `colors.md` | `packages/*/src/Colors/**`, `packages/support/src/Twig/Extension/ColorExtension.php` | How a colour is named, how a contrast policy picks its shade, and how policies are registered. |
 | `css.md` | `packages/*/assets/src/styles/**` | How component stylesheets are written, scoped and coloured, and what support's CSS build generates. |
 | `docs.md` | `/docs/progress/**`, `/docs/internals/**` | Where documentation lives, and the rules every docs file follows. |

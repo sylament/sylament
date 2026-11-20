@@ -9,6 +9,7 @@ owns:
   - packages/support/src/Components/Component.php
   - packages/support/src/Components/Concerns/Configurable.php
   - packages/support/src/Concerns/EvaluatesClosures.php
+  - packages/support/src/Concerns/HasTranslator.php
   - packages/support/src/Evaluation/ClosureParameter.php
   - packages/support/src/Evaluation/Invoker.php
 ---
@@ -24,6 +25,7 @@ Its Twig-rendering subclass is [`ViewComponent`](view-component.md), and the man
 | [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
 | [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) · [diverges](#evaluated-flag-getters-are-not-re-cast-to-bool) |
 | [`evaluationValueIsFunctionAndHasParameter()`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | — |
+| [`HasTranslator`](../../../packages/support/src/Concerns/HasTranslator.php): `setTranslator()`, `getTranslator()`, `translateText()` | Laravel's global `__()`, which Filament's getters call | done | — | [diverges](#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks) |
 | [`Invoker`](../../../packages/support/src/Evaluation/Invoker.php) and [`ClosureParameter`](../../../packages/support/src/Evaluation/ClosureParameter.php) | the reflection loop inside `EvaluatesClosures::evaluate()` | done | — | [diverges](#closure-resolution-lives-in-a-service) |
 | [`newInstance()`](../../../packages/support/src/Components/Component.php) | `make()`'s `app(static::class, …)` call, inlined | done | — | [diverges](#newinstance-routes-every-make-through-a-locator) · [diverges](#make-arguments-move-from-constructors-to-setters) · [diverges](#components-declare-no-final-constructor) |
 | Conditionable | [`Illuminate\Support\Traits\Conditionable`](../../../vendor/laravel/framework/src/Illuminate/Conditionable/Traits/Conditionable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
@@ -94,6 +96,16 @@ The setter still runs before `configure()`, so `setUp()` sees the value as it do
 Filament seals `Action::__construct(?string $name)` `final`, and its siblings such as `ImportColumn`, `ExportColumn`, `NavigationItem` and `NavigationGroup` likewise.
 Sylament declares no constructor on `Action` or `Component`, so a user subclass can declare its own constructor dependencies, autowired through [`ComponentResolver`](#newinstance-routes-every-make-through-a-locator).
 That is the point of routing `make()` through the locator.
+
+### A message is translated through an injected translator, which a new-built component lacks
+
+Filament translates inside its getters with Laravel's global `__()`; the port puts the translator on the component instead, through [`HasTranslator`](../../../packages/support/src/Concerns/HasTranslator.php)'s `#[Required]` `setTranslator()`, which takes `Symfony\Contracts\Translation\TranslatorInterface` beside `setInvoker()`, so no component reaches a service through a global ([principle §1](../../internals/principles.md#the-test)).
+`translateText()` turns a `TranslatableInterface` into its translation through the message's own `trans()`, so a user enum implementing the interface is translated the way a `TranslatableMessage` is; a string, a `Markup` and `null` come back unchanged without the translator being asked for.
+A human-text getter returns `$this->translateText($this->evaluate(…))`, so every template and PHP reader still receives a string.
+The trait sits in `src/Concerns/` beside `EvaluatesClosures` rather than in `Components/Concerns/`, because nothing in it is component-specific, so a container-built text holder that is no component can compose it as well.
+A component built with `new` never runs the setter, and `getTranslator()` then throws a `LogicException` naming the class and saying to build it through `make()` after the kernel has booted or to register it as a service.
+The `Invoker`'s dependency-free fallback has no translator equivalent: an identity translator would print each message's key, which reads as working output.
+The throw fires only when a message reaches `translateText()`, so a `new`-built component still renders every plain string it is given.
 
 ### Evaluated flag getters are not re-cast to bool
 

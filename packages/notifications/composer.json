@@ -14,12 +14,15 @@
     ],
     "require": {
         "php": "^8.5",
+        "ext-intl": "*",
         "sylament/actions": "self.version",
         "sylament/support": "self.version",
         "symfony/event-dispatcher": "^8.1",
         "symfony/html-sanitizer": "^8.1",
         "symfony/http-foundation": "^8.1",
         "symfony/service-contracts": "^3.6",
+        "symfony/translation": "^8.1",
+        "symfony/translation-contracts": "^3.6",
         "symfony/uid": "^8.1",
         "symfony/ux-live-component": "^3.5",
         "symfony/ux-twig-component": "^3.5"

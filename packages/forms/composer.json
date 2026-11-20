@@ -14,6 +14,7 @@
     ],
     "require": {
         "php": "^8.5",
+        "ext-intl": "*",
         "doctrine/orm": "^3.7",
         "league/flysystem": "^3",
         "sylament/actions": "self.version",
@@ -23,6 +24,8 @@
         "symfony/service-contracts": "^3.6",
         "symfony/stimulus-bundle": "^3.1",
         "symfony/string": "^8.1",
+        "symfony/translation": "^8.1",
+        "symfony/translation-contracts": "^3.6",
         "symfony/uid": "^8.1",
         "symfony/ux-twig-component": "^3.5",
         "symfony/validator": "^8.1"

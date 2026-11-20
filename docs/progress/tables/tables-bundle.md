@@ -63,7 +63,7 @@ It ports with the toolkit-wide [i18n pass](../../internals/i18n.md).
 
 A template reads an alias where the markup renders the icon: the table partial for the sort chevrons, the group header's collapse button, the reorder handle, the empty state and the collapsible above-content filters' funnel, the [`SearchField`](../../../packages/tables/templates/components/SearchField/index.html.twig) component for `SEARCH_FIELD`, and the column manager's item list for its own reorder handle.
 PHP reads the rest, because the icon is chosen before any template runs: the filter, remove-all-filters, column-manager, grouping and reorder triggers are `Action` objects whose icon is set where the action is built ([`HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php), [`HasColumnManager`](column-manager.md), [`CanGroupRecords`](grouping.md), [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)), and [`IconColumn`](icon-column.md)'s `getTrueIcon()` / `getFalseIcon()` resolve the boolean pair through the icon manager because the fallback has to yield to a `trueIcon()` the caller set.
-Either way the alias is overridable end to end, save the filters trigger's and the remove-all button's, whose closure the Invoker never hands the private icon manager ([has-filters.md](has-filters.md#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip)); the collapsible above-content funnel, which the template draws, reads `ACTIONS_FILTER` all the same.
+Either way the alias is overridable end to end.
 
 ### Leaving `@sylament/tables` out of `controllers.json` disables every controller without an error
 

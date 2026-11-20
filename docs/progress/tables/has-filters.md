@@ -120,8 +120,7 @@ The **apply action is sized**, and vendor's is not.
 That is an addition rather than a port: the three sit two to a footer, and one rendering a size larger than its neighbour read as a mistake in the panel.
 `defaultSize()` is the [non-destructive setter](../actions/action.md), so a caller's own `size()` through `filtersApplyAction()` still wins — which is what keeps an addition from being a restriction.
 
-The icons resolve through a closure the action evaluates (`static fn (?IconManager $icons = null) => …`) rather than an injected manager field, because [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) already declares a `#[Required] setIconManager()` on `Table` and a second trait declaring the same method is a fatal collision.
-The parameter is nullable with a `null` default, and the Invoker's container arm never fills it: `IconManager` is a private service and the Invoker asks `service_container`, whose `has()` answers false, so an application alias override never reaches the filters trigger or the remove-all button.
+The icons resolve through a manager that a `#[Required] setFiltersIconManager()` of this trait's own name injects, since `Table` flattens [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)' `setIconManager()` into the same class; a table built outside the container falls back to a bare manager, which resolves no alias and answers the fallback glyph.
 
 ### The collapsible panel is a `<details>` element, and the modal opens through an invoker command
 

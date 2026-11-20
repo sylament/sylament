@@ -168,7 +168,6 @@ Apply and reset stay plain live actions, because the dirty draft rides every req
 Filament resolves the trigger's glyph through the `FilamentIcon::resolve()` facade.
 [`resolveColumnManagerIcon()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) reads the `ACTIONS_COLUMN_MANAGER` alias off an `IconManager` injected through `#[Required] setColumnManagerIconManager()`, the way [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) and [`CanGroupRecords`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) take theirs, and falls back to a bare manager, which resolves nothing, for a table built outside the container.
 The setter is not named `setIconManager()` because `Table` flattens `CanReorderRecords` into the same class, and a second setter under that name is a trait collision rather than a second injection.
-It is not `resolveFiltersIcon()`'s shape either, a closure taking `?IconManager $icons = null` for the Invoker to fill: `IconManager` is a private service and the Invoker asks `service_container`, so `has()` answers false and the parameter takes its `null` default.
 
 ### An explicit `columnManager(true)` over nothing editable lists no rows, where Filament's lists every column
 

@@ -109,7 +109,7 @@ The reflection loop itself is todo: it arrives when a consumer needs the `defaul
 `getDefaultTestingSchemaName()` answers the first name `schemas()` declares, where Filament's answers the first schema its cache holds, because the port keeps no discovered-name cache ([why](#schema-discovery-is-explicit-via-schemas-not-reflection-based)).
 The two name the same schema for a host that builds its declared schemas first, in the order it declares them.
 A host whose `schemas()` declares none answers `null`, so a testing helper called without a schema and with no action mounted throws "declares no schema to test", where Filament's host answers whichever schema its cache holds first.
-Panels' [`Page`](../panels/page.md#a-page-tests-its-form-schema-by-default-else-its-content-whatever-it-declares) and [`RelationManager`](../panels/relation-manager.md#the-managers-testing-helpers-default-to-its-form-where-filaments-default-to-its-content) override it, so no panel host answers `null`.
+Panels' [`Page`](../panels/page.md#a-page-tests-its-form-schema-by-default-else-its-content-whatever-it-declares) and [`RelationManager`](../panels/relation-manager.md#the-managers-testing-helpers-default-to-its-form-where-filaments-default-to-its-table-filters-form) override it, so no panel host answers `null`.
 
 ### cacheSchema() has no discovery arm and requires its second argument
 

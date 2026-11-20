@@ -33,7 +33,7 @@ A manager is never routed to: the page that owns the record embeds it through sc
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | the same | done | — | [semantics](#the-view-arm-shares-the-form-builder-because-viewaction-disables-its-own-schema) · [diverges](#the-defaultform-two-column-wrapper-does-not-port) · [manage-related-records.md](manage-related-records.md#the-schema-resolver-is-the-hosts-not-the-tiers) |
 | [`getDefaultActionRelationship()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`Concerns/InteractsWithActions::getDefaultActionRelationship()`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php), inherited as `null` | done | — | [diverges](#the-manager-answers-the-hosts-relationship-hook-where-filaments-leaves-it-null) |
 | [`schemas()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | no counterpart — Livewire has no schema-discovery list | done | — | — |
-| [`getDefaultTestingSchemaName()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`schemas/Concerns/InteractsWithSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php), inherited | done | — | [diverges](#the-managers-testing-helpers-default-to-its-form-where-filaments-default-to-its-content) |
+| [`getDefaultTestingSchemaName()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`schemas/Concerns/InteractsWithSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php), inherited | done | — | [diverges](#the-managers-testing-helpers-default-to-its-form-where-filaments-default-to-its-table-filters-form) |
 | `mount()` — `loadDefaultActiveTab()` | `mount()` | done | — | [diverges](#the-default-active-tab-loads-at-post-mount-and-the-manager-keeps-no-mount-of-its-own) |
 | The panel id a manager's own live request resolves URLs against | `original_request()` inside Filament's URL arms | todo | — | [detail](#every-url-a-manager-generates-on-its-own-live-request-resolves-the-default-panel) |
 | [`canViewForRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `canViewForRecord()` | in progress | — | [detail](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
@@ -182,10 +182,10 @@ The heading needs no chrome of the manager's: `makeTable()` seeds `Table::headin
 The `Modals` outlet is not optional decoration: without it every action a manager mounts renders **nothing at all**, with no error anywhere.
 It is pinned inside the root for that reason.
 
-### The manager's testing helpers default to its form, where Filament's default to its content
+### The manager's testing helpers default to its form, where Filament's default to its table filters form
 
-Filament's manager inherits the schemas trait's default, the first schema its cache holds, which is the `content` schema its view renders.
-The port's manager has no `content` schema, because it [renders a template](#the-manager-renders-a-template-not-a-content-schema), so `getDefaultTestingSchemaName()` answers `form`, the schema its create, edit and view actions build on.
+Filament's manager inherits the schemas trait's default, the first schema its cache holds, which is `tableFiltersForm`: its table caches that schema as every request boots, before the view caches `content`.
+The port's manager answers `form` from `getDefaultTestingSchemaName()`, the schema its create, edit and view actions build on.
 So a bare form helper after a completed action, such as `assertHasNoActionErrors()`, passes here as it does in Filament, testing another schema under another name.
 
 ### A manager must carry `#[AsLiveComponent]`, and the pass enforces it

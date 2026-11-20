@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Tables\Testing\Testable;
+use Sylament\Tests\Fixtures\Entity\Garden;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Seedling;
@@ -130,8 +131,11 @@ describe('resetTableSearch()', function (): void {
 });
 
 describe('the per-column terms', function (): void {
-    it('seeds a term for every column searchable on its own input, a dotted name nested, keeping a blank and dropping a key that names no column', function (): void {
-        $this->seed($oak = new Seedling('Oak'), $elm = new Seedling('Elm'));
+    it('seeds a term for every column searchable on its own input, a dotted name nested and a flat dotted key folded into it, keeping a blank and dropping a key that names no column', function (): void {
+        $kew = new Garden('Kew');
+        $elm = new Seedling('Elm');
+        $elm->garden = $kew;
+        $this->seed($kew, $oak = new Seedling('Oak'), $elm);
         $bag = fn (Testable $tester): mixed => $this::liveProps($tester->render()->crawler())['tableColumnSearches'];
 
         $tester = $this->createLiveComponent(SeedlingGardenTable::class);
@@ -145,6 +149,10 @@ describe('the per-column terms', function (): void {
         $tester->set('tableColumnSearches.name', '')->assertCanSeeTableRecords([$oak, $elm]);
 
         expect($bag($tester))->toBe(['name' => '', 'garden' => ['name' => '']]);
+
+        $tester->searchTableColumns(['garden.name' => 'Kew'])->assertCanSeeTableRecords([$elm])->assertCanNotSeeTableRecords([$oak]);
+
+        expect($bag($tester))->toBe(['name' => '', 'garden' => ['name' => 'Kew']]);
     });
 
     it('narrows by every word of each term, on every column holding one, beside the global term', function (): void {

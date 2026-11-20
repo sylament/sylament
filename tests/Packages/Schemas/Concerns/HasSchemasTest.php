@@ -37,6 +37,7 @@ use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
 use Sylament\Tests\Fixtures\Schemas\ReaderForm;
 use Sylament\Tests\Fixtures\Schemas\Record\VettedCard;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
+use Sylament\Tests\Fixtures\Schemas\RepeaterForm;
 use Sylament\Tests\Fixtures\Schemas\SchemaResolutionHost;
 use Sylament\Tests\Fixtures\Schemas\ScopedValidationForm;
 use Sylament\Tests\Fixtures\Schemas\StickyValidationForm;
@@ -261,10 +262,28 @@ describe('persistOldState()', function (): void {
             ->assertFormSet(['address' => ['city' => 'Paris']]);
     });
 
+    it('keeps the first value typed into a field of a repeater item the host holds as null', function (): void {
+        $this->createLiveComponent(ContainerLevelsForm::class, ['data' => ['members' => ['ada' => null, 'grace' => ['name' => 'Grace']]]])
+            ->set('data.members.ada.name', 'Ada')
+            ->assertFormSet(['members' => ['ada' => ['name' => 'Ada', 'home' => []], 'grace' => ['name' => 'Grace', 'home' => []]]]);
+    });
+
     it('keeps a repeater item whose key holds a dot as one item, starting none under the part before the dot', function (): void {
         $this->createLiveComponent(ContainerLevelsForm::class, ['data' => ['members' => ['ada.l' => ['name' => 'Ada'], 'grace' => ['name' => 'Grace']]]])
             ->refresh()
-            ->assertFormSet(['members' => ['ada.l' => ['name' => 'Ada'], 'grace' => ['name' => 'Grace']]]);
+            ->assertFormSet(['members' => ['ada.l' => ['name' => 'Ada'], 'grace' => ['name' => 'Grace', 'home' => []]]]);
+    });
+
+    it('leaves the item keyed by the part before the dot of an item key as it is, when the item field sits in a layout component', function (): void {
+        $this->createLiveComponent(RepeaterForm::class, ['data' => ['members' => ['ada' => ['name' => 'Ada'], 'ada.l' => ['name' => 'Ada L']]]])
+            ->refresh()
+            ->assertFormSet(['members' => ['ada' => ['name' => 'Ada'], 'ada.l' => ['name' => 'Ada L']]]);
+    });
+
+    it('starts no level inside an item whose key holds a dot, leaving the item keyed by the part before the dot as it is', function (): void {
+        $this->createLiveComponent(ContainerLevelsForm::class, ['data' => ['members' => ['ada' => ['name' => 'Ada'], 'ada.home' => ['name' => 'Ada H']]]])
+            ->refresh()
+            ->assertFormSet(['members' => ['ada' => ['name' => 'Ada', 'home' => []], 'ada.home' => ['name' => 'Ada H']]]);
     });
 
     it('leaves a level the host holds as a scalar as it is, starting no level below it', function (): void {

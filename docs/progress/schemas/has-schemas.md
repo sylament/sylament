@@ -60,8 +60,10 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 ### Every missing or null level a field's state path crosses starts as an empty array
 
 Before `persistOldState()` takes its snapshot, a separate pass walks the state path of every component in a cached schema and writes `[]` at each level below the host property that is missing or `null`, wherever that level's parent is an array.
-The levels it walks are a root schema's own path (`data.profile`), the parent component's path and the inner segments of the component's own path, never a split of a repeater item's key, so an item key holding a dot gains no phantom item.
-It never writes the host property itself, into an object or over a scalar, so a record-backed bag and a state cast's object leaf are left as they are.
+The levels are the keys of the component's own path but its last, of each ancestor component's path and of the root schema's own path (`data.profile`), and each repeater item's whole key, each joined onto the absolute path of what holds it, so a layout component with no path of its own adds none and no level is found by splitting a path that holds an item key.
+An item the host holds as `null` therefore starts as `[]` like any other level, and the first value typed into its fields is kept.
+A component inside an item whose key holds a dot starts no level, because every dotted path, a client write's included, splits that key and so never reaches the item, and an item keyed by the part before the dot is left as it is.
+A level the host holds as a scalar keeps it, and the pass starts no level below it.
 The write works around UX's hydrator: `LiveComponentHydrator::adjustPropertyPathForData()` stops bracketing a path once an intermediate value is missing or `null`, so `data.address.city` on a `data` without `address` reaches PropertyAccess as `[address].city`, a property write on an array, and the exception it throws is swallowed as bad user data.
 Without the write, a host that never fills loses the first value typed below a container its state lacks, and a container a hook sets to `null` (`$set('address', null)`) loses every write below it, because PropertyAccess will not traverse `null`.
 Filament's Livewire starts a missing or `null` level as `[]` before it descends, so the same writes land there, and with the write they land here too.

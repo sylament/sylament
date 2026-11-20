@@ -14,9 +14,9 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * A repeater whose item holds its field directly, beside a field two levels below the
- * bag, on a bag that starts empty: a test keys the items and fills the levels above the
- * field through the mount data.
+ * A repeater whose item holds one field directly and one a level below the item,
+ * beside a field two levels below the bag, on a bag that starts empty: a test keys the
+ * items and fills the levels above the fields through the mount data.
  */
 #[AsLiveComponent(name: 'Schemas:ContainerLevelsForm', template: '@Fixtures/schemas/ContainerLevelsForm.html.twig')]
 class ContainerLevelsForm implements InteractsWithSchemas
@@ -42,6 +42,7 @@ class ContainerLevelsForm implements InteractsWithSchemas
             ->components([
                 Repeater::make('members')->reorderable(false)->components([
                     TextInput::make('name'),
+                    TextInput::make('home.city'),
                 ]),
                 TextInput::make('address.street.name'),
             ]);

@@ -36,6 +36,7 @@ use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use TypeError;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\filled;
 
 trait HasSchemas
 {
@@ -374,44 +375,53 @@ trait HasSchemas
     /**
      * Start every missing or `null` level the component's state path crosses below
      * an array as `[]`, because UX's hydrator drops a client write below such a
-     * level. The levels are a root schema's path, the parent component's path and
-     * the inner segments of the component's own, never a split of an item schema's
-     * key, which may hold a dot.
+     * level. Each level is a key of the component's own path but its last, of an
+     * ancestor component's path or of the root schema's, or an item schema's whole
+     * key, below the absolute path of what holds it. An item whose key holds a dot
+     * starts none, since no dotted path reaches it.
      */
     private function createMissingStateContainers(PropertyAccessor $propertyAccessor, Component $component): void
     {
-        $container = $component->getContainer();
-        $path = (string) $container->getStatePath();
-        $levels = [];
-        $segments = explode('.', (string) $component->getStatePath(isAbsolute: false));
+        $keys = explode('.', (string) $component->getStatePath(isAbsolute: false));
+        array_pop($keys);
+        $schema = $component->getContainer();
+        $relativePaths = [[(string) $schema->getStatePath(), $keys]];
 
-        if (blank($container->getStatePath(isAbsolute: false))) {
-            $levels[] = $path;
-        } elseif (!$container->getParentComponent() instanceof Component) {
-            $segments = [...explode('.', $path), ...$segments];
-            $path = '';
-        }
+        while (($parentComponent = $schema->getParentComponent()) instanceof Component) {
+            $itemKey = $schema->getStatePath(isAbsolute: false);
 
-        array_pop($segments);
-
-        foreach ($segments as $segment) {
-            $path = ($path === '') ? $segment : "{$path}.{$segment}";
-            $levels[] = $path;
-        }
-
-        foreach ($levels as $level) {
-            $parentLength = mb_strrpos($level, '.');
-
-            if ($parentLength === false) {
-                continue;
-            }
-
-            if (!is_array($propertyAccessor->get($this, mb_substr($level, 0, $parentLength)))) {
+            if (str_contains((string) $itemKey, '.')) {
                 return;
             }
 
-            if ($propertyAccessor->get($this, $level) === null) {
-                $propertyAccessor->set($this, $level, []);
+            if (filled($itemKey)) {
+                $relativePaths[] = [(string) $parentComponent->getStatePath(), [$itemKey]];
+            }
+
+            $schema = $parentComponent->getContainer();
+
+            if (filled($parentPath = $parentComponent->getStatePath(isAbsolute: false))) {
+                $relativePaths[] = [(string) $schema->getStatePath(), explode('.', $parentPath)];
+            }
+        }
+
+        if (filled($rootPath = $schema->getStatePath(isAbsolute: false))) {
+            $relativePaths[] = ['', explode('.', $rootPath)];
+        }
+
+        foreach (array_reverse($relativePaths) as [$path, $keys]) {
+            foreach ($keys as $key) {
+                if ($path !== '') {
+                    if (!is_array($propertyAccessor->get($this, $path))) {
+                        return;
+                    }
+
+                    if ($propertyAccessor->get($this, "{$path}.{$key}") === null) {
+                        $propertyAccessor->set($this, "{$path}.{$key}", []);
+                    }
+                }
+
+                $path = ($path === '') ? $key : "{$path}.{$key}";
             }
         }
     }

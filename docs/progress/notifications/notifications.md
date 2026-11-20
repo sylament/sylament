@@ -37,7 +37,7 @@ Toast HTML has one renderer (Twig), the DOM is the only client-side state, and a
 
 ### The client-side builder's entry point waits on the builder
 
-`pushNotificationFromEvent()` listens for the Livewire `notificationSent` event that Filament's client-side `FilamentNotification` builder ([`resources/js/Notification.js`](../../../vendor/filament/notifications/resources/js/Notification.js)) dispatches: the browser composes a notification as data, the server rebuilds it through `Notification::fromArray()` and renders it.
+`pushNotificationFromEvent()` listens for the Livewire `notificationSent` event that Filament's client-side `FilamentNotification` builder ([`resources/js/notification.js`](../../../vendor/filament/notifications/resources/js/notification.js)) dispatches: the browser composes a notification as data, the server rebuilds it through `Notification::fromArray()` and renders it.
 The port has no client-side builder, so there is nothing to listen for.
 
 **Next step:** port the builder and its entry point together, and note the shape the decision here implies — the stack renders no notification client-side, so the JS builder posts its payload to a **fragment-rendering endpoint** which returns toast HTML, rather than pushing state into a live component.

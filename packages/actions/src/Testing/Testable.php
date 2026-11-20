@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Test\Constraint\ResponseHeaderLocationSame;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\UX\LiveComponent\Metadata\LiveComponentMetadataFactory;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 use Symfony\UX\TwigComponent\MountedComponent;
 use Symfony\UX\TwigComponent\Test\RenderedComponent;
@@ -179,6 +180,31 @@ class Testable
         TestsNotifications::assertNotNotified($sentNotifications, $notification);
 
         return $this;
+    }
+
+    /**
+     * The names UX reads an update to the component by, one per `LiveProp` it lets the
+     * client write, whole or at a path, as UX's hydrator reads them.
+     *
+     * @return list<string>
+     */
+    protected function getWritableLivePropNames(object $component): array
+    {
+        $metadataFactory = $this->client->getContainer()->get('ux.live_component.metadata_factory');
+
+        if (!$metadataFactory instanceof LiveComponentMetadataFactory) {
+            throw new LogicException(sprintf('The container holds no [%s] at [ux.live_component.metadata_factory]: register LiveComponentBundle.', LiveComponentMetadataFactory::class));
+        }
+
+        $names = [];
+
+        foreach ($metadataFactory->getMetadata($this->testLiveComponent->getName())->getAllLivePropsMetadata($component) as $livePropMetadata) {
+            if ($livePropMetadata->isIdentityWritable() || ($livePropMetadata->writablePaths() !== [])) {
+                $names[] = $livePropMetadata->calculateFieldName($component, $livePropMetadata->getName());
+            }
+        }
+
+        return $names;
     }
 
     /**

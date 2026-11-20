@@ -3,13 +3,16 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
+use Sylament\Actions\Testing\Testable;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Tests\Fixtures\Forms\AddedItemForm;
+use Sylament\Tests\Fixtures\Forms\PropertyBoundForm;
 use Sylament\Tests\Fixtures\Forms\RedirectingForm;
 use Sylament\Tests\Fixtures\Forms\SelectBerthForm;
 use Sylament\Tests\Fixtures\Forms\TagFieldsForm;
 use Sylament\Tests\Fixtures\Forms\WithdrawnCardForm;
+use Sylament\Tests\Fixtures\Panels\Pages\NotesPage;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\RepeaterForm;
@@ -128,6 +131,20 @@ describe('fillForm()', function (): void {
             ->fillForm(['slot' => 'S1', 'label' => 'Quiet'])
             ->assertFormSet(['pier' => 'North', 'slot' => 'S1', 'label' => 'Quiet'], 'mountedActionSchema0');
     });
+
+    it('writes a key naming a writable LiveProp of the host when the form under test has no state path', function (): void {
+        $this->createLiveComponent(PropertyBoundForm::class)
+            ->fillForm(['search' => 'tea'])
+            ->assertFormSet(['search' => 'tea']);
+    });
+
+    it('refuses a key naming no writable LiveProp of the host when the form under test has no state path, before writing anything', function (array $state, string $key): void {
+        expect(fn (): Testable => $this->createLiveComponent(NotesPage::class)->fillForm($state))
+            ->toThrow(LogicException::class, sprintf('The [content] schema of the [%s] component has no state path, so fillForm() writes the [%s] key onto the component, which has no writable LiveProp of that name.', NotesPage::class, $key));
+    })->with([
+        'a scalar' => [['title' => 'Draft'], 'title'],
+        'a non-empty associative array' => [['missing' => ['a' => 'x']], 'missing'],
+    ]);
 
     it('empties the form when given no state', function (): void {
         $this->createLiveComponent(CodeForm::class)

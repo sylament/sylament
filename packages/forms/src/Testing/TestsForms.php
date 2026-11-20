@@ -46,6 +46,10 @@ trait TestsForms
 
         $state = $this->undotFormState($state, $propertyAccessor);
 
+        if (!filled($schemaStatePath)) {
+            $this->refuseKeysNamingNoWritableLiveProp($state, $form);
+        }
+
         foreach ($this->getFormStateWrites($state, $this->getTestedSchemasHost(), $propertyAccessor, (string) $schemaStatePath) as $path => $value) {
             $this->set((string) $path, $value);
         }
@@ -235,6 +239,24 @@ trait TestsForms
         }
 
         return $undotted;
+    }
+
+    /**
+     * A form with no state path writes each key onto the host itself, where UX reads an
+     * update only under a writable `LiveProp`'s name and drops any other in silence.
+     *
+     * @param array<string, mixed> $state
+     */
+    private function refuseKeysNamingNoWritableLiveProp(array $state, string $form): void
+    {
+        $host = $this->getTestedSchemasHost();
+        $writableLivePropNames = $this->getWritableLivePropNames($host);
+
+        foreach (array_keys($state) as $key) {
+            if (!in_array((string) $key, $writableLivePropNames, true)) {
+                throw new LogicException(sprintf('The [%s] schema of the [%s] component has no state path, so fillForm() writes the [%s] key onto the component, which has no writable LiveProp of that name.', $form, $host::class, $key));
+            }
+        }
     }
 
     /**

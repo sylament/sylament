@@ -56,7 +56,7 @@ trait EntanglesStateWithSingularRelationship
 
         if (blank($name)) {
             throw new LogicException(sprintf(
-                '%s declares relationship(), but names no association property to entangle with — a layout component carries no name of its own to fall back on. Pass the property Doctrine maps as relationship()\'s first argument.',
+                "%s declares relationship(), but names no association property to entangle with — a layout component carries no name of its own to fall back on. Pass the property Doctrine maps as relationship()'s first argument.",
                 static::class,
             ));
         }

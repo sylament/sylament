@@ -302,7 +302,7 @@ trait HasRelationship
         }
 
         throw new LogicException(sprintf(
-            'The [%s] field\'s relationship modifyQueryUsing returned %s. Return the QueryBuilder it was handed, or nothing at all — anything else would drop the scoping without a trace.',
+            "The [%s] field's relationship modifyQueryUsing returned %s. Return the QueryBuilder it was handed, or nothing at all — anything else would drop the scoping without a trace.",
             (string) $this->getName(),
             get_debug_type($scoped),
         ));

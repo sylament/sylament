@@ -49,7 +49,7 @@ class Actions extends Component
             return true;
         }
 
-        return array_all($this->getChildSchema()?->getComponents() ?? [], fn ($component): bool => !$component->isVisible());
+        return array_all($this->getChildSchema()?->getComponents() ?? [], fn (Component|Action|ActionGroup $component): bool => !$component->isVisible());
     }
 
     public function fullWidth(bool|Closure $isFullWidth = true): static

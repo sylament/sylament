@@ -7,6 +7,7 @@ namespace Sylament\Schemas\State;
 use Doctrine\ORM\Mapping\Entity;
 use LogicException;
 use ReflectionClass;
+use ReflectionMethod;
 use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
@@ -258,7 +259,7 @@ final readonly class PropertyAccessor
         $reflection = new ReflectionClass($class);
         $constructor = $reflection->getConstructor();
 
-        if (($constructor !== null) && $constructor->getNumberOfRequiredParameters() > 0) {
+        if (($constructor instanceof ReflectionMethod) && $constructor->getNumberOfRequiredParameters() > 0) {
             throw new LogicException(sprintf(
                 'Cannot map %s: %s requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or %s',
                 $subject,

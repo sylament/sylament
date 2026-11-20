@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Evaluation;
 
 use Closure;
+use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
@@ -103,7 +104,7 @@ class Invoker
 
         $class = $parameter->getDeclaringClass();
 
-        if ($class === null) {
+        if (!$class instanceof ReflectionClass) {
             return $name;
         }
 

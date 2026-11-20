@@ -2076,7 +2076,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     {
         return $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeFillUsing, $itemData)
             ?? throw new LogicException(sprintf(
-                'The [%s] repeater\'s mutateRelationshipDataBeforeFillUsing callback returned null, but a fill has no item to skip — only the create and save callbacks may decline one. Return the array the callback was handed.',
+                "The [%s] repeater's mutateRelationshipDataBeforeFillUsing callback returned null, but a fill has no item to skip — only the create and save callbacks may decline one. Return the array the callback was handed.",
                 (string) $this->getName(),
             ));
     }

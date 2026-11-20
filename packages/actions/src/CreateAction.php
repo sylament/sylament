@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\ORM\ORMInvalidArgumentException;
 use LogicException;
 use ReflectionClass;
+use ReflectionMethod;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Schemas\Schema;
@@ -266,7 +267,7 @@ class CreateAction extends Action
     {
         $constructor = new ReflectionClass($recordClass)->getConstructor();
 
-        if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+        if ($constructor instanceof ReflectionMethod && $constructor->getNumberOfRequiredParameters() > 0) {
             $this->getPropertyAccessor()->constructRecord(
                 $recordClass,
                 sprintf('a new record for the [%s] action', $this->getName()),

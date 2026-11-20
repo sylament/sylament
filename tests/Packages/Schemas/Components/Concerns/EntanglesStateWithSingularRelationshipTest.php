@@ -51,7 +51,7 @@ describe('relationship()', function (): void {
     it('refuses a declaration that names no association', function (?string $name): void {
         expect(fn (): Group => Group::make()->relationship($name))->toThrow(
             LogicException::class,
-            Group::class . ' declares relationship(), but names no association property to entangle with — a layout component carries no name of its own to fall back on. Pass the property Doctrine maps as relationship()\'s first argument.',
+            Group::class . " declares relationship(), but names no association property to entangle with — a layout component carries no name of its own to fall back on. Pass the property Doctrine maps as relationship()'s first argument.",
         );
     })->with([
         'no name' => [null],

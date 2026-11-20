@@ -45,7 +45,7 @@ it('constructs an AssociationReader only in the manager-less fallback', function
 
     expect($constructors)->toBe(
         ['schemas/src/Components/Concerns/CanAccessAssociations.php'],
-        'Rebind the reader the site already holds — the mounted schema\'s, the action\'s or the table\'s — with '
+        "Rebind the reader the site already holds — the mounted schema's, the action's or the table's — with "
         . 'withEntityManager() instead of constructing one. AssociationReader is a service an application may '
         . 'subclass or decorate, and new AssociationReader(...) drops it in silence. The one construction is the '
         . 'manager-less fallback in CanAccessAssociations.',

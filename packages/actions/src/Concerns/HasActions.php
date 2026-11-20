@@ -651,7 +651,7 @@ trait HasActions
 
         $returnTypeReflection = new ReflectionMethod($this, $methodName)->getReturnType();
 
-        if ($returnTypeReflection === null) {
+        if (!$returnTypeReflection instanceof ReflectionType) {
             return null;
         }
 

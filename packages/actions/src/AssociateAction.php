@@ -317,7 +317,7 @@ class AssociateAction extends Action
         $records = $this->findCandidatesByKey($keys);
 
         if (count($records) !== count($keys)) {
-            throw new LogicException(sprintf('The action [%s] was asked to associate a record its select never offered — the key is malformed, outside recordSelectOptionsQuery()\'s scope, or already associated.', $this->getName()));
+            throw new LogicException(sprintf("The action [%s] was asked to associate a record its select never offered — the key is malformed, outside recordSelectOptionsQuery()'s scope, or already associated.", $this->getName()));
         }
 
         return $records;

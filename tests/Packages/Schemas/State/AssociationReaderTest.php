@@ -869,7 +869,7 @@ describe('attach() and detach()', function (): void {
         expect(fn () => $this->reader->assertRelationshipAcceptsDetach(new Relationship($this->ash, $name)))->toThrow(LogicException::class, $message);
     })->with([
         'its orphans are removed' => ['plots', '[' . Garden::class . '::$plots] declares orphanRemoval, so a record removed from it is deleted rather than dissociated — dissociating is not something the mapping permits; use DeleteAction.'],
-        'the owner is half their identifier' => ['patches', '[' . GardenPatch::class . '::$garden] is part of the identifier of [' . GardenPatch::class . '], so a [' . GardenPatch::class . '] cannot be dissociated from its [' . Garden::class . '] — nulling it would erase half the record\'s identity; use DeleteAction.'],
+        'the owner is half their identifier' => ['patches', '[' . GardenPatch::class . '::$garden] is part of the identifier of [' . GardenPatch::class . '], so a [' . GardenPatch::class . '] cannot be dissociated from its [' . Garden::class . "] — nulling it would erase half the record's identity; use DeleteAction."],
         'their join column is not nullable' => ['rows', '[' . GardenRow::class . '::$garden] is mapped with a `nullable: false` join column, so a [' . GardenRow::class . '] cannot be dissociated from its [' . Garden::class . ']; make the column nullable or use DeleteAction.'],
         'their property does not accept null' => ['labels', '[' . GardenLabel::class . '::$garden] does not accept null — type its setter or property nullable so a record can be dissociated.'],
     ]);

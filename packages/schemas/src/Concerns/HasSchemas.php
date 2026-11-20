@@ -475,7 +475,7 @@ trait HasSchemas
 
         return !blank($key)
             ? $key
-            : throw new LogicException('Cannot validate a schema without a key — register it through getSchema()/cacheSchema() so it is keyed, or validate a keyed component\'s child schema.');
+            : throw new LogicException("Cannot validate a schema without a key — register it through getSchema()/cacheSchema() so it is keyed, or validate a keyed component's child schema.");
     }
 
     /**

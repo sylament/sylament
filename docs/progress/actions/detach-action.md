@@ -104,7 +104,7 @@ The arm is reached only where a host asks for it: `fetchSelectedRecords()` defau
 What it buys is what the flag promises: on the owning side, a selection keyed by scalar fields is never `SELECT`ed on its own.
 One keyed through an association is read by a `find()` per key the identity map does not hold yet, the route above, and the first detach loads the owning collection, which puts the other selected rows there.
 The owning collection still loads once, which is the price of writing through the domain's remover rather than around it, and the same price a single `DetachAction` pays.
-On the **inverse** side the reader writes through the owning side, which is each selected record's own collection, so each reference is initialised: one `SELECT` of the row per key, where the fetching arm reads them all in one statement, and one collection load per key on either arm, so the flag costs statements there rather than saving them.
+On the **inverse** side the reader writes through the owning side, which is each selected record's own collection, so each reference is initialised: one `SELECT` of the row per key, beside the key pluck that replaces the fetching arm's one read of all of them, and one collection load per key on either arm, so the flag costs one statement more per selected key there rather than saving any.
 
 The reported count is the number of records the loop detached, not an affected-row count, because there is no statement to read one off.
 A key naming a row that is already detached therefore still counts, where Filament's `DELETE` would not count it; within one request the selection's re-pluck drops such a key first, so only a concurrent detach reaches this.

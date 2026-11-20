@@ -30,6 +30,7 @@ use Sylament\Tests\Fixtures\Entity\VettedBinderSheet;
 use Sylament\Tests\Fixtures\Schemas\CappedHeadlineForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
+use Sylament\Tests\Fixtures\Schemas\ContainerLevelsForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\NestedBagForm;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
@@ -258,6 +259,18 @@ describe('persistOldState()', function (): void {
         $tester
             ->set('data.address.city', 'Paris')
             ->assertFormSet(['address' => ['city' => 'Paris']]);
+    });
+
+    it('keeps a repeater item whose key holds a dot as one item, starting none under the part before the dot', function (): void {
+        $this->createLiveComponent(ContainerLevelsForm::class, ['data' => ['members' => ['ada.l' => ['name' => 'Ada'], 'grace' => ['name' => 'Grace']]]])
+            ->refresh()
+            ->assertFormSet(['members' => ['ada.l' => ['name' => 'Ada'], 'grace' => ['name' => 'Grace']]]);
+    });
+
+    it('leaves a level the host holds as a scalar as it is, starting no level below it', function (): void {
+        $this->createLiveComponent(ContainerLevelsForm::class, ['data' => ['address' => 'Paris']])
+            ->refresh()
+            ->assertFormSet(['address' => 'Paris']);
     });
 });
 

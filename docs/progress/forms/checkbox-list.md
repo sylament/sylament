@@ -126,9 +126,9 @@ Filament emits only `wire:model` on each input and lets Livewire set the checked
 The port renders `checked` from [`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template), so a server-rendered edit page shows the stored selection before any JavaScript runs.
 Same addition [`Radio`](radio.md#the-checked-attribute-is-rendered-server-side), [`ToggleButtons`](toggle-buttons.md) and [`Select`](select.md#the-template-renders-the-selected-state-itself) make.
 
-The comparison is `state is iterable and value in state` — Twig's `in` is loose for scalars, deliberately, because an option key may be an `int` where the state holds the `'1'` a browser submitted.
+The comparison casts the option's key and each member of the state to strings and compares them by identity, as [`Select`'s](select.md#the-template-renders-the-selected-state-itself) does, because an option key may be an `int` where the state holds the `'1'` a browser submitted, and a loose comparison would read the keys `01` and `1` as one number and check both.
 The state compared is the cast one, so `OptionsArrayStateCast` (or the enum cast) has already wrapped a tampered scalar into a one-element list: it checks the option it names exactly, never one whose key it merely contains, and the [`Type` guard](#the-three-server-side-guards-are-ordered-so-they-never-collide) rejects it on save.
-The `is iterable` guard is what a custom cast answering a string falls into: that state checks nothing rather than every option whose key it contains, because Twig's `in` against a string is a substring test.
+A state that is not a list, which a custom cast answering a string yields, checks nothing: it is never compared as one member.
 
 It also means the bulk-toggle's "are they all checked?" question is answerable from the DOM on the controller's first frame.
 Vendor defers that read to `$nextTick` because Livewire has not hydrated the checkboxes yet when the Alpine component initialises; here they are already correct in the HTML.

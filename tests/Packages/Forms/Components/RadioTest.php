@@ -98,7 +98,7 @@ describe('state casts', function (): void {
 });
 
 describe('checked state', function (): void {
-    it('renders checked on the stored option alone, moving it to the option a later request selects, and on the No answer of a boolean radio for 0 but on neither answer before anyone answers', function (): void {
+    it('renders checked on the stored option alone, never on another key that reads as the same number, moving it to the option a later request selects, and on the No answer of a boolean radio for 0 but on neither answer before anyone answers', function (): void {
         $checked = static fn (Crawler $render, string $field): array => $render->filter("[aria-labelledby=\"form.{$field}-label\"] " . Selectors::RADIO . '[checked]')->each(static fn (Crawler $input): ?string => $input->attr('value'));
         $tester = $this->createLiveComponent(RadioForm::class);
         $render = $tester->render()->crawler();
@@ -112,10 +112,11 @@ describe('checked state', function (): void {
         expect($checked($render, 'plan'))->toBe(['basic'])
             ->and($checked($render, 'subscribed'))->toBe(['0']);
 
-        $render = $tester->fillForm(['plan' => 'pro', 'subscribed' => '0'])->assertFormSet(['plan' => 'pro'])->render()->crawler();
+        $render = $tester->fillForm(['plan' => 'pro', 'subscribed' => '0', 'code' => '1'])->assertFormSet(['plan' => 'pro'])->render()->crawler();
 
         expect($checked($render, 'plan'))->toBe(['pro'])
-            ->and($checked($render, 'subscribed'))->toBe(['0']);
+            ->and($checked($render, 'subscribed'))->toBe(['0'])
+            ->and($checked($render, 'code'))->toBe(['1']);
     });
 });
 

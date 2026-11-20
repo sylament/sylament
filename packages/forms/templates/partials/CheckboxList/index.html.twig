@@ -1,6 +1,7 @@
 {% set controller = 'sylament--forms--checkbox-list' %}
 
 {% set state = component.getOptionComparisonState %}
+{% set stateKeys = (state is iterable ? state : [])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set options = component.getOptions %}
 {% set isDisabled = component.isDisabled %}
 {% set isHtmlAllowed = component.isHtmlAllowed %}
@@ -60,7 +61,7 @@
                             class: 'sy-checkbox sy-fo-checkbox',
                             id: component.getId ~ '-' ~ value,
                             value: value,
-                            checked: state is iterable and value in state,
+                            checked: stateKeys has some (key => key is same as (value ~ '')),
                             'data-model': component.getDataModel,
                             'aria-invalid': hasErrors,
                             disabled: isDisabled or component.isOptionDisabled(value, label),

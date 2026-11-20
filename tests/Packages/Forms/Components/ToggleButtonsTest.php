@@ -37,14 +37,14 @@ describe('rendering', function (): void {
             ->and($multiple->filter('[role="group"][aria-labelledby="schema.level-label"] input[type="checkbox"]:not([name])'))->toHaveCount(2);
     })->with('variants');
 
-    it('checks the options the state holds, and none of a boolean field nobody has answered', function (): void {
+    it('checks the options the state holds, never another key that reads as the same number in either tree, and none of a boolean field nobody has answered', function (): void {
         $tester = $this->createLiveComponent(BoolFieldsForm::class);
 
         expect($tester->render()->crawler())
             ->toContainElement('input[value="1"][data-model$="data.confirmed"][checked]')
             ->toContainElement('input[value="0"][data-model$="data.confirmed"]:not([checked])');
 
-        $render = $tester->fillForm(['channels' => ['sms'], 'size' => 'l', 'confirmed' => '0'])->render()->crawler();
+        $render = $tester->fillForm(['channels' => ['sms'], 'size' => 'l', 'confirmed' => '0', 'codes' => ['1'], 'groupedCode' => '1'])->render()->crawler();
 
         expect($render)
             ->toContainElement('input[value="sms"][data-model$="data.channels"][checked]')
@@ -53,6 +53,10 @@ describe('rendering', function (): void {
             ->toContainElement('input[value="s"][data-model$="data.size"]:not([checked])')
             ->toContainElement('input[value="0"][data-model$="data.confirmed"][checked]')
             ->toContainElement('input[value="1"][data-model$="data.confirmed"]:not([checked])')
+            ->toContainElement('input[value="1"][data-model$="data.codes"][checked]')
+            ->toContainElement('input[value="01"][data-model$="data.codes"]:not([checked])')
+            ->toContainElement('input[value="1"][data-model$="data.groupedCode"][checked]')
+            ->toContainElement('input[value="01"][data-model$="data.groupedCode"]:not([checked])')
             ->and($tester->fillForm(['confirmed' => null])->render()->crawler()->filter('input[data-model$="data.confirmed"]:not([checked])'))->toHaveCount(2);
     });
 

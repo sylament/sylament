@@ -84,7 +84,8 @@ Filament emits only `wire:model` on each input and lets Livewire set the checked
 The port renders `checked` from [`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template), so a server-rendered edit page shows the stored selection before any JavaScript runs.
 Same addition [`Checkbox`](checkbox.md#the-checked-attribute-is-rendered-server-side) and [`Select`](select.md#the-template-renders-the-selected-state-itself) make, for the same reason.
 
-The comparison is `state is not null and value == state` — deliberately loose, because an option key is an `int` where the state may hold the `'1'` a browser submitted, and deliberately null-guarded, because PHP's `0 == null` is `true` and a `boolean()` radio would otherwise render its **No** option checked for a field nobody has answered.
+The comparison casts the option's key and the state to strings and compares them by identity, as [`Select`'s](select.md#the-template-renders-the-selected-state-itself) does, because an option key is an `int` where the state may hold the `'1'` a browser submitted, and a loose comparison would read the keys `01` and `1` as one number and check both.
+A `null` state is left out of the comparison, because PHP's `0 == null` is `true` and a `boolean()` radio would otherwise render its **No** option checked for a field nobody has answered.
 The strict [`Choice`](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) is what admits or rejects a value; `checked` is presentation.
 
 The client agrees with the server rather than fighting it.

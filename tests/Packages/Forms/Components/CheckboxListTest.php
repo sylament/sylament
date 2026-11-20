@@ -41,16 +41,17 @@ describe('rendering', function (): void {
             ]))->toBe([['Fern', 'Feathery fronds'], ['Moss', null]]);
     });
 
-    it('checks each stored option, an int key matching the submitted string and a scalar the option it names, but nothing for a state a cast leaves a string', function (): void {
+    it('checks each stored option, an int key matching the submitted string and never another key that reads as the same number, and a scalar the option it names, but nothing for a state a cast leaves a string', function (): void {
         $checked = static fn (Crawler $render, string $field): array => $render->filter("[aria-labelledby=\"form.{$field}-label\"] input[type=\"checkbox\"][checked]")->each(static fn (Crawler $input): ?string => $input->attr('value'));
         $tester = $this->createLiveComponent(CheckboxListForm::class);
 
         expect($checked($tester->render()->crawler(), 'tags'))->toBe([]);
 
-        $render = $tester->fillForm(['tags' => ['moss', 'fern'], 'numbered' => ['2']])->render()->crawler();
+        $render = $tester->fillForm(['tags' => ['moss', 'fern'], 'numbered' => ['2'], 'codes' => ['1']])->render()->crawler();
 
         expect($checked($render, 'tags'))->toBe(['fern', 'moss'])
             ->and($checked($render, 'numbered'))->toBe(['2'])
+            ->and($checked($render, 'codes'))->toBe(['1'])
             ->and($checked($tester->fillForm(['tags' => 'moss'])->render()->crawler(), 'tags'))->toBe(['moss'])
             ->and($checked($tester->fillForm(['tags' => 'mos'])->render()->crawler(), 'tags'))->toBe([]);
 

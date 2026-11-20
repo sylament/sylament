@@ -35,4 +35,4 @@ Every value on both sides runs through [`HasOptions::normalizeOptionComparisonVa
 The cast is not cosmetic.
 An option's value is a **PHP array key**, so an option map written `[1 => 'One']` has the *int* `1` as its value, while the same value coming back off the wire in a sibling item is the *string* `'1'`.
 A strict comparison after normalisation would leave `1 !== '1'` and silently disable nothing at all on every int-keyed option map.
-Filament reaches the same place through `Collection::contains()`, which compares loosely when given a single value, and the radio, toggle-buttons and checkbox-list templates compare loosely too, where `Select`'s [compares the two cast to strings](select.md#the-template-renders-the-selected-state-itself).
+Filament reaches the same place through `Collection::contains()`, which compares loosely when given a single value, and the option templates [compare the two cast to strings](select.md#the-template-renders-the-selected-state-itself).

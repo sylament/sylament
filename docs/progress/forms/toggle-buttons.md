@@ -188,8 +188,8 @@ A case pins the input directly followed by its label in both variants for exactl
 Filament emits only `wire:model` and lets Livewire set the checked property once it boots.
 The port renders `checked` from [`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template), so a server-rendered edit page shows the stored selection before any JavaScript runs — the same addition [`Radio`](radio.md#the-checked-attribute-is-rendered-server-side), [`Checkbox`](checkbox.md#the-checked-attribute-is-rendered-server-side) and [`Select`](select.md#the-template-renders-the-selected-state-itself) make.
 
-The comparison branches on the state's own shape rather than on `isMultiple()`: `state is iterable ? value in state : (state is not null and value == state)`.
-The scalar arm is deliberately loose (an option key is an `int` where the state may hold the `'1'` a browser submitted) and deliberately null-guarded (PHP's `0 == null` is `true`, so a `boolean()` field would otherwise render **No** checked for a field nobody has answered).
+The comparison reads the state's own shape rather than `isMultiple()`: a list is compared member by member and a scalar as the one member, each cast to a string and compared by identity with the option key cast the same way, as [`Select`'s](select.md#the-template-renders-the-selected-state-itself) is, so the keys `01` and `1` are never both checked for a state of `1`.
+A `null` is left out (PHP's `0 == null` is `true`, so a `boolean()` field would otherwise render **No** checked for a field nobody has answered).
 Reading the shape rather than the flag also keeps a `multiple()` field whose custom state cast yields a scalar rendering sanely instead of comparing a string against a list.
 
 ### The dead `disabled` on a `<label>` is not ported

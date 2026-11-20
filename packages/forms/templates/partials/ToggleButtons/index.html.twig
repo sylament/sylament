@@ -1,4 +1,5 @@
 {% set state = component.getOptionComparisonState %}
+{% set stateKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set isMultiple = component.isMultiple %}
 {% set areButtonLabelsHidden = component.areButtonLabelsHidden %}
 {% set hasErrors = component.getErrorMessages is not empty %}
@@ -31,7 +32,7 @@
                     id: inputId,
                     name: isMultiple ? null : component.getId,
                     value: value,
-                    checked: state is iterable ? value in state : (state is not null and value == state),
+                    checked: stateKeys has some (key => key is same as (value ~ '')),
                     'data-model': component.getDataModel,
                     'aria-invalid': hasErrors,
                     disabled: isOptionDisabled,

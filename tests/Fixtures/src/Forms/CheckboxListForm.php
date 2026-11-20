@@ -16,8 +16,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * One checkbox list per way a list reads, casts and guards its state: a static map with
- * a description and a disabled option, int keys, a required list, a required list that
- * also wants two items, item bounds, a backed enum, an `in()` list and one with nothing
+ * a description and a disabled option, int keys, keys `01` and `1` that read as one number,
+ * a required list, a required list that also wants two items, item bounds, a backed enum, an `in()` list and one with nothing
  * to enumerate. A save validates every field, so a case asserts the errors of the field
  * it fills.
  */
@@ -55,6 +55,7 @@ class CheckboxListForm implements InteractsWithSchemas
                     ->descriptions(['fern' => 'Feathery fronds'])
                     ->disableOptionWhen(static fn (string $value): bool => $value === 'ivy'),
                 CheckboxList::make('numbered')->options([1 => 'One', 2 => 'Two']),
+                CheckboxList::make('codes')->options(['01' => 'Zero one', 1 => 'One']),
                 CheckboxList::make('chosen')->options($plants)->required(),
                 CheckboxList::make('chosenPair')->options($plants)->required()->minItems(2),
                 CheckboxList::make('bounded')->options(['a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D'])->minItems(2)->maxItems(3),

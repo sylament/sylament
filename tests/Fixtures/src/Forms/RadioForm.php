@@ -16,9 +16,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * One radio per way a radio reads, casts and guards its state: a static map with a
- * description and a disabled option, int keys, a required `boolean()`, int keys a custom
- * cast stores as booleans, a backed enum, an `in()` list with no options, one with nothing
- * to enumerate and one whose options name no enum. A save validates every field, so a
+ * description and a disabled option, int keys, keys `01` and `1` that read as one number, a
+ * required `boolean()`, int keys a custom cast stores as booleans, a backed enum, an `in()`
+ * list with no options, one with nothing to enumerate and one whose options name no enum. A save validates every field, so a
  * case asserts the errors of the field it fills.
  */
 #[AsLiveComponent(name: 'Forms:RadioForm', template: '@Fixtures/forms/RadioForm.html.twig')]
@@ -53,6 +53,7 @@ class RadioForm implements InteractsWithSchemas
                     ->descriptions(['pro' => 'For teams'])
                     ->disableOptionWhen(static fn (string $value): bool => $value === 'legacy'),
                 Radio::make('priority')->options([1 => 'Low', 2 => 'High']),
+                Radio::make('code')->options(['01' => 'Zero one', 1 => 'One']),
                 Radio::make('subscribed')->boolean()->required(),
                 Radio::make('confirmed')->options([1 => 'Yes', 0 => 'No'])->stateCast(new BooleanStateCast()),
                 Radio::make('mode')->enum(DeliveryMode::class),

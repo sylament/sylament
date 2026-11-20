@@ -10,6 +10,7 @@ use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Pages\MonthlyReportPage;
 use Sylament\Tests\Fixtures\Panels\Pages\NotesPage;
 use Sylament\Tests\Fixtures\Panels\Pages\OrphanPage;
+use Sylament\Tests\Fixtures\Panels\Pages\SettingsFirstPage;
 use Sylament\Tests\Fixtures\Panels\Pages\SettingsPage;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListModalArticles;
 use Sylament\Tests\Fixtures\Panels\Selectors;
@@ -208,7 +209,7 @@ describe('hosts', function (): void {
             ->and($page->assertHasNoFormErrors())->toBe($page);
     });
 
-    it('has its form helpers test the form schema it resolves by default, whatever its schemas() declares', function (): void {
+    it('has its form helpers test the form schema it resolves by default', function (): void {
         $this->seed($apple = new Article('Apple'));
 
         $tester = $this->createLiveComponent(ListModalArticles::class, ['panelId' => 'list-pages'])
@@ -216,6 +217,12 @@ describe('hosts', function (): void {
 
         expect($tester->assertHasNoActionErrors())->toBe($tester)
             ->and($this->reload($apple)->title)->toBe('Apricot');
+    });
+
+    it('tests its form schema by default over a schema it declares before it', function (): void {
+        $tester = $this->createLiveComponent(SettingsFirstPage::class);
+
+        expect($tester->assertSchemaStateSet(['title' => 'Draft']))->toBe($tester);
     });
 
     it('redraws unchanged on refresh, called or dispatched, keeping a mounted action', function (): void {

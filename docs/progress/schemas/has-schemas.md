@@ -47,7 +47,7 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 | Livewire file-upload integration (`use WithFileUploads`, `componentFileAttachments`, `isFileUploadForSchemaComponent()`, `getSchemaComponentForFileUpload()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#dynamic-livewire-properties-are-not-ported-because-they-hide-from-phpstan) |
 | Translatable content driver (`getFilamentTranslatableContentDriver()`, `makeFilamentTranslatableContentDriver()`, `getActiveSchemaLocale()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
-| Testing helpers (`fillFormDataForTesting()`, `disableSchemaStateUpdateHooksForTesting()`, `enableSchemaStateUpdateHooksForTesting()`, `unsetMissingNumericArrayKeys()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-host-carries-no-testing-helpers) |
+| Testing helpers (`fillFormDataForTesting()`, `disableSchemaStateUpdateHooksForTesting()`, `enableSchemaStateUpdateHooksForTesting()`, `unsetMissingNumericArrayKeys()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-host-carries-no-state-writing-testing-helpers) |
 
 ## Details
 
@@ -149,7 +149,7 @@ Filament names the host method `updatedInteractsWithSchemas` (mirroring the Live
 Sylament names it `callAfterSchemaStateUpdated` to keep it distinct from the component-level `afterStateUpdated()` setter that lives on the state concern (see [`component.md`](component.md)), with which a host-level `afterStateUpdated` would collide.
 The rename is deliberate and permanent.
 
-### The host carries no testing helpers
+### The host carries no state-writing testing helpers
 
 Filament folds `fillFormDataForTesting()`, the hook toggles and `unsetMissingNumericArrayKeys()` into `InteractsWithSchemas`, beside the `#[Locked]` `$areSchemaStateUpdateHooksDisabledForTesting` flag, so its `fillForm()` can write state in process.
 Here [`fillForm()`](../forms/tests-forms.md#fillform-sends-one-live-request-per-key) writes through live requests and prunes numeric keys itself, so the host's only method that exists for tests is the contract's `getDefaultTestingSchemaName()`.

@@ -101,7 +101,8 @@ So the arm builds a **reference** per selected key ([`AssociationReader::getRefe
 That call decodes the key against the target's own mapping first and then takes one of two routes: a no-load reference for a scalar identifier of any width, and a `find()` where an identifier field is itself an association, because `getReference()` is a `TypeError` for those against a **cold** identity map.
 A bulk detach is exactly where the map is cold, so without that route a derived-identity selection would fail on the first request after a page load.
 The arm is reached only where a host asks for it: `fetchSelectedRecords()` defaults to **true**, so the shipped default hydrates and this key route is opt-in.
-What it buys is what the flag promises: on the owning side, the selected rows are never `SELECT`ed on their own.
+What it buys is what the flag promises: on the owning side, a selection keyed by scalar fields is never `SELECT`ed on its own.
+One keyed through an association is read by a `find()` per key the identity map does not hold yet, the route above, and the first detach loads the owning collection, which puts the other selected rows there.
 The owning collection still loads once, which is the price of writing through the domain's remover rather than around it, and the same price a single `DetachAction` pays.
 On the **inverse** side the reader writes through the owning side, which is each selected record's own collection, so each reference is initialised: one `SELECT` of the row per key, where the fetching arm reads them all in one statement, and one collection load per key on either arm, so the flag costs statements there rather than saving them.
 

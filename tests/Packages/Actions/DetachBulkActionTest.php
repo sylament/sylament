@@ -124,6 +124,40 @@ it('reads a selection on the inverse side by key in one more statement a key tha
     expect($statements($byKey, ['noFetch']))->toBe($statements($byRecord, []) + 2);
 });
 
+it('reads a selection on the owning side by key in no more statements than by record when keyed by scalar fields, and in one more when keyed through an association', function (Closure $scene, string $relation, int $delta): void {
+    [$byRecord, $byKey] = [$scene(0), $scene(100)];
+    $this->seed(...$byRecord[0], ...$byKey[0]);
+    $statements = function (array $arm, array $variants) use ($relation): int {
+        [, $owner, $selection] = $arm;
+
+        $this->createLiveComponent(AttachableRelationTable::class, AttachableRelationTable::props($this->entityManager(), $owner, $relation, 'note', $variants))
+            ->selectTableRecords($selection)
+            ->callAction(TestAction::make('detach')->table()->bulk())
+            ->assertNotified('Detached');
+
+        return count($this->statementsRun());
+    };
+
+    expect($statements($byKey, ['noFetch']))->toBe($statements($byRecord, []) + $delta);
+})->with([
+    'scalar fields' => [static function (int $base): array {
+        $manifest = new LineManifest();
+        $manifest->addOrderLine($first = new OrderLine(order: $base + 7, line: 2));
+        $manifest->addOrderLine($second = new OrderLine(order: $base + 8, line: 3));
+        $manifest->addOrderLine($kept = new OrderLine(order: $base + 7, line: 3));
+
+        return [[$manifest, $first, $second, $kept], $manifest, [$first, $second]];
+    }, 'orderLines', 0],
+    'an association plus a scalar' => [static function (int $base): array {
+        $manifest = new LineManifest();
+        $manifest->addInvoiceLine($first = new InvoiceLine($seven = new Invoice($base + 7), line: 2));
+        $manifest->addInvoiceLine($second = new InvoiceLine($eight = new Invoice($base + 8), line: 3));
+        $manifest->addInvoiceLine($kept = new InvoiceLine($seven, line: 3));
+
+        return [[$manifest, $first, $second, $kept], $manifest, [$first, $second]];
+    }, 'invoiceLines', 1],
+]);
+
 it('detaches nothing when one join row fails to go, toasting that the whole selection failed', function (): void {
     FailingWrite::afterJoinTableDeletes($this->entityManager(), Garden::class, 'plants', 1);
 

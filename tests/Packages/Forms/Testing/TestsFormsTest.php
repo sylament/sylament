@@ -132,13 +132,18 @@ describe('fillForm()', function (): void {
             ->assertFormSet(['pier' => 'North', 'slot' => 'S1', 'label' => 'Quiet'], 'mountedActionSchema0');
     });
 
-    it('writes a key naming a writable LiveProp of the host when the form under test has no state path', function (): void {
-        $this->createLiveComponent(PropertyBoundForm::class)
+    it('writes a key naming a writable LiveProp of the host when the form under test has no state path, and no key at all when another names none', function (): void {
+        $tester = $this->createLiveComponent(PropertyBoundForm::class);
+
+        expect(fn (): Testable => $tester->fillForm(['search' => 'tea', 'title' => 'Draft']))
+            ->toThrow(LogicException::class, sprintf('The [form] schema of the [%s] component has no state path, so fillForm() writes the [title] key onto the component, which has no writable LiveProp of that name.', PropertyBoundForm::class));
+
+        $tester->assertFormSet(['search' => null])
             ->fillForm(['search' => 'tea'])
             ->assertFormSet(['search' => 'tea']);
     });
 
-    it('refuses a key naming no writable LiveProp of the host when the form under test has no state path, before writing anything', function (array $state, string $key): void {
+    it('refuses a key naming no writable LiveProp of the host when the form under test has no state path', function (array $state, string $key): void {
         expect(fn (): Testable => $this->createLiveComponent(NotesPage::class)->fillForm($state))
             ->toThrow(LogicException::class, sprintf('The [content] schema of the [%s] component has no state path, so fillForm() writes the [%s] key onto the component, which has no writable LiveProp of that name.', NotesPage::class, $key));
     })->with([

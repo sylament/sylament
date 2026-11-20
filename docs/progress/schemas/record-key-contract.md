@@ -126,6 +126,7 @@ So the grammar is the server's alone and no JavaScript depends on it; a controll
 `Sylament\Schemas\Identity\` is a capability directory at `src/` level, beside `Query\` and `State\`, per `.claude/rules/php.md`'s rule that the engine a trait delegates to is filed by capability.
 It lives in `schemas` rather than `support` because every Doctrine-facing package already requires `schemas`, and `support` has no Doctrine at all.
 Three public classes; `IdentifierFields` is `@internal` and is the per-class descriptor the other two share — field names in mapping order, whether each is a to-one association, and the resolved DBAL type name each binds as.
+Its `escape()` alone is public and static, because a relationship repeater writes a record key holding a dot in the grammar's escape ([why](../forms/repeater-relationship.md#a-record-key-holding-a-dot-keys-its-item-record-and-the-keys-escape)).
 `@internal` means *no part of the key contract*, not *no reader outside this directory*: the relation layer's owner bind reads the terminal field's type off it, which makes `State\AssociationReader` its first reader outside `Identity\` — same package, and [recorded with the bind](relationship.md#a-single-identifier-owner-binds-its-identifier-value-typed-by-the-fields-own-dbal-type).
 
 ```php

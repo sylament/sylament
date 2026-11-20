@@ -1465,13 +1465,19 @@ describe('relationship()', function (): void {
                 'record=dry=2Egoods' => ['notes' => ['record-1' => ['text' => 'rice']], 'code' => 'dry.goods'],
             ]);
 
+            $read = [];
+
             foreach ($schema->getComponent('bins')->getItems() as $item) {
-                $item->getComponents(withActions: false)[0]->getLabel();
+                $code = $item->getComponents(withActions: false)[0];
+                $code->getLabel();
+                $read[$code->getStatePath()] = $code->getState();
             }
 
             ksort($handed);
+            ksort($read);
 
-            expect($handed)->toBe(['data.bins.record-dry=2Egoods.code' => 'dry=2Egoods', 'data.bins.record=dry=2Egoods.code' => 'dry.goods']);
+            expect($read)->toBe(['data.bins.record-dry=2Egoods.code' => 'dry=2Egoods', 'data.bins.record=dry=2Egoods.code' => 'dry.goods'])
+                ->and($handed)->toBe($read);
 
             $host->data['bins']['record=dry=2Egoods']['notes']['record-1']['text'] = 'oats';
             $host->data['bins']['record-dry=2Egoods']['notes']['added'] = ['text' => 'salt'];

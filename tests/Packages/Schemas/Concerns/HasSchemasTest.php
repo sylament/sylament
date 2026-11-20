@@ -31,6 +31,7 @@ use Sylament\Tests\Fixtures\Schemas\CappedHeadlineForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Schemas\NestedBagForm;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
 use Sylament\Tests\Fixtures\Schemas\ReaderForm;
 use Sylament\Tests\Fixtures\Schemas\Record\VettedCard;
@@ -239,6 +240,12 @@ describe('persistOldState()', function (): void {
         $this->createLiveComponent(ReaderForm::class)
             ->fillForm(['address' => ['city' => 'Paris']])
             ->assertFormSet(['address' => ['city' => 'Paris']]);
+    });
+
+    it('keeps the first value typed into a form bound below a level of its bag the host never filled', function (): void {
+        $this->createLiveComponent(NestedBagForm::class)
+            ->fillForm(['name' => 'Ada'])
+            ->assertFormSet(['name' => 'Ada']);
     });
 
     it('keeps a value typed into a field below a container a hook set to null, whose hooks no request that leaves it alone runs', function (): void {

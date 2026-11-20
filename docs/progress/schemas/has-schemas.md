@@ -59,13 +59,13 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 ### Every missing or null level a field's state path crosses starts as an empty array
 
 Before `persistOldState()` takes its snapshot, a separate pass walks the state path of every component in a cached schema and writes `[]` at each level below the host property that is missing or `null`, wherever that level's parent is an array.
-The levels it walks are the parent component's path and the inner segments of the component's own path, never a split of a repeater item's key, so an item key holding a dot gains no phantom item.
+The levels it walks are a root schema's own path (`data.profile`), the parent component's path and the inner segments of the component's own path, never a split of a repeater item's key, so an item key holding a dot gains no phantom item.
 It never writes the host property itself, into an object or over a scalar, so a record-backed bag and a state cast's object leaf are left as they are.
 The write works around UX's hydrator: `LiveComponentHydrator::adjustPropertyPathForData()` stops bracketing a path once an intermediate value is missing or `null`, so `data.address.city` on a `data` without `address` reaches PropertyAccess as `[address].city`, a property write on an array, and the exception it throws is swallowed as bad user data.
 Without the write, a host that never fills loses the first value typed below a container its state lacks, and a container a hook sets to `null` (`$set('address', null)`) loses every write below it, because PropertyAccess will not traverse `null`.
 Filament's Livewire starts a missing or `null` level as `[]` before it descends, so the same writes land there, and with the write they land here too.
 A host fills each schema before the first render a user types into, and every shipped host does: panels' `CreateRecord` and `EditRecord` in `mount()`, a mounted action's form through its `mountUsing`, and tables' filters form as the table mounts.
-A fill creates every container a field's state path crosses, so a filled host meets the gap only where its own code sets a container to `null`.
+A fill creates every container a field's state path crosses, so without the write a filled host would meet the gap only where its own code sets a container to `null`.
 The pass runs before the snapshot, so a container's snapshot already holds the `[]` the next request reads, and its `afterStateUpdated` hooks run for no request that leaves it alone.
 
 Two differences from Filament remain visible.

@@ -369,17 +369,24 @@ trait HasSchemas
     /**
      * Start every missing or `null` level the component's state path crosses below
      * an array as `[]`, because UX's hydrator drops a client write below such a
-     * level. The levels are the parent component's path and the inner segments of
-     * the component's own, never a split of an item schema's key, which may hold a
-     * dot.
+     * level. The levels are a root schema's path, the parent component's path and
+     * the inner segments of the component's own, never a split of an item schema's
+     * key, which may hold a dot.
      */
     private function createMissingStateContainers(PropertyAccessor $propertyAccessor, Component $component): void
     {
         $container = $component->getContainer();
         $path = (string) $container->getStatePath();
-        $levels = blank($container->getStatePath(isAbsolute: false)) ? [$path] : [];
-
+        $levels = [];
         $segments = explode('.', (string) $component->getStatePath(isAbsolute: false));
+
+        if (blank($container->getStatePath(isAbsolute: false))) {
+            $levels[] = $path;
+        } elseif (!$container->getParentComponent() instanceof Component) {
+            $segments = [...explode('.', $path), ...$segments];
+            $path = '';
+        }
+
         array_pop($segments);
 
         foreach ($segments as $segment) {

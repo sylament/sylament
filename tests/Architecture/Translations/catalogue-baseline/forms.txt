@@ -1,0 +1,26 @@
+missing validators: At least one item must be selected.
+missing validators: One or more of the given values is not allowed.
+missing validators: Only one item may be selected.
+missing validators: The file is too small ({{ size }} {{ suffix }}). Minimum size is {{ limit }} {{ suffix }}.
+missing validators: The selected value does not exist.
+missing validators: The submitted file path is not authorised.
+missing validators: This value has a format that is not allowed.
+missing validators: This value is already taken.
+missing validators: This value is already used by another item.
+missing validators: This value is not allowed.
+missing validators: This value is not an active URL.
+missing validators: This value is prohibited.
+missing validators: This value may only contain ASCII characters.
+missing validators: This value may only contain letters and numbers.
+missing validators: This value may only contain letters, numbers, dashes and underscores.
+missing validators: This value may only contain letters.
+missing validators: This value must be after {{ boundary }}.
+missing validators: This value must be before {{ boundary }}.
+missing validators: This value must be on or after {{ boundary }}.
+missing validators: This value must be on or before {{ boundary }}.
+missing validators: This value must differ from {{ other }}.
+missing validators: This value must end with one of: {{ values }}.
+missing validators: This value must match {{ other }}.
+missing validators: This value must not end with any of: {{ values }}.
+missing validators: This value must not start with any of: {{ values }}.
+missing validators: This value must start with one of: {{ values }}.

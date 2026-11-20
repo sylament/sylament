@@ -1,0 +1,95 @@
+assets/src/controllers/file_upload_controller.ts: The file could not be loaded.
+assets/src/controllers/file_upload_controller.ts: The file could not be removed.
+assets/src/controllers/file_upload_controller.ts: The file could not be uploaded.
+assets/src/controllers/file_upload_controller.ts: The files could not be reordered.
+assets/src/utils/select.ts: Clear selection
+assets/src/utils/select.ts: Loading...
+assets/src/utils/select.ts: Maximum number of items selected
+assets/src/utils/select.ts: No options available
+assets/src/utils/select.ts: No results found
+assets/src/utils/select.ts: Remove ${this.isHtmlAllowed ? label.replace(/<[^>]*>/g, "") : label}
+assets/src/utils/select.ts: Search
+assets/src/utils/select.ts: Search...
+assets/src/utils/select.ts: Searching...
+src/Components/CheckboxList.php: Deselect all
+src/Components/CheckboxList.php: Select all
+src/Components/Concerns/CanBeSearchable.php: No options available.
+src/Components/Concerns/CanBeSearchable.php: No options match your search.
+src/Components/Concerns/CanBeSearchable.php: Searching...
+src/Components/Concerns/CanBeSearchable.php: Start typing to search...
+src/Components/Concerns/HasLoadingMessage.php: Loading...
+src/Components/FileUpload.php: Drag mode "crop"
+src/Components/FileUpload.php: Drag mode "move"
+src/Components/FileUpload.php: Flip image horizontally
+src/Components/FileUpload.php: Flip image vertically
+src/Components/FileUpload.php: Move image down
+src/Components/FileUpload.php: Move image to left
+src/Components/FileUpload.php: Move image to right
+src/Components/FileUpload.php: Move image up
+src/Components/FileUpload.php: Rotate image to left
+src/Components/FileUpload.php: Rotate image to right
+src/Components/FileUpload.php: The %s field must not have more than %d items.
+src/Components/FileUpload.php: Zoom image to 100%
+src/Components/FileUpload.php: Zoom in
+src/Components/FileUpload.php: Zoom out
+src/Components/KeyValue.php: Add row
+src/Components/KeyValue.php: Delete row
+src/Components/KeyValue.php: Key
+src/Components/KeyValue.php: Reorder row
+src/Components/KeyValue.php: Value
+src/Components/Radio.php: No
+src/Components/Radio.php: Yes
+src/Components/Repeater.php: Add to
+src/Components/Repeater.php: Clone
+src/Components/Repeater.php: Collapse
+src/Components/Repeater.php: Collapse all
+src/Components/Repeater.php: Delete
+src/Components/Repeater.php: Expand
+src/Components/Repeater.php: Expand all
+src/Components/Repeater.php: Insert between
+src/Components/Repeater.php: Move
+src/Components/Repeater.php: Move down
+src/Components/Repeater.php: Move up
+src/Components/Select.php: Create
+src/Components/Select.php: Create
+src/Components/Select.php: Create
+src/Components/Select.php: Create & create another
+src/Components/Select.php: Edit
+src/Components/Select.php: Edit
+src/Components/Select.php: No
+src/Components/Select.php: Only :count can be selected.
+src/Components/Select.php: Save
+src/Components/Select.php: Select an option
+src/Components/Select.php: Yes
+src/Components/TagsInput.php: New tag
+src/Components/TextInput/Actions/CopyAction.php: Copied
+src/Components/TextInput/Actions/CopyAction.php: Copy
+src/Components/TextInput/Actions/HidePasswordAction.php: Hide password
+src/Components/TextInput/Actions/ShowPasswordAction.php: Show password
+src/Components/ToggleButtons.php: No
+src/Components/ToggleButtons.php: Yes
+templates/partials/FileUpload/index.html.twig: Aspect ratios
+templates/partials/FileUpload/index.html.twig: Cancel
+templates/partials/FileUpload/index.html.twig: Cancel
+templates/partials/FileUpload/index.html.twig: Download
+templates/partials/FileUpload/index.html.twig: Editing SVG files is disabled as it can result in quality loss when scaling.
+templates/partials/FileUpload/index.html.twig: Editing SVG files is not recommended as it can result in quality loss when scaling. Are you sure you want to continue?
+templates/partials/FileUpload/index.html.twig: Height
+templates/partials/FileUpload/index.html.twig: Image editor
+templates/partials/FileUpload/index.html.twig: Open in new tab
+templates/partials/FileUpload/index.html.twig: Reset
+templates/partials/FileUpload/index.html.twig: Rotation
+templates/partials/FileUpload/index.html.twig: Save
+templates/partials/FileUpload/index.html.twig: Save
+templates/partials/FileUpload/index.html.twig: Set aspect ratio to
+templates/partials/FileUpload/index.html.twig: Width
+templates/partials/FileUpload/index.html.twig: X
+templates/partials/FileUpload/index.html.twig: Y
+templates/partials/KeyValue/index.html.twig: Actions
+templates/partials/KeyValue/index.html.twig: Reorder
+templates/partials/Repeater/Table.html.twig: Actions
+templates/partials/Repeater/Table.html.twig: Reorder
+templates/partials/TagsInput/Chip.html.twig: Delete
+templates/partials/TagsInput/Chip.html.twig: Delete:
+templates/partials/TagsInput/index.html.twig: Added: :tag
+templates/partials/TagsInput/index.html.twig: Removed: :tag

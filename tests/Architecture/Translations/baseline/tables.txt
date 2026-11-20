@@ -1,0 +1,71 @@
+src/Columns/SelectColumn.php: Select an option
+src/Columns/Summarizers/Average.php: Average
+src/Columns/Summarizers/Count.php: Count
+src/Columns/Summarizers/Sum.php: Sum
+src/Concerns/HasColumns.php: The value is invalid.
+src/Filters/SelectFilter.php: All
+src/Filters/TernaryFilter.php: No
+src/Filters/TernaryFilter.php: Yes
+src/Table.php: Create a %s to get started.
+src/Table/Concerns/CanGroupRecords.php: Group
+src/Table/Concerns/CanReorderRecords.php: Finish reordering records
+src/Table/Concerns/CanReorderRecords.php: Reorder records
+src/Table/Concerns/HasColumnManager.php: Apply columns
+src/Table/Concerns/HasColumnManager.php: Column manager
+src/Table/Concerns/HasEmptyState.php: No %s
+src/Table/Concerns/HasFilters.php: Apply filters
+src/Table/Concerns/HasFilters.php: Filter
+src/Table/Concerns/HasFilters.php: Remove all filters
+src/Table/Concerns/HasRecords.php: record
+templates/components/ColumnManager/index.html.twig: Columns
+templates/components/ColumnManager/index.html.twig: Reset
+templates/components/ColumnManager/index.html.twig: Reset
+templates/components/ColumnManagerContent/index.html.twig: Reorder
+templates/components/Filters/index.html.twig: Filters
+templates/components/Filters/index.html.twig: Reset
+templates/components/Filters/index.html.twig: Reset
+templates/components/SearchField/index.html.twig: Search
+templates/components/SearchField/index.html.twig: Search
+templates/components/Summary/index.html.twig: All
+templates/components/Summary/index.html.twig: Summary
+templates/components/Summary/index.html.twig: Summary
+templates/components/Summary/index.html.twig: Summary
+templates/components/Summary/index.html.twig: This page
+templates/partials/ColorColumn/index.html.twig: Copy
+templates/partials/ColorColumn/index.html.twig: Copy colour
+templates/partials/Table/index.html.twig: 1 record selected
+templates/partials/Table/index.html.twig: :
+templates/partials/Table/index.html.twig: :count records selected
+templates/partials/Table/index.html.twig: Actions
+templates/partials/Table/index.html.twig: Active filters
+templates/partials/Table/index.html.twig: Ascending
+templates/partials/Table/index.html.twig: Columns
+templates/partials/Table/index.html.twig: Descending
+templates/partials/Table/index.html.twig: Deselect all
+templates/partials/Table/index.html.twig: Drag and drop the records into order.
+templates/partials/Table/index.html.twig: Filter
+templates/partials/Table/index.html.twig: Filters
+templates/partials/Table/index.html.twig: Group by
+templates/partials/Table/index.html.twig: Group by
+templates/partials/Table/index.html.twig: Group by
+templates/partials/Table/index.html.twig: Group direction
+templates/partials/Table/index.html.twig: Group direction
+templates/partials/Table/index.html.twig: Group direction
+templates/partials/Table/index.html.twig: Loading
+templates/partials/Table/index.html.twig: Remove filter
+templates/partials/Table/index.html.twig: Reorder item
+templates/partials/Table/index.html.twig: Reset
+templates/partials/Table/index.html.twig: Reset
+templates/partials/Table/index.html.twig: Search
+templates/partials/Table/index.html.twig: Search
+templates/partials/Table/index.html.twig: Search
+templates/partials/Table/index.html.twig: Select all{{ }}
+templates/partials/Table/index.html.twig: Select/deselect all records on this page for bulk actions.
+templates/partials/Table/index.html.twig: Select/deselect every record in group
+templates/partials/Table/index.html.twig: Select/deselect record
+templates/partials/Table/index.html.twig: for bulk actions.
+templates/partials/Table/index.html.twig: for bulk actions.
+templates/partials/Table/index.html.twig: summary
+templates/partials/TextColumn/index.html.twig: Show {{ }} less
+templates/partials/TextColumn/index.html.twig: Show {{ }} more
+templates/partials/TextColumn/index.html.twig: and {{ }} more

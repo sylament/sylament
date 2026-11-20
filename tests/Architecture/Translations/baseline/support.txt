@@ -1,0 +1,22 @@
+assets/src/controllers/clipboard_controller.ts: Copied
+assets/src/controllers/section_controller.ts: Collapse section
+assets/src/controllers/section_controller.ts: Expand section
+src/Components/Concerns/CanBeCopied.php: Copied
+templates/components/Badge/index.html.twig: Remove
+templates/components/Breadcrumbs/index.html.twig: Breadcrumbs
+templates/components/Modal/index.html.twig: Close
+templates/components/Pagination/index.html.twig: All
+templates/components/Pagination/index.html.twig: Go to page
+templates/components/Pagination/index.html.twig: Go to the first page
+templates/components/Pagination/index.html.twig: Go to the last page
+templates/components/Pagination/index.html.twig: Next page
+templates/components/Pagination/index.html.twig: Pagination
+templates/components/Pagination/index.html.twig: Per page
+templates/components/Pagination/index.html.twig: Previous page
+templates/components/Pagination/index.html.twig: Showing 0 results
+templates/components/Pagination/index.html.twig: Showing 0 results of {{ }}
+templates/components/Pagination/index.html.twig: Showing {{ }} to {{ }} of {{ }} results
+templates/components/Pagination/index.html.twig: Showing {{ }} to {{ }} results
+templates/components/Section/index.html.twig: Collapse section
+templates/components/Section/index.html.twig: Expand section
+templates/components/Tabs/index.html.twig: Tabs

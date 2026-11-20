@@ -62,7 +62,7 @@ it('registers its property accessor, record type reader and association reader u
         ->and($container->get('sylament_schemas.association_reader'))->toBe($container->get(AssociationReader::class));
 });
 
-it('hands its association reader no entity manager in an application that registers none', function (): void {
+it("wires its association reader's entity manager null-on-invalid", function (): void {
     $container = new ContainerBuilder(new ParameterBag(['kernel.environment' => 'test']));
     new SylamentSchemasBundle()->getContainerExtension()?->load([], $container);
 

@@ -20,6 +20,10 @@ use Sylament\Tests\Fixtures\Support\Icons\Icon;
 use Sylament\Tests\Fixtures\Support\Icons\SizedIcon;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\Translator;
+
+use function Symfony\Component\Translation\t;
 
 describe('construction', function (): void {
     it("lists its members in order and maps every leaf action by name, a nested group's leaves included", function (): void {
@@ -368,4 +372,20 @@ describe('serialization', function (): void {
         expect($this->renderViewComponent(BulkActionGroup::fromArray(['actions' => [['actions' => [['name' => 'view']]]]]))->filter(SupportSelectors::DROPDOWN . Selectors::BULK_ONLY))
             ->toHaveCount(2);
     });
+});
+
+it('translates its label given as a message, and a string label as a key in the default domain under translateLabel()', function (): void {
+    $translator = new Translator('en');
+    $translator->addLoader('array', new ArrayLoader());
+    $translator->addResource('array', ['more' => 'More (from the default domain)'], 'en');
+
+    $translated = ActionGroup::make([Action::make('edit')])->label('more')->translateLabel();
+    $translated->setTranslator($translator);
+
+    $literal = ActionGroup::make([Action::make('edit')])->label('more');
+    $literal->setTranslator($translator);
+
+    expect($this->renderViewComponent(ActionGroup::make([Action::make('edit')])->label(t('trigger.label', [], 'fixtures-actions'))))->toContainButtons(SupportSelectors::ICON_BUTTON, ['Archive (translated)'])
+        ->and($this->renderViewComponent($translated))->toContainButtons(SupportSelectors::ICON_BUTTON, ['More (from the default domain)'])
+        ->and($this->renderViewComponent($literal))->toContainButtons(SupportSelectors::ICON_BUTTON, ['more']);
 });

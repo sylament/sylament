@@ -9,6 +9,7 @@ use LogicException;
 use Stringable;
 use Sylament\Support\ArrayRecord;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -25,11 +26,11 @@ trait InteractsWithRecord
      */
     protected string|Closure|null $recordClass = null;
 
-    protected string|Closure|null $recordLabel = null;
+    protected string|TranslatableInterface|Closure|null $recordLabel = null;
 
-    protected string|Closure|null $pluralRecordLabel = null;
+    protected string|TranslatableInterface|Closure|null $pluralRecordLabel = null;
 
-    protected string|Closure|null $recordTitle = null;
+    protected string|TranslatableInterface|Closure|null $recordTitle = null;
 
     protected string|Closure|null $recordTitleAttribute = null;
 
@@ -50,21 +51,21 @@ trait InteractsWithRecord
         return $this;
     }
 
-    public function recordLabel(string|Closure|null $label): static
+    public function recordLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->recordLabel = $label;
 
         return $this;
     }
 
-    public function pluralRecordLabel(string|Closure|null $label): static
+    public function pluralRecordLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->pluralRecordLabel = $label;
 
         return $this;
     }
 
-    public function recordTitle(string|Closure|null $title): static
+    public function recordTitle(string|TranslatableInterface|Closure|null $title): static
     {
         $this->recordTitle = $title;
 
@@ -124,7 +125,7 @@ trait InteractsWithRecord
 
     public function getCustomRecordLabel(): ?string
     {
-        return $this->evaluate($this->recordLabel);
+        return $this->translateRecordText($this->evaluate($this->recordLabel));
     }
 
     public function getRecordLabel(): ?string
@@ -149,7 +150,7 @@ trait InteractsWithRecord
 
     public function getCustomPluralRecordLabel(): ?string
     {
-        return $this->evaluate($this->pluralRecordLabel);
+        return $this->translateRecordText($this->evaluate($this->pluralRecordLabel));
     }
 
     public function getPluralRecordLabel(): ?string
@@ -184,11 +185,11 @@ trait InteractsWithRecord
             return null;
         }
 
-        $title = $this->evaluate(
+        $title = $this->translateRecordText($this->evaluate(
             $this->recordTitle,
             namedInjections: ['record' => $record],
             typedInjections: [$record::class => $record],
-        );
+        ));
 
         if (filled($title)) {
             return $title;
@@ -272,6 +273,15 @@ trait InteractsWithRecord
         }
 
         return (string) $key;
+    }
+
+    /**
+     * What a record label or title hook answered, as the string every reader
+     * interpolates: a message is translated, record data passes unchanged.
+     */
+    protected function translateRecordText(string|TranslatableInterface|null $text): ?string
+    {
+        return $text instanceof TranslatableInterface ? $text->trans($this->getTranslator()) : $text;
     }
 
     /**

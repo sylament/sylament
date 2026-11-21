@@ -366,7 +366,13 @@ class ActionGroup extends ViewComponent
 
     public function getLabel(): string|Markup|null
     {
-        return $this->evaluate($this->label) ?? 'Actions';
+        $label = $this->evaluate($this->label) ?? 'Actions';
+
+        if (is_string($label) && $this->shouldTranslateLabel) {
+            return $this->getTranslator()->trans($label);
+        }
+
+        return $this->translateText($label);
     }
 
     /**

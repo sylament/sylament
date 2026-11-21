@@ -107,8 +107,8 @@ The Livewire → UX LiveComponent, Blade → Twig and `Htmlable` → `Markup` tr
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#the-name-derived-label-is-the-names-segment-before-the-first-dot) |
 | [`hiddenLabel()` / `isLabelHidden()` / `hasLabelHidden()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
-| `translateLabel()` | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
-| `disableLabel()` (deprecated) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
+| [`translateLabel()` / `shouldTranslateLabel`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
+| `disableLabel()` (deprecated) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#the-deprecated-disablelabel-alias-is-not-ported) |
 | [`ActionCalling`](../../../packages/actions/src/Events/ActionCalling.php) / [`ActionCalled`](../../../packages/actions/src/Events/ActionCalled.php) | [`Events/ActionCalling.php`](../../../vendor/filament/actions/src/Events/ActionCalling.php) · [`Events/ActionCalled.php`](../../../vendor/filament/actions/src/Events/ActionCalled.php) | done | — | [diverges](#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) |
 | [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | done | — | [diverges](#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) · [has-actions.md](has-actions.md#callmountedaction-runs-filaments-pipeline-in-filaments-order) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
@@ -264,6 +264,14 @@ An uncolored badge or link action therefore emits `sy-color sy-color-primary` an
 
 That is Filament's behaviour, not a divergence: `badge.blade.php` and `link.blade.php` both default `'color' => 'primary'`.
 The one trigger where the gray branch *is* reachable is `Grouped`, which passes the bare getter on purpose: [`DropdownItem`](../support/dropdown-item.md) defaults to `'gray'`, matching `dropdown/list/item.blade.php`, and its colour policy emits nothing for either `gray` or `null`, so the two render the same.
+
+### A label is a string, a Markup or a message, translated in the getter
+
+`label()` takes `string|Markup|TranslatableInterface|Closure|null`, and `getLabel()` evaluates it and then translates it through the action's translator, so a template or a PHP reader always receives a string or a `Markup`.
+A plain string stays a literal, as in Filament, unless `translateLabel()` is on: then a string label, the [name-derived one](#the-name-derived-label-is-the-names-segment-before-the-first-dot) included, is handed to the translator as a key in the default `messages` domain, Filament's `__($label)`.
+A message already names its own domain and is translated either way.
+[`ActionGroup`](action-group.md#getlabel-falls-back-to-a-plain-string-not-a-translated-label) re-declares `getLabel()` and translates the same way.
+An action built with `new` and handed a message or a `translateLabel()` key throws a `LogicException` naming its class, because it has no translator.
 
 ### The name-derived label is the name's segment before the first dot
 
@@ -444,11 +452,10 @@ Filament types the grouped icon `string|BackedEnum|Htmlable|Closure|null`; the p
 Consumed where Filament consumes it: [`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig) resolves its icon as `component.getIcon(component.getGroupedIcon)`, Filament's `icon: $this->getIcon(default: $this->getGroupedIcon())`, so the grouped icon only surfaces inside a dropdown item, never on the button shape.
 Widen the type in lockstep with an enum or `Markup` grouped icon if the actions package needs one.
 
-### Label translation and the deprecated `disableLabel()` alias are not ported
+### The deprecated `disableLabel()` alias is not ported
 
-Filament's `HasLabel` carries `$shouldTranslateLabel` + `translateLabel()` and runs a string `getLabel()` result through Laravel's `__()` translator, plus a `@deprecated disableLabel()` alias whose replacement Filament names as `hiddenLabel()`.
-Sylament drops all three: no translation layer is wired into labels (schemas' `HasLabel` ports it, see [`schemas/has-label.md`](../schemas/has-label.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter), and this concern does not yet), and a fresh codebase has no reason to ship the deprecated alias when `hiddenLabel()` exists.
-Reverses for translation if a translation layer lands; the deprecated alias stays out regardless.
+Filament's `HasLabel` carries a `@deprecated disableLabel()` alias whose replacement Filament names as `hiddenLabel()`.
+A fresh codebase has no reason to ship the alias when `hiddenLabel()` exists, so Sylament drops it.
 
 ### Action invocation is a PHP-side seam only
 
@@ -479,4 +486,4 @@ Pinned end to end through a live host: the action's own URL, else the host's, fo
 ### The deprecated `hold()` and `withAttributes()` aliases are not ported
 
 Filament marks `hold()` `@deprecated` in favour of `halt()`, and `withAttributes()` in favour of `extraAttributes()`.
-The port ships both replacements and neither alias, as it does for [`disableLabel()`](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported).
+The port ships both replacements and neither alias, as it does for [`disableLabel()`](#the-deprecated-disablelabel-alias-is-not-ported).

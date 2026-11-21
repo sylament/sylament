@@ -6,14 +6,15 @@ namespace Sylament\Actions\Concerns;
 
 use Closure;
 use Sylament\Notifications\Notification;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\blank;
 
 trait CanNotify
 {
-    protected string|Closure|null $successNotificationTitle = null;
+    protected string|TranslatableInterface|Closure|null $successNotificationTitle = null;
 
-    protected string|Closure|null $failureNotificationTitle = null;
+    protected string|TranslatableInterface|Closure|null $failureNotificationTitle = null;
 
     protected Notification|Closure|null $successNotification = null;
 
@@ -23,14 +24,14 @@ trait CanNotify
 
     protected bool $isFailureNotificationDisabled = false;
 
-    public function successNotificationTitle(string|Closure|null $title): static
+    public function successNotificationTitle(string|TranslatableInterface|Closure|null $title): static
     {
         $this->successNotificationTitle = $title;
 
         return $this;
     }
 
-    public function failureNotificationTitle(string|Closure|null $title): static
+    public function failureNotificationTitle(string|TranslatableInterface|Closure|null $title): static
     {
         $this->failureNotificationTitle = $title;
 
@@ -55,12 +56,16 @@ trait CanNotify
 
     public function getSuccessNotificationTitle(): ?string
     {
-        return $this->evaluate($this->successNotificationTitle);
+        $title = $this->evaluate($this->successNotificationTitle);
+
+        return $title instanceof TranslatableInterface ? $title->trans($this->getTranslator()) : $title;
     }
 
     public function getFailureNotificationTitle(): ?string
     {
-        return $this->evaluate($this->failureNotificationTitle, $this->getFailureNotificationNamedInjections());
+        $title = $this->evaluate($this->failureNotificationTitle, $this->getFailureNotificationNamedInjections());
+
+        return $title instanceof TranslatableInterface ? $title->trans($this->getTranslator()) : $title;
     }
 
     /**

@@ -51,6 +51,6 @@ The delivery half — who reads these attributes, and how a `'self'` emitter is 
 ### The deprecated `emit*` aliases are not ported
 
 Filament's `CanDispatchEvent` carries three `@deprecated` aliases — `emit()`, `emitSelf()` and `emitTo()` — each a one-line forward to its `dispatch*` twin, kept for callers written against the older `emit` vocabulary.
-The port carries the `dispatch*` methods and nothing else: Sylament has no deprecation-shim policy, and a fresh codebase has no older vocabulary to keep compatible with — the same call already made for [`disableLabel()`](action.md#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported), `CanNotify`'s `*NotificationMessage()` pair, and `HasData`'s `*FormData*` pair.
+The port carries the `dispatch*` methods and nothing else: Sylament has no deprecation-shim policy, and a fresh codebase has no older vocabulary to keep compatible with — the same call already made for [`disableLabel()`](action.md#the-deprecated-disablelabel-alias-is-not-ported), `CanNotify`'s `*NotificationMessage()` pair, and `HasData`'s `*FormData*` pair.
 Nothing is lost, since every alias's target is ported.
 Stays out regardless.

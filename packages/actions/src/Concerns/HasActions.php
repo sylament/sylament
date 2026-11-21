@@ -23,6 +23,7 @@ use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -706,7 +707,7 @@ trait HasActions
         return null;
     }
 
-    public function getDefaultActionRecordTitle(Action $action): ?string
+    public function getDefaultActionRecordTitle(Action $action): string|TranslatableInterface|null
     {
         return null;
     }
@@ -719,7 +720,7 @@ trait HasActions
         return null;
     }
 
-    public function getDefaultActionRecordLabel(Action $action): ?string
+    public function getDefaultActionRecordLabel(Action $action): string|TranslatableInterface|null
     {
         return null;
     }

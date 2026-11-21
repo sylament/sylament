@@ -185,10 +185,9 @@ Every caller that passes a value is unaffected.
 
 ### `getLabel()` falls back to a plain string, not a translated label
 
-Filament's `getLabel()` is `$this->evaluate($this->label) ?? __('filament-actions::group.trigger.label')`, then runs a string result through `__()` again when `$shouldTranslateLabel` is set, the same translation layer `Action`'s own `HasLabel` drops (no translator is wired into the repo; see [action.md](action.md#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported)).
-The port's [`getLabel()`](../../../packages/actions/src/ActionGroup.php) is `$this->evaluate($this->label) ?? 'Actions'`, a plain literal.
+Filament's `getLabel()` is `$this->evaluate($this->label) ?? __('filament-actions::group.trigger.label')`, then runs a string result through `__()` again when `$shouldTranslateLabel` is set.
+The port's [`getLabel()`](../../../packages/actions/src/ActionGroup.php) is `$this->evaluate($this->label) ?? 'Actions'`, a plain literal, then translates a message label, or a string one under `translateLabel()`, as [`Action`'s label](action.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) does.
 The override also means `ActionGroup` never runs the `HasLabel` trait's own `getLabel()`, which derives a default from `getName()`: PHP resolves the class-defined method over the trait's, and a group has no name for that default to derive from anyway.
-It reverses when a translation layer lands, as the linked `Action` divergence does.
 
 ### Extra attribute bags flatten through `toScalarAttributes()` before reaching the ux component attribute bag
 

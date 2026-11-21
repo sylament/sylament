@@ -71,6 +71,12 @@ So a host that answers unconditionally turns its [`DeleteAction`](delete-action.
 Filament's own implementation (`Resources\Pages\Page::getDefaultActionUrl()`) is a chain of `$action instanceof CreateAction` / `instanceof EditAction` guards for exactly this reason, and a host answering only for its `EditAction` keeps its `DeleteAction` a button whose confirmation opens.
 The default the trait ships returns `null`, so the trap is reachable only by a host that overrides it.
 
+### The host record hooks may answer a message
+
+`getDefaultActionRecordLabel()` and `getDefaultActionRecordTitle()` return `string|TranslatableInterface|null`, so a host that holds its label in a catalogue answers a message instead of translating it itself.
+`HasActions`' default answers `null`, and an implementation that returns a plain `?string` stays valid, since a narrower return type satisfies the contract.
+[`Action`](interacts-with-record.md#a-record-label-plural-label-or-title-is-a-string-or-a-message-translated-before-it-is-composed) translates the answer before it composes it.
+
 ## Divergences
 
 ### Host methods are promoted onto the interface when a template calls them

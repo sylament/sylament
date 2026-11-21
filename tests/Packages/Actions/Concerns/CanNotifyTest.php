@@ -15,6 +15,12 @@ it('toasts its success title when the action succeeds', function (): void {
         ->assertNotified(Notification::make()->success()->title('Archived'));
 });
 
+it('toasts its success title translated when the title is a message', function (): void {
+    $this->createLiveComponent(ToolbarHost::class)
+        ->callAction('archiveTranslated')
+        ->assertNotified(Notification::make()->success()->title('Archived (translated)'));
+});
+
 it('toasts a persistent danger notification with its failure title when the action fails', function (): void {
     $this->createLiveComponent(ToolbarHost::class)
         ->callAction('restore')

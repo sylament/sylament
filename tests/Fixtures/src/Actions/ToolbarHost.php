@@ -12,6 +12,8 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
+use function Symfony\Component\Translation\t;
+
 #[AsLiveComponent(name: 'Actions:ToolbarHost', template: '@Fixtures/actions/ToolbarHost.html.twig')]
 class ToolbarHost implements InteractsWithActions
 {
@@ -26,6 +28,11 @@ class ToolbarHost implements InteractsWithActions
     public function archiveAction(): Action
     {
         return Action::make('archive')->successNotificationTitle('Archived');
+    }
+
+    public function archiveTranslatedAction(): Action
+    {
+        return Action::make('archiveTranslated')->successNotificationTitle(t('notification.title', [], 'fixtures-actions'));
     }
 
     public function restoreAction(): Action

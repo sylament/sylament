@@ -15,6 +15,7 @@ use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Enums\Size;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Actions\AddressStateForm;
+use Sylament\Tests\Fixtures\Actions\LocalisedSectionHost;
 use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
 use Sylament\Tests\Fixtures\Actions\RecordDefaultsHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
@@ -406,4 +407,15 @@ describe('context', function (): void {
         'scalar fields' => fn (): array => [OrderLineTable::class, new OrderLine(order: 7, line: 2), new OrderLine(order: 7, line: 3)],
         'an association plus a scalar' => fn (): array => [InvoiceLineTable::class, new InvoiceLine($seven = new Invoice(7), line: 2), new InvoiceLine($seven, line: 3)],
     ]);
+});
+
+describe('a localised live route', function (): void {
+    it('keeps a section-registered action mounted across a live call, the section keyed by a heading the locale translates', function (): void {
+        $tester = $this->createLiveComponent(LocalisedSectionHost::class)->setRouteLocale('sk');
+
+        $tester->call('mountAction', ['name' => 'stamp', 'context' => ['schemaComponent' => 'form.zasielky::section'], 'arguments' => []]);
+        $tester->call('callMountedAction', ['arguments' => []]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['stamped']);
+    });
 });

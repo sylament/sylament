@@ -56,6 +56,12 @@ Because the title is read after the override runs, an override may title an unti
 `successNotification(null)` and `failureNotification(null)` are the other way to say *not this one*: they set the disable flag and skip the build outright.
 The flash-to-browser step is the notifications package's: [`LiveDeliverySubscriber`](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php) turns each flashed entry into a `sylament:notification` browser event on a live request, so nothing here dispatches.
 
+### The titles are translated in their getters
+
+`successNotificationTitle()` and `failureNotificationTitle()` take `string|TranslatableInterface|Closure|null`, and each getter translates the evaluated value, so the string `sendSuccessNotification()` and `sendFailureNotification()` hand to the notification, and test with `blank()`, is already the text the sender's request would show.
+The notification is stored as that string, so the persistent failure toast keeps the locale of the request that sent it.
+A closure given the counting injections may return a message built from them, which is how the bulk actions' failure titles carry their counts.
+
 ## Divergences
 
 ### The notification arm is a guarded soft integration, not a `require`

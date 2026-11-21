@@ -488,11 +488,11 @@ class Action extends ViewComponent
         $host = $this->getLiveComponentOrNull();
 
         if ($class === null) {
-            return $host?->getDefaultActionRecordLabel($this);
+            return $this->translateRecordText($host?->getDefaultActionRecordLabel($this));
         }
 
         if ($class === $host?->getDefaultActionRecordClass($this)) {
-            return $host->getDefaultActionRecordLabel($this) ?? get_record_label($class);
+            return $this->translateRecordText($host->getDefaultActionRecordLabel($this)) ?? get_record_label($class);
         }
 
         return get_record_label($class);
@@ -535,7 +535,7 @@ class Action extends ViewComponent
             }
         }
 
-        return $this->getLiveComponentOrNull()?->getDefaultActionRecordTitle($this)
+        return $this->translateRecordText($this->getLiveComponentOrNull()?->getDefaultActionRecordTitle($this))
             ?? $this->getRecordLabel();
     }
 

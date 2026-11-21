@@ -36,6 +36,13 @@ The own-record gate is `is_object($record) || filled($record)`, because Filament
 A plain `filled()` would count an empty `Countable` or a whitespace-only `Stringable` as blank, so an empty collection bound as a record would fall through to the group instead of stopping.
 A filled scalar stops the walk and is returned as the record, where Filament treats it as a record key to resolve ([below](#record-key-resolution-is-hoisted-to-hasactions)).
 
+### A record label, plural label or title is a string or a message, translated before it is composed
+
+`recordLabel()`, `pluralRecordLabel()` and `recordTitle()` take `string|TranslatableInterface|Closure|null`, and their `getCustom*()` readers translate a message, so every later step receives a string.
+`Action` also translates what the host answers through [`getDefaultActionRecordLabel()` and `getDefaultActionRecordTitle()`](interacts-with-actions.md#the-host-record-hooks-may-answer-a-message), before it tests the answer with `filled()` or falls back on the class label.
+`getTitleCaseRecordLabel()` and `getPluralRecordLabel()` then title-case and pluralise the translated text, so both stay English-shaped for a label in another language: a developer who needs the right inflection passes `pluralRecordLabel()` and a label already in the case they want.
+A record title is record data and is never looked up, so only a message a developer wrote is translated.
+
 ## Divergences
 
 ### Three guards read `!== null` where Filament reads `filled()`
@@ -55,8 +62,7 @@ The attribute is read through schemas' [`PropertyAccessor::getFromRecord()`](../
 ### The plural label pluralises English unconditionally
 
 Filament's `getPluralModelLabel()` pluralises the singular only when `locale_has_pluralization()` is true, and returns the singular otherwise.
-The port's `getPluralRecordLabel()` always pluralises through [`Sylament\Support\plural()`](../support/helpers.md), because the port has no i18n layer and so no locale to ask ([translations.md](../translations.md#idiom)).
-The guard lands with the i18n pass, which is when `locale_has_pluralization()` is ported.
+The port's `getPluralRecordLabel()` always pluralises through [`Sylament\Support\plural()`](../support/helpers.md), whose inflector is English, so a label translated into another language is pluralised as English; the guard is not ported, because a free function reaches no translator, and locale-aware inflection is a follow-up beyond the message catalogues ([translations.md](../translations.md#idiom)).
 
 ### Record-key resolution is hoisted to HasActions
 

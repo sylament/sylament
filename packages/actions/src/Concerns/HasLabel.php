@@ -5,27 +5,43 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Symfony\Component\String\u;
 
 trait HasLabel
 {
-    protected string|Markup|Closure|null $label = null;
+    protected string|Markup|TranslatableInterface|Closure|null $label = null;
 
     protected bool|Closure $isLabelHidden = false;
 
-    public function label(string|Markup|Closure|null $label): static
+    protected bool $shouldTranslateLabel = false;
+
+    public function label(string|Markup|TranslatableInterface|Closure|null $label): static
     {
         $this->label = $label;
 
         return $this;
     }
 
+    public function translateLabel(bool $shouldTranslateLabel = true): static
+    {
+        $this->shouldTranslateLabel = $shouldTranslateLabel;
+
+        return $this;
+    }
+
     public function getLabel(): string|Markup|null
     {
-        return $this->evaluate($this->label)
+        $label = $this->evaluate($this->label)
             ?? (string) u($this->getName())->before('.')->kebab()->replace('-', ' ')->title();
+
+        if (is_string($label) && $this->shouldTranslateLabel) {
+            return $this->getTranslator()->trans($label);
+        }
+
+        return $this->translateText($label);
     }
 
     public function hiddenLabel(bool|Closure $condition = true): static

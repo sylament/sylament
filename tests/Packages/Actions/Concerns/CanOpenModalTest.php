@@ -14,6 +14,8 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Markup;
 
+use function Symfony\Component\Translation\t;
+
 beforeEach(function (): void {
     $this->modal = fn (Action $action): Crawler => $this->renderTwigComponent('SylamentActions:ActionModal', ['action' => $action, 'id' => 'archive-modal'])->crawler();
 });
@@ -53,6 +55,17 @@ describe('chrome', function (): void {
             ->and(($this->modal)(Action::make('archive')->color('warning')->modalIcon('support:star')))
             ->toContainElement('h2', 'Archive')
             ->toContainElement('header svg' . SupportSelectors::color('warning'), 'Star');
+    });
+
+    it('translates the heading, the description and the submit and cancel labels it is given as messages', function (): void {
+        expect(($this->modal)(Action::make('archive')
+            ->modalHeading(t('modal.heading', [], 'fixtures-actions'))
+            ->modalDescription(t('modal.description', [], 'fixtures-actions'))
+            ->modalSubmitActionLabel(t('modal.submit', [], 'fixtures-actions'))
+            ->modalCancelActionLabel(t('modal.cancel', [], 'fixtures-actions'))))
+            ->toContainElement('h2', 'Archive the order (translated)')
+            ->toContainElement('p', 'It leaves the list (translated)')
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Archive now (translated)', 'Keep it (translated)']);
     });
 
     it('renders the content and the content footer it is given', function (): void {

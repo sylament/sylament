@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Actions\Action;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 interface InteractsWithActions
 {
@@ -88,7 +89,7 @@ interface InteractsWithActions
      * The title a record-bound action interpolates into its modal heading when
      * it carries no recordTitle() of its own — null when the host has none.
      */
-    public function getDefaultActionRecordTitle(Action $action): ?string;
+    public function getDefaultActionRecordTitle(Action $action): string|TranslatableInterface|null;
 
     /**
      * The class an action creates into when nothing names one — a resource page
@@ -102,7 +103,7 @@ interface InteractsWithActions
      * The label an action interpolates when it carries no recordLabel() and its
      * class is the host's default class — null when the host has none.
      */
-    public function getDefaultActionRecordLabel(Action $action): ?string;
+    public function getDefaultActionRecordLabel(Action $action): string|TranslatableInterface|null;
 
     /**
      * The relationship a creating action attaches its record to when neither the

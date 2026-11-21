@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="modal.cancel" resname="modal.cancel">
+                <source>modal.cancel</source>
+                <target>Keep it (translated)</target>
+            </trans-unit>
+            <trans-unit id="modal.description" resname="modal.description">
+                <source>modal.description</source>
+                <target>It leaves the list (translated)</target>
+            </trans-unit>
+            <trans-unit id="modal.heading" resname="modal.heading">
+                <source>modal.heading</source>
+                <target>Archive the order (translated)</target>
+            </trans-unit>
+            <trans-unit id="modal.submit" resname="modal.submit">
+                <source>modal.submit</source>
+                <target>Archive now (translated)</target>
+            </trans-unit>
+            <trans-unit id="notification.title" resname="notification.title">
+                <source>notification.title</source>
+                <target>Archived (translated)</target>
+            </trans-unit>
+            <trans-unit id="section" resname="section">
+                <source>section</source>
+                <target>Shipments</target>
+            </trans-unit>
+            <trans-unit id="trigger.label" resname="trigger.label">
+                <source>trigger.label</source>
+                <target>Archive (translated)</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

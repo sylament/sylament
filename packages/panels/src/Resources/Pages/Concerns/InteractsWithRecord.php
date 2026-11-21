@@ -7,6 +7,7 @@ namespace Sylament\Panels\Resources\Pages\Concerns;
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Twig\Markup;
 
@@ -93,7 +94,7 @@ trait InteractsWithRecord
      * shows it where the resource has one — then the page's own crumb. A record
      * the resource titles by nothing at all leaves the trail as it is.
      *
-     * @return array<int|string, string|Markup>
+     * @return array<int|string, string|Markup|TranslatableInterface>
      */
     public function getBreadcrumbs(): array
     {

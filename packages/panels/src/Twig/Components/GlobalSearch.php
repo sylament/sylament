@@ -6,14 +6,18 @@ namespace Sylament\Panels\Twig\Components;
 
 use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\GlobalSearch\GlobalSearchProviderRegistry;
+use Sylament\Panels\GlobalSearch\GlobalSearchResult;
 use Sylament\Panels\GlobalSearch\GlobalSearchResults;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Twig\Markup;
 
 #[AsLiveComponent(
     name: 'SylamentPanels:GlobalSearch',
@@ -34,6 +38,7 @@ final class GlobalSearch
         private readonly PanelRegistry $panels,
         private readonly GlobalSearchProviderRegistry $providers,
         private readonly RequestStack $requests,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -77,6 +82,37 @@ final class GlobalSearch
             return null;
         }
 
-        return $this->providers->get($providerClass)->getResults($search);
+        $results = $this->providers->get($providerClass)->getResults($search);
+
+        if (! $results instanceof GlobalSearchResults) {
+            return null;
+        }
+
+        $translated = GlobalSearchResults::make();
+
+        foreach ($results->getCategories() as $category => $categoryResults) {
+            $translated->category($category, array_map($this->translateResult(...), $categoryResults));
+        }
+
+        return $translated;
+    }
+
+    /**
+     * A result is built with `new` by a resource or a provider of the application's own, so no translator sits on it:
+     * what it holds is translated here, where the component reads it.
+     */
+    private function translateResult(GlobalSearchResult $result): GlobalSearchResult
+    {
+        return new GlobalSearchResult(
+            title: $this->translate($result->title),
+            url: $result->url,
+            details: array_map(fn (string|TranslatableInterface $detail): string => $detail instanceof TranslatableInterface ? $detail->trans($this->translator) : $detail, $result->details),
+            actions: $result->actions,
+        );
+    }
+
+    private function translate(string|Markup|TranslatableInterface $text): string|Markup
+    {
+        return $text instanceof TranslatableInterface ? $text->trans($this->translator) : $text;
     }
 }

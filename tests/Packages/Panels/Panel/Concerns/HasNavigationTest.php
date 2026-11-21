@@ -40,3 +40,9 @@ it('refuses resource navigation on a panel built with new, which assembles the r
     expect(array_map(static fn (NavigationItem $item): string => $item->getLabel(), $pages->getNavigation()[0]->getItems()))->toBe(['Slugged Settings Page'])
         ->and(fn (): array => $resources->getNavigation())->toThrow(LogicException::class, 'Resource navigation needs the container-built panel — build panels through a PanelProvider.');
 });
+
+it('places a registered group given as a message by its translated label, ahead of an unregistered one sorted before it', function (): void {
+    $page = $this->visit('/translated/translated-desk-page');
+
+    expect($page->filter(Selectors::NAVIGATION . ' [data-group-label]')->each(fn ($group): ?string => $group->attr('data-group-label')))->toBe(['Library (translated)', 'Misc']);
+});

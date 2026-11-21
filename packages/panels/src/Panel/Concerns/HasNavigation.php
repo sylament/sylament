@@ -11,11 +11,12 @@ use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 trait HasNavigation
 {
     /**
-     * @var array<string|int, NavigationGroup|string>
+     * @var array<string|int, NavigationGroup|string|TranslatableInterface>
      */
     protected array $navigationGroups = [];
 
@@ -33,7 +34,7 @@ trait HasNavigation
     }
 
     /**
-     * @param array<string|int, NavigationGroup|string> $groups
+     * @param array<string|int, NavigationGroup|string|TranslatableInterface> $groups
      */
     public function navigationGroups(array $groups): static
     {
@@ -53,7 +54,7 @@ trait HasNavigation
     }
 
     /**
-     * @return array<string|int, NavigationGroup|string>
+     * @return array<string|int, NavigationGroup|string|TranslatableInterface>
      */
     public function getNavigationGroups(): array
     {
@@ -122,7 +123,7 @@ trait HasNavigation
         }
 
         foreach ($this->getNavigationGroups() as $key => $registered) {
-            $label = $registered instanceof NavigationGroup ? $registered->getLabel() : $registered;
+            $label = $registered instanceof NavigationGroup ? $registered->getLabel() : $this->translateText($registered);
             $matched = array_find([$key, $label], fn ($candidate): bool => is_string($candidate) && isset($itemsByGroup[$candidate]));
 
             if ($matched === null) {

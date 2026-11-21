@@ -20,12 +20,14 @@ use Sylament\Schemas\Components\Tabs\Tab;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\State\Relationship;
+use Sylament\Support\Concerns\HasTranslator;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Twig\Markup;
@@ -44,6 +46,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     use HasActions;
     use HasSchemas;
     use HasTable;
+    use HasTranslator;
     /*
      * One `use` statement per trait, and the exclusions naming traits inserted
      * above: Rector's `SeparateMultiUseImportsRector` splits a grouped insert and
@@ -107,7 +110,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
         return str_replace('\\', ':', static::class);
     }
 
-    public static function getTitle(object $ownerRecord, string $pageClass): string
+    public static function getTitle(object $ownerRecord, string $pageClass): string|TranslatableInterface
     {
         return static::$title ?? static::getHumanizedRelationshipName();
     }
@@ -122,7 +125,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
         return static::$iconPosition;
     }
 
-    public static function getBadge(object $ownerRecord, string $pageClass): ?string
+    public static function getBadge(object $ownerRecord, string $pageClass): string|TranslatableInterface|null
     {
         return static::$badge;
     }
@@ -132,7 +135,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
         return static::$badgeColor;
     }
 
-    public static function getBadgeTooltip(object $ownerRecord, string $pageClass): string|Markup|null
+    public static function getBadgeTooltip(object $ownerRecord, string $pageClass): string|Markup|TranslatableInterface|null
     {
         return static::$badgeTooltip;
     }
@@ -254,7 +257,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     protected function makeTable(): Table
     {
         return $this->makeBaseRelationshipTable()
-            ->heading(fn (): string => static::getTitle($this->getOwnerRecord(), $this->getPageClass()));
+            ->heading(fn (): string|Markup|null => $this->translateText(static::getTitle($this->getOwnerRecord(), $this->getPageClass())));
     }
 
     protected function getResourceRegistry(): ResourceRegistry

@@ -79,3 +79,11 @@ it('renders no results panel for a provider answering nothing at all', function 
     expect($this->globalSearchCategories($tester->set('search', 'maps')->render()->crawler()))->toBe(['Shelf' => ['Shelf of maps']])
         ->and($tester->set('search', ShelfGlobalSearchProvider::SILENT_TERM)->render()->crawler()->filter(Selectors::GLOBAL_SEARCH_RESULTS))->toHaveCount(0);
 });
+
+it('translates the title and the detail values a provider hands it as messages, leaving the detail labels as keys', function (): void {
+    $search = $this->createLiveComponent(GlobalSearch::class, ['panelId' => 'search-custom'])->set('search', ShelfGlobalSearchProvider::CATALOGUE_TERM)->render()->crawler();
+
+    expect($search->filter(Selectors::GLOBAL_SEARCH_RESULT_HEADING)->text())->toBe('Shelf of catalogue (translated)')
+        ->and($search->filter('dt')->each(fn (Crawler $label): string => $label->text()))->toBe(['Count:'])
+        ->and($search->filter('dd')->each(fn (Crawler $value): string => $value->text()))->toBe(['2 words (translated)']);
+});

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Panels\Panel\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 trait HasBrandName
 {
-    protected string|Markup|Closure|null $brandName = null;
+    protected string|Markup|TranslatableInterface|Closure|null $brandName = null;
 
-    public function brandName(string|Markup|Closure|null $name): static
+    public function brandName(string|Markup|TranslatableInterface|Closure|null $name): static
     {
         $this->brandName = $name;
 
@@ -20,6 +21,6 @@ trait HasBrandName
 
     public function getBrandName(): string|Markup|null
     {
-        return $this->evaluate($this->brandName);
+        return $this->translateText($this->evaluate($this->brandName));
     }
 }

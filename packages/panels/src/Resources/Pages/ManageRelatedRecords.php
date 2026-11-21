@@ -19,6 +19,7 @@ use Sylament\Support\Icons\IconManager;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 use Twig\Markup;
 
@@ -85,7 +86,7 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithTable
         return $this->getRecord();
     }
 
-    public static function getNavigationLabel(): string
+    public static function getNavigationLabel(): string|TranslatableInterface
     {
         return static::$navigationLabel ?? static::getHumanizedRelationshipName();
     }

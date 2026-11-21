@@ -19,11 +19,13 @@ use Sylament\Panels\Panel;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Concerns\HasTranslator;
 use Sylament\Support\Enums\Width;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
@@ -44,6 +46,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
     }
     use HasSchemas;
     use HasSubNavigation;
+    use HasTranslator;
     use InteractsWithFormActions;
     use InteractsWithHeaderActions;
 
@@ -236,7 +239,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
      * A string key is the crumb's URL and renders as a link; an int key renders
      * as plain text.
      *
-     * @return array<int|string, string|Markup>
+     * @return array<int|string, string|Markup|TranslatableInterface>
      */
     public function getBreadcrumbs(): array
     {
@@ -268,7 +271,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
         return str_replace('\\', ':', static::class);
     }
 
-    public static function getNavigationLabel(): string
+    public static function getNavigationLabel(): string|TranslatableInterface
     {
         return static::$navigationLabel ?? static::$title ?? static::getHumanizedClassBasename();
     }
@@ -288,7 +291,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
         return static::$navigationSort;
     }
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string|TranslatableInterface|null
     {
         return static::$navigationGroup;
     }
@@ -298,7 +301,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
         return static::$shouldRegisterNavigation;
     }
 
-    public static function getNavigationBadge(): ?string
+    public static function getNavigationBadge(): string|TranslatableInterface|null
     {
         return null;
     }

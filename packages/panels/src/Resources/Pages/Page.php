@@ -21,6 +21,7 @@ use Sylament\Schemas\State\Relationship;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -74,7 +75,7 @@ abstract class Page extends BasePage
     }
 
     /**
-     * @return array<int|string, string|Markup>
+     * @return array<int|string, string|Markup|TranslatableInterface>
      */
     public function getBreadcrumbs(): array
     {
@@ -97,7 +98,7 @@ abstract class Page extends BasePage
      * listing of its own is reached through its parent's record page, which is
      * the crumb directly above it.
      *
-     * @return array<int|string, string|Markup>
+     * @return array<int|string, string|Markup|TranslatableInterface>
      */
     public function getResourceBreadcrumbs(): array
     {
@@ -131,11 +132,11 @@ abstract class Page extends BasePage
      * A string key is the crumb's URL and renders as a link; an int key renders
      * as plain text, which is what a URL the trail already spends becomes.
      *
-     * @param array<int|string, string|Markup> $breadcrumbs
+     * @param array<int|string, string|Markup|TranslatableInterface> $breadcrumbs
      *
-     * @return array<int|string, string|Markup>
+     * @return array<int|string, string|Markup|TranslatableInterface>
      */
-    protected function appendBreadcrumb(array $breadcrumbs, ?string $url, string|Markup $label): array
+    protected function appendBreadcrumb(array $breadcrumbs, ?string $url, string|Markup|TranslatableInterface $label): array
     {
         if ($url === null || array_key_exists($url, $breadcrumbs)) {
             $breadcrumbs[] = $label;

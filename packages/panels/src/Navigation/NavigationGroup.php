@@ -7,6 +7,7 @@ namespace Sylament\Panels\Navigation;
 use Closure;
 use Sylament\Support\Components\Component;
 use Sylament\Support\Components\Concerns\HasIcon;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\filled;
 
@@ -25,9 +26,9 @@ class NavigationGroup extends Component
      */
     protected array|Closure $items = [];
 
-    protected string|Closure|null $label = null;
+    protected string|TranslatableInterface|Closure|null $label = null;
 
-    public static function make(string|Closure|null $label = null): static
+    public static function make(string|TranslatableInterface|Closure|null $label = null): static
     {
         $group = static::newInstance();
 
@@ -40,7 +41,7 @@ class NavigationGroup extends Component
         return $group;
     }
 
-    public function label(string|Closure|null $label): static
+    public function label(string|TranslatableInterface|Closure|null $label): static
     {
         $this->label = $label;
 
@@ -80,7 +81,9 @@ class NavigationGroup extends Component
 
     public function getLabel(): ?string
     {
-        return $this->evaluate($this->label);
+        $label = $this->evaluate($this->label);
+
+        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
     }
 
     /**

@@ -9,6 +9,7 @@ use Sylament\Panels\GlobalSearch\GlobalSearchResult;
 use Sylament\Panels\GlobalSearch\GlobalSearchResults;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 trait PanelsHelpers
 {
@@ -84,7 +85,7 @@ trait PanelsHelpers
      */
     protected static function globalSearchTitles(array $results): array
     {
-        return array_values(array_map(static fn (GlobalSearchResult $result): string => (string) $result->title, $results));
+        return array_values(array_map(static fn (GlobalSearchResult $result): string => $result->title instanceof TranslatableInterface ? throw new LogicException('A message title is translated by the search component, so a title read here is a string or a Markup.') : (string) $result->title, $results));
     }
 
     /**

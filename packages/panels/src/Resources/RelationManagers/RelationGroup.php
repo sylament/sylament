@@ -13,6 +13,7 @@ use Sylament\Support\Components\Concerns\HasBadgeTooltip;
 use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconPosition;
 use Sylament\Support\Evaluation\ClosureParameter;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 /**
  * Several relation managers behind one tab: the group supplies the tab's label
@@ -25,7 +26,7 @@ class RelationGroup extends Component
     use HasIcon;
     use HasIconPosition;
 
-    protected string|Closure $label;
+    protected string|TranslatableInterface|Closure $label;
 
     /**
      * @var array<class-string<RelationManager>|RelationManagerConfiguration>|Closure
@@ -48,7 +49,7 @@ class RelationGroup extends Component
     /**
      * @param array<class-string<RelationManager>|RelationManagerConfiguration>|Closure $managers
      */
-    public static function make(string|Closure $label, array|Closure $managers = []): static
+    public static function make(string|TranslatableInterface|Closure $label, array|Closure $managers = []): static
     {
         $relationGroup = static::newInstance();
 
@@ -60,7 +61,7 @@ class RelationGroup extends Component
         return $relationGroup;
     }
 
-    public function label(string|Closure $label): static
+    public function label(string|TranslatableInterface|Closure $label): static
     {
         $this->label = $label;
 
@@ -103,7 +104,9 @@ class RelationGroup extends Component
 
     public function getLabel(): string
     {
-        return $this->evaluate($this->label);
+        $label = $this->evaluate($this->label);
+
+        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Sylament\Panels\GlobalSearch;
 
 use Sylament\Actions\Action;
 use Sylament\Support\Enums\Size;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class GlobalSearchResult
@@ -16,11 +17,11 @@ class GlobalSearchResult
     public readonly array $actions;
 
     /**
-     * @param array<string, string>|list<string> $details
+     * @param array<string, string|TranslatableInterface>|list<string|TranslatableInterface> $details
      * @param array<Action> $actions
      */
     public function __construct(
-        public readonly string|Markup $title,
+        public readonly string|Markup|TranslatableInterface $title,
         public readonly string $url,
         public readonly array $details = [],
         array $actions = [],

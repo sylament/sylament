@@ -8,6 +8,7 @@ use Closure;
 use InvalidArgumentException;
 use Sylament\Panels\GlobalSearch\Providers\Contracts\GlobalSearchProvider;
 use Sylament\Panels\GlobalSearch\Providers\DefaultGlobalSearchProvider;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 trait HasGlobalSearch
 {
@@ -23,7 +24,7 @@ trait HasGlobalSearch
      */
     protected string|bool $globalSearchProvider = true;
 
-    protected string|Closure|null $globalSearchFieldSuffix = null;
+    protected string|TranslatableInterface|Closure|null $globalSearchFieldSuffix = null;
 
     /**
      * @param class-string|bool $provider
@@ -56,7 +57,7 @@ trait HasGlobalSearch
         return $this;
     }
 
-    public function globalSearchFieldSuffix(string|Closure|null $suffix): static
+    public function globalSearchFieldSuffix(string|TranslatableInterface|Closure|null $suffix): static
     {
         $this->globalSearchFieldSuffix = $suffix;
 
@@ -94,7 +95,9 @@ trait HasGlobalSearch
 
     public function getGlobalSearchFieldSuffix(): ?string
     {
-        return $this->evaluate($this->globalSearchFieldSuffix);
+        $suffix = $this->evaluate($this->globalSearchFieldSuffix);
+
+        return $suffix instanceof TranslatableInterface ? $suffix->trans($this->getTranslator()) : $suffix;
     }
 
     /**

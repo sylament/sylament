@@ -41,6 +41,13 @@ describe('title and heading', function (): void {
 });
 
 describe('breadcrumbs', function (): void {
+    it('translates a breadcrumb message, a linked crumb and a plain one', function (): void {
+        $page = $this->visit('/translated/translated-desk-page');
+
+        expect($page->filter(SupportSelectors::LINKED_BREADCRUMB)->each(fn (Crawler $crumb): array => [$crumb->text(), $crumb->attr('href')]))->toBe([['Home (translated)', '/translated/translated-desk-page']])
+            ->and($page->filter(SupportSelectors::UNLINKED_BREADCRUMB)->each(fn (Crawler $crumb): string => $crumb->text()))->toBe(['Desk here (translated)']);
+    });
+
     it('renders no trail by default, and the crumbs a page returns, a string key as a link', function (): void {
         $notes = $this->visit('/pages/notes-page');
         $settings = $this->visit('/pages/settings-page');
@@ -55,6 +62,14 @@ describe('breadcrumbs', function (): void {
 });
 
 describe('navigation', function (): void {
+    it('labels the navigation from a static getter returning a message', function (): void {
+        $page = $this->visit('/translated/translated-desk-page');
+        $item = $page->filter(Selectors::navigationGroup('Library (translated)'));
+
+        expect($item->filter(Selectors::NAVIGATION_ITEM_LABEL)->text())->toBe('Desk (translated)')
+            ->and($item->filter(SupportSelectors::BADGE)->text())->toBe('New (translated)');
+    });
+
     it('shows a page on its sidebar item by its label, icon, sort and badge', function (): void {
         $notes = $this->visit('/pages/notes-page');
         $settings = $this->visit('/pages/settings-page');

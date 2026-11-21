@@ -13,6 +13,7 @@ use Sylament\Support\Icons\IconManager;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -23,16 +24,16 @@ class NavigationItem extends Component
 
     protected string|BackedEnum|Markup|Closure|null $activeIcon = null;
 
-    protected string|Closure $label;
+    protected string|TranslatableInterface|Closure $label;
 
-    protected string|Closure|null $badge = null;
+    protected string|TranslatableInterface|Closure|null $badge = null;
 
     /**
      * @var string | array<string> | Closure | null
      */
     protected string|array|Closure|null $badgeColor = null;
 
-    protected string|Closure|null $group = null;
+    protected string|TranslatableInterface|Closure|null $group = null;
 
     protected bool|Closure|null $isActive = null;
 
@@ -52,7 +53,7 @@ class NavigationItem extends Component
 
     private ?IconManager $iconManager = null;
 
-    public static function make(string|Closure|null $label = null): static
+    public static function make(string|TranslatableInterface|Closure|null $label = null): static
     {
         $item = static::newInstance();
 
@@ -73,7 +74,7 @@ class NavigationItem extends Component
         $this->iconManager = $iconManager;
     }
 
-    public function label(string|Closure $label): static
+    public function label(string|TranslatableInterface|Closure $label): static
     {
         $this->label = $label;
 
@@ -90,7 +91,7 @@ class NavigationItem extends Component
     /**
      * @param  string | array<string> | Closure | null  $color
      */
-    public function badge(string|Closure|null $badge, string|array|Closure|null $color = null): static
+    public function badge(string|TranslatableInterface|Closure|null $badge, string|array|Closure|null $color = null): static
     {
         $this->badge = $badge;
 
@@ -111,7 +112,7 @@ class NavigationItem extends Component
         return $this;
     }
 
-    public function group(string|Closure|null $group): static
+    public function group(string|TranslatableInterface|Closure|null $group): static
     {
         $this->group = $group;
 
@@ -171,12 +172,16 @@ class NavigationItem extends Component
 
     public function getLabel(): string
     {
-        return $this->evaluate($this->label);
+        $label = $this->evaluate($this->label);
+
+        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
     }
 
     public function getBadge(): ?string
     {
-        return $this->evaluate($this->badge);
+        $badge = $this->evaluate($this->badge);
+
+        return $badge instanceof TranslatableInterface ? $badge->trans($this->getTranslator()) : $badge;
     }
 
     /**
@@ -189,7 +194,9 @@ class NavigationItem extends Component
 
     public function getGroup(): ?string
     {
-        return $this->evaluate($this->group);
+        $group = $this->evaluate($this->group);
+
+        return $group instanceof TranslatableInterface ? $group->trans($this->getTranslator()) : $group;
     }
 
     public function getSort(): int

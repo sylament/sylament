@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="brand" resname="brand">
+                <source>brand</source>
+                <target>Acme (translated)</target>
+            </trans-unit>
+            <trans-unit id="crumb.here" resname="crumb.here">
+                <source>crumb.here</source>
+                <target>{page} here (translated)</target>
+            </trans-unit>
+            <trans-unit id="crumb.home" resname="crumb.home">
+                <source>crumb.home</source>
+                <target>Home (translated)</target>
+            </trans-unit>
+            <trans-unit id="manager.badge" resname="manager.badge">
+                <source>manager.badge</source>
+                <target>Sown (translated)</target>
+            </trans-unit>
+            <trans-unit id="manager.title" resname="manager.title">
+                <source>manager.title</source>
+                <target>Sprouts (translated)</target>
+            </trans-unit>
+            <trans-unit id="manager.tooltip" resname="manager.tooltip">
+                <source>manager.tooltip</source>
+                <target>Sown this season (translated)</target>
+            </trans-unit>
+            <trans-unit id="page.badge" resname="page.badge">
+                <source>page.badge</source>
+                <target>New (translated)</target>
+            </trans-unit>
+            <trans-unit id="page.group" resname="page.group">
+                <source>page.group</source>
+                <target>Library (translated)</target>
+            </trans-unit>
+            <trans-unit id="page.label" resname="page.label">
+                <source>page.label</source>
+                <target>Desk (translated)</target>
+            </trans-unit>
+            <trans-unit id="search.detail" resname="search.detail">
+                <source>search.detail</source>
+                <target>{words} words (translated)</target>
+            </trans-unit>
+            <trans-unit id="search.title" resname="search.title">
+                <source>search.title</source>
+                <target>Shelf of {term} (translated)</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

@@ -28,11 +28,13 @@ use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Support\Concerns\HasTranslator;
 use Sylament\Tables\Table;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -46,6 +48,7 @@ abstract class Resource
     use BelongsToParent;
     use HasBreadcrumbs;
     use HasGlobalSearch;
+    use HasTranslator;
 
     /**
      * @var class-string|null
@@ -496,7 +499,7 @@ abstract class Resource
         ];
     }
 
-    public function getNavigationLabel(): string
+    public function getNavigationLabel(): string|TranslatableInterface
     {
         return static::$navigationLabel ?? $this->getTitleCasePluralRecordLabel();
     }
@@ -516,12 +519,12 @@ abstract class Resource
         return static::$navigationSort;
     }
 
-    public function getNavigationGroup(): ?string
+    public function getNavigationGroup(): string|TranslatableInterface|null
     {
         return static::$navigationGroup;
     }
 
-    public function getNavigationBadge(): ?string
+    public function getNavigationBadge(): string|TranslatableInterface|null
     {
         return null;
     }

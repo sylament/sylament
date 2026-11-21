@@ -17,6 +17,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditAllotment;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditGarden;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditTerrace;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\SeedlingsRelationManager;
+use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\SproutsRelationManager;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\TaggedPlantsRelationManager;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
@@ -43,6 +44,14 @@ beforeEach(function (): void {
 });
 
 describe('as a live component', function (): void {
+    it('translates a title, badge and badge tooltip it returns as messages, in its table heading and its tab', function (): void {
+        $tester = $this->createLiveComponent(SproutsRelationManager::class, ['ownerRecord' => (string) $this->garden->id, 'pageClass' => EditGarden::class]);
+        $tab = SproutsRelationManager::getTabComponent($this->garden, EditGarden::class);
+
+        expect($tester->render()->crawler())->toContainElement(TablesSelectors::HEADER . ' h2', 'Sprouts (translated)')
+            ->and([$tab->getLabel(), $tab->getBadge(), $tab->getBadgeTooltip()])->toBe(['Sprouts (translated)', 'Sown (translated)', 'Sown this season (translated)']);
+    });
+
     it("renders its own root with its owner's association alone, headed by its title, and sorts it", function (): void {
         $tester = ($this->seedlings)();
 

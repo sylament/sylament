@@ -14,3 +14,10 @@ it("titles the document with the page's title and then the brand name, and names
 it('titles the document with the page title alone on a panel with no brand name', function (): void {
     expect($this->visit('/panel-routing')->filter(Selectors::DOCUMENT_TITLE)->text())->toBe('Dashboard');
 });
+
+it('translates a brand name message in the document title and the brand it draws', function (): void {
+    $page = $this->visit('/translated/translated-desk-page');
+
+    expect($page->filter(Selectors::DOCUMENT_TITLE)->text())->toBe('Translated Desk Page — Acme (translated)')
+        ->and($page->filter(Selectors::LOGO)->each(fn ($logo): string => $logo->text()))->toContain('Acme (translated)');
+});

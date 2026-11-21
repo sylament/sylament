@@ -9,6 +9,7 @@ use Sylament\Actions\Action;
 use Sylament\Panels\GlobalSearch\GlobalSearchResult;
 use Sylament\Tables\Query\SearchConstraint;
 use Sylament\Tables\Query\SearchTermSplitter;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -54,14 +55,14 @@ trait HasGlobalSearch
     }
 
     /**
-     * @return array<string, string>|list<string>
+     * @return array<string, string|TranslatableInterface>|list<string|TranslatableInterface>
      */
     public function getGlobalSearchResultDetails(object $record): array
     {
         return [];
     }
 
-    public function getGlobalSearchResultTitle(object $record): string|Markup
+    public function getGlobalSearchResultTitle(object $record): string|Markup|TranslatableInterface
     {
         return $this->getRecordTitle($record);
     }

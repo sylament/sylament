@@ -15,7 +15,7 @@ Everything [`SelectFilter`](select-filter.md) carries — the field chain, the a
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`trueLabel()` / `falseLabel()` + getters](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::trueLabel()` | done | — | [diverges](#the-arm-labels-are-hardcoded-english) |
+| [`trueLabel()` / `falseLabel()` + getters](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::trueLabel()` | done | — | [semantics](#the-arm-labels-and-the-placeholder-may-be-messages) |
 | [`getFormField()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::getFormField()` | done | — | [semantics](#boolean-rebuilds-the-options-the-parent-chain-just-set) |
 | [`queries()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::queries()` | done | — | [semantics](#the-dispatcher-is-installed-as-the-filters-own-query-callback) |
 | [`boolean()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::boolean()` | in progress | — | [detail](#the-whererelation-arms-are-deferred) · [diverges](#the-arms-qualify-the-attribute-where-filaments-leave-it-bare) |
@@ -64,6 +64,9 @@ An already-built `Indicator` still passes through verbatim, same rule as the par
 ### The arm labels and the placeholder may be messages
 
 `trueLabel()` and `falseLabel()` take a message, and their getters translate it, so the select, the placeholder and the chip receive strings.
+`setUp()` seeds the arms with Filament's keys `components.select.boolean.true` and `.false`, which live in the `sylament-forms` catalogue, since tables requires forms and the text is forms' own.
+The `'-'` placeholder stays a literal: Filament hardcodes that one too.
+The chip is worded as `<indicator>: <state>` through the port-added `table.filters.state_indicator` message.
 
 ## Divergences
 
@@ -72,9 +75,3 @@ An already-built `Indicator` still passes through verbatim, same rule as the par
 Filament's `boolean()` and `nullable()` arms call `$query->where($this->getAttribute(), …)` with the raw attribute, while `SelectFilter::apply()` in the same package runs its column through `qualifyColumn()` — an inconsistency that produces an ambiguous column the moment the query joins.
 Ours routes both arm sets through `SelectFilter::getAttributePath()`, i.e. [`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php), so a bare name is qualified with the root alias and a dotted path is checked against the builder's aliases.
 A fix, not a mirror; recorded in the [renames table](../renames.md) and pinned over a joined query, where a bare attribute filters by the root's field and a dotted one by its alias's.
-
-### The arm labels are hardcoded English
-
-`setUp()` seeds `trueLabel('Yes')` and `falseLabel('No')` where Filament reads `__('filament-forms::components.select.boolean.true')` and its `false` twin.
-The values are that catalogue's English ones, so the rendered chip and the two options match Filament byte for byte — but there is no catalogue to look them up in, the same [hardcoded-copy gap](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state and the search chip carry, and it lifts when toolkit-wide i18n ships.
-The `'-'` placeholder is not part of it: Filament hardcodes that one too.

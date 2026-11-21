@@ -24,7 +24,7 @@ use Twig\Markup;
 describe('boolean mode', function (): void {
     it('draws a success check for a true item, a danger cross for a false one and nothing for a null one, each named Yes or No', function (): void {
         $cell = $this->renderViewComponent(IconColumn::make('stocked')->record(['stocked' => [true, false, null]])->boolean());
-        $unwired = $this->renderViewComponent(new IconColumn()->name('stocked')->record(['stocked' => true])->boolean());
+        $unwired = $this->renderViewComponent(new IconColumn()->name('stocked')->record(['stocked' => true])->boolean()->tooltip('Stock level'));
 
         expect($cell->filter(Selectors::ICON_COLUMN . ' svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['check-circle', 'x-circle'])
             ->and($cell->filter('svg')->eq(0)->matches(SupportSelectors::color('success')))->toBeTrue()

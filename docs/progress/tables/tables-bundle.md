@@ -33,7 +33,7 @@ This file also documents the two Twig-side pieces beside it, [`TableExtension`](
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [`prependExtension()` — `assets/dist` in AssetMapper as `@sylament/tables`](../../../packages/tables/src/SylamentTablesBundle.php) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) (`Js::make('tables')` + the column `AlpineComponent`s), [`resources/js/index.js`](../../../vendor/filament/tables/resources/js/index.js) | done | — | [semantics](#leaving-sylamenttables-out-of-controllersjson-disables-every-controller-without-an-error) · [diverges](#the-assets-register-through-assetmapper-as-stimulus-controllers-not-as-alpine-components) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#the-make-commands-and-stub-publishing-are-not-ported) |
-| Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#the-translations-namespace-is-not-registered) |
+| [Translations — `translations/` holds the `sylament-tables` catalogue](../../../packages/tables/translations) | [`->hasTranslations()` in `configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [semantics](#the-catalogue-is-filaments-table-lang-file-under-the-sylament-tables-domain) |
 | `Testable::mixin(...)` — the tables testing mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
 ## Details
@@ -50,12 +50,6 @@ Each new alias needs its default glyph in [the fixture icon set](../../../tests/
 `->hasCommands([MakeColumnCommand, MakeLivewireTableCommand, MakeTableCommand])` generates a user column class, a Livewire table component and a table class from Filament's [`stubs/`](../../../vendor/filament/tables/stubs) (`ColumnView.stub`, `LivewireTableView.stub`), which `packageBooted()` also publishes into the app's `stubs/filament/`.
 No `Commands/` subtree exists in the port, in any package; Filament's `Commands/` is an [Unported row](README.md#unported).
 A Symfony console command and a Twig-based generator have nothing package-specific about them, so the commands port with the toolkit-wide `make:` story rather than per package.
-
-### The translations namespace is not registered
-
-`->hasTranslations()` registers Filament's [`resources/lang/`](../../../vendor/filament/tables/resources/lang) — the column labels, the empty-state heading and description, the filter and bulk-action strings, the pagination summary — and the bundle registers no translation domain.
-The visible consequence is in [`has-empty-state.md`](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships): `getEmptyStateHeading()` interpolates the plural record label into an English `"No …"` in PHP, because there is no catalogue to look the phrase up in.
-It ports with the toolkit-wide [i18n pass](../../internals/i18n.md).
 
 ## Semantics
 
@@ -76,6 +70,17 @@ Filament needs Alpine the same way, but the cost here is graded, and some of it 
 - **A grouping selector** never fires, and on a table with `collapsedGroupsByDefault()` the rows the server painted collapsed can never expand ([grouping.md](grouping.md#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open)).
 
 No test in this repo can enforce the app's `controllers.json`.
+
+### The catalogue is Filament's table lang file under the `sylament-tables` domain
+
+`translations/sylament-tables+intl-icu.en.yaml` holds the texts the package renders under Filament's `filament-tables::table.*` key paths (`table.empty.heading`), nested as Filament's lang array nests them, with `:name` placeholders as ICU `{name}`.
+FrameworkBundle registers the directory with no wiring, and `validators.en.yaml` ships the one tables-own validator message, `The value is invalid.`.
+The package requires `symfony/translation` and `symfony/translation-contracts`, and reads two keys of its dependencies: `components.select.boolean.*` of `sylament-forms` for the ternary filter's arms and `components/copyable.*` of `sylament` for a colour swatch's copy texts.
+
+Where the shipped English is not Filament's `en` text, the key stays and our text wins:
+`table.fields.bulk_select_page.label`, `bulk_select_record.label` and `bulk_select_group.label` say *record* where Filament says *item*, `table.loading` is `Loading` against `Loading...`, `table.column_manager.actions.reorder.label` is `Reorder {column}` against `Reorder column`, and `table.columns.actions.label` is always the plural `Actions`, against Filament's `Action|Actions` by the count of record actions, which the template still passes as `{count}` so a locale importing the plural arm resolves.
+Text Filament composes in code takes a port-added key beside its own: `table.fields.search.term_indicator` (*Search: {term}*), `table.fields.search.column_indicator` (*{column}: {term}*) and `table.fields.search.column_label` (*Search {column}*), `table.filters.state_indicator` (*{indicator}: {state}*) and `table.filters.select.labels_joined` (*{labels} & {last}*), `table.grouping.label_prefix` (*{label}: *), `table.selection_indicator.actions.select_all.label_bare` and `table.columns.color.copy_label`.
+`table.fields.search.indicator` is therefore not shipped, since the chips read the composed keys.
 
 ## Divergences
 

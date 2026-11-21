@@ -7,6 +7,7 @@ namespace Sylament\Tables\Filters;
 use Closure;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Forms\Components\Select;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\blank;
@@ -21,8 +22,8 @@ class TernaryFilter extends SelectFilter
     {
         parent::setUp();
 
-        $this->trueLabel('Yes');
-        $this->falseLabel('No');
+        $this->trueLabel(new TranslatableMessage('components.select.boolean.true', domain: 'sylament-forms'));
+        $this->falseLabel(new TranslatableMessage('components.select.boolean.false', domain: 'sylament-forms'));
         $this->placeholder('-');
 
         $this->boolean();
@@ -34,13 +35,7 @@ class TernaryFilter extends SelectFilter
 
             $stateLabel = $state['value'] ? $this->getTrueLabel() : $this->getFalseLabel();
 
-            $indicator = $this->getIndicator();
-
-            if (!$indicator instanceof Indicator) {
-                $indicator = Indicator::make("{$indicator}: {$stateLabel}");
-            }
-
-            return [$indicator];
+            return [$this->makeStateIndicator($this->getIndicator(), (string) $stateLabel)];
         });
     }
 

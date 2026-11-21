@@ -9,6 +9,7 @@ use Closure;
 use InvalidArgumentException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
@@ -122,7 +123,9 @@ trait HasEmptyState
 
     public function getEmptyStateHeading(): string|Markup
     {
-        return $this->translateText($this->evaluate($this->emptyStateHeading)) ?? sprintf('No %s', $this->getPluralRecordLabel());
+        $heading = $this->evaluate($this->emptyStateHeading) ?? new TranslatableMessage('table.empty.heading', ['model' => $this->getPluralRecordLabel()], 'sylament-tables');
+
+        return $heading instanceof TranslatableInterface ? (string) $this->translateText($heading) : $heading;
     }
 
     public function getEmptyStateDescription(): string|Markup|null

@@ -59,10 +59,11 @@ The change that adds the call verifies it in the demo.
 ### The actions header cell is always the unlabelled arm
 
 Filament's header renders one of two `<th>`s for the actions column: a normal `fi-ta-header-cell` carrying `$recordActionsColumnLabel` when the table set one, and otherwise an empty `fi-ta-actions-header-cell fi-ta-empty-header-cell` whose `aria-label` is the pluralised *"Actions"* translation.
-Sylament's partial renders only the second, with the English literal `aria-label="Actions"`.
+Sylament's partial renders only the second, whose `aria-label` is the `table.columns.actions.label` message.
+Its English is always the plural *Actions*, where Filament's `Action|Actions` follows the count of flat record actions; the template passes that count as `{count}`, so a locale importing the plural arm resolves.
 
-Both halves of the first arm are missing rather than declined: `recordActionsColumnLabel()` is unported, so there is no label to read; the pluralisation `trans_choice(..., $flatRecordActionsCount)` needs the [i18n layer](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) nothing in the port has, the same reason every fixed string is a literal.
-The setter and the `{% if %}` that reads it land together, at which point the literal becomes the fallback of the second arm rather than the only arm.
+The first arm is missing rather than declined: `recordActionsColumnLabel()` is unported, so there is no label to read.
+The setter and the `{% if %}` that reads it land together, at which point the message becomes the fallback of the second arm rather than the only arm.
 
 `recordActionsAlignment()` is a CSS question, not a template one: Filament expresses it as `fi-align-*` modifier classes on `fi-ta-actions`, and the [ported stylesheet block](../../../packages/tables/assets/src/styles/components/table.css) deliberately stops at the base rule; the alignment and wrapping arms come back with the setter that can emit them.
 
@@ -169,10 +170,11 @@ The loading indicator inside the first child goes with [the loading affordances]
 
 Both links are `<twig:SylamentSupport:Link tag="button">`, which is exactly what `<x-filament::link tag="button">` is on the other side, so `primary` and `danger` come from the colour policy rather than a banner-local rule, and [`selection.css`](../../../packages/tables/assets/src/styles/components/selection.css) carries no link styling at all.
 "Select all" ships a server `hidden` and is revealed by the controller only where a ceiling is known and not everything is selected; "Deselect all" is visible whenever the banner is.
-The count is a controller-filled empty `<span>` seeded from two literal value strings (`1 record selected`, `:count records selected`) where Filament runs a `|`-separated Laravel plural string through its own `window.pluralize` global, which the port does not ship; i18n takes both literals when it lands.
-The controller formats the number it interpolates with `Intl.NumberFormat`, so it reads _"1,200 records selected"_, while the ceiling in the server-rendered _"Select all N"_ label is the bare integer.
-The two are deliberately not aligned: `Intl.NumberFormat()` groups by the **browser's** locale and Twig's `number_format` by the template's, so matching them would trade a visible inconsistency for a locale-dependent one.
-It resolves with i18n, on the same pass that takes the two count literals.
+The count is a controller-filled empty `<span>` seeded from a `countMessages` value, where Filament runs a `|`-separated Laravel plural string through its own `window.pluralize` global, which the port does not ship.
+The value is the `table.selection_indicator.selected_count` message rendered once per plural category the server knows, `{"one": "__COUNT__ record selected", "other": "__COUNT__ records selected"}` for `en`: the message is `{count, plural, one {{shown} record selected} other {{shown} records selected}}`, rendered with `count` 1 and 2 and `shown` the `__COUNT__` token.
+The controller picks the category `Intl.PluralRules` answers for the document's language, falling back to `other`, and replaces the token with the number it formats with `Intl.NumberFormat`, so it reads _"1,200 records selected"_ in a browser that groups so.
+The ceiling in the server-rendered _"Select all {count}"_ label is formatted by the message's ICU number format in the request locale, so the two can group differently when the browser's locale is not the application's: `Intl.NumberFormat()` takes the **browser's** locale, and aligning them would trade a visible inconsistency for a locale-dependent one.
+A locale with a plural category beyond `one` and `other` needs its map extended on the server.
 
 The banner is server-gated on `isSelectionEnabled()` and client-gated on the count, as vendor's is, and it renders on an overflow (empty) page too: a selection outlives a page that lost its rows.
 Of vendor's two extra server gates one is ported (the banner does not render while a deferred table's window is still open), while `maxSelectableRecords(1)` stays unported.
@@ -191,7 +193,8 @@ A record the table refuses renders the cell **empty** rather than a disabled inp
 The `<input>` is inline in the template with no support Twig component behind it, again Filament's shape, and its skin is support's code-less `.sy-checkbox` class, beside the `sy-ta-page-checkbox` / `sy-ta-record-checkbox` hooks.
 The skin in support is what gives the page checkbox its `:indeterminate` arm, which forms' copy never carried because nothing in forms can set that property ([forms' styles.md](../forms/styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too)).
 
-The two ARIA labels are Filament's own strings with one word translated: "Select/deselect all records on this page for bulk actions." and "Select/deselect record :key for bulk actions." against vendor's "Select/deselect all items for bulk actions." and "Select/deselect item :key for bulk actions."
+The two ARIA labels are Filament's own strings with one word translated: "Select/deselect all records on this page for bulk actions." and "Select/deselect record {key} for bulk actions." against vendor's "Select/deselect all items for bulk actions." and "Select/deselect item :key for bulk actions."
+They are the `table.fields.bulk_select_page.label` and `bulk_select_record.label` messages, which keep Filament's keys and our English; the group checkbox's `bulk_select_group.label` words the group as *every record in group {title}* where vendor says *group :title*.
 *Record* is this toolkit's word for what vendor's translation calls an item, and the page checkbox says which rows it covers because our header cell is the only place that label appears.
 
 ### The visible action map is a `Table` method, and is not short-circuited

@@ -40,7 +40,7 @@ Naming a colour the page does not show would be worse than staying silent, which
 
 A **copyable** swatch keys only the `style` off the sanitizer.
 Its `role` is `button` for every value, because the copy control exists whatever the colour is, so the name cannot be dropped with the paint: a nameless `role="button"` carrying the clipboard controller is a focusable, operable control with no accessible name.
-The unsanitizable arm therefore falls back to the colour-free `Copy colour`, the verb without a value the page shows.
+The unsanitizable arm therefore falls back to the colour-free `Copy colour`, the verb without a value the page shows: the port-added `table.columns.color.copy_label` message, since Filament's fallback names the column and `components/copyable.label` (*Copy {label}*) needs a value.
 
 The swatch still renders.
 It is not dropped from the list, so a row of five values always shows five squares and a bad one reads as a gap in the row rather than as a shorter row.

@@ -23,8 +23,9 @@ owns:
 
 ### The empty-state texts read the record labels
 
-`getEmptyStateHeading()` falls back to `"No {plural record label}"`, and `Table::setUp()` stores a default `emptyStateDescription()` closure answering *"Create a `<record label>` to get started."* when the table carries an action named `create`, and `null` otherwise.
-Both are Filament's interpolations, emitted as [English literals](#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships).
+`getEmptyStateHeading()` falls back to the `table.empty.heading` message (*"No {model}"*) over the plural record label, and `Table::setUp()` stores a default `emptyStateDescription()` closure answering the `table.empty.description` message (*"Create a {model} to get started."*) over the record label when the table carries an action named `create`, and `null` otherwise.
+Both are Filament's keys and English in the `sylament-tables` catalogue, and both interpolate what the table's own getters answer, so a `recordLabel()` given as a message is translated before it names the records.
+The heading and the description given as a message are translated by their getters, as are the [header texts](table.md#the-header-and-the-record-labels-may-be-messages-translated-in-the-getter).
 
 The heading says `No records` only where the table has no record class to read — a `records()` table, or one configured with neither; a `query()` table over `Song` says `No songs`, through [`plural()`](../support/helpers.md).
 The description is a *stored closure* rather than a getter fallback, which is what makes `emptyStateDescription(null)` clear it: the setter overwrites the closure, so a caller can turn the default off, as in Filament.
@@ -40,15 +41,6 @@ Vendor feeds the computed tag to nine call sites; this partial feeds two, the em
 Of the seven it does not, one is the grid layout's group heading, which arrives with the layout columns; one is the [column manager](column-manager.md), whose panel takes a literal `headingLevel` prop; and five are the filters panel in its five layout positions, which takes a literal `headingLevel` of 3 ([a recorded rename](../renames.md#a-tag-name-template-prop-narrows-to-what-it-selects)) because it is [fixed chrome](has-filters.md#the-panel-takes-the-apply-actions-visibility-as-a-prop-and-its-groups-stay-keyed) rather than part of the table's outline.
 
 ## Divergences
-
-### The copy is English and hardcoded, because no i18n layer ships
-
-Filament's `getEmptyStateHeading()` falls back to `__('filament-tables::table.empty.heading', ['model' => $this->getPluralModelLabel()])`, a translated string interpolating the table's plural model label, and its default description is the same kind of lookup.
-Sylament interpolates the same labels ([semantics](#the-empty-state-texts-read-the-record-labels)) in PHP and emits English directly.
-
-The translation half is not a table concern: the port has [no i18n layer](../../internals/i18n.md), no bundle requires `symfony/translation` and no message catalogue ships, so there is nothing for a translation key to resolve against.
-Every fixed string the toolkit renders sits in the same position, which is why the other packages' copy rows cite this entry.
-It reverses in the toolkit-wide i18n pass, which turns each literal into a catalogue lookup without changing what it interpolates.
 
 ### The empty state icon getter returns null, and the fallback lives in the template
 

@@ -10,4 +10,8 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(TablePageController::class)
         ->methods(['GET'])
         ->requirements(['component' => 'Tables:\w+']);
+
+    $routes->add('sylament_tests_tables_localised_live', '/{_locale}/_components/{_live_component}/{_live_action}')
+        ->defaults(['_locale' => 'en', '_live_action' => 'get'])
+        ->requirements(['_locale' => '[a-z]{2}']);
 };

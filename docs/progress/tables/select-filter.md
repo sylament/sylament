@@ -22,7 +22,7 @@ Everything [`BaseFilter`](base-filter.md) carries is tracked there.
 | --- | --- | --- | --- | --- |
 | [`options()` / `getOptions()`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Concerns\HasOptions`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | done | — | [diverges](#options-takes-an-array-or-a-closure-and-nothing-else) |
 | `options()` given an enum class-string | [`Concerns\HasOptions`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | todo | — | [detail](#the-filters-options-reads-no-enum-class-string-where-forms-options-does) |
-| [`placeholder()` / `getPlaceholder()`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Concerns\HasPlaceholder`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | — | [diverges](#the-placeholder-copy-is-hardcoded-english) |
+| [`placeholder()` / `getPlaceholder()`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Concerns\HasPlaceholder`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | — | [semantics](#the-options-and-the-placeholder-may-be-messages) |
 | [`multiple()` / `isMultiple()`](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::multiple()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | done | — | — |
 | [`attribute()` / `getAttribute()`](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::attribute()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | done | — | [semantics](#a-dotted-attribute-is-resolved-not-joined) |
 | `column()` / `getColumn()` (deprecated; `attribute()` replaces them) | [`SelectFilter::column()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | skipped | — | [diverges](#the-deprecated-column-alias-is-not-ported) |
@@ -102,6 +102,9 @@ Filament behaves identically, and the count is what the trigger badge shows.
 
 `options()` takes a message for each option label and for each label inside a group, `placeholder()` takes a message, and `getOptions()` translates each one, so the chip that reads a label back by its posted value gets text.
 A group's label is its array key, which cannot be a message.
+`setUp()` seeds the placeholder with a closure choosing `table.filters.multi_select.placeholder` or `table.filters.select.placeholder` by `isMultiple()` when it is read, since `multiple()` is called after `setUp()`; both say *All*, so the rendered field matches Filament's copy, and the two keys stay separately overridable.
+The chip joins several selected labels as `{labels} & {last}` through the port-added `table.filters.select.labels_joined` message, and words the chip as `<indicator>: <state>` through `table.filters.state_indicator`, where Filament joins both in code.
+A `Markup` indicator reads as its text inside that message.
 
 ## Divergences
 
@@ -110,13 +113,6 @@ A group's label is its array key, which cannot be a message.
 Filament's `HasOptions::options()` also accepts an `Arrayable`, calling `toArray()` on it inside `getOptions()`.
 There is no Laravel `Arrayable` here, so the filter's trait takes `array|Closure|null`; forms' `HasOptions` drops the `Arrayable` arm too.
 The enum class-string arm is a [gap](#the-filters-options-reads-no-enum-class-string-where-forms-options-does) rather than part of this divergence.
-
-### The placeholder copy is hardcoded English
-
-`setUp()` seeds the literal `'All'` where Filament branches on `isMultiple()` to read `__('filament-tables::table.filters.multi_select.placeholder')` or `__('filament-tables::table.filters.select.placeholder')`.
-Both keys carry `'All'` in that catalogue ([`lang/en/table.php`](../../../vendor/filament/tables/resources/lang/en/table.php) `:193` and `:198`), so the branch collapses to one literal and the rendered field matches Filament's copy verbatim — a filter's placeholder says *"All"*, not the generic form-select *"Select an option"* our own [`Select`](../forms/select.md) seeds.
-What is left is the mechanism rather than the copy — the same [hardcoded-copy gap](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state, the search chip and the [ternary arm labels](ternary-filter.md#the-arm-labels-are-hardcoded-english) carry, lifting when toolkit-wide i18n ships.
-The branch returns with it, since the two keys stay separately overridable even though their English values agree.
 
 ### The deprecated `column()` alias is not ported
 

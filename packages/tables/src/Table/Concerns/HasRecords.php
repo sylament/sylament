@@ -8,6 +8,7 @@ use Closure;
 use Stringable;
 use Sylament\Support\Pagination\Paginator;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\filled;
@@ -83,7 +84,7 @@ trait HasRecords
 
         $class = $this->getRecordClass();
 
-        return $class === null ? 'record' : get_record_label($class);
+        return $class === null ? (string) $this->translateText(new TranslatableMessage('table.default_model_label', domain: 'sylament-tables')) : get_record_label($class);
     }
 
     public function getPluralRecordLabel(): string

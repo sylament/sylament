@@ -7,6 +7,7 @@ use Sylament\Tests\Fixtures\Entity\Garden;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Seedling;
+use Sylament\Tests\Fixtures\Tables\LocalisedSearchableLarderTable;
 use Sylament\Tests\Fixtures\Tables\SearchableLarderTable;
 use Sylament\Tests\Fixtures\Tables\SeedlingGardenTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -275,5 +276,13 @@ describe('the per-column terms', function (): void {
 
         expect($tester->render()->crawler()->filter(Selectors::SELECTED_RECORD))->toHaveCount(1)
             ->and($tester->render()->crawler()->filter(Selectors::columnSearch('name')))->toHaveCount(1);
+    });
+});
+
+describe('the search indicator', function (): void {
+    it('shows a translated search indicator', function (): void {
+        $tester = $this->createLiveComponent(LocalisedSearchableLarderTable::class)->setRouteLocale('sk')->searchTable('lamp');
+
+        expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $label): string => $label->text()))->toBe(['Hľadať: lamp']);
     });
 });

@@ -1,0 +1,5 @@
+table:
+    fields:
+        search:
+            column_indicator: '{column}: {term}'
+            term_indicator: 'Hľadať: {term}'

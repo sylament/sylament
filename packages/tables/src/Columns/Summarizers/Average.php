@@ -7,6 +7,7 @@ namespace Sylament\Tables\Columns\Summarizers;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\Summarizers\Concerns\HasSelectAlias;
 use Sylament\Tables\Query\SummaryQuery;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class Average extends Summarizer implements Contracts\HasSelectAlias
 {
@@ -32,8 +33,8 @@ class Average extends Summarizer implements Contracts\HasSelectAlias
         return [$this->getSelectAlias() => "AVG({$column})"];
     }
 
-    public function getDefaultLabel(): ?string
+    public function getDefaultLabel(): TranslatableMessage
     {
-        return 'Average';
+        return new TranslatableMessage('table.summary.summarizers.average.label', domain: 'sylament-tables');
     }
 }

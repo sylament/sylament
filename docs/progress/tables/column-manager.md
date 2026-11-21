@@ -270,6 +270,7 @@ In the **modal** layout the partial renders the panel's items alone (`ColumnMana
 This is the filters modal's shape one component over, and deliberately so: a modal already has a footer, and a heading-row Reset inside a dialog whose own footer is empty reads as a mistake.
 Vendor reaches the same place by a different route (its modal *is* the trigger action's, with the footer assembled through `extraModalFooterActions()`), so upstream the setting is equally inert under the modal layout.
 The divergence is in the mechanism, not the outcome.
+The Reset button of the panel and of the modal footer both read `table.column_manager.actions.reset.label`, and the filters panel's pair read `table.filters.actions.reset.label`, which are two Filament keys of one English word.
 
 ### The item-list block sits at top level, where vendor's nests inside the panel
 

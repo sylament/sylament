@@ -170,6 +170,15 @@ describe('header cells', function (): void {
 });
 
 describe('selection controller', function (): void {
+    it('renders the selection count map for the controller', function (): void {
+        $this->seed(new Product('Lamp'));
+
+        $controller = $this->createLiveComponent(SelectionReadingProductTable::class)->render()->crawler()->filter(Selectors::TABLE_CONTROLLER);
+
+        expect(json_decode((string) $controller->attr('data-sylament--tables--table-count-messages-value'), associative: true))
+            ->toBe(['one' => '__COUNT__ record selected', 'other' => '__COUNT__ records selected']);
+    });
+
     it("mounts the table controller on a selectable table with its values, its banner hidden until a record is selected and each record's checkbox ticking on change", function (): void {
         $this->seed($lamp = new Product('Lamp'));
 
@@ -178,7 +187,7 @@ describe('selection controller', function (): void {
         $selected = $tester->selectTableRecords([$lamp])->render()->crawler();
         $checkbox = $unselected->filter(Selectors::recordCheckbox((string) $lamp->id));
 
-        expect($unselected->filter(Selectors::TABLE_CONTROLLER . Selectors::tableValue('can-track', 'true') . Selectors::tableValue('page-only', 'false') . Selectors::tableValue('all-selectable-count', '1') . Selectors::tableValue('count-one', '1 record selected') . Selectors::tableValue('count-many', ':count records selected')))->toHaveCount(1)
+        expect($unselected->filter(Selectors::TABLE_CONTROLLER . Selectors::tableValue('can-track', 'true') . Selectors::tableValue('page-only', 'false') . Selectors::tableValue('all-selectable-count', '1')))->toHaveCount(1)
             ->and($unselected->filter(Selectors::SELECTION_BANNER . '[hidden]'))->toHaveCount(1)
             ->and($unselected->filter(Selectors::tableTarget('count')))->toHaveCount(1)
             ->and($unselected->filter(Selectors::tableTarget('selectAll')))->toHaveCount(1)

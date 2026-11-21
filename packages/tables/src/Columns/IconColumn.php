@@ -15,6 +15,7 @@ use Sylament\Support\Icons\IconManager;
 use Sylament\Tables\Columns\Concerns\HasColor;
 use Sylament\Tables\Columns\Concerns\HasIcon;
 use Sylament\Tables\Twig\TablesIconAlias;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Traversable;
@@ -316,7 +317,7 @@ class IconColumn extends Column
     {
         $alternative = match (true) {
             filled($tooltip) => $tooltip,
-            $this->isBoolean() => $state ? 'Yes' : 'No',
+            $this->isBoolean() => $this->translateText($state ? new TranslatableMessage('table.columns.icon.boolean.true', domain: 'sylament-tables') : new TranslatableMessage('table.columns.icon.boolean.false', domain: 'sylament-tables')),
             $state instanceof HasLabel => $this->translateText($state->getLabel()),
             $state instanceof TranslatableInterface => $this->translateText($state),
             $state instanceof BackedEnum => $state->value,

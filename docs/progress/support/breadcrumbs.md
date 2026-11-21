@@ -13,7 +13,8 @@ owns:
 It renders one `<nav>` holding an `<ol>` of crumbs, each crumb either a link or a plain label, separated by a direction-aware chevron pair.
 It takes a single `breadcrumbs` prop, a map whose key is the URL and whose value is the label, and the key's kind, not its content, decides whether the crumb links.
 Filament's breadcrumbs Blade has no PHP class behind it, so the port is the view and its stylesheet.
-Panels' [`Header`](../panels/layout-templates.md) renders it, filled from `Page::getBreadcrumbs()`.
+Panels' [`Header`](../panels/custom-pages.md) renders it, filled from `Page::getBreadcrumbs()`.
+A caller hands it plain text: a page override that wants a catalogue text translates it itself ([page.md](../panels/page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it)).
 
 ## Surface
 
@@ -40,7 +41,7 @@ Twig has no `is_int` test that survives the key coercion, because `{% for url, l
 **The double backslash is load-bearing, and getting it wrong fails no gate.**
 `Twig\Lexer::stripcslashes()` processes escape sequences inside single-quoted strings too, so `'/^\\d+$/'` reaches the regex engine as `/^\d+$/`.
 Written with one backslash, the lexer drops the backslash and raises only a deprecation notice, so the pattern reaches the engine as `/^d+$/`, matching the literal letter `d`: every crumb takes the link arm and the last crumb becomes an anchor to its own label text.
-The single-backslash form compiles and renders, the suites do not fail on deprecations, and the only guard is the panels DOM assertion that an int-keyed crumb renders a `<span>`.
+The single-backslash form compiles and renders and the suites do not fail on deprecations, so the guards are support's `BreadcrumbsTest`, which renders a `'12'` key as an unlinked crumb, and panels' `PageTest`, which asserts that an int-keyed crumb renders a `<span>`.
 
 ## Divergences
 

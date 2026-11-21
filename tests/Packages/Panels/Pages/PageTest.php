@@ -41,7 +41,7 @@ describe('title and heading', function (): void {
 });
 
 describe('breadcrumbs', function (): void {
-    it('translates a breadcrumb message, a linked crumb and a plain one', function (): void {
+    it("renders the crumbs an override translates through the page's translator, a linked one and a plain one", function (): void {
         $page = $this->visit('/translated/translated-desk-page');
 
         expect($page->filter(SupportSelectors::LINKED_BREADCRUMB)->each(fn (Crawler $crumb): array => [$crumb->text(), $crumb->attr('href')]))->toBe([['Home (translated)', '/translated/translated-desk-page']])

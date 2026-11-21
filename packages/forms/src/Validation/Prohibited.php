@@ -28,6 +28,7 @@ final class Prohibited extends Constraint
     ) {
         parent::__construct(null, $groups, $payload);
 
+        // The default is a validators-domain id, translated by validators.en.xlf.
         $this->message = $message ?? ($others === null ? $this->message : 'This value cannot be combined with {{ others }}.');
     }
 }

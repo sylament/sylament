@@ -159,6 +159,11 @@ describe('render', function (): void {
             ->toMatchArray(['maxFilesMessage' => 'The Photo field must not have more than 1 item.']);
     });
 
+    it('leaves a plain label untouched in the file limit message', function (): void {
+        expect(FileUploadFixtures::values($this->renderSchemaComponent(FileUpload::make('photo')->label('A <b')->maxFiles(1)), 'data.photo'))
+            ->toMatchArray(['maxFilesMessage' => 'The A <b field must not have more than 1 item.']);
+    });
+
     it('carries the link colour policy on the pond container, whose label action reads its text slots', function (): void {
         expect($this->renderSchemaComponent(FileUpload::make('document')))
             ->toContainElement(Selectors::FILE_UPLOAD_POND . SupportSelectors::COLORED . SupportSelectors::color('primary') . SupportSelectors::textShades(700, 400) . '[data-live-ignore]');

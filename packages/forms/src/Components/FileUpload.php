@@ -654,7 +654,7 @@ class FileUpload extends BaseFileUpload
             ),
             'minSize' => filled($minSize = $this->getMinSize()) ? $minSize . 'KB' : null,
             'maxFilesMessage' => filled($maxFiles = $this->getMaxFiles())
-                ? new TranslatableMessage('components.file_upload.max_files_message', ['label' => strip_tags((string) $this->getLabel()), 'count' => $maxFiles], 'sylament-forms')->trans($this->getTranslator())
+                ? new TranslatableMessage('components.file_upload.max_files_message', ['label' => ($label = $this->getLabel()) instanceof Markup ? strip_tags((string) $label) : (string) $label, 'count' => $maxFiles], 'sylament-forms')->trans($this->getTranslator())
                 : null,
         ];
     }

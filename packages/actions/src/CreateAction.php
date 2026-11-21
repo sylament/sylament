@@ -13,6 +13,7 @@ use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
+use Symfony\Component\Translation\TranslatableMessage;
 
 use function Sylament\Support\only;
 
@@ -41,15 +42,19 @@ class CreateAction extends Action
     {
         parent::setUp();
 
-        $this->label(fn (): string => ($label = $this->getRecordLabel()) === null ? 'Create' : "New {$label}");
+        $this->label(fn (): TranslatableMessage => ($label = $this->getRecordLabel()) === null
+            ? new TranslatableMessage('create.single.label_bare', [], 'sylament-actions')
+            : new TranslatableMessage('create.single.label', ['label' => $label], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($label = $this->getTitleCaseRecordLabel()) === null ? 'Create' : "Create {$label}");
+        $this->modalHeading(fn (): TranslatableMessage => ($label = $this->getTitleCaseRecordLabel()) === null
+            ? new TranslatableMessage('create.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('create.single.modal.heading', ['label' => $label], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Create');
+        $this->modalSubmitActionLabel(new TranslatableMessage('create.single.modal.actions.create.label', [], 'sylament-actions'));
 
         $this->extraModalFooterActions(fn (): array => $this->canCreateAnother() ? [$this->getCreateAnotherAction()] : []);
 
-        $this->successNotificationTitle('Created');
+        $this->successNotificationTitle(new TranslatableMessage('create.single.notifications.created.title', [], 'sylament-actions'));
 
         $this->groupedIcon('heroicons:plus-20-solid');
 
@@ -115,7 +120,7 @@ class CreateAction extends Action
     public function getCreateAnotherAction(): Action
     {
         $action = $this->makeModalSubmitAction('createAnother', arguments: ['another' => true])
-            ->label('Create & create another');
+            ->label(new TranslatableMessage('create.single.modal.actions.create_another.label', [], 'sylament-actions'));
 
         return $this->evaluate($this->modifyCreateAnotherActionUsing, ['action' => $action]) ?? $action;
     }

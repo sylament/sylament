@@ -27,7 +27,7 @@ owns:
 | [Page-wide dispatch controller](../../../packages/actions/assets/src/controllers/dispatch_controller.ts) | — | done | — | [diverges](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it) |
 | [The `@sylament/actions` AssetMapper prepend](../../../packages/actions/src/SylamentActionsBundle.php) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) (`packageBooted()`) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend) |
 | Exports/Imports provider wiring (`hasMigrations()`, `hasRoutes('web')`, the `filament.actions` middleware group, `hasCommands()`) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) · [`routes/web.php`](../../../vendor/filament/actions/routes/web.php) | blocked | the Exports/Imports subsystem | [detail](#the-exportsimports-provider-wiring-waits-on-the-exportsimports-subsystem) |
-| Translations (`hasTranslations()`) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#translations-are-unported-independently-of-exportsimports) |
+| [Translations (`hasTranslations()`)](../../../packages/actions/translations) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | done | — | [diverges](#the-catalogue-loads-from-the-translations-directory-with-no-wiring) |
 | `Testable::mixin(new TestsActions)` | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) (`packageBooted()`) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | [The tester's `ExceptionRecorder`, registered only in test mode](../../../packages/actions/src/SylamentActionsBundle.php) (`configureTesting()`) | — | done | — | [testable.md](testable.md#the-recorder-exists-only-when-frameworktest-is-on) |
 
@@ -49,12 +49,6 @@ None of this can be ported before the subsystem itself: the migrations describe 
 All four are **blocked** on that subsystem rather than skipped, because background export and import is a wanted parity feature.
 Filament runs those jobs on Laravel's queue; their Symfony counterpart is Messenger.
 
-### Translations are unported, independently of Exports/Imports
-
-`->hasTranslations()` registers Filament's `resources/lang` namespace: labels for the confirmation modal, notification titles, and generated import and export messages.
-No translation catalogue exists in the port.
-It does not wait on the Exports/Imports subsystem, because the confirmation-modal strings apply to the ported `Action` and [`CanRequireConfirmation`](can-open-modal.md).
-
 ## Semantics
 
 ### Every action class is a service, so its `#[Required]` setters run
@@ -74,6 +68,13 @@ The bundle registers no view namespace: `AbstractBundle::getPath()` returns `pac
 That is why [`Action`](../../../packages/actions/src/Action.php) can default `$defaultTemplate` to `self::BUTTON_TEMPLATE` (`'@SylamentActions/partials/Action/Button.html.twig'`) with no explicit Twig path config.
 Same divergence as [forms-bundle.md](../forms/forms-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) and [schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call).
 A bundle case pins it: `@SylamentActions` maps to `packages/actions/templates` with no Twig path configured, and an action renders its trigger partial.
+
+### The catalogue loads from the `translations/` directory with no wiring
+
+`->hasTranslations()` registers Filament's `resources/lang` namespace.
+The port ships one ICU catalogue, [`sylament-actions+intl-icu.en.xlf`](../../../packages/actions/translations/sylament-actions+intl-icu.en.xlf), in the `sylament-actions` domain, and FrameworkBundle registers a bundle's `translations/` directory itself, so the bundle class does nothing.
+It carries the keys of Filament's `modal`, `create`, `edit`, `view`, `delete`, `detach`, `dissociate`, `replicate`, `attach`, `associate` and `group` catalogues that the ported classes read, the port-added keys beside them, and the `table.actions.open_bulk_actions.label` key re-homed from the tables namespace.
+The keys of the unported Export, Import, ForceDelete, Restore and rate-limiting surface wait for their classes, so the catalogue never holds a key nothing reads.
 
 ### The bundle registers a Twig component service, which Filament has no counterpart for
 

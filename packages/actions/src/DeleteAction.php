@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class DeleteAction extends Action
 {
@@ -20,11 +21,13 @@ class DeleteAction extends Action
     {
         parent::setUp();
 
-        $this->label('Delete');
+        $this->label(new TranslatableMessage('delete.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'Delete' : "Delete {$title}");
+        $this->modalHeading(fn (): TranslatableMessage => ($title = $this->getRecordTitle()) === null
+            ? new TranslatableMessage('delete.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('delete.single.modal.heading', ['label' => $title], 'sylament-actions'));
 
-        $this->successNotificationTitle('Deleted');
+        $this->successNotificationTitle(new TranslatableMessage('delete.single.notifications.deleted.title', [], 'sylament-actions'));
 
         $this->defaultColor('danger');
 

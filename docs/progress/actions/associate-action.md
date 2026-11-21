@@ -22,8 +22,8 @@ The class is pinned end to end on a relation table.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/AssociateAction.php) (`'associate'`) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | — |
-| [`setUp()` chrome](../../../packages/actions/src/AssociateAction.php) (label, submit label, `modalWidth('lg')`, success title, `defaultColor('gray')`) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
-| [`modalHeading()`](../../../packages/actions/src/AssociateAction.php) (`"Associate {title-case record label}"`) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` chrome](../../../packages/actions/src/AssociateAction.php) (label, submit label, `modalWidth('lg')`, success title, `defaultColor('gray')`) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
+| [`modalHeading()`](../../../packages/actions/src/AssociateAction.php) (`"Associate {title-case record label}"`) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`extraModalFooterActions()`](../../../packages/actions/src/AssociateAction.php) (the `associateAnother` submit) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [attach-action.md](attach-action.md#the-another-arm-refills-the-schema-and-halts) |
 | [`schema()`](../../../packages/actions/src/AssociateAction.php) (the record select alone) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [attach-action.md](attach-action.md#the-record-select-is-a-forms-select-which-is-why-actions-requires-forms) |
 | [The `action()` body](../../../packages/actions/src/AssociateAction.php) (resolve, bind, `process()` per record, the "another" arm) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [attach-action.md](attach-action.md#the-submitted-key-is-re-resolved-through-the-candidate-query) · [diverges](#the-vendors-raw-ismultiple-read-is-not-copied) |
@@ -64,8 +64,7 @@ Associating is a move, not only an adoption of orphans.
 `MorphMany`'s `whereNotMorphedTo()` branch, `HasOneOrManyThrough` and the relation-count-hash self-join are Eloquent mechanics with no Doctrine referent: Doctrine's ORM maps no polymorphic association, and a "through" relation is a join the caller writes.
 Doctrine has no pivot model either, so the pivot columns and accessors Filament's attach family carries have no counterpart; a join table with attributes is an entity of its own here.
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-Filament resolves every label through `__('filament-actions::associate.…')`.
-The port hardcodes the six `en` strings: `Associate`, `Associate :label`, `Record`, `Associate`, `Associate & associate another` and `Associated`, the same call every other prebuilt action's strings got.
-When translation lands they become the same keys.
+`associate.single.label`, `associate.single.modal.heading` (`Associate {label}`), `associate.single.modal.actions.associate.label`, `associate.single.modal.actions.associate_another.label`, `associate.single.notifications.associated.title` and the record select's `associate.single.modal.fields.record_id.label` (`Record`) are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
+The heading falls back to the port-added `associate.single.modal.heading_bare` when no label is known.

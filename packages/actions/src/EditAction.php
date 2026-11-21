@@ -9,6 +9,7 @@ use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\CanMutateRecordData;
 use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Schemas\Schema;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class EditAction extends Action
 {
@@ -25,13 +26,15 @@ class EditAction extends Action
     {
         parent::setUp();
 
-        $this->label('Edit');
+        $this->label(new TranslatableMessage('edit.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'Edit' : "Edit {$title}");
+        $this->modalHeading(fn (): TranslatableMessage => ($title = $this->getRecordTitle()) === null
+            ? new TranslatableMessage('edit.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('edit.single.modal.heading', ['label' => $title], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Save changes');
+        $this->modalSubmitActionLabel(new TranslatableMessage('edit.single.modal.actions.save.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Saved');
+        $this->successNotificationTitle(new TranslatableMessage('edit.single.notifications.saved.title', [], 'sylament-actions'));
 
         $this->defaultColor('primary');
 

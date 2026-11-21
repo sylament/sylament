@@ -33,6 +33,7 @@ use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Enums\Size;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Twig\ComponentAttributeBag;
+use Symfony\Component\Translation\TranslatableMessage;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -366,7 +367,7 @@ class ActionGroup extends ViewComponent
 
     public function getLabel(): string|Markup|null
     {
-        $label = $this->evaluate($this->label) ?? 'Actions';
+        $label = $this->evaluate($this->label) ?? new TranslatableMessage('group.trigger.label', [], 'sylament-actions');
 
         if (is_string($label) && $this->shouldTranslateLabel) {
             return $this->getTranslator()->trans($label);

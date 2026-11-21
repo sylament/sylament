@@ -270,7 +270,7 @@ The one trigger where the gray branch *is* reachable is `Grouped`, which passes 
 `label()` takes `string|Markup|TranslatableInterface|Closure|null`, and `getLabel()` evaluates it and then translates it through the action's translator, so a template or a PHP reader always receives a string or a `Markup`.
 A plain string stays a literal, as in Filament, unless `translateLabel()` is on: then a string label, the [name-derived one](#the-name-derived-label-is-the-names-segment-before-the-first-dot) included, is handed to the translator as a key in the default `messages` domain, Filament's `__($label)`.
 A message already names its own domain and is translated either way.
-[`ActionGroup`](action-group.md#getlabel-falls-back-to-a-plain-string-not-a-translated-label) re-declares `getLabel()` and translates the same way.
+[`ActionGroup`](action-group.md#getlabel-falls-back-to-a-catalogue-message-not-a-literal) re-declares `getLabel()` and translates the same way.
 An action built with `new` and handed a message or a `translateLabel()` key throws a `LogicException` naming its class, because it has no translator.
 
 ### The name-derived label is the name's segment before the first dot

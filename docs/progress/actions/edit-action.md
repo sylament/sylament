@@ -21,12 +21,12 @@ The chrome, the rendered link to the page its host routes it to and the modal ar
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/EditAction.php) (`'edit'`) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | — |
-| [`setUp()` label, success-notification title, `defaultColor('primary')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` label, success-notification title, `defaultColor('primary')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`icon('heroicons:pencil-square-20-solid')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | [URL mode](../../../packages/actions/src/Concerns/CanOpenUrl.php) (the host-hook fallthrough) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [can-open-url.md](can-open-url.md#geturl-falls-back-to-the-hosts-default-url-through-the-nullable-accessor) |
 | [Modal mode](../../../packages/actions/src/EditAction.php) (`fillForm()` from the record and the `action()` body that updates it) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-modal-arm-maps-the-validated-state-onto-the-bound-record) |
-| [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#mutaterecorddatausing-is-one-shared-trait-not-three-copies) |
 | The `BelongsToMany` pivot-column split in the fill and the write | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | skipped | — | [diverges](#the-pivot-column-split-has-no-doctrine-counterpart) |
 
@@ -99,10 +99,10 @@ The name is the literal `heroicons:pencil-square-20-solid` rather than Filament'
 Filament's fill merges the pivot's attributes into the form data and its write splits them back out onto the pivot, when the table's relationship is a `BelongsToMany`.
 A Doctrine association table carrying payload is an entity of its own, so a relation-scoped table's row has no pivot attributes to fill from or write back ([table.md](../tables/table.md#surface)), the same call [`CreateAction`'s relationship arm](create-action.md#filaments-three-way-relationship-branch-collapses-to-two) got.
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-`label('Edit')`, the `Edit :label` modal heading, `modalSubmitActionLabel('Save changes')` and `successNotificationTitle('Saved')` are the English literals read from [`resources/lang/en/edit.php`](../../../vendor/filament/actions/resources/lang/en/edit.php), where Filament reads `__('filament-actions::edit.single…')`, the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records for the create side.
+`edit.single.label`, `edit.single.modal.heading` (`Edit {label}`), `edit.single.modal.actions.save.label` (`Save changes`) and `edit.single.notifications.saved.title` (`Saved`) are the messages Filament's [`resources/lang/en/edit.php`](../../../vendor/filament/actions/resources/lang/en/edit.php) keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records for the create side.
 The success title is `Saved`, not `Edited`: that is Filament's own wording, kept.
 
-The heading's `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), which is why it is a closure rather than a literal: no title is known until the action is hosted and a record is bound.
-It carries a fallback Filament does not have: when the whole title chain answers `null`, Filament would render a trailing-space `Edit `, so the port falls back to the bare verb `Edit`.
+The heading's `{label}` argument is [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), which is why it is a closure: no title is known until the action is hosted and a record is bound.
+When the whole title chain answers `null`, Filament would render a trailing-space `Edit `, so the port answers the bare verb under the port-added key `edit.single.modal.heading_bare`.

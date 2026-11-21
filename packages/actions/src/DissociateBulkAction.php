@@ -11,6 +11,7 @@ use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\State\AssociationTarget;
 use Sylament\Schemas\State\Relationship;
+use Symfony\Component\Translation\TranslatableMessage;
 use Throwable;
 
 class DissociateBulkAction extends BulkAction
@@ -26,18 +27,20 @@ class DissociateBulkAction extends BulkAction
     {
         parent::setUp();
 
-        $this->label('Dissociate selected');
+        $this->label(new TranslatableMessage('dissociate.multiple.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($label = $this->getTitleCasePluralRecordLabel()) === null ? 'Dissociate selected' : "Dissociate selected {$label}");
+        $this->modalHeading(fn (): TranslatableMessage => ($label = $this->getTitleCasePluralRecordLabel()) === null
+            ? new TranslatableMessage('dissociate.multiple.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('dissociate.multiple.modal.heading', ['label' => $label], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Dissociate');
+        $this->modalSubmitActionLabel(new TranslatableMessage('dissociate.multiple.modal.actions.dissociate.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Dissociated');
+        $this->successNotificationTitle(new TranslatableMessage('dissociate.multiple.notifications.dissociated.title', [], 'sylament-actions'));
 
         $this->failureNotificationTitle(
-            fn (int $successCount, int $totalCount): string => $successCount > 0
-                ? sprintf('Dissociated %d of %d', $successCount, $totalCount)
-                : sprintf('Failed to dissociate %d records', $totalCount),
+            fn (int $successCount, int $totalCount): TranslatableMessage => $successCount > 0
+                ? new TranslatableMessage('dissociate.multiple.notifications.dissociated_partial.title', ['count' => (string) $successCount, 'total' => (string) $totalCount], 'sylament-actions')
+                : new TranslatableMessage('dissociate.multiple.notifications.dissociated_none.title', ['count' => (string) $totalCount], 'sylament-actions'),
         );
 
         $this->defaultColor('danger');

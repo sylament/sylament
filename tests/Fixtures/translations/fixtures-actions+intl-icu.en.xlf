@@ -22,6 +22,14 @@
                 <source>notification.title</source>
                 <target>Archived (translated)</target>
             </trans-unit>
+            <trans-unit id="record.label" resname="record.label">
+                <source>record.label</source>
+                <target>crate</target>
+            </trans-unit>
+            <trans-unit id="record.title" resname="record.title">
+                <source>record.title</source>
+                <target>The crate</target>
+            </trans-unit>
             <trans-unit id="section" resname="section">
                 <source>section</source>
                 <target>Shipments</target>

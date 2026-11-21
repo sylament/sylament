@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use Sylament\Actions\Concerns\CanMutateRecordData;
 use Sylament\Schemas\Schema;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class ViewAction extends Action
 {
@@ -20,12 +21,14 @@ class ViewAction extends Action
     {
         parent::setUp();
 
-        $this->label('View');
+        $this->label(new TranslatableMessage('view.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'View' : "View {$title}");
+        $this->modalHeading(fn (): TranslatableMessage => ($title = $this->getRecordTitle()) === null
+            ? new TranslatableMessage('view.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('view.single.modal.heading', ['label' => $title], 'sylament-actions'));
 
         $this->modalSubmitAction(false);
-        $this->modalCancelAction(fn (Action $action): Action => $action->label('Close'));
+        $this->modalCancelAction(fn (Action $action): Action => $action->label(new TranslatableMessage('view.single.modal.actions.close.label', [], 'sylament-actions')));
 
         $this->defaultColor('gray');
 

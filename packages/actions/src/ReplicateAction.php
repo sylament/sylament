@@ -17,6 +17,7 @@ use Sylament\Actions\Replication\RecordReplicator;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Evaluation\ClosureParameter;
+use Symfony\Component\Translation\TranslatableMessage;
 
 use function Sylament\Support\except;
 
@@ -44,13 +45,15 @@ class ReplicateAction extends Action
     {
         parent::setUp();
 
-        $this->label('Replicate');
+        $this->label(new TranslatableMessage('replicate.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'Replicate' : "Replicate {$title}");
+        $this->modalHeading(fn (): TranslatableMessage => ($title = $this->getRecordTitle()) === null
+            ? new TranslatableMessage('replicate.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('replicate.single.modal.heading', ['label' => $title], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Replicate');
+        $this->modalSubmitActionLabel(new TranslatableMessage('replicate.single.modal.actions.replicate.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Replicated');
+        $this->successNotificationTitle(new TranslatableMessage('replicate.single.notifications.replicated.title', [], 'sylament-actions'));
 
         $this->icon('heroicons:square-2-stack-20-solid');
         $this->groupedIcon('heroicons:square-2-stack-20-solid');

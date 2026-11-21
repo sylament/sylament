@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class DetachAction extends Action
 {
@@ -20,13 +21,15 @@ class DetachAction extends Action
     {
         parent::setUp();
 
-        $this->label('Detach');
+        $this->label(new TranslatableMessage('detach.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'Detach' : "Detach {$title}");
+        $this->modalHeading(fn (): TranslatableMessage => ($title = $this->getRecordTitle()) === null
+            ? new TranslatableMessage('detach.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('detach.single.modal.heading', ['label' => $title], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Detach');
+        $this->modalSubmitActionLabel(new TranslatableMessage('detach.single.modal.actions.detach.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Detached');
+        $this->successNotificationTitle(new TranslatableMessage('detach.single.notifications.detached.title', [], 'sylament-actions'));
 
         $this->defaultColor('danger');
 

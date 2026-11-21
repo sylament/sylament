@@ -9,6 +9,7 @@ use Doctrine\ORM\Query;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Symfony\Component\Translation\TranslatableMessage;
 use Throwable;
 
 class DeleteBulkAction extends BulkAction
@@ -24,18 +25,20 @@ class DeleteBulkAction extends BulkAction
     {
         parent::setUp();
 
-        $this->label('Delete selected');
+        $this->label(new TranslatableMessage('delete.multiple.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($label = $this->getTitleCasePluralRecordLabel()) === null ? 'Delete selected' : "Delete selected {$label}");
+        $this->modalHeading(fn (): TranslatableMessage => ($label = $this->getTitleCasePluralRecordLabel()) === null
+            ? new TranslatableMessage('delete.multiple.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('delete.multiple.modal.heading', ['label' => $label], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Delete');
+        $this->modalSubmitActionLabel(new TranslatableMessage('delete.multiple.modal.actions.delete.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Deleted');
+        $this->successNotificationTitle(new TranslatableMessage('delete.multiple.notifications.deleted.title', [], 'sylament-actions'));
 
         $this->failureNotificationTitle(
-            fn (int $successCount, int $totalCount): string => $successCount > 0
-                ? sprintf('Deleted %d of %d', $successCount, $totalCount)
-                : sprintf('Failed to delete %d records', $totalCount),
+            fn (int $successCount, int $totalCount): TranslatableMessage => $successCount > 0
+                ? new TranslatableMessage('delete.multiple.notifications.deleted_partial.title', ['count' => (string) $successCount, 'total' => (string) $totalCount], 'sylament-actions')
+                : new TranslatableMessage('delete.multiple.notifications.deleted_none.title', ['count' => (string) $totalCount], 'sylament-actions'),
         );
 
         $this->defaultColor('danger');

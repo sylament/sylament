@@ -9,6 +9,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\SlideOverPosition;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
@@ -368,7 +369,7 @@ trait CanOpenModal
         }
 
         if ($this->isConfirmationRequired()) {
-            return 'Are you sure you would like to do this?';
+            return new TranslatableMessage('modal.confirmation', [], 'sylament-actions')->trans($this->getTranslator());
         }
 
         return null;
@@ -629,14 +630,18 @@ trait CanOpenModal
             return $label;
         }
 
-        return $this->isConfirmationRequired() ? 'Confirm' : 'Submit';
+        $message = $this->isConfirmationRequired()
+            ? new TranslatableMessage('modal.actions.confirm.label', [], 'sylament-actions')
+            : new TranslatableMessage('modal.actions.submit.label', [], 'sylament-actions');
+
+        return $message->trans($this->getTranslator());
     }
 
     public function getModalCancelActionLabel(): string
     {
-        $label = $this->evaluate($this->modalCancelActionLabel);
+        $label = $this->evaluate($this->modalCancelActionLabel) ?? new TranslatableMessage('modal.actions.cancel.label', [], 'sylament-actions');
 
-        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label ?? 'Cancel';
+        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
     }
 
     public function getModalWidth(): string

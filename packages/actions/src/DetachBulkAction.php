@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Symfony\Component\Translation\TranslatableMessage;
 use Throwable;
 
 class DetachBulkAction extends BulkAction
@@ -21,18 +22,20 @@ class DetachBulkAction extends BulkAction
     {
         parent::setUp();
 
-        $this->label('Detach selected');
+        $this->label(new TranslatableMessage('detach.multiple.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($label = $this->getTitleCasePluralRecordLabel()) === null ? 'Detach selected' : "Detach selected {$label}");
+        $this->modalHeading(fn (): TranslatableMessage => ($label = $this->getTitleCasePluralRecordLabel()) === null
+            ? new TranslatableMessage('detach.multiple.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('detach.multiple.modal.heading', ['label' => $label], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Detach');
+        $this->modalSubmitActionLabel(new TranslatableMessage('detach.multiple.modal.actions.detach.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Detached');
+        $this->successNotificationTitle(new TranslatableMessage('detach.multiple.notifications.detached.title', [], 'sylament-actions'));
 
         $this->failureNotificationTitle(
-            fn (int $successCount, int $totalCount): string => $successCount > 0
-                ? sprintf('Detached %d of %d', $successCount, $totalCount)
-                : sprintf('Failed to detach %d records', $totalCount),
+            fn (int $successCount, int $totalCount): TranslatableMessage => $successCount > 0
+                ? new TranslatableMessage('detach.multiple.notifications.detached_partial.title', ['count' => (string) $successCount, 'total' => (string) $totalCount], 'sylament-actions')
+                : new TranslatableMessage('detach.multiple.notifications.detached_none.title', ['count' => (string) $totalCount], 'sylament-actions'),
         );
 
         $this->defaultColor('danger');

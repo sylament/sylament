@@ -19,6 +19,7 @@ use Sylament\Tests\Fixtures\Actions\LocalisedSectionHost;
 use Sylament\Tests\Fixtures\Actions\MountedActionsHost;
 use Sylament\Tests\Fixtures\Actions\RecordDefaultsHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
+use Sylament\Tests\Fixtures\Actions\TranslatedRecordHost;
 use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
@@ -339,6 +340,14 @@ describe('record labels', function (): void {
         "the host's label" => ['labelled', 'Delete stock item'],
         "the class's label, the host answering none" => ['unlabelled', 'Delete product'],
         "no title, the host answering an empty one" => ['untitled', 'Delete'],
+    ]);
+
+    it('translates the title or the label its host answers as a message before it composes the heading', function (string $action, string $heading): void {
+        expect($this->createLiveComponent(TranslatedRecordHost::class)->mountAction($action)->render()->crawler())
+            ->toContainElement(SupportSelectors::MODAL_HEADING, $heading);
+    })->with([
+        "the host's title" => ['titled', 'Delete The crate'],
+        "the host's label" => ['labelled', 'Delete crate'],
     ]);
 });
 

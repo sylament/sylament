@@ -15,6 +15,7 @@ use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -22,7 +23,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A product table titled by name whose rows and toolbar delete: the plain `delete` of each,
  * `keep` and `skip` replacing the row's delete with a `using()` that answers false or true
  * and deletes nothing, and `handBuilt`, a bulk delete built with `new` rather than by the
- * container.
+ * container, given the translator its texts need and no manager registry.
  */
 #[AsLiveComponent(name: 'Tables:DeletingProductTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class DeletingProductTable implements InteractsWithActions, InteractsWithTable
@@ -34,6 +35,7 @@ class DeletingProductTable implements InteractsWithActions, InteractsWithTable
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly HookLog $log,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -64,7 +66,15 @@ class DeletingProductTable implements InteractsWithActions, InteractsWithTable
             ])
             ->toolbarActions([
                 DeleteBulkAction::make(),
-                new DeleteBulkAction()->name('handBuilt')->configure(),
+                $this->buildByHand(),
             ]);
+    }
+
+    private function buildByHand(): DeleteBulkAction
+    {
+        $action = new DeleteBulkAction()->name('handBuilt');
+        $action->setTranslator($this->translator);
+
+        return $action->configure();
     }
 }

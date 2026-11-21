@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Symfony\Component\Translation\TranslatableMessage;
 
 class DissociateAction extends Action
 {
@@ -20,13 +21,15 @@ class DissociateAction extends Action
     {
         parent::setUp();
 
-        $this->label('Dissociate');
+        $this->label(new TranslatableMessage('dissociate.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'Dissociate' : "Dissociate {$title}");
+        $this->modalHeading(fn (): TranslatableMessage => ($title = $this->getRecordTitle()) === null
+            ? new TranslatableMessage('dissociate.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('dissociate.single.modal.heading', ['label' => $title], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Dissociate');
+        $this->modalSubmitActionLabel(new TranslatableMessage('dissociate.single.modal.actions.dissociate.label', [], 'sylament-actions'));
 
-        $this->successNotificationTitle('Dissociated');
+        $this->successNotificationTitle(new TranslatableMessage('dissociate.single.notifications.dissociated.title', [], 'sylament-actions'));
 
         $this->defaultColor('danger');
 

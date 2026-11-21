@@ -20,7 +20,7 @@ Both read the relationship off the **table**, and both let the reader's refusals
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DissociateAction.php) (`'dissociate'`) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | done | — | — |
-| [`setUp()` chrome — label, submit label, success title, `defaultColor('danger')`, `requiresConfirmation()`](../../../packages/actions/src/DissociateAction.php) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` chrome — label, submit label, success title, `defaultColor('danger')`, `requiresConfirmation()`](../../../packages/actions/src/DissociateAction.php) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`modalHeading()` — `"Dissociate {record title}"`](../../../packages/actions/src/DissociateAction.php) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | done | — | [semantics](#the-heading-resolves-the-record-title-through-the-table) |
 | [`icon('heroicons:x-mark-20-solid')` / `modalIcon('heroicons:x-mark')`](../../../packages/actions/src/DissociateAction.php) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) (`FilamentIcon::resolve()` over two aliases) | done | — | [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | [The `action()` body — `process()` then `success()`](../../../packages/actions/src/DissociateAction.php) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | done | — | [diverges](#the-write-goes-through-the-association-reader-not-a-belongsto) |
@@ -32,7 +32,7 @@ Both read the relationship off the **table**, and both let the reader's refusals
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DissociateBulkAction.php) (`'dissociate'`) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | — |
-| [`setUp()` chrome](../../../packages/actions/src/DissociateBulkAction.php) — label, modal heading, submit label, success title, colour, both icons, confirmation, deselect | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) · [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
+| [`setUp()` chrome](../../../packages/actions/src/DissociateBulkAction.php) — label, modal heading, submit label, success title, colour, both icons, confirmation, deselect | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) · [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of) |
 | [The fetching arm — `detach()` per record, one `flush()`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`$records->each(…)`) | done | — | [diverges](#the-fetching-arm-is-atomic-where-filaments-is-per-record) |
 | [`dissociateSelectedRecordsByKey()`](../../../packages/actions/src/DissociateBulkAction.php) — the `fetchSelectedRecords(false)` arm | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`getSelectedRecordsQuery()->update([…=> null])`) | done | — | [diverges](#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns) |
@@ -68,10 +68,11 @@ Filament reaches the target's inverse `BelongsTo` object (`$table->getInverseRel
 Doctrine has no such object: the port asks [`AssociationReader::detach()`](../schemas/association-reader.md) instead, which reads `mappedBy` off the mapping and writes `null` through the record's own setter, then flushes through the action's entity manager.
 The whole inverse family is therefore not ported.
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-Both classes hardcode Filament's `en` strings, for the reason [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records: `Dissociate` / `Dissociate :label` / `Dissociated`, and `Dissociate selected` / `Dissociate selected :label` / `Dissociated`.
-The counting failure title beside them has no `en` source; it is [an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
+`dissociate.single.label`, `dissociate.single.modal.heading` (`Dissociate {label}`), `dissociate.single.modal.actions.dissociate.label` and `dissociate.single.notifications.dissociated.title`, and on the bulk class the `dissociate.multiple.…` counterparts, are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
+Each heading falls back to a port-added `heading_bare` key when no label is known.
+The counting failure titles beside them, `dissociate.multiple.notifications.dissociated_partial.title` and `dissociate.multiple.notifications.dissociated_none.title`, have no Filament key; they are [an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
 
 ### The fetching arm is atomic where Filament's is per-record
 

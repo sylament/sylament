@@ -13,6 +13,7 @@ use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Query\SearchConstraint;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
+use Symfony\Component\Translation\TranslatableMessage;
 
 use function Sylament\Support\filled;
 use function Sylament\Support\wrap;
@@ -47,19 +48,21 @@ class AssociateAction extends Action
     {
         parent::setUp();
 
-        $this->label('Associate');
+        $this->label(new TranslatableMessage('associate.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($label = $this->getTitleCaseRecordLabel()) === null ? 'Associate' : "Associate {$label}");
+        $this->modalHeading(fn (): TranslatableMessage => ($label = $this->getTitleCaseRecordLabel()) === null
+            ? new TranslatableMessage('associate.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('associate.single.modal.heading', ['label' => $label], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Associate');
+        $this->modalSubmitActionLabel(new TranslatableMessage('associate.single.modal.actions.associate.label', [], 'sylament-actions'));
 
         $this->modalWidth('lg');
 
         $this->extraModalFooterActions(fn (): array => $this->canAssociateAnother() ? [
-            $this->makeModalSubmitAction('associateAnother', arguments: ['another' => true])->label('Associate & associate another'),
+            $this->makeModalSubmitAction('associateAnother', arguments: ['another' => true])->label(new TranslatableMessage('associate.single.modal.actions.associate_another.label', [], 'sylament-actions')),
         ] : []);
 
-        $this->successNotificationTitle('Associated');
+        $this->successNotificationTitle(new TranslatableMessage('associate.single.notifications.associated.title', [], 'sylament-actions'));
 
         $this->defaultColor('gray');
 
@@ -173,7 +176,7 @@ class AssociateAction extends Action
         $searchColumns = $this->getRecordSelectSearchColumns();
 
         $select = Select::make('recordId')
-            ->label('Record')
+            ->label(new TranslatableMessage('associate.single.modal.fields.record_id.label', [], 'sylament-actions'))
             ->required()
             ->multiple($this->isMultiple())
             ->searchable($searchColumns === null ? true : array_values($searchColumns))

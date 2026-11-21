@@ -29,10 +29,20 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\LarderCrockTable;
 use Sylament\Tests\Fixtures\Tables\SecondManagerSpineTable;
 
+use function Symfony\Component\Translation\t;
+
 describe('the trigger', function (): void {
     it('reads "New" and its record label, and the bare verb when nothing names a record class', function (): void {
         expect($this->renderViewComponent(CreateAction::make()->recordClass(CappedHeadline::class)))->toContainElement('button', 'New capped headline')
             ->and($this->renderViewComponent(CreateAction::make()))->toContainElement('button', 'Create');
+    });
+
+    it('translates its label and its modal heading around a record label given as a message', function (): void {
+        $action = fn (): CreateAction => CreateAction::make()->recordClass(CappedHeadline::class)->recordLabel(t('record.label', [], 'fixtures-actions'));
+
+        expect($this->renderViewComponent($action()))->toContainElement('button', 'New crate')
+            ->and($this->renderTwigComponent('SylamentActions:ActionModal', ['action' => $action(), 'id' => 'create-modal'])->crawler())
+            ->toContainElement('h2', 'Create Crate');
     });
 
     it('shows a plus inside a dropdown and no icon as a button of its own', function (): void {

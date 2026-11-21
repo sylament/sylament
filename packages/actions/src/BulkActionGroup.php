@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use Symfony\Component\Translation\TranslatableMessage;
+
 class BulkActionGroup extends ActionGroup
 {
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->label('Bulk actions');
+        $this->label(new TranslatableMessage('table.actions.open_bulk_actions.label', [], 'sylament-actions'));
         $this->icon(static::DEFAULT_ICON);
         $this->defaultColor('gray');
         $this->defaultTriggerTemplate(static::BUTTON_TEMPLATE);

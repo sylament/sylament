@@ -26,7 +26,7 @@ owns:
 | [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php): `group()`, `getGroup()`, `getRootGroup()` | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | [diverges](#groups-parameter-defaults-to-null) |
 | [`BelongsToTable`](../../../packages/actions/src/Concerns/BelongsToTable.php) (shared with `Action`) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | — | [belongs-to-table.md](belongs-to-table.md) |
 | `getClone()` / `cloneActions()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | [diverges](#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately) |
-| `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | [diverges](#getlabel-falls-back-to-a-plain-string-not-a-translated-label) |
+| `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | [diverges](#getlabel-falls-back-to-a-catalogue-message-not-a-literal) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) (shared with `Action`; read by the button trigger only, as in Filament) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [action.md](action.md) |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [action.md](action.md) |
 | [`HasLabel`](../../../packages/actions/src/Concerns/HasLabel.php) (shared with `Action`) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [action.md](action.md) |
@@ -56,7 +56,7 @@ owns:
 | `toArray()` / `fromArray()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-four-built-in-trigger-templates) · [semantics](#the-restore-side-recurses-through-selffromarray-and-filters-child-keys-to-strings) |
 | `toArray()` / `fromArray()` `view` key | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | todo | — | [detail](#the-groups-serialized-key-list-drops-iconposition-and-vendors-view) |
 | `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | todo | — | [detail](#hasnonbulkaction-waits-for-the-table-toolbars-non-bulk-partition) |
-| [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) `setUp()` defaults | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](#bulkactiongroup-sets-its-icon-explicitly-and-keeps-the-label-a-literal) |
+| [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) `setUp()` defaults | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](#bulkactiongroup-sets-its-icon-explicitly-and-re-homes-its-label-key) |
 | [`BulkActionGroup::getExtraDropdownAttributes()`](../../../packages/actions/src/BulkActionGroup.php), the bulk-only marker | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](bulk-action.md#bulk-only-visibility-is-a-data-marker-the-table-controller-flips-not-an-alpine-expression) |
 | `labeledFrom()` on the group, and `labeledFrom('sm')` in the bulk preset | [`Concerns/CanBeLabeledFrom.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFrom.php) | blocked | `CanBeLabeledFrom` | — |
 
@@ -183,10 +183,11 @@ It is lossless, because every read inside `fromArray()` is by string key, so rem
 The port's `group(?ActionGroup $group = null): static` gives its parameter a default of `null` where Filament's is required, so `->group()` clears the association without spelling out the `null` argument.
 Every caller that passes a value is unaffected.
 
-### `getLabel()` falls back to a plain string, not a translated label
+### `getLabel()` falls back to a catalogue message, not a literal
 
 Filament's `getLabel()` is `$this->evaluate($this->label) ?? __('filament-actions::group.trigger.label')`, then runs a string result through `__()` again when `$shouldTranslateLabel` is set.
-The port's [`getLabel()`](../../../packages/actions/src/ActionGroup.php) is `$this->evaluate($this->label) ?? 'Actions'`, a plain literal, then translates a message label, or a string one under `translateLabel()`, as [`Action`'s label](action.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) does.
+The port's [`getLabel()`](../../../packages/actions/src/ActionGroup.php) falls back to the `group.trigger.label` message (`Actions`) in the `sylament-actions` catalogue, then translates a message label, or a string one under `translateLabel()`, as [`Action`'s label](action.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) does.
+The fallback is translated once: Filament's second `__()` would look the already-translated text up as a key, which the port does not.
 The override also means `ActionGroup` never runs the `HasLabel` trait's own `getLabel()`, which derives a default from `getName()`: PHP resolves the class-defined method over the trait's, and a group has no name for that default to derive from anyway.
 
 ### Extra attribute bags flatten through `toScalarAttributes()` before reaching the ux component attribute bag
@@ -200,11 +201,11 @@ That flattening seam is load-bearing: support's `ComponentAttributeBag` normaliz
 `toScalarAttributes()` joins class tokens to a string and drops `null` and `false`, so a caller's `class` token-merges with the component root's own classes through `attributes.defaults()`.
 Filament has no such seam because its Blade side renders its own attribute bag directly.
 
-### `BulkActionGroup` sets its icon explicitly and keeps the label a literal
+### `BulkActionGroup` sets its icon explicitly and re-homes its label key
 
 Filament's `BulkActionGroup::setUp()` reads its label from the `filament-tables::` translation namespace and its icon from `FilamentIcon::resolve(TablesIconAlias::ACTIONS_OPEN_BULK_ACTIONS) ?? Heroicon::EllipsisVertical`, both of which reach **into the tables package from actions**.
 Neither crosses here.
-The label is the literal `'Bulk actions'`, matching every other prebuilt action's [literal chrome](delete-action.md#the-strings-are-literals-not-translation-keys); and the icon is set to `ActionGroup::DEFAULT_ICON` directly, because the alias would need a registry entry whose only reader would be this line, and an alias lands with its reader.
+The label is the message `table.actions.open_bulk_actions.label`, Filament's tables key re-homed into the `sylament-actions` catalogue under the same key path, because the split publishes actions without tables and a key read from another package's domain would render raw there; the icon is set to `ActionGroup::DEFAULT_ICON` directly, because the alias would need a registry entry whose only reader would be this line, and an alias lands with its reader.
 
 Setting the icon at all is the load-bearing part, and it is **not** redundant with the constant's other use: only [`IconButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/IconButtonTrigger.html.twig) applies `DEFAULT_ICON` as a fallback (`group.getIcon(constant(…))`), while [`ButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/ButtonTrigger.html.twig) reads `group.getIcon` bare, and this group is a **button** group, so without the explicit call it would render icon-less.
 

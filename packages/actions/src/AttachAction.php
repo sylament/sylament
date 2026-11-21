@@ -13,6 +13,7 @@ use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Query\SearchConstraint;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
+use Symfony\Component\Translation\TranslatableMessage;
 
 use function Sylament\Support\filled;
 use function Sylament\Support\wrap;
@@ -47,19 +48,21 @@ class AttachAction extends Action
     {
         parent::setUp();
 
-        $this->label('Attach');
+        $this->label(new TranslatableMessage('attach.single.label', [], 'sylament-actions'));
 
-        $this->modalHeading(fn (): string => ($label = $this->getTitleCaseRecordLabel()) === null ? 'Attach' : "Attach {$label}");
+        $this->modalHeading(fn (): TranslatableMessage => ($label = $this->getTitleCaseRecordLabel()) === null
+            ? new TranslatableMessage('attach.single.modal.heading_bare', [], 'sylament-actions')
+            : new TranslatableMessage('attach.single.modal.heading', ['label' => $label], 'sylament-actions'));
 
-        $this->modalSubmitActionLabel('Attach');
+        $this->modalSubmitActionLabel(new TranslatableMessage('attach.single.modal.actions.attach.label', [], 'sylament-actions'));
 
         $this->modalWidth('lg');
 
         $this->extraModalFooterActions(fn (): array => $this->canAttachAnother() ? [
-            $this->makeModalSubmitAction('attachAnother', arguments: ['another' => true])->label('Attach & attach another'),
+            $this->makeModalSubmitAction('attachAnother', arguments: ['another' => true])->label(new TranslatableMessage('attach.single.modal.actions.attach_another.label', [], 'sylament-actions')),
         ] : []);
 
-        $this->successNotificationTitle('Attached');
+        $this->successNotificationTitle(new TranslatableMessage('attach.single.notifications.attached.title', [], 'sylament-actions'));
 
         $this->defaultColor('gray');
 
@@ -174,7 +177,7 @@ class AttachAction extends Action
         $searchColumns = $this->getRecordSelectSearchColumns();
 
         $select = Select::make('recordId')
-            ->label('Record')
+            ->label(new TranslatableMessage('attach.single.modal.fields.record_id.label', [], 'sylament-actions'))
             ->required()
             ->multiple($this->isMultiple())
             ->searchable($searchColumns === null ? true : array_values($searchColumns))

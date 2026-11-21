@@ -19,7 +19,7 @@ Panels ships no `ViewRecord` page to register under that name, so the action ope
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/ViewAction.php) (`'view'`) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | — |
-| [`setUp()` label, `modalHeading()`, `defaultColor('gray')`](../../../packages/actions/src/ViewAction.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` label, `modalHeading()`, `defaultColor('gray')`](../../../packages/actions/src/ViewAction.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`modalSubmitAction(false)` + the `Close` cancel action](../../../packages/actions/src/ViewAction.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | [semantics](#the-footer-is-a-close-button-because-nothing-else-is-there) |
 | [`disabledSchema()` + `fillForm()` from the record](../../../packages/actions/src/ViewAction.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | — |
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | [diverges](edit-action.md#mutaterecorddatausing-is-one-shared-trait-not-three-copies) |
@@ -51,11 +51,11 @@ Filament is identical, and the port keeps it: a throw would be a divergence with
 
 ## Divergences
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-`label('View')`, the `View :label` modal heading and the cancel action's `Close` are the English literals read from [`resources/lang/en/view.php`](../../../vendor/filament/actions/resources/lang/en/view.php), where Filament reads `__('filament-actions::view.single…')`, the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records for the create side.
+`view.single.label`, `view.single.modal.heading` (`View {label}`) and the cancel action's `view.single.modal.actions.close.label` (`Close`) are the messages Filament's [`resources/lang/en/view.php`](../../../vendor/filament/actions/resources/lang/en/view.php) keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records for the create side.
 
-The heading's `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](interacts-with-record.md), so it is a closure rather than a literal, with the same bare-verb fallback [`EditAction`](edit-action.md#the-strings-are-literals-not-translation-keys) carries: `View` where Filament would render a trailing-space `View `.
+The heading's `{label}` argument is [`Action::getRecordTitle()`](interacts-with-record.md), so it is a closure, with the same bare-verb fallback [`EditAction`](edit-action.md#the-texts-are-catalogue-messages-under-filaments-keys) carries under the port-added key `view.single.modal.heading_bare`.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

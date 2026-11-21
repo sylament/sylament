@@ -20,7 +20,7 @@ It is the undo of [`AttachAction`](attach-action.md), and like it, it only makes
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DetachAction.php) (`'detach'`) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | done | — | — |
-| [`setUp()` chrome — label, modal heading (`"Detach {record title}"`), submit label, success title, `defaultColor('danger')`, `requiresConfirmation()`](../../../packages/actions/src/DetachAction.php) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` chrome — label, modal heading (`"Detach {record title}"`), submit label, success title, `defaultColor('danger')`, `requiresConfirmation()`](../../../packages/actions/src/DetachAction.php) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`icon('heroicons:x-mark-20-solid')` + `modalIcon('heroicons:x-mark')`](../../../packages/actions/src/DetachAction.php) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) (`FilamentIcon::resolve(…) ?? Heroicon::XMark`) | done | — | [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | [The `action()` body — `detach()` then one `flush()`, then `success()`](../../../packages/actions/src/DetachAction.php) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | done | — | [semantics](#the-write-goes-through-the-association-reader-on-the-owning-side) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
@@ -31,7 +31,7 @@ It is the undo of [`AttachAction`](attach-action.md), and like it, it only makes
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DetachBulkAction.php) (`'detach'`) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | — |
-| [`setUp()` chrome](../../../packages/actions/src/DetachBulkAction.php) — label, modal heading, submit label, success title, colour, both icons, confirmation, deselect | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-strings-are-literals-not-translation-keys) · [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
+| [`setUp()` chrome](../../../packages/actions/src/DetachBulkAction.php) — label, modal heading, submit label, success title, colour, both icons, confirmation, deselect | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) · [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DetachBulkAction.php) | — | done | — | [diverges](#the-counting-failure-title-is-an-addition-filament-has-neither-of) |
 | [The fetching arm — `detach()` per hydrated record, one `flush()`](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | [diverges](#the-bulk-detach-is-atomic-where-filaments-fetching-arm-is-per-record) |
 | [The `fetchSelectedRecords(false)` arm — `getReference()` per key, then the same](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) (`$relationship->detach($records)`) | done | — | [diverges](#the-no-fetch-arm-detaches-through-references-not-a-join-table-delete) · [semantics](#a-stale-key-is-a-danger-toast-except-on-an-owning-side-many-to-many-over-a-scalar-identifier) |
@@ -85,10 +85,11 @@ Filament's `DetachBulkAction` fetching arm always deletes through the pivot acce
 Doctrine has no pivot model, and a join table's primary key is the pair, so a duplicate join row is unrepresentable and the branch has nothing to select between: the port carries only `detach()`, on both classes and both arms.
 Same skip as [`AttachAction`](attach-action.md#pivot-data-duplicates-morphs-and-relationshipjoiner-are-not-ported).
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-Filament reads every string through `__('filament-actions::detach…')`.
-The port hardcodes Filament's `en` values instead, for the reason [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records: `Detach`, `Detach {label}` and `Detached`, and `Detach selected`, `Detach selected {label}` and `Detached` on the bulk class.
+`detach.single.label`, `detach.single.modal.heading` (`Detach {label}`), `detach.single.modal.actions.detach.label` and `detach.single.notifications.detached.title`, and on the bulk class `detach.multiple.label`, `detach.multiple.modal.heading`, `detach.multiple.modal.actions.detach.label` and `detach.multiple.notifications.detached.title`, are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
+Each heading falls back to a port-added `heading_bare` key when no label is known.
+The bulk class's two failure titles, `detach.multiple.notifications.detached_partial.title` and `detach.multiple.notifications.detached_none.title`, are port-added: Filament sends no failure toast there, so the keys follow the shape of the delete class's pair.
 
 ### The no-fetch arm detaches through references, not a join-table DELETE
 
@@ -117,9 +118,9 @@ Same shape and same reasoning as [`DeleteBulkAction`](delete-action.md#the-bulk-
 
 ### The counting failure title is an addition Filament has neither of
 
-`DetachBulkAction` sets a `failureNotificationTitle()` closure answering `Detached %d of %d` and `Failed to detach %d records`.
+`DetachBulkAction` sets a `failureNotificationTitle()` closure answering the messages `Detached {count} of {total}` and `Failed to detach {count} records`.
 Filament's does not, and there is nothing to port: `vendor/filament/actions/src/DetachBulkAction.php` declares no `failureNotificationTitle()`, and `resources/lang/en/detach.php` carries no `*_partial` or `*_none` key; only `delete.php`, `force-delete.php` and `restore.php` do.
 
 Without a title neither side sends a failure toast: Filament's `sendFailureNotification()` sends only when `filled($notification?->getTitle())`, and the port's returns early when `blank($notification->getTitle())`.
 In Filament a failed detach is therefore silent, its partial failures counted but never shown; in the port, where the atomic shape above makes every failure a whole-batch failure, a silent toast would hide a batch that changed nothing, so the title is added.
-The wording follows `DeleteBulkAction`'s, whose title *is* a port: the two `sprintf`s and their `successCount` and `totalCount` [injections](can-notify.md#the-failure-notification-carries-four-injections-of-filaments-nine) come from there, not from vendor's detach.
+The wording follows `DeleteBulkAction`'s, whose title *is* a port: the two messages and their `successCount` and `totalCount` [injections](can-notify.md#the-failure-notification-carries-four-injections-of-filaments-nine) come from there, not from vendor's detach.

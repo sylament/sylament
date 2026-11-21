@@ -22,8 +22,8 @@ Both arms are pinned end to end, and the copy rules against real Doctrine metada
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/ReplicateAction.php) (`'replicate'`) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | — |
-| [`setUp()` label, `modalSubmitActionLabel()`, `successNotificationTitle()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
-| [`modalHeading()`](../../../packages/actions/src/ReplicateAction.php) (record title interpolated) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` label, `modalSubmitActionLabel()`, `successNotificationTitle()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
+| [`modalHeading()`](../../../packages/actions/src/ReplicateAction.php) (record title interpolated) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`icon('heroicons:square-2-stack-20-solid')` + `groupedIcon(...)`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#the-icon-is-a-literal-name-and-a-plain-icon-stands-in-for-tableicon) |
 | [`fillForm()` from the record, minus the excluded names](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-fill-reads-the-schemas-declared-paths-not-an-attribute-bag) |
 | [The `action()` body — copy, map, hook, flush, `success()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) · [diverges](#a-taken-key-answers-in-the-modal-and-any-other-unique-column-is-still-the-databases) · [diverges](#a-key-mutatedatausing-adds-that-no-component-of-the-modal-maps-is-refused-by-name) · [semantics](#the-write-body-reads-the-mounted-schema-from-the-host-not-from-a-parameter) |
@@ -182,10 +182,10 @@ Filament declares the property and the setter on this class, on [`EditAction`](e
 Filament marks it `@deprecated Use after() instead` and its whole body is `$this->after($callback)`.
 Porting a deprecated alias would publish an API we would then have to deprecate, so `after()` is the only hook — and it reads the saved replica through the `replica` injection this class registers.
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-`label('Replicate')`, the `Replicate :label` modal heading, the submit label and the `Replicated` toast title are the English literals read from [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php), where Filament reads `__('filament-actions::replicate.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records.
-The `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry: `Replicate` where Filament would render a trailing-space `Replicate `.
+`replicate.single.label`, `replicate.single.modal.heading` (`Replicate {label}`), `replicate.single.modal.actions.replicate.label` and `replicate.single.notifications.replicated.title` are the messages Filament's [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php) keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
+The `{label}` argument is [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry, the port-added key `replicate.single.modal.heading_bare`, where Filament would render a trailing-space `Replicate `.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="associate.single.label" resname="associate.single.label">
+                <source>associate.single.label</source>
+                <target>Associate</target>
+            </trans-unit>
+            <trans-unit id="associate.single.modal.actions.associate.label" resname="associate.single.modal.actions.associate.label">
+                <source>associate.single.modal.actions.associate.label</source>
+                <target>Associate</target>
+            </trans-unit>
+            <trans-unit id="associate.single.modal.actions.associate_another.label" resname="associate.single.modal.actions.associate_another.label">
+                <source>associate.single.modal.actions.associate_another.label</source>
+                <target>Associate &amp; associate another</target>
+            </trans-unit>
+            <trans-unit id="associate.single.modal.fields.record_id.label" resname="associate.single.modal.fields.record_id.label">
+                <source>associate.single.modal.fields.record_id.label</source>
+                <target>Record</target>
+            </trans-unit>
+            <trans-unit id="associate.single.modal.heading" resname="associate.single.modal.heading">
+                <source>associate.single.modal.heading</source>
+                <target>Associate {label}</target>
+            </trans-unit>
+            <trans-unit id="associate.single.modal.heading_bare" resname="associate.single.modal.heading_bare">
+                <source>associate.single.modal.heading_bare</source>
+                <target>Associate</target>
+            </trans-unit>
+            <trans-unit id="associate.single.notifications.associated.title" resname="associate.single.notifications.associated.title">
+                <source>associate.single.notifications.associated.title</source>
+                <target>Associated</target>
+            </trans-unit>
+            <trans-unit id="attach.single.label" resname="attach.single.label">
+                <source>attach.single.label</source>
+                <target>Attach</target>
+            </trans-unit>
+            <trans-unit id="attach.single.modal.actions.attach.label" resname="attach.single.modal.actions.attach.label">
+                <source>attach.single.modal.actions.attach.label</source>
+                <target>Attach</target>
+            </trans-unit>
+            <trans-unit id="attach.single.modal.actions.attach_another.label" resname="attach.single.modal.actions.attach_another.label">
+                <source>attach.single.modal.actions.attach_another.label</source>
+                <target>Attach &amp; attach another</target>
+            </trans-unit>
+            <trans-unit id="attach.single.modal.fields.record_id.label" resname="attach.single.modal.fields.record_id.label">
+                <source>attach.single.modal.fields.record_id.label</source>
+                <target>Record</target>
+            </trans-unit>
+            <trans-unit id="attach.single.modal.heading" resname="attach.single.modal.heading">
+                <source>attach.single.modal.heading</source>
+                <target>Attach {label}</target>
+            </trans-unit>
+            <trans-unit id="attach.single.modal.heading_bare" resname="attach.single.modal.heading_bare">
+                <source>attach.single.modal.heading_bare</source>
+                <target>Attach</target>
+            </trans-unit>
+            <trans-unit id="attach.single.notifications.attached.title" resname="attach.single.notifications.attached.title">
+                <source>attach.single.notifications.attached.title</source>
+                <target>Attached</target>
+            </trans-unit>
+            <trans-unit id="create.single.label" resname="create.single.label">
+                <source>create.single.label</source>
+                <target>New {label}</target>
+            </trans-unit>
+            <trans-unit id="create.single.label_bare" resname="create.single.label_bare">
+                <source>create.single.label_bare</source>
+                <target>Create</target>
+            </trans-unit>
+            <trans-unit id="create.single.modal.actions.create.label" resname="create.single.modal.actions.create.label">
+                <source>create.single.modal.actions.create.label</source>
+                <target>Create</target>
+            </trans-unit>
+            <trans-unit id="create.single.modal.actions.create_another.label" resname="create.single.modal.actions.create_another.label">
+                <source>create.single.modal.actions.create_another.label</source>
+                <target>Create &amp; create another</target>
+            </trans-unit>
+            <trans-unit id="create.single.modal.heading" resname="create.single.modal.heading">
+                <source>create.single.modal.heading</source>
+                <target>Create {label}</target>
+            </trans-unit>
+            <trans-unit id="create.single.modal.heading_bare" resname="create.single.modal.heading_bare">
+                <source>create.single.modal.heading_bare</source>
+                <target>Create</target>
+            </trans-unit>
+            <trans-unit id="create.single.notifications.created.title" resname="create.single.notifications.created.title">
+                <source>create.single.notifications.created.title</source>
+                <target>Created</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.label" resname="delete.multiple.label">
+                <source>delete.multiple.label</source>
+                <target>Delete selected</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.modal.actions.delete.label" resname="delete.multiple.modal.actions.delete.label">
+                <source>delete.multiple.modal.actions.delete.label</source>
+                <target>Delete</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.modal.heading" resname="delete.multiple.modal.heading">
+                <source>delete.multiple.modal.heading</source>
+                <target>Delete selected {label}</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.modal.heading_bare" resname="delete.multiple.modal.heading_bare">
+                <source>delete.multiple.modal.heading_bare</source>
+                <target>Delete selected</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.notifications.deleted.title" resname="delete.multiple.notifications.deleted.title">
+                <source>delete.multiple.notifications.deleted.title</source>
+                <target>Deleted</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.notifications.deleted_none.title" resname="delete.multiple.notifications.deleted_none.title">
+                <source>delete.multiple.notifications.deleted_none.title</source>
+                <target>Failed to delete {count} records</target>
+            </trans-unit>
+            <trans-unit id="delete.multiple.notifications.deleted_partial.title" resname="delete.multiple.notifications.deleted_partial.title">
+                <source>delete.multiple.notifications.deleted_partial.title</source>
+                <target>Deleted {count} of {total}</target>
+            </trans-unit>
+            <trans-unit id="delete.single.label" resname="delete.single.label">
+                <source>delete.single.label</source>
+                <target>Delete</target>
+            </trans-unit>
+            <trans-unit id="delete.single.modal.heading" resname="delete.single.modal.heading">
+                <source>delete.single.modal.heading</source>
+                <target>Delete {label}</target>
+            </trans-unit>
+            <trans-unit id="delete.single.modal.heading_bare" resname="delete.single.modal.heading_bare">
+                <source>delete.single.modal.heading_bare</source>
+                <target>Delete</target>
+            </trans-unit>
+            <trans-unit id="delete.single.notifications.deleted.title" resname="delete.single.notifications.deleted.title">
+                <source>delete.single.notifications.deleted.title</source>
+                <target>Deleted</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.label" resname="detach.multiple.label">
+                <source>detach.multiple.label</source>
+                <target>Detach selected</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.modal.actions.detach.label" resname="detach.multiple.modal.actions.detach.label">
+                <source>detach.multiple.modal.actions.detach.label</source>
+                <target>Detach</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.modal.heading" resname="detach.multiple.modal.heading">
+                <source>detach.multiple.modal.heading</source>
+                <target>Detach selected {label}</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.modal.heading_bare" resname="detach.multiple.modal.heading_bare">
+                <source>detach.multiple.modal.heading_bare</source>
+                <target>Detach selected</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.notifications.detached.title" resname="detach.multiple.notifications.detached.title">
+                <source>detach.multiple.notifications.detached.title</source>
+                <target>Detached</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.notifications.detached_none.title" resname="detach.multiple.notifications.detached_none.title">
+                <source>detach.multiple.notifications.detached_none.title</source>
+                <target>Failed to detach {count} records</target>
+            </trans-unit>
+            <trans-unit id="detach.multiple.notifications.detached_partial.title" resname="detach.multiple.notifications.detached_partial.title">
+                <source>detach.multiple.notifications.detached_partial.title</source>
+                <target>Detached {count} of {total}</target>
+            </trans-unit>
+            <trans-unit id="detach.single.label" resname="detach.single.label">
+                <source>detach.single.label</source>
+                <target>Detach</target>
+            </trans-unit>
+            <trans-unit id="detach.single.modal.actions.detach.label" resname="detach.single.modal.actions.detach.label">
+                <source>detach.single.modal.actions.detach.label</source>
+                <target>Detach</target>
+            </trans-unit>
+            <trans-unit id="detach.single.modal.heading" resname="detach.single.modal.heading">
+                <source>detach.single.modal.heading</source>
+                <target>Detach {label}</target>
+            </trans-unit>
+            <trans-unit id="detach.single.modal.heading_bare" resname="detach.single.modal.heading_bare">
+                <source>detach.single.modal.heading_bare</source>
+                <target>Detach</target>
+            </trans-unit>
+            <trans-unit id="detach.single.notifications.detached.title" resname="detach.single.notifications.detached.title">
+                <source>detach.single.notifications.detached.title</source>
+                <target>Detached</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.label" resname="dissociate.multiple.label">
+                <source>dissociate.multiple.label</source>
+                <target>Dissociate selected</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.modal.actions.dissociate.label" resname="dissociate.multiple.modal.actions.dissociate.label">
+                <source>dissociate.multiple.modal.actions.dissociate.label</source>
+                <target>Dissociate</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.modal.heading" resname="dissociate.multiple.modal.heading">
+                <source>dissociate.multiple.modal.heading</source>
+                <target>Dissociate selected {label}</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.modal.heading_bare" resname="dissociate.multiple.modal.heading_bare">
+                <source>dissociate.multiple.modal.heading_bare</source>
+                <target>Dissociate selected</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.notifications.dissociated.title" resname="dissociate.multiple.notifications.dissociated.title">
+                <source>dissociate.multiple.notifications.dissociated.title</source>
+                <target>Dissociated</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.notifications.dissociated_none.title" resname="dissociate.multiple.notifications.dissociated_none.title">
+                <source>dissociate.multiple.notifications.dissociated_none.title</source>
+                <target>Failed to dissociate {count} records</target>
+            </trans-unit>
+            <trans-unit id="dissociate.multiple.notifications.dissociated_partial.title" resname="dissociate.multiple.notifications.dissociated_partial.title">
+                <source>dissociate.multiple.notifications.dissociated_partial.title</source>
+                <target>Dissociated {count} of {total}</target>
+            </trans-unit>
+            <trans-unit id="dissociate.single.label" resname="dissociate.single.label">
+                <source>dissociate.single.label</source>
+                <target>Dissociate</target>
+            </trans-unit>
+            <trans-unit id="dissociate.single.modal.actions.dissociate.label" resname="dissociate.single.modal.actions.dissociate.label">
+                <source>dissociate.single.modal.actions.dissociate.label</source>
+                <target>Dissociate</target>
+            </trans-unit>
+            <trans-unit id="dissociate.single.modal.heading" resname="dissociate.single.modal.heading">
+                <source>dissociate.single.modal.heading</source>
+                <target>Dissociate {label}</target>
+            </trans-unit>
+            <trans-unit id="dissociate.single.modal.heading_bare" resname="dissociate.single.modal.heading_bare">
+                <source>dissociate.single.modal.heading_bare</source>
+                <target>Dissociate</target>
+            </trans-unit>
+            <trans-unit id="dissociate.single.notifications.dissociated.title" resname="dissociate.single.notifications.dissociated.title">
+                <source>dissociate.single.notifications.dissociated.title</source>
+                <target>Dissociated</target>
+            </trans-unit>
+            <trans-unit id="edit.single.label" resname="edit.single.label">
+                <source>edit.single.label</source>
+                <target>Edit</target>
+            </trans-unit>
+            <trans-unit id="edit.single.modal.actions.save.label" resname="edit.single.modal.actions.save.label">
+                <source>edit.single.modal.actions.save.label</source>
+                <target>Save changes</target>
+            </trans-unit>
+            <trans-unit id="edit.single.modal.heading" resname="edit.single.modal.heading">
+                <source>edit.single.modal.heading</source>
+                <target>Edit {label}</target>
+            </trans-unit>
+            <trans-unit id="edit.single.modal.heading_bare" resname="edit.single.modal.heading_bare">
+                <source>edit.single.modal.heading_bare</source>
+                <target>Edit</target>
+            </trans-unit>
+            <trans-unit id="edit.single.notifications.saved.title" resname="edit.single.notifications.saved.title">
+                <source>edit.single.notifications.saved.title</source>
+                <target>Saved</target>
+            </trans-unit>
+            <trans-unit id="group.trigger.label" resname="group.trigger.label">
+                <source>group.trigger.label</source>
+                <target>Actions</target>
+            </trans-unit>
+            <trans-unit id="modal.actions.cancel.label" resname="modal.actions.cancel.label">
+                <source>modal.actions.cancel.label</source>
+                <target>Cancel</target>
+            </trans-unit>
+            <trans-unit id="modal.actions.confirm.label" resname="modal.actions.confirm.label">
+                <source>modal.actions.confirm.label</source>
+                <target>Confirm</target>
+            </trans-unit>
+            <trans-unit id="modal.actions.submit.label" resname="modal.actions.submit.label">
+                <source>modal.actions.submit.label</source>
+                <target>Submit</target>
+            </trans-unit>
+            <trans-unit id="modal.confirmation" resname="modal.confirmation">
+                <source>modal.confirmation</source>
+                <target>Are you sure you would like to do this?</target>
+            </trans-unit>
+            <trans-unit id="replicate.single.label" resname="replicate.single.label">
+                <source>replicate.single.label</source>
+                <target>Replicate</target>
+            </trans-unit>
+            <trans-unit id="replicate.single.modal.actions.replicate.label" resname="replicate.single.modal.actions.replicate.label">
+                <source>replicate.single.modal.actions.replicate.label</source>
+                <target>Replicate</target>
+            </trans-unit>
+            <trans-unit id="replicate.single.modal.heading" resname="replicate.single.modal.heading">
+                <source>replicate.single.modal.heading</source>
+                <target>Replicate {label}</target>
+            </trans-unit>
+            <trans-unit id="replicate.single.modal.heading_bare" resname="replicate.single.modal.heading_bare">
+                <source>replicate.single.modal.heading_bare</source>
+                <target>Replicate</target>
+            </trans-unit>
+            <trans-unit id="replicate.single.notifications.replicated.title" resname="replicate.single.notifications.replicated.title">
+                <source>replicate.single.notifications.replicated.title</source>
+                <target>Replicated</target>
+            </trans-unit>
+            <trans-unit id="table.actions.open_bulk_actions.label" resname="table.actions.open_bulk_actions.label">
+                <source>table.actions.open_bulk_actions.label</source>
+                <target>Bulk actions</target>
+            </trans-unit>
+            <trans-unit id="view.single.label" resname="view.single.label">
+                <source>view.single.label</source>
+                <target>View</target>
+            </trans-unit>
+            <trans-unit id="view.single.modal.actions.close.label" resname="view.single.modal.actions.close.label">
+                <source>view.single.modal.actions.close.label</source>
+                <target>Close</target>
+            </trans-unit>
+            <trans-unit id="view.single.modal.heading" resname="view.single.modal.heading">
+                <source>view.single.modal.heading</source>
+                <target>View {label}</target>
+            </trans-unit>
+            <trans-unit id="view.single.modal.heading_bare" resname="view.single.modal.heading_bare">
+                <source>view.single.modal.heading_bare</source>
+                <target>View</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

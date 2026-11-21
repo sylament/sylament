@@ -44,7 +44,7 @@ Nothing blocks it: `BelongsToTable` gives `Action` its `table()` / `getTable()` 
 ### The heading, the description and the two button labels are translated in their getters
 
 `modalHeading()` and `modalDescription()` take `string|Markup|TranslatableInterface|Closure|null`; `modalSubmitActionLabel()` and `modalCancelActionLabel()` take `string|TranslatableInterface|Closure|null`, with no `Markup` arm, as in Filament.
-Each getter evaluates the value and translates it through the action's translator, before any presence test, so `hasCustomModalHeading()`, `hasModalDescription()` and [`shouldOpenModal()`](#the-action-modal-template-only-renders-part-of-the-full-action-modal) test the text the user would read.
+Each getter evaluates the value and translates it through the action's translator, before any presence test, so `hasCustomModalHeading()`, `hasModalDescription()` and [`shouldOpenModal()`](../../../packages/actions/src/Concerns/CanOpenModal.php) test the text the user would read.
 The two label getters keep returning a `string`, since they feed another action's `label()`, which treats a string as a literal.
 A message names its own domain, so the built-in texts and a developer's own translate alike.
 

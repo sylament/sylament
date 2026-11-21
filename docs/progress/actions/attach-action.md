@@ -22,7 +22,7 @@ The class is pinned end to end on a relation table, record select included.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/AttachAction.php) (`'attach'`) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | — |
-| [`setUp()` chrome](../../../packages/actions/src/AttachAction.php) (label, heading, submit label, `modalWidth('lg')`, success title, `defaultColor('gray')`) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` chrome](../../../packages/actions/src/AttachAction.php) (label, heading, submit label, `modalWidth('lg')`, success title, `defaultColor('gray')`) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`schema()`](../../../packages/actions/src/AttachAction.php) (the record select as the modal's only field) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [diverges](#the-record-select-is-a-forms-select-which-is-why-actions-requires-forms) |
 | [`extraModalFooterActions()`](../../../packages/actions/src/AttachAction.php) (the `attachAnother` submit) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [semantics](#the-another-arm-refills-the-schema-and-halts) |
 | [The `action()` body](../../../packages/actions/src/AttachAction.php) (resolve, bind, `process()`, another-or-success) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [semantics](#the-submitted-key-is-re-resolved-through-the-candidate-query) |
@@ -166,7 +166,8 @@ This is the one line of `getRecordSelect()` that is not the vendor's.
 Filament's default step receives `relationship` and resolves the record itself; the port's default step, [`attachRecords()`](../../../packages/actions/src/AttachAction.php), is handed `relationship` and `records`, the resolved list, so a `using()` override reads the picked records whatever the multiplicity.
 The action binds `record()` only when exactly one record was picked.
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-Filament reads every string through `__('filament-actions::attach…')`.
-The port hardcodes Filament's `en` values, `Attach`, `Attach :label`, `Record`, `Attach & attach another` and `Attached`, the same call every other prebuilt action's strings got.
+`attach.single.label`, `attach.single.modal.heading` (`Attach {label}`), `attach.single.modal.actions.attach.label`, `attach.single.modal.actions.attach_another.label`, `attach.single.notifications.attached.title` and the record select's `attach.single.modal.fields.record_id.label` (`Record`) are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
+The heading falls back to the port-added `attach.single.modal.heading_bare` when no label is known.
+The select's label is handed to forms as a message, so the `required()` message it feeds reads the translated label.

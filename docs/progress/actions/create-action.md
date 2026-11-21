@@ -23,12 +23,12 @@ The tests that pin each rule are named in its entry below.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/CreateAction.php) (`'create'`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | — |
-| [`setUp()` label + success-notification title](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` label + success-notification title](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | [URL mode](../../../packages/actions/src/Concerns/CanOpenUrl.php) (the host-hook fallthrough) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [semantics](#a-page-beats-a-modal-for-every-record-action) · [can-open-url.md](can-open-url.md#geturl-falls-back-to-the-hosts-default-url-through-the-nullable-accessor) |
 | [Modal mode](../../../packages/actions/src/CreateAction.php) (the `action()` body that persists a new record) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) · [diverges](#a-key-mutatedatausing-adds-that-no-component-maps-is-refused-by-name) |
 | [`RefusesUnmappedData`](../../../packages/actions/src/Concerns/RefusesUnmappedData.php) (`@internal`, shared with edit and replicate) | — | done | — | [diverges](#a-key-mutatedatausing-adds-that-no-component-maps-is-refused-by-name) |
-| [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`groupedIcon('heroicons:plus-20-solid')`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | [Create-another](../../../packages/actions/src/CreateAction.php) (`createAnother()`, `canCreateAnother()`, `createAnotherAction()`, `getCreateAnotherAction()`, `preserveFormDataWhenCreatingAnother()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) · [diverges](#two-props-widen-filaments-closure-to-the-closures-own-result) |
 | [`shouldClearRecordAfter()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [has-actions.md](has-actions.md#clearrecordafter-runs-at-both-of-filaments-sites) |
@@ -173,14 +173,16 @@ It is **skipped**, not blocked: nothing will make it necessary.
 
 `disableCreateAnother()` is `@deprecated` upstream in favour of `createAnother(false)`, and the port ships no deprecated surface.
 
-### The strings are literals, not translation keys
+### The texts are catalogue messages under Filament's keys
 
-Filament reads every user-visible string through `__('filament-actions::create.single…')`.
-The port sets the English literals directly, read from [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php): `New :label` for the trigger, `Create :label` for the modal heading, `Create` for the submit button, `Create & create another` for the extra footer button and `Created` for the success toast, because no translation catalogue is ported.
+Every user-visible string is a `TranslatableMessage` in the `sylament-actions` domain, kept in [`sylament-actions+intl-icu.en.xlf`](../../../packages/actions/translations/sylament-actions+intl-icu.en.xlf) under the key Filament's [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php) gives it: `create.single.label` (`New {label}`) for the trigger, `create.single.modal.heading` (`Create {label}`), `create.single.modal.actions.create.label`, `create.single.modal.actions.create_another.label` and `create.single.notifications.created.title`.
+Filament's `:label` placeholders are ICU `{label}` arguments, and the getters translate the message, so a locale or an override needs no change to the action.
 
-The two `:label` interpolations become string interpolation over [`Action::getRecordLabel()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and `getTitleCaseRecordLabel()`, which is why they are closures rather than literals: neither label is known until the action is hosted.
-Both carry a fallback Filament does not have: when nothing names a record class the label is `null`, and Filament would render a trailing-space `New ` and `Create `, so the port falls back to the bare verb `Create` for each.
+The two `{label}` arguments are fed by [`Action::getRecordLabel()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and `getTitleCaseRecordLabel()`, which is why the label and the heading are closures: neither label is known until the action is hosted.
+Both carry a fallback Filament does not have: when nothing names a record class the label is `null`, and Filament would render a trailing-space `New ` and `Create `, so the port falls back to the bare verb for each.
 That fallback is reachable only by an action with no record class from any source, which is a misconfiguration everywhere except url mode, where the trigger's text is all that renders.
+The bare verbs are port-added keys beside Filament's in the same shape, `create.single.label_bare` and `create.single.modal.heading_bare`, rather than a branch folded into Filament's keys, so Filament's locales still map one-to-one; they are separate keys from the submit button's `Create`, because a heading and a button translate differently in inflected languages.
+Every sibling action follows the shape: `<verb>.single.label`, `<verb>.single.modal.heading`, `<verb>.single.modal.heading_bare` and the notification title, with the bulk classes under `<verb>.multiple.…`.
 
 ### Icons are literal heroicon names with no alias indirection
 

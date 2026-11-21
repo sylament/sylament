@@ -6,6 +6,7 @@ namespace Sylament\Tests\Architecture\Trail;
 
 use Closure;
 use RuntimeException;
+use Sylament\Tests\Architecture\Documentation\DocumentationFiles;
 use Sylament\Tests\Architecture\TrackedFiles;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -31,6 +32,8 @@ final class Trail
     ];
 
     private const array UNAUDITED = ['_not audited yet_', '_rest not audited yet_'];
+
+    private const array ENTRY_SECTIONS = ['Details', 'Semantics', 'Divergences'];
 
     private const string DETAIL_CELL = '/^(—|\[[^\]]+\]\([^)\s]+\)( · \[[^\]]+\]\([^)\s]+\))*)$/u';
 
@@ -563,6 +566,57 @@ final class Trail
     }
 
     /**
+     * Check 8: every entry, a "###" heading under "## Details", "## Semantics" or "## Divergences", is the target of a
+     * link from a table row of some trail file, its own or another; a link in prose does not count.
+     *
+     * @return list<string>
+     */
+    public function orphanViolations(): array
+    {
+        $entries = [];
+        $linked = [];
+
+        foreach ($this->trailPaths() as $path) {
+            $section = null;
+            $seen = [];
+
+            foreach (self::proseLines($this->read($path)) as $number => $line) {
+                if (1 === preg_match('/^(#{1,6})\s+(.+?)\s*#*$/', $line, $heading)) {
+                    $slug = DocumentationFiles::slug($heading[2]);
+                    $anchor = isset($seen[$slug]) ? "{$slug}-{$seen[$slug]}" : $slug;
+                    $seen[$slug] = ($seen[$slug] ?? 0) + 1;
+                    $section = '##' === $heading[1] ? $heading[2] : $section;
+
+                    if ('###' === $heading[1] && in_array($section, self::ENTRY_SECTIONS, true)) {
+                        $entries["{$path}#{$anchor}"] = "{$path}:{$number}: ### {$heading[2]}";
+                    }
+
+                    continue;
+                }
+
+                if (!str_starts_with($line, '|')) {
+                    continue;
+                }
+
+                preg_match_all('/\]\(([^)\s#]*)#([^)\s]+)\)/', (string) preg_replace('/`[^`]*`/', '``', $line), $links, PREG_SET_ORDER);
+
+                foreach ($links as $link) {
+                    $target = '' === $link[1] ? $path : self::joinPath(dirname($path), rawurldecode($link[1]));
+                    $linked[$target . '#' . rawurldecode($link[2])] = true;
+                }
+            }
+        }
+
+        $violations = [];
+
+        foreach (array_diff_key($entries, $linked) as $entry) {
+            $violations[] = "{$entry} is linked from no table row; link it from the row of the code it constrains";
+        }
+
+        return $violations;
+    }
+
+    /**
      * Check 9: no trail file is past the size alarm, so every file can be read in one call.
      *
      * @return list<string>
@@ -830,6 +884,24 @@ final class Trail
         $title = (string) preg_replace('#\s*\n\s*(?:\*(?!\*)|//|\#)?\s*#', ' ', $title);
 
         return mb_trim((string) preg_replace('/\s+/', ' ', str_replace('`', '', $title)));
+    }
+
+    /**
+     * A repo-relative path joined onto a directory, with "." and ".." segments resolved.
+     */
+    private static function joinPath(string $directory, string $relative): string
+    {
+        $segments = [];
+
+        foreach (explode('/', "{$directory}/{$relative}") as $segment) {
+            if ('..' === $segment) {
+                array_pop($segments);
+            } elseif (!in_array($segment, ['', '.'], true)) {
+                $segments[] = $segment;
+            }
+        }
+
+        return implode('/', $segments);
     }
 
     private static function isYamlComment(string $line): bool

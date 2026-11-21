@@ -15,8 +15,8 @@ use UnexpectedValueException;
 
 /**
  * Convention test for the port trail under docs/progress/: frontmatter, ownership of every source file,
- * table and row rules, the generated README indexes, the trail paths code and docs/internals cite, and the
- * size alarm.
+ * table and row rules, the generated README indexes, the trail paths code and docs/internals cite, a row link
+ * to every entry, and the size alarm.
  * The logic is in Trail/; the rules are in .claude/rules/trail.md.
  */
 
@@ -253,6 +253,27 @@ it('checks the trail paths and quoted titles that code and docs/internals cite',
     }
 });
 
+it('refuses an entry that no table row of any trail file links, a prose link notwithstanding', function (): void {
+    $files = TrailFixture::greenTree();
+    $files[TrailFixture::docs('alpha/widget.md')] .= "\n### A second `Widget` note\n\nSee [the engine](#widget-waits-on-the-engine) and [itself](#a-second-widget-note).\n"
+        . "\n## Semantics\n\n### Linked from another file\n\nOne sentence.\n\n### Unlinked\n\n```\n### Fenced\n```\n\n## Divergences\n\n### Unlinked\n\nOne sentence.\n";
+    $files[TrailFixture::docs('alpha/has-thing.md')] = str_replace(
+        '| `legacyThing()` | `HasThing.php` | skipped | — | — |',
+        '| `legacyThing()` | `HasThing.php` | skipped | — | [semantics](widget.md#linked-from-another-file) · [`b`](./../alpha/widget.md#unlinked-1) |',
+        $files[TrailFixture::docs('alpha/has-thing.md')],
+    ) . "\n## The controller's values\n\n### A reference subsection\n";
+    $root = TrailFixture::tree($files);
+
+    try {
+        expect(new Trail($root, TrailFixture::tracked($files))->orphanViolations())->toBe([
+            TrailFixture::docs('alpha/widget.md') . ':25: ### A second `Widget` note is linked from no table row; link it from the row of the code it constrains',
+            TrailFixture::docs('alpha/widget.md') . ':35: ### Unlinked is linked from no table row; link it from the row of the code it constrains',
+        ]);
+    } finally {
+        new Filesystem()->remove($root);
+    }
+});
+
 it('raises the size alarm one byte past 90 KB', function (int $bytes, bool $alarm): void {
     $files = TrailFixture::greenTree();
     $head = "# Big (alpha)\n\n";
@@ -286,6 +307,7 @@ it('writes the indexes between the markers and passes every check afterwards', f
             ->and($trail->ownership()['violations'])->toBe([])
             ->and($trail->indexViolations())->toBe([])
             ->and($trail->referenceViolations())->toBe([])
+            ->and($trail->orphanViolations())->toBe([])
             ->and($trail->sizeViolations())->toBe([])
             ->and((string) file_get_contents($root . '/' . TrailFixture::docs('README.md')))->toContain(implode("\n", [
                 Trail::INDEX_START,
@@ -414,6 +436,12 @@ it('names only trail paths and headings that exist (check 7)', function (): void
     $violations = new Trail(TrailFixture::repositoryRoot())->referenceViolations();
 
     expect($violations)->toBe([], "References to trail files or sections that do not exist:\n" . implode("\n", $violations));
+});
+
+it('links every Details, Semantics and Divergences entry from a table row of some trail file (check 8)', function (): void {
+    $violations = new Trail(TrailFixture::repositoryRoot())->orphanViolations();
+
+    expect($violations)->toBe([], "Trail entries no table row links (.claude/rules/trail.md):\n" . implode("\n", $violations));
 });
 
 it('keeps every trail file under the 90 KB alarm (check 9)', function (): void {

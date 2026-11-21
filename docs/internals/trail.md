@@ -90,6 +90,7 @@ So a file stays under 80 KB, and a file that outgrows that splits along the code
 - **Status lines:** no `**Status:**` line remains.
 - **Indexes:** every README index equals its rendering.
 - **References:** a trail path or quoted section title named in code or in `docs/internals/` resolves.
+- **Entry links:** every `###` under `## Details`, `## Semantics` or `## Divergences` is the target of a link from a table row of some trail file, so no entry is reachable only by scrolling or through prose; a `###` under a reference section is not an entry and needs none.
 - **Size:** no trail file exceeds 90 KB.
 
 `DocumentationFilesTest` checks every relative link and anchor in `docs/`, and that `docs/` carries no milestone label.

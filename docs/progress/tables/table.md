@@ -228,6 +228,12 @@ That is what makes actions' unconditional table hop ([action.md](../actions/acti
 `heading()`, `description()`, `recordLabel()`, `pluralRecordLabel()` and `recordTitle()` take a message, and each getter translates it through the table's translator before anything tests, casts or pluralises it, so `getRecordLabel()` and `getPluralRecordLabel()` still answer plain strings.
 `plural()` stays English, so a translated singular `recordLabel()` needs its own `pluralRecordLabel()`: without one, the plural is derived from the translated singular by English rules.
 
+### A `Markup` that goes into a message reads as its text
+
+The texts the port composes around a label or a title are one message with the label as an argument, and an argument is plain text: a `Markup` group label (in the group heading's prefix and the collapse button's name), a `Markup` group title (in the group summary's heading, the group checkbox's name and the collapse button's name), a `Markup` column label (in a column's search chip) and a `Markup` filter indicator (in the `<indicator>: <state>` chip) are reduced with `striptags` first.
+A heading that prints the title itself still renders a `Markup` title raw, since no message holds it.
+Filament concatenates the same pieces in code, where a `Markup` stringifies to its markup and the badge or attribute shows it escaped.
+
 ## Divergences
 
 ### The card layout settings wait on the layout columns

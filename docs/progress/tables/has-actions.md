@@ -173,7 +173,8 @@ Both links are `<twig:SylamentSupport:Link tag="button">`, which is exactly what
 The count is a controller-filled empty `<span>` seeded from a `countMessages` value, where Filament runs a `|`-separated Laravel plural string through its own `window.pluralize` global, which the port does not ship.
 The value is the `table.selection_indicator.selected_count` message rendered once per plural category the server knows, `{"one": "__COUNT__ record selected", "other": "__COUNT__ records selected"}` for `en`: the message is `{count, plural, one {{shown} record selected} other {{shown} records selected}}`, rendered with `count` 1 and 2 and `shown` the `__COUNT__` token.
 The controller picks the category `Intl.PluralRules` answers for the document's language, falling back to `other`, and replaces the token with the number it formats with `Intl.NumberFormat`, so it reads _"1,200 records selected"_ in a browser that groups so.
-The ceiling in the server-rendered _"Select all {count}"_ label is formatted by the message's ICU number format in the request locale, so the two can group differently when the browser's locale is not the application's: `Intl.NumberFormat()` takes the **browser's** locale, and aligning them would trade a visible inconsistency for a locale-dependent one.
+The ceiling in the server-rendered _"Select all {count}"_ label is the bare integer, since an untyped ICU argument is not grouped.
+The two are deliberately not aligned: `Intl.NumberFormat()` groups by the **browser's** locale and Twig's `number_format` by the template's, so matching them would trade a visible inconsistency for a locale-dependent one.
 A locale with a plural category beyond `one` and `other` needs its map extended on the server.
 
 The banner is server-gated on `isSelectionEnabled()` and client-gated on the count, as vendor's is, and it renders on an overflow (empty) page too: a selection outlives a page that lost its rows.

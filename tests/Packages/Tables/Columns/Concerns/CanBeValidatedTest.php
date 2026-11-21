@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Tables\Columns\TextInputColumn;
 use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
@@ -10,6 +12,9 @@ use Sylament\Tests\Fixtures\Tables\EditableFlaggedSampleTable;
 use Sylament\Tests\Fixtures\Tables\EditableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\RecordsLaneCellsTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Symfony\Component\Validator\Constraints\Length;
+
+use function Symfony\Component\Translation\t;
 
 describe('declared constraints', function (): void {
     it('refuses a post through each constraint the column declares, in the message the developer gave it, and writes one they all accept', function (): void {
@@ -41,6 +46,22 @@ describe('declared constraints', function (): void {
 
         expect(fn () => $tester->call('updateTableColumnState', ['column' => 'motto', 'record' => 'north', 'input' => 'Onward']))
             ->toThrow(LogicException::class, 'Sylament cannot apply a validation message to the column [motto] because Symfony\Component\Validator\Constraints\Length has no [message] message option. Use one of: [maxMessage], [minMessage], [exactMessage], [charsetMessage].');
+    });
+});
+
+describe('messages', function (): void {
+    it('refuses with a message the developer gave as a message, in its translation', function (): void {
+        $column = TextInputColumn::make('code')->constraint(new Length(max: 2))->validationMessages([Length::class => ['maxMessage' => t('validator.invalid', [], 'fixtures-tables')]]);
+
+        $errors = [];
+
+        try {
+            $column->validate('ABC');
+        } catch (ValidationException $validationException) {
+            $errors = $validationException->getErrors();
+        }
+
+        expect($errors)->toBe(['code' => ['Refused (translated)']]);
     });
 });
 

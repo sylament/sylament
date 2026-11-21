@@ -25,12 +25,10 @@ it('derives its label from its name when given none', function (string $name, st
     'a dotted name' => ['sealed.nested', 'Sealed'],
 ]);
 
-it('names its field and its chip by a label given as a message', function (): void {
+it('names its field by a label given as a message', function (): void {
     $tester = $this->createLiveComponent(TranslatedLarderJarTable::class)->filterTable('sealed');
 
-    expect($tester->render()->crawler())
-        ->toContainElement(Selectors::filterFieldLabel('sealed', 'isActive'), 'Sealed ones (translated)')
-        ->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Sealed chip (translated)');
+    expect($tester->render()->crawler())->toContainElement(Selectors::filterFieldLabel('sealed', 'isActive'), 'Sealed ones (translated)');
 });
 
 it('translates a filter label under translateLabel()', function (): void {

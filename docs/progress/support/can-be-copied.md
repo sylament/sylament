@@ -17,7 +17,7 @@ The client half, the `sylament--support--clipboard` Stimulus controller a templa
 | --- | --- | --- | --- | --- |
 | [`copyable()` + `isCopyable()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`CanBeCopied::copyable()`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | — | — |
 | [`copyableState()` + `getCopyableState()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`CanBeCopied::copyableState()`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | — | [semantics](#a-null-copyable-state-means-copy-what-the-cell-rendered) |
-| [`copyMessage()` + `getCopyMessage()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`CanBeCopied::copyMessage()`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | — | [diverges](#the-copied-default-is-an-english-literal) |
+| [`copyMessage()` + `getCopyMessage()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`CanBeCopied::copyMessage()`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | — | [semantics](#the-confirmation-is-translated-before-the-template-reads-it) |
 | [`copyMessageDuration()` + `getCopyMessageDuration()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`CanBeCopied::copyMessageDuration()`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | — | — |
 | [`hasCopyable()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`CanBeCopied::hasCopyable()`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | — | [semantics](#hascopyable-answers-configured-not-currently-on) |
 
@@ -37,11 +37,10 @@ The text column falls back to the **formatted** state, what the user can see, so
 The colour column falls back to the raw colour string, as Filament's `ColorColumn` does.
 The fallback lives in the consuming column rather than here, exactly as Filament arranges it.
 
-## Divergences
+### The confirmation is translated before the template reads it
 
-### The `Copied` default is an English literal
-
-Filament's `getCopyMessage()` falls back to `__('filament::components/copyable.messages.copied')`.
-i18n is [deferred toolkit-wide](../../internals/i18n.md), so the port falls back to the literal `'Copied'`, as every other user-visible default string in the toolkit does.
+`copyMessage()` takes a string, a `TranslatableInterface` or a closure returning either, and falls back to a `TranslatableMessage` for Filament's `components/copyable.messages.copied` key in the `sylament` catalogue, `Copied` in Filament's English.
+`getCopyMessage()` always answers the translated string, because the clipboard controller takes it as a Stimulus value and holds no default of its own.
+The fallback is a message, so a column built with `new` and asked for its confirmation throws the [`LogicException`](component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks) a message always throws there; a rendered column is container-built and never does.
 The `2000` ms duration default is Filament's own literal and is unchanged.
-When i18n lands, this fallback is one of the strings it collects.
+`copyableState()` is clipboard data rather than interface text, so a string there is never a key and a message is not accepted.

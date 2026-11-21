@@ -13,6 +13,17 @@ it('tells which records the page shows out of the total, and that it shows none 
         ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 0 results of 30');
 });
 
+it('counts the page overview with a plural message', function (): void {
+    expect($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 1, 1, 10)])->crawler())
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 result')
+        ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1], ['id' => 2]], 2, 1, 10)])->crawler())
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 2 of 2 results')
+        ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1], ['id' => 2]], 1234, 1, 2)])->crawler())
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 2 of 1,234 results')
+        ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1], ['id' => 2]], 5000, 1500, 2)])->crawler())
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 2,999 to 3,000 of 5,000 results');
+});
+
 it('offers a per-page select bound to the table, all named All, the current choice selected, only with more than one choice', function (): void {
     $pagination = $this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 30, 1, 10), 'pageOptions' => [5, 10, 'all'], 'currentPerPage' => 10])->crawler();
 
@@ -45,7 +56,7 @@ it('goes back only after the first page and forward only before the last, and of
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3]], 3, 3, 1)])->crawler())
         ->toContainButtons('.sy-pagination-items button', ['Previous page', 'Go to page 1', 'Go to page 2', 'Go to page 3'])
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 1, 1, 10)])->crawler())
-        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 1 of 1 results')
+        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 result')
         ->not->toContainElement('button');
 });
 

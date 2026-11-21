@@ -23,7 +23,7 @@ That split is Filament's, and it is why `role` is the caller's attribute rather 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [Root `<nav>` + `sy-contained` / `sy-vertical`](../../../packages/support/templates/components/Tabs/index.html.twig) | [`tabs/index.blade.php`](../../../vendor/filament/support/resources/views/components/tabs/index.blade.php) | done | — | — |
-| [`aria-label` with a fallback](../../../packages/support/templates/components/Tabs/index.html.twig) | [`__('filament::components/tabs.label')`](../../../vendor/filament/support/resources/views/components/tabs/index.blade.php) | done | — | [diverges](#the-navigation-label-fallback-is-a-literal-not-a-translation-key) |
+| [`aria-label` with a fallback](../../../packages/support/templates/components/Tabs/index.html.twig) | [`__('filament::components/tabs.label')`](../../../vendor/filament/support/resources/views/components/tabs/index.blade.php) | done | — | — |
 | [Item tag arms — `button` `type`, `a` `href`/`target`](../../../packages/support/templates/components/TabsItem/index.html.twig) | [the `@if ($tag === 'button')` pair](../../../vendor/filament/support/resources/views/components/tabs/item.blade.php) | done | — | [diverges](#the-anchor-arm-emits-href-and-target-directly-instead-of-generate_href_html) |
 | [`active` → `sy-active` + `aria-current`](../../../packages/support/templates/components/TabsItem/index.html.twig) | [the `aria-current` merge + `fi-active`](../../../vendor/filament/support/resources/views/components/tabs/item.blade.php) | done | — | — |
 | [Leading / trailing icon + `iconAlias`](../../../packages/support/templates/components/TabsItem/index.html.twig) | [the two `generate_icon_html()` calls](../../../vendor/filament/support/resources/views/components/tabs/item.blade.php) | done | — | [diverges](#the-item-takes-an-iconalias-prop-and-drops-the-unused-iconcolor-one) |
@@ -43,11 +43,6 @@ The block wins when both are present, matching Blade's branch order.
 `markup()` returns `null` for a blank capture, so a block that renders only whitespace (schemas' Tabs partial emits the badge block unconditionally and fills it only for a deferred tab) falls through to the scalar arm instead of swallowing it.
 
 ## Divergences
-
-### The navigation label fallback is a literal, not a translation key
-
-Filament falls back to `__('filament::components/tabs.label')`; ours falls back to the literal `'Tabs'`, the same call [breadcrumbs.md](breadcrumbs.md#the-navigation-label-is-a-literal-not-a-translation-key) makes.
-The port has no translation layer ([i18n](../../internals/i18n.md)), so every user-facing literal is English at the point of use and moves in one pass when one ships.
 
 ### The anchor arm emits `href` and `target` directly instead of `generate_href_html()`
 

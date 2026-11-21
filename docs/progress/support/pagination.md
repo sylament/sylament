@@ -33,12 +33,19 @@ Filament's carrier is Laravel's `LengthAwarePaginator`, a framework class Sylame
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | [diverges](#the-pagination-item-is-markup-inlined-at-each-use-not-a-component) |
 | [Simple paging: the null-total branch](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
 | Cursor paging: the `CursorPaginator` arm | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([can-paginate-records.md](../tables/can-paginate-records.md#cursor-pagination-waits-on-a-keyset-carrier)) | — |
-| Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([has-empty-state.md](../tables/has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)) | — |
+| [Translated copy: the overview, the labels and the per-page choices](../../../packages/support/templates/components/Pagination/index.html.twig) | `__('filament::components/pagination.*')` and `trans_choice()` in the same view | done | — | [diverges](#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths) |
+| Locale-formatted page numbers on the buttons and the per-page choices | `Number::format()` in the same view | todo | — | [detail](#the-page-buttons-and-the-per-page-choices-print-raw-digits) |
 | [Styles: the footer, the overview, the item list and its items](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination`, `.fi-pagination-overview`, `.fi-pagination-items`, `.fi-pagination-item*`](../../../vendor/filament/support/resources/css/components/pagination.css) | done | — | [diverges](#the-item-styles-collapse-filaments-three-elements-onto-one) |
 | [Styles: the per-page select and its label](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination-records-per-page-select*`](../../../vendor/filament/support/resources/css/components/pagination.css) + input wrapper and select | in progress | — | [detail](#the-selects-compact-twin-is-the-last-unported-arm) · [diverges](#the-per-page-select-carries-the-input-wrappers-chrome-because-it-has-no-wrapper) |
 | Vendor's responsive layout arms (`hidden` bases, `@4xl:`/`md:` swaps, `@container`, both `@supports` blocks) | [`pagination.css`](../../../vendor/filament/support/resources/css/components/pagination.css) | skipped | — | [diverges](#the-responsive-arms-are-dropped-with-the-mobile-layout-they-serve) |
 
 ## Details
+
+### The page buttons and the per-page choices print raw digits
+
+The overview formats its three numbers through ICU's `number` type, so `5000` reads `5,000` in English, as Filament's `Number::format()` does.
+The numbers a button shows and the per-page choices still print as raw digits, and the `Go to page {page}` label takes `page` untyped for the same reason: it names the button's own text, which has no formatter, so the two stay in step.
+A locale-aware formatter on all three changes each button's text and its label together.
 
 ### The component renders one of Filament's two layouts
 
@@ -91,6 +98,16 @@ The paginator a `records()` closure returns is never the one the template render
 And the counts are carried through untouched — `withRecords()` does not recompute `totalRecordCount` from the array it is handed, because the whole point of the carrier is that the total is bigger than the page.
 
 ## Divergences
+
+### The copy is read from the `sylament` catalogue under Filament's key paths
+
+Every text the footer renders is a `'<key>'|trans(domain: 'sylament')` call whose key is Filament's `filament::components/pagination.*` path, so a Filament locale maps onto it key for key.
+`components/pagination.overview` is one ICU plural over `total`: `one` reads `Showing 1 result`, which is Filament's text, and `other` reads `Showing {first} to {last} of {total} results`, the numbers formatted for the locale.
+A one-record page therefore reads `Showing 1 result`, where a footer with no plural arm would say `Showing 1 to 1 of 1 results`.
+Filament renders an empty page through the same key as `Showing 0 to 0 of 0 results` and suppresses the overview in simple mode, so three texts have no Filament key and take port-added keys in the same shape: `overview_without_total` (`Showing {first} to {last} results`), `overview_empty_with_total` (`Showing 0 results of {total}`) and `overview_empty` (`Showing 0 results`).
+Five texts keep the port's English under Filament's key, because each names what the control does where Filament's names the control: `label` is `Pagination` (Filament: `Pagination navigation`), and `actions.first.label`, `actions.previous.label`, `actions.next.label` and `actions.last.label` are `Go to the first page`, `Previous page`, `Next page` and `Go to the last page` (Filament: `First`, `Previous`, `Next`, `Last`).
+`actions.go_to_page.label` is `Go to page {page}`, where Filament's `trans_choice()` passes the page as the plural selector; the page is an ordinary argument here.
+`fields.records_per_page.label` and `.options.all` (`Per page`, `All`) are Filament's text.
 
 ### The carrier is first-party rather than an ecosystem package
 
@@ -163,7 +180,7 @@ The port asks the same question of its one carrier (`totalRecordCount is null`) 
 The **overview** stays because the numbers are there and the copy is ours.
 `getFirstRecordNumber()` / `getLastRecordNumber()` need no total, and neither do Laravel's `firstItem()` / `lastItem()`, which sit on `AbstractPaginator`, so the simple paginator answers them too.
 What forces Filament's hand is the translation: `'{1} Showing 1 result|[2,*] Showing :first to :last of :total results'` is one key with no totals-free arm, so a simple footer there can only say nothing about where the user is.
-When [i18n](../tables/has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) lands, the second arm is a second key rather than a re-decision.
+The port's second arm is a [port-added key](#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths), `components/pagination.overview_without_total`, beside Filament's.
 
 The **item list** stays because the port renders [one of Filament's two layouts](#the-component-renders-one-of-filaments-two-layouts): the standalone buttons simple mode falls back to are the layout we do not emit, so dropping the `<ol>` would leave a simple footer with no way to change page at all.
 Its prev/next items already key off `onFirstPage()` / `hasMorePages()`, the two predicates a carrier answers without a total, so the branch skips the window and nothing else and both shapes share one markup and one stylesheet path.

@@ -25,7 +25,7 @@ The schemas [`Section`](../schemas/section.md) component wraps it, embedding `<t
 | [Variant + state classes](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | — |
 | [Collapsible disclosure](../../../packages/support/assets/src/controllers/section_controller.ts) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-collapsed-state-is-rendered-server-side-not-bound-client-side) |
 | [Element ids + ARIA landmark](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#element-ids-and-aria-landmark-wiring-are-rendered-from-server-computed-props) |
-| [Disclosure labels](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-expandcollapse-labels-are-english-prop-defaults-not-translations) |
+| [Disclosure labels](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-expand-and-collapse-labels-are-props-defaulting-to-the-catalogue-and-the-controller-holds-no-text) |
 | [Live-state reset wiring](../../../packages/support/templates/components/Section/index.html.twig) | — | in progress | — | [detail](#the-live-state-reset-branch-has-no-caller) · [diverges](#the-live-component-state-reset-wiring-is-a-sylament-addition) |
 | [`section.css`](../../../packages/support/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/support/resources/css/components/section.css) | in progress | — | [detail](#two-collapsed-state-rules-differ-from-filaments-with-no-recorded-reason) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) |
 
@@ -69,12 +69,12 @@ Sylament renders `sy-collapsed` server-side (`'sy-collapsed': collapsible and co
 The only case that can still flash is a persisted section, whose localStorage value may override the server default on connect, so `sy-cloak` is emitted for `collapsible and persistCollapsed` alone, a narrower condition than Filament's.
 It is pinned: `sy-cloak` is absent on a collapsible section that persists nothing and present under `persistCollapsed`.
 
-### The expand/collapse labels are English prop defaults, not translations
+### The expand and collapse labels are props defaulting to the catalogue, and the controller holds no text
 
-Filament resolves the disclosure button's labels inline with `__('filament::components/section.actions.expand.label')` / `…collapse.label`, pulling from its translation catalogues.
-Sylament ships no translation layer, so the template exposes `expandLabel` / `collapseLabel` props defaulting to the literal English strings `'Expand section'` / `'Collapse section'`.
-Callers can override them, but there is no locale lookup.
-It is revisited when the `support` translations (`resources/lang/`) are ported.
+Filament resolves the disclosure button's labels inline with `__('filament::components/section.actions.expand.label')` / `…collapse.label`.
+The template exposes `expandLabel` / `collapseLabel` props whose defaults translate Filament's key paths, `components/section.actions.expand.label` and `components/section.actions.collapse.label`, from the `sylament` catalogue, in Filament's English.
+A caller can pass either prop to replace the catalogue's text.
+The button's `aria-label` and the controller's `expandLabel` / `collapseLabel` Stimulus values are rendered from the same two props, so the controller, which rewrites the `aria-label` on every toggle, carries no English default: the server's locale at render time fixes both texts, and a client-side locale change needs a re-render.
 
 ### The live-component-state reset wiring is a Sylament addition
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Components\Concerns;
 
 use Closure;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 
 trait CanBeCopied
@@ -63,9 +64,9 @@ trait CanBeCopied
     {
         $message = $this->evaluate($this->copyMessage, [
             'state' => $state,
-        ]);
+        ]) ?? new TranslatableMessage('components/copyable.messages.copied', domain: 'sylament');
 
-        return (string) ($this->translateText($message) ?? 'Copied');
+        return (string) $this->translateText($message);
     }
 
     public function getCopyMessageDuration(mixed $state): int

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="sk" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="components/section.actions.collapse.label" resname="components/section.actions.collapse.label">
+                <source>components/section.actions.collapse.label</source>
+                <target>Zbaliť sekciu</target>
+            </trans-unit>
+            <trans-unit id="components/section.actions.expand.label" resname="components/section.actions.expand.label">
+                <source>components/section.actions.expand.label</source>
+                <target>Rozbaliť sekciu</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

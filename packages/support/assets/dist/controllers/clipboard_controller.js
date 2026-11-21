@@ -14,7 +14,7 @@ function liveRegion() {
 class clipboard_controller_default extends Controller {
   static values = {
     text: String,
-    message: { type: String, default: "Copied" },
+    message: String,
     duration: { type: Number, default: 2e3 }
   };
   #timer;

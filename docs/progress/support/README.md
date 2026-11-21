@@ -53,7 +53,7 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [link.md](link.md) | in progress | 1 in progress · 3 blocked · 2 todo | `resources/views/components/link.blade.php`, `View/Components/LinkComponent.php`, `resources/css/components/link.css` | The `<twig:SylamentSupport:Link>` anonymous component, Filament's inline text link or button with its icon, size, weight and colour map. |
 | [loading-indicator.md](loading-indicator.md) | in progress | 2 todo | `resources/views/components/loading-indicator.blade.php`, `View/DefaultLoadingIndicator.php`, `Contracts/LoadingIndicator.php`, `resources/css/components/loading-indicator.css` | The LoadingIndicator Twig component, the spinner SVG Filament's loading-indicator view renders, and its stylesheet. |
 | [modal.md](modal.md) | in progress | 1 blocked · 7 todo | `View/Components/ModalComponent.php`, `resources/views/components/modal/index.blade.php`, `resources/css/components/modal.css`, `resources/js/components/modal.js` | The shared `<twig:SylamentSupport:Modal>` primitive, Filament's Alpine-driven modal rebuilt on a native `<dialog>` and a Stimulus controller. |
-| [pagination.md](pagination.md) | in progress | 2 in progress · 2 blocked · 1 todo | `resources/views/components/pagination/index.blade.php`, `resources/views/components/pagination/item.blade.php`, `resources/css/components/pagination.css` | The `Paginator` carrier, one page of records plus its counts, and the `<twig:SylamentSupport:Pagination>` footer that renders it. |
+| [pagination.md](pagination.md) | in progress | 2 in progress · 1 blocked · 2 todo | `resources/views/components/pagination/index.blade.php`, `resources/views/components/pagination/item.blade.php`, `resources/css/components/pagination.css` | The `Paginator` carrier, one page of records plus its counts, and the `<twig:SylamentSupport:Pagination>` footer that renders it. |
 | [section.md](section.md) | in progress | 2 in progress | `resources/views/components/section/index.blade.php`, `resources/views/components/section/heading.blade.php`, `resources/views/components/section/description.blade.php`, `resources/css/components/section.css` | The presentational `<twig:SylamentSupport:Section>` Twig component, its collapse controller and stylesheet, the port of Filament's `filament::section` view. |
 | [sortable.md](sortable.md) | done | — | `resources/js/sortable.js`, `resources/css/sortable.css` | The shared drag-and-drop Stimulus controller over SortableJS, the port of Filament's `x-sortable` directive, and its ghost-class rule. |
 | [support-bundle.md](support-bundle.md) | in progress | 1 blocked | `SupportServiceProvider.php`, `resources/css/index.css`, `resources/css/base.css` | The `SylamentSupportBundle` service wiring, config, static-instance boot and asset registration, and the package's stylesheet entry and core controller. |
@@ -64,6 +64,8 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 <!-- trail-index:end -->
 
 ## Unported
+
+`Contracts/TranslatableContentDriver.php` is Filament's driver for translating a record's own content, which the toolkit's interface-text catalogues do not cover.
 
 | Filament | Status | Blocked by | Detail |
 | --- | --- | --- | --- |

@@ -10,8 +10,8 @@ export default class extends Controller<HTMLElement> {
     id: String,
     collapsed: Boolean,
     persist: Boolean,
-    expandLabel: { type: String, default: "Expand section" },
-    collapseLabel: { type: String, default: "Collapse section" },
+    expandLabel: String,
+    collapseLabel: String,
     liveComponentId: String,
     schemaKey: String,
   };

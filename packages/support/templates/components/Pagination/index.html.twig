@@ -17,34 +17,34 @@
 <nav
     {{ attributes.defaults({
         class: classes('sy', 'sy-pagination'),
-        'aria-label': 'Pagination',
+        'aria-label': 'components/pagination.label'|trans(domain: 'sylament'),
     }) }}
 >
     {% if firstRecordNumber is not null %}
         <span class="sy-pagination-overview">
             {% if totalRecordCount is not null %}
-                Showing {{ firstRecordNumber }} to {{ paginator.getLastRecordNumber }} of {{ totalRecordCount }} results
+                {{ 'components/pagination.overview'|trans({first: firstRecordNumber, last: paginator.getLastRecordNumber, total: totalRecordCount}, domain: 'sylament') }}
             {% else %}
-                Showing {{ firstRecordNumber }} to {{ paginator.getLastRecordNumber }} results
+                {{ 'components/pagination.overview_without_total'|trans({first: firstRecordNumber, last: paginator.getLastRecordNumber}, domain: 'sylament') }}
             {% endif %}
         </span>
     {% else %}
         <span class="sy-pagination-overview">
             {% if totalRecordCount is not null %}
-                Showing 0 results of {{ totalRecordCount }}
+                {{ 'components/pagination.overview_empty_with_total'|trans({total: totalRecordCount}, domain: 'sylament') }}
             {% else %}
-                Showing 0 results
+                {{ 'components/pagination.overview_empty'|trans(domain: 'sylament') }}
             {% endif %}
         </span>
     {% endif %}
 
     {% if pageOptions|length > 1 %}
         <label class="sy-pagination-per-page">
-            <span class="sy-pagination-per-page-label">Per page</span>
+            <span class="sy-pagination-per-page-label">{{ 'components/pagination.fields.records_per_page.label'|trans(domain: 'sylament') }}</span>
             <select class="sy-pagination-per-page-select" data-model="{{ currentPageOptionProperty }}">
                 {% for option in pageOptions %}
                     <option value="{{ option }}" {{ attrs({selected: option == currentPerPage}) }}>
-                        {{ option == 'all' ? 'All' : option }}
+                        {{ option == 'all' ? 'components/pagination.fields.records_per_page.options.all'|trans(domain: 'sylament') : option }}
                     </option>
                 {% endfor %}
             </select>
@@ -56,13 +56,13 @@
             {% if not paginator.onFirstPage %}
                 {% if extremeLinks %}
                     <li>
-                        <button type="button" class="sy-pagination-item" rel="first" aria-label="Go to the first page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: 1}) }}>
+                        <button type="button" class="sy-pagination-item" rel="first" aria-label="{{ 'components/pagination.actions.first.label'|trans(domain: 'sylament') }}" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: 1}) }}>
                             <twig:SylamentSupport:Icon icon="heroicons:chevron-double-left-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_FIRST_BUTTON')" />
                         </button>
                     </li>
                 {% endif %}
                 <li>
-                    <button type="button" class="sy-pagination-item" rel="prev" aria-label="Previous page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: page - 1}) }}>
+                    <button type="button" class="sy-pagination-item" rel="prev" aria-label="{{ 'components/pagination.actions.previous.label'|trans(domain: 'sylament') }}" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: page - 1}) }}>
                         <twig:SylamentSupport:Icon icon="heroicons:chevron-left-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_PREVIOUS_BUTTON')" />
                     </button>
                 </li>
@@ -79,7 +79,7 @@
                                 {{ attrs({
                                     class: classes('sy-pagination-item', {'sy-pagination-item-active': element == page}),
                                     'aria-current': element == page ? 'page' : null,
-                                    'aria-label': 'Go to page ' ~ element,
+                                    'aria-label': 'components/pagination.actions.go_to_page.label'|trans({page: element}, domain: 'sylament'),
                                     disabled: element == page,
                                 }) }}
                                 {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: element}) }}
@@ -93,13 +93,13 @@
 
             {% if paginator.hasMorePages %}
                 <li>
-                    <button type="button" class="sy-pagination-item" rel="next" aria-label="Next page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: page + 1}) }}>
+                    <button type="button" class="sy-pagination-item" rel="next" aria-label="{{ 'components/pagination.actions.next.label'|trans(domain: 'sylament') }}" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: page + 1}) }}>
                         <twig:SylamentSupport:Icon icon="heroicons:chevron-right-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_NEXT_BUTTON')" />
                     </button>
                 </li>
                 {% if extremeLinks and lastPage is not null %}
                     <li>
-                        <button type="button" class="sy-pagination-item" rel="last" aria-label="Go to the last page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: lastPage}) }}>
+                        <button type="button" class="sy-pagination-item" rel="last" aria-label="{{ 'components/pagination.actions.last.label'|trans(domain: 'sylament') }}" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: lastPage}) }}>
                             <twig:SylamentSupport:Icon icon="heroicons:chevron-double-right-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_LAST_BUTTON')" />
                         </button>
                     </li>

@@ -19,7 +19,7 @@ Panels' [`Header`](../panels/layout-templates.md) renders it, filled from `Page:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Root `<nav aria-label>` + `<ol>` list](../../../packages/support/templates/components/Breadcrumbs/index.html.twig) | [`<nav>` / `fi-breadcrumbs-list`](../../../vendor/filament/support/resources/views/components/breadcrumbs.blade.php) | done | — | [diverges](#the-navigation-label-is-a-literal-not-a-translation-key) |
+| [Root `<nav aria-label>` + `<ol>` list](../../../packages/support/templates/components/Breadcrumbs/index.html.twig) | [`<nav>` / `fi-breadcrumbs-list`](../../../vendor/filament/support/resources/views/components/breadcrumbs.blade.php) | done | — | [diverges](#the-navigation-label-is-breadcrumbs-where-filaments-english-is-breadcrumb) |
 | [Key kind decides link vs label](../../../packages/support/templates/components/Breadcrumbs/index.html.twig) | [`@if (is_int($url))`](../../../vendor/filament/support/resources/views/components/breadcrumbs.blade.php) | done | — | [semantics](#a-digits-only-key-is-the-twig-side-spelling-of-is_int) · [diverges](#two-unreachable-key-shapes-link-where-filament-does-not) |
 | [Separator pair from the second crumb on](../../../packages/support/templates/components/Breadcrumbs/index.html.twig) | [`@if (! $loop->first)` + the two `generate_icon_html()` calls](../../../vendor/filament/support/resources/views/components/breadcrumbs.blade.php) | done | — | — |
 | [`BREADCRUMBS_SEPARATOR` / `_RTL` overrides](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::BREADCRUMBS_SEPARATOR`, `…_RTL`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md) |
@@ -44,11 +44,11 @@ The single-backslash form compiles and renders, the suites do not fail on deprec
 
 ## Divergences
 
-### The navigation label is a literal, not a translation key
+### The navigation label is `Breadcrumbs`, where Filament's English is `Breadcrumb`
 
-Filament merges `__('filament::components/breadcrumbs.label')` onto the `<nav>`; the port merges the literal `'Breadcrumbs'`, as [`Pagination`](pagination.md) does with its `aria-label="Pagination"`.
-The port ships no translation layer, so every user-facing literal is English at the point of use and moves in one pass when i18n lands.
-A caller can still override it: `attrs()` lets a later source win for a scalar attribute, so `<twig:SylamentSupport:Breadcrumbs aria-label="…" />` replaces it.
+Filament merges `__('filament::components/breadcrumbs.label')` onto the `<nav>`; the port reads the same key path, `components/breadcrumbs.label`, from the `sylament` catalogue, as [`Pagination`](pagination.md#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths) does for its `aria-label`.
+The catalogue's English is the plural `Breadcrumbs`, kept over Filament's singular `Breadcrumb` because the label names the list of crumbs; an application that wants Filament's text overrides the key in its own catalogue.
+A caller can still override it per use: `attrs()` lets a later source win for a scalar attribute, so `<twig:SylamentSupport:Breadcrumbs aria-label="…" />` replaces it.
 
 ### Two unreachable key shapes link where Filament does not
 

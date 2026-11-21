@@ -128,6 +128,14 @@ it('names its collapse button Collapse section while expanded and Expand section
         ->toContainButtons(SupportSelectors::SECTION_COLLAPSE_BUTTON, ['Show orders']);
 });
 
+it('labels the section toggle from the catalogue, in the locale the translator answers', function (): void {
+    $this::getContainer()->get('translator')->setLocale('sk');
+
+    expect($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'collapsible' => true])->crawler())
+        ->toContainButtons(SupportSelectors::SECTION_COLLAPSE_BUTTON, ['Zbaliť sekciu'])
+        ->toContainElement('section.sy-section' . SupportSelectors::sectionValue('expand-label', 'Rozbaliť sekciu') . SupportSelectors::sectionValue('collapse-label', 'Zbaliť sekciu'));
+});
+
 it('resets its collapsed state with the live component it belongs to, unless it persists the state or either id is missing', function (): void {
     $reset = '[data-action~="reset-schema-component-state@window->sylament--support--section#resetState"]';
 

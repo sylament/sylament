@@ -88,9 +88,8 @@ The glyph does not.
 Filament renders an empty `<span class="fi-badge-delete-btn-icon">` that [`badge.css`](../../../vendor/filament/support/resources/css/components/badge.css) paints as a `mask-image` filled with `currentColor`, and reads no icon alias for it; `SupportIconAlias::BADGE_DELETE_BUTTON` survives in Filament only as a constant.
 The port draws an SVG through `generateIconHtml()` under that alias, at the extra-small icon size with `aria-hidden="true"`, so an application can swap the glyph the way every other support icon is swapped.
 
-Three smaller shifts ride with it.
+Two smaller shifts ride with it.
 The accessible name is an `aria-label` on the button rather than Filament's `fi-sr-only` span, matching [`IconButton`](icon-button.md): support ships no sr-only class of its own, and the escaped-on-output caveat the `labelSrOnly` divergence records applies here too.
-`deleteLabel` defaults to the literal `'Remove'` where Filament reads `__('filament::components/badge.actions.delete.label')`, one more literal for the [deferred i18n pass](../../internals/i18n.md).
 And the glyph colour reads `currentColor` at 50 % opacity (75 % on hover and focus) where Filament's stylesheet sets `text-color-700/50` and `text-gray-700/50` on the glyph: the badge's own text colour is already the shade `BadgeComponent` resolved for this palette, so inheriting it keeps the one contrast decision in the policy instead of re-fixing a shade in the stylesheet, [the policy layer](../../internals/styling.md#why-does-a-policy-pick-the-shade-instead-of-the-stylesheet) of the styling contract.
 
 The hover and focus states hang off the button, not the glyph: Filament writes them as `hover:` / `focus-visible:` utilities on `.fi-badge-delete-btn-icon`, pseudo-classes on the glyph `<span>`, where ours reads `.sy-badge-delete-btn:hover > .sy-icon` and its `:focus-visible` twin.

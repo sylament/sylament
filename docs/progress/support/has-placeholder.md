@@ -7,14 +7,14 @@ owns:
 ---
 # HasPlaceholder (support)
 
-`Sylament\Support\Components\Concerns\HasPlaceholder` ports Filament's support-tier trait of the same name, typed `string | Markup | Closure | null`.
+`Sylament\Support\Components\Concerns\HasPlaceholder` ports Filament's support-tier trait of the same name, typed `string | Markup | TranslatableInterface | Closure | null`.
 Tables' [`Column`](../tables/column.md) composes it, and its partials render `<p class="sy-ta-placeholder">` in place of an empty cell.
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`placeholder()` setter + property](../../../packages/support/src/Components/Concerns/HasPlaceholder.php) | [`HasPlaceholder::placeholder()`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | done | — | — |
+| [`placeholder()` setter + property](../../../packages/support/src/Components/Concerns/HasPlaceholder.php) | [`HasPlaceholder::placeholder()`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | done | — | [semantics](#a-message-is-translated-by-the-getter-so-a-reader-still-gets-a-string-or-markup) |
 | [`getPlaceholder()`](../../../packages/support/src/Components/Concerns/HasPlaceholder.php) | [`HasPlaceholder::getPlaceholder()`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | done | — | [semantics](#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too) |
 
 ## Semantics
@@ -23,4 +23,9 @@ Tables' [`Column`](../tables/column.md) composes it, and its partials render `<p
 
 `Sylament\Forms\Components\Concerns\HasPlaceholder` and `Sylament\Tables\Filters\Concerns\HasPlaceholder` are separate traits, and neither imports this one.
 Filament carries the same three traits under the same three namespaces ([support](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php), [forms](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php), [tables filters](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php)), so pointing forms at the support one would be a divergence rather than a cleanup.
-The two lower copies are also narrower, `string | Closure | null`, because an input's `placeholder` attribute is a plain string where a cell's placeholder is rendered content and takes `Markup`; repointing them would widen a published signature.
+The two lower copies are also narrower, taking no `Markup`, because an input's `placeholder` attribute is a plain string where a cell's placeholder is rendered content; repointing them would widen a published signature.
+
+### A message is translated by the getter, so a reader still gets a string or `Markup`
+
+`placeholder()` accepts a `TranslatableInterface` beside a string, a `Markup` and a closure, and `getPlaceholder()` returns `$this->translateText($this->evaluate($this->placeholder))`, so a closure that answers a message is translated too.
+The translator is the component's own, [injected](component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks), and a plain string never reaches it.

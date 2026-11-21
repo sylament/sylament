@@ -38,7 +38,7 @@ ICU's `NumberFormatter::formatCurrency()` accepts either case, so the lowercase 
 ### The three display formats are PHP format strings, because the reader is `DateTimeImmutable::format()`
 
 `'M j, Y'`, `'M j, Y H:i:s'` and `'H:i:s'` are byte-identical to Filament's, which is not a coincidence: Carbon's `translatedFormat()` takes PHP `date()` tokens too, and only differs from `format()` by translating month and day names.
-The port reads them through `DateTimeImmutable::format()`, so English output matches Carbon's exactly and every other locale waits on the [deferred i18n pass](../../internals/i18n.md), recorded at [`text-column.md`](../tables/text-column.md).
+The port reads them through `DateTimeImmutable::format()`, so English output matches Carbon's exactly and month and day names in every other locale wait on locale-aware date formatting, which the message catalogues do not cover, recorded at [`text-column.md`](../tables/text-column.md).
 
 ### A null number locale means "ask the process", not "no locale"
 

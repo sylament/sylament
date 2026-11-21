@@ -11,7 +11,7 @@
             'sy-contained': contained,
             'sy-vertical': vertical,
         }),
-        'aria-label': label ?? 'Tabs',
+        'aria-label': label ?? ('components/tabs.label'|trans(domain: 'sylament')),
     }) }}
 >
     {% block content %}{% endblock content %}

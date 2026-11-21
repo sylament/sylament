@@ -20,7 +20,7 @@ function liveRegion(): HTMLElement {
 export default class extends Controller<HTMLElement> {
   static values = {
     text: String,
-    message: { type: String, default: "Copied" },
+    message: String,
     duration: { type: Number, default: 2000 },
   };
 

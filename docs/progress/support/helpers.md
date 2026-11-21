@@ -38,7 +38,7 @@ The markup of Filament's `generate_loading_indicator_html()` is ported as the [l
 | `generate_search_column_expression()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | skipped | — | [search-constraint.md](../schemas/search-constraint.md) |
 | `generate_search_term_expression()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | skipped | — | [search-constraint.md](../schemas/search-constraint.md) |
 | `original_request()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | skipped | — | [resource.md](../panels/resource.md#url-generation-inside-a-live-action-resolves-the-panel-the-page-was-opened-in) |
-| `locale_has_pluralization()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | blocked | toolkit i18n | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
+| `locale_has_pluralization()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | blocked | locale-aware pluralisation | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | `prepare_inherited_attributes()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `is_slot_empty()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | [detail](#is_slot_empty-has-no-twig-counterpart-to-wrap) |
 | `is_app_url()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
@@ -153,7 +153,7 @@ Its main job is guarding the `foreach (wrap($this->evaluate(…)))` shape the sc
 `plural()` is that trade a third time, and the one whose body is not a one-liner: Laravel's `Str::plural` runs the **last word** of a phrase through an inflector and leaves the rest alone, so `blog post` becomes `blog posts`, the inflector seeing only `post`.
 symfony/string's `EnglishInflector` is the inflector; `pluralize()` returns *candidates* rather than one answer (`person` → `['persons', 'people']`), and the port takes the last.
 `panels`' `Resource` and the actions' plural labels call this function rather than carrying their own inflection, because two implementations would drift.
-Laravel's `$count`/`$prependCount` arms are not ported (nothing asks), and neither is its `locale_has_pluralization()` guard: i18n is deferred, so the port pluralises English unconditionally.
+Laravel's `$count`/`$prependCount` arms are not ported (nothing asks), and neither is its `locale_has_pluralization()` guard: a free function reaches no translator and the inflector is English, so the port pluralises English unconditionally, whatever the request's locale.
 
 ### `sanitize_css_color()` is the second macro that lands as a helper
 
@@ -177,7 +177,7 @@ It is written the Carbon way anyway, because the modulo is what makes the arm re
 
 Two deliberate narrowings.
 Carbon's `$syntax`, `$short`, `$parts` and `$options` arguments have no port: the behaviours they select (absolute phrasing, `before`/`after` instead of `ago`/`from now`, short units, multi-part output, `a_second`-style rounding, `JUST_NOW`) have no consumer, and adding one is additive.
-And the English strings are literals rather than a translation catalogue, i18n being deferred.
+And the English unit names and word order are fixed in the function rather than read from a catalogue, because a free function reaches no translator: locale-aware relative times are a follow-up beyond the message catalogues.
 
 The `$now` argument is required rather than defaulted to the current time, so the function stays pure and testable: the consuming column passes `new DateTimeImmutable('now', $timezone)`.
 The reading is `$date->diff($now)`, Carbon's own operand order ([`Difference.php`](../../../vendor/nesbot/carbon/src/Carbon/Traits/Difference.php) `$this->diff($other)`), so `invert === 1` means the date is in the future and reads `from now`, while everything at or before `$now`, the zero difference included, reads `ago`, exactly as Carbon does.

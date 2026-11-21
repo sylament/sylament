@@ -31,7 +31,7 @@ Consumers build against this.
 | Piece | Value |
 | --- | --- |
 | Identifier | `sylament--support--clipboard`, on the element that *is* the copy control: the text item, the badge pill, the colour swatch |
-| Values | `text` (String, the string written to the clipboard); `message` (String, default `Copied`); `duration` (Number, default `2000`) |
+| Values | `text` (String, the string written to the clipboard); `message` (String, no default: the server always passes the translated confirmation); `duration` (Number, default `2000`) |
 | Actions | `copy`, bound explicitly to `click`, `keydown.enter` and `keydown.space`, because the element is a `span` and Stimulus binds no default event on one |
 | Element contract | the template renders `role="button"` and the class `sy-copyable`; `tabindex="0"` is not server-rendered, the controller stamps it at `connect()` |
 | Accessible name | the consuming template's, never the controller's ([semantics](#a-contentless-copy-control-owes-its-own-aria-label)) |

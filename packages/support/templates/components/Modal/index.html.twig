@@ -138,7 +138,7 @@
                         icon="heroicons:x-mark"
                         :iconAlias="constant('Sylament\\Support\\Twig\\SupportIconAlias::MODAL_CLOSE_BUTTON')"
                         iconSize="lg"
-                        label="Close"
+                        :label="'components/modal.actions.close.label'|trans(domain: 'sylament')"
                         :tabindex="closeByEscaping ? '-1' : false"
                         data-action="sylament--support--modal#dismiss"
                     />

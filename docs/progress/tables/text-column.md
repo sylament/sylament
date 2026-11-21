@@ -46,7 +46,7 @@ Everything [`Column`](column.md) carries, from the name and the record binding t
 | [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup) |
 | [`html()` / `markdown()` / `commonMarkOptions()` / `commonMarkExtensions()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php), [`CanConfigureCommonMark`](../../../vendor/filament/support/src/Concerns/CanConfigureCommonMark.php) | done | — | [semantics](#html-sanitizes-in-php-and-markdown-converts-before-it-does) · [diverges](#markdown-throws-for-the-package-it-suggests-rather-than-falling-through) · [diverges](#the-commonmark-pair-is-declared-on-canformatstate-not-composed-from-a-support-trait) |
 | [`date()` / `dateTime()` / `time()` / `since()`, the four `*Tooltip()` twins and `timezone()` / `getTimezone()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#one-timezone-chain-answers-for-every-date-arm) · [diverges](#the-date-family-formats-through-datetimeimmutable-so-only-english-reads-right) |
-| `isoDate()` / `isoDateTime()` / `isoTime()` and their three tooltips | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | blocked | i18n | [detail](#the-iso-family-waits-on-i18n-and-only-on-that) · [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md#the-three-iso-defaults-ship-with-no-reader) |
+| `isoDate()` / `isoDateTime()` / `isoTime()` and their three tooltips | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | blocked | locale-aware formatting | [detail](#the-iso-family-waits-on-locale-aware-formatting-and-only-on-that) · [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md#the-three-iso-defaults-ship-with-no-reader) |
 | [`money()` / `numeric()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#the-money-and-numeric-arms-are-numberformatter-with-two-sentinels) · [diverges](#numeric-refuses-a-formatter-failure-rather-than-rendering-false) |
 | Negative-zero suppression in `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#money-and-numeric-print-a-negative-zero-that-laravels-number-suppresses) |
 | The numeric marker class and `tabular-nums` on a `money()` / `numeric()` cell | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`columns/text.css`](../../../vendor/filament/tables/resources/css/columns/text.css) | todo | — | — |
@@ -64,11 +64,11 @@ Everything [`Column`](column.md) carries, from the name and the record binding t
 
 ## Details
 
-### The `iso*` family waits on i18n, and only on that
+### The `iso*` family waits on locale-aware formatting, and only on that
 
 `isoDate()`, `isoDateTime()`, `isoTime()` and their three tooltips take moment.js locale presets such as `L`, `LLL` and `LT`, which name a *locale's* preferred date shape rather than a token sequence.
 `DateTimeImmutable::format()` has no such concept: handing it `'L'` emits the leap-year flag.
-Answering them means ICU locale data and a locale to read it under, which is i18n's to supply, so the setters stay blocked rather than shipping a partial port that formats wrongly.
+Answering them means ICU locale data and a locale to read it under, which locale-aware formatting supplies and the message catalogues do not, so the setters stay blocked rather than shipping a partial port that formats wrongly.
 Nothing else blocks them: the three defaults they read are already on [`HasDefaultDataFormattingSettings`](../support/has-default-data-formatting-settings.md), carried unread for exactly this.
 
 ### `money()` and `numeric()` print a negative zero that Laravel's `Number` suppresses
@@ -218,7 +218,7 @@ This port normalises with a three-arm match, a `DateTimeInterface` through `Date
 Carbon is not adopted: [principles §2](../../internals/principles.md) sends us to the platform mechanism, and the whole of what Carbon adds here is the name translation.
 
 The consequence is bounded: output matches Carbon's for English, and for any other locale the month and day names stay English.
-That is i18n's to close, and closing it does not change this API, only what `format()` is replaced with.
+That is locale-aware formatting's to close, beyond the message catalogues, and closing it does not change this API, only what `format()` is replaced with.
 `since()` has the same shape one level up: it reads [`diff_for_humans()`](../support/helpers.md), a pure port of `CarbonInterval::forHumans()`'s single-unit cascade, whose words are English by construction.
 
 A fourth arm is a throw rather than a coercion: a float, an array or an object that is not a `DateTimeInterface` names the column in a `LogicException` instead of being pushed through `new DateTimeImmutable((string) $state)`, which Carbon's `parse()` would attempt and fail at less legibly.

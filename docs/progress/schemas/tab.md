@@ -53,7 +53,7 @@ The override is Filament's, verbatim.
 
 ### `getBadge()` casts an evaluated badge to string
 
-`badge(3)` stores `'3'`, and `getBadge()` casts a non-null value that a badge closure returns the same way, so `badge(fn () => count($items))` reads back as a string.
+`badge()` stores a number as given and accepts a `TranslatableInterface`; `getBadge()` translates a message, then casts any other non-null value to a string, so `badge(3)` and `badge(fn () => count($items))` read back as `'3'` and a count is never translated ([the getter rule](../support/has-tooltip.md#a-message-is-translated-by-the-getter-so-a-reader-still-gets-a-string-or-markup)).
 Filament's `getBadge()` has no cast and relies on its file's non-strict mode to coerce the number to the `?string` return type; under `declare(strict_types=1)` that return would throw a `TypeError`.
 A closure returning an array raises PHP's "Array to string conversion" warning, an `ErrorException` under Symfony's debug error handler, where Filament throws a `TypeError`.
 `evaluate()`'s template types the value `?string`, so PHPStan leaves no branch to guard a non-string.

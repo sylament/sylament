@@ -49,4 +49,4 @@ Filament's tail is `config('app.locale')`, which is the same intent one framewor
 ### The three `iso*` defaults ship with no reader
 
 `'L'`, `'LLL'` and `'LT'` are moment.js locale presets, not PHP format strings: handed to `DateTimeImmutable::format()`, `L` is the leap-year flag and `T` the timezone abbreviation, so `'LT'` renders `1UTC` for a date in 2024.
-They are carried because the setters are part of Filament's public surface and a migrating consumer's `defaultIsoDateDisplayFormat()` call must not fatal; the `isoDate()` family that reads them is [blocked on i18n](../tables/text-column.md).
+They are carried because the setters are part of Filament's public surface and a migrating consumer's `defaultIsoDateDisplayFormat()` call must not fatal; the `isoDate()` family that reads them is [blocked on locale-aware formatting](../tables/text-column.md#the-iso-family-waits-on-locale-aware-formatting-and-only-on-that).

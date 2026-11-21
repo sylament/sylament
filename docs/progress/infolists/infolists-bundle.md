@@ -21,7 +21,7 @@ owns:
 | [Stylesheet entry point](../../../packages/infolists/assets/src/styles/index.css) | [`resources/css/index.css`](../../../vendor/filament/infolists/resources/css/index.css) | in progress | — | [detail](#the-stylesheet-entry-point-imports-no-component-sheet) |
 | `@SylamentInfolists` template namespace | [`->hasViews()`](../../../vendor/filament/infolists/src/InfolistsServiceProvider.php) | todo | — | [detail](#there-is-no-template-namespace-because-the-package-has-no-templates-directory) |
 | `MakeEntryCommand` + stub publishing (`packageBooted()`) | [`Commands/MakeEntryCommand.php`](../../../vendor/filament/infolists/src/Commands/MakeEntryCommand.php) | todo | — | — |
-| Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/infolists/src/InfolistsServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#translation-is-one-deferred-pass-not-a-per-component-port) |
+| Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/infolists/src/InfolistsServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring) |
 | `Testable::mixin(new TestsInfolistActions)` | [`packageBooted()`](../../../vendor/filament/infolists/src/InfolistsServiceProvider.php) | skipped | — | [diverges](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
 ## Details

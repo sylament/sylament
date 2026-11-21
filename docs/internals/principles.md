@@ -72,7 +72,7 @@ ones, which have no rename to record because the Laravel side is simply absent.
 | --- | --- |
 | `app()`, facades, `resolve()` | constructor or `#[Required]` injection |
 | `data_get()` / `Arr::get()` against an object | `symfony/property-access` |
-| `__()` | Symfony translation — deferred: an English literal at the call site until the [toolkit-wide i18n pass](i18n.md) lands |
+| `__()` | a `TranslatableMessage` in the package's domain, translated through a `#[Required]` `TranslatorInterface` ([the convention](i18n.md)) |
 | `config()` | bundle configuration and injected parameters |
 
 The table is not exhaustive, and an unmapped case is a decision waiting to be

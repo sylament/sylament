@@ -22,7 +22,7 @@ owns:
 | `@SylamentWidgets` template namespace | [`->hasViews()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [detail](#there-is-no-template-namespace-because-the-package-has-no-templates-directory) |
 | Asset registration (the `chart` and `stats-overview/stat/chart` Alpine components) | [`packageBooted()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [detail](#the-chart-component-gives-way-to-symfonyux-chartjs) |
 | `MakeWidgetCommand` + stub publishing (`packageBooted()`) | [`Commands/MakeWidgetCommand.php`](../../../vendor/filament/widgets/src/Commands/MakeWidgetCommand.php) | todo | — | — |
-| Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#translation-is-one-deferred-pass-not-a-per-component-port) |
+| Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring) |
 
 ## Details
 

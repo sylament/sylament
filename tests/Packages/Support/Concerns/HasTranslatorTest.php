@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Schemas\Components\Text;
+use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Symfony\Component\Translation\TranslatableMessage;
 use Twig\Markup;
 
@@ -25,5 +26,6 @@ it('refuses a message on a component built without the container, naming its cla
 });
 
 it('needs no translator for a string on a component built without the container', function (): void {
-    expect(new Text()->translateText('plain'))->toBe('plain');
+    expect(new Text()->translateText('plain'))->toBe('plain')
+        ->and($this->renderSchemaComponent(new Text()->content('Plain words')))->toContainElement(Selectors::TEXT, 'Plain words');
 });

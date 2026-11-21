@@ -26,6 +26,16 @@ it("keeps a redirecting action's toast for the page it lands on", function (): v
     expect($client->followRedirect())->toContainElement(Selectors::STACK . ' ' . Selectors::TITLE, 'Saved');
 });
 
+it('shows a translated title after a redirect', function (): void {
+    $client = $this::getContainer()->get('test.client');
+
+    $this->createLiveComponent(NotifyingHost::class, client: $client)
+        ->call('saveTranslatedAndLeave')
+        ->assertRedirect(NotificationsPageController::URL);
+
+    expect($client->followRedirect())->toContainElement(Selectors::STACK . ' ' . Selectors::TITLE, 'Saved from the catalogue');
+});
+
 it('hands a toast sent while the host renders to the next response', function (): void {
     $tester = $this->createLiveComponent(NotifyingHost::class, ['notifiesWhileRendering' => true]);
 

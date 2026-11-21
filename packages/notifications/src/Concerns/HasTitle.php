@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Notifications\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Twig\Markup;
 
 trait HasTitle
 {
-    protected string|Closure|null $title = null;
+    protected string|TranslatableInterface|Closure|null $title = null;
 
-    public function title(string|Closure|null $title): static
+    public function title(string|TranslatableInterface|Closure|null $title): static
     {
         $this->title = $title;
 
@@ -19,6 +21,8 @@ trait HasTitle
 
     public function getTitle(): ?string
     {
-        return $this->evaluate($this->title);
+        $title = $this->translateText($this->evaluate($this->title));
+
+        return $title instanceof Markup ? (string) $title : $title;
     }
 }

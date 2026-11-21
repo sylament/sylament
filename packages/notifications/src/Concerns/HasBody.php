@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Notifications\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Twig\Markup;
 
 trait HasBody
 {
-    protected string|Closure|null $body = null;
+    protected string|TranslatableInterface|Closure|null $body = null;
 
-    public function body(string|Closure|null $body): static
+    public function body(string|TranslatableInterface|Closure|null $body): static
     {
         $this->body = $body;
 
@@ -19,6 +21,8 @@ trait HasBody
 
     public function getBody(): ?string
     {
-        return $this->evaluate($this->body);
+        $body = $this->translateText($this->evaluate($this->body));
+
+        return $body instanceof Markup ? (string) $body : $body;
     }
 }

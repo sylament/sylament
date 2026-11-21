@@ -11,6 +11,8 @@ use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
+use function Symfony\Component\Translation\t;
+
 /**
  * Sends toasts from its live actions, as a page's host does, or while it renders when
  * mounted with `notifiesWhileRendering`; its template renders a plain Twig component
@@ -35,6 +37,14 @@ final class NotifyingHost
     public function saveAndLeave(): RedirectResponse
     {
         Notification::make()->success()->title('Saved')->send();
+
+        return new RedirectResponse(NotificationsPageController::URL);
+    }
+
+    #[LiveAction]
+    public function saveTranslatedAndLeave(): RedirectResponse
+    {
+        Notification::make()->success()->title(t('saved', [], 'fixtures-notifications'))->send();
 
         return new RedirectResponse(NotificationsPageController::URL);
     }

@@ -88,10 +88,11 @@ A group without a key therefore emits neither `id="-label"` nor an `aria-labelle
 
 ### FusedGroup lives in forms, not schemas
 
-Filament ships `Filament\Schemas\Components\FusedGroup`, and that class imports three **forms** concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes` and `HasHelperText` — plus `Forms\Components\Field` for its error walk.
+Filament ships `Filament\Schemas\Components\FusedGroup`, and that class imports three **forms** concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes` and `HasHelperText` — a forms contract (`HasNestedRecursiveValidationRules`), and `Forms\Components\Field` for its error walk; what it renders is forms' field-wrapper chrome.
+Filament can host it in schemas because Laravel ships every Filament package together.
 That is the upward import from schemas into forms this port cannot reproduce: `forms` depends on `schemas`, and the CI split publishes each package standalone, so a `sylament/schemas` reaching a forms symbol breaks the moment it is installed alone.
-The same layering argument moved [`CanBeMarkedAsRequired` down](../translations.md#namespace-segments); here it moves the component **up** instead, to the package that already owns the field-wrapper chrome the group renders.
-Recorded in [translations.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that does not hold it.
+Nothing it needs can move down with it, so the lowest package that reaches all of it is `forms` and the class goes **up**, where [`CanBeMarkedAsRequired` goes down](../translations.md#canbemarkedasrequired-moves-down-into-schemas) by the same criterion.
+Recorded in [translations.md](../translations.md#fusedgroup-moves-up-into-forms); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that does not hold it.
 Every class the stylesheet's rules reach into keeps the code of the package that emits it: `.sy-sc`, `.sy-sc-component` and `.sy-sc-actions` from schemas, `.sy-input-wrp` from support, `.sy-fo-field` and `.sy-fo-input` from forms.
 
 ### The group renders through `FieldWrapper` instead of a second copy of it

@@ -19,6 +19,7 @@ They are **not** renames and never go in [the Renames table](renames.md#renames)
 | A Livewire event's `livewireId` payload key | dropped — a browser event is scoped by the live root that dispatched it | `form-validation-error` and `reset-schema-component-state` ([why](#a-browser-event-needs-no-livewireid-because-its-target-is-the-host)) |
 | Alpine.js | Stimulus | `x-data` / `x-on:` → a controller under `packages/*/assets/src/controllers/`, wired with StimulusBundle's Twig helpers |
 | A `window` event broadcast to reach one component among many | a method on the owning Stimulus controller, which its own targets scope | `repeater-collapse` / `repeater-expand` → the repeater controller's `collapseAll` / `expandAll` ([why](#a-window-broadcast-becomes-a-method-on-the-owning-controller)) |
+| Filament's unprefixed colour custom properties | `--sy-*` custom properties | `--primary-600` → `--sy-primary-600`, `--text` → `--sy-text` ([why](#custom-properties-carry-the---sy--prefix)) |
 | `fi-*` classes | `sy-*` classes | `fi-icon-btn` → `sy-icon-btn`, `fi-disabled` → `sy-disabled`, `fi-sortable-ghost` → `sy-sortable-ghost` ([with a package code](#css-class-names-insert-a-package-code)) |
 | `filament.*` route names | `sylament.*` route names | `filament.admin.pages.dashboard` → `sylament.admin.pages.dashboard`, built by [`Page::getRouteName()`](panels/page.md); the panel id and the page slug are untouched |
 | A Laravel storage disk | A Flysystem storage ([league/flysystem-bundle](../../vendor/league/flysystem-bundle)) | `disk('public')` → `disk('public.storage')`, and `filament.default_filesystem_disk` → `sylament.default_filesystem_disk` ([file-upload.md](forms/file-upload.md#disk-names-a-flysystem-storage-and-there-is-no-publiclocal-swap), [`FilesystemRegistry`](support/filesystem-registry.md)) |
@@ -94,7 +95,7 @@ Two of them land under `State\` rather than at the root, filing beside the [`Pro
 | --- | --- | --- |
 | `Filament\Schemas\Components\StateCasts\` | `Sylament\Schemas\State\Casts\` | `StateCast` and its implementations — value objects that transform state |
 | `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\State\` | `Get` / `Set` — the closure-injected state accessors |
-| `Filament\Support\Components\ComponentManager` | `Sylament\Support\Configuration\ComponentManager` | The `configureUsing()` registry — an engine, filed by capability like `Evaluation\Invoker`, not beside what it configures |
+| `Filament\Support\Components\ComponentManager` | `Sylament\Support\Configuration\ComponentManager` | The `configureUsing()` registry, [filed by capability](support/component-manager.md#the-manager-lives-in-configuration-not-components) |
 
 A migrating user importing `Filament\Schemas\Components\Utilities\Get` will not find it by prefix swap alone, which is why these are recorded here rather than left to the verbatim rule.
 
@@ -156,10 +157,7 @@ One **component** moves the other way for the same reason, and it is the same Fi
 
 The criterion in both directions is **the lowest package that reaches every symbol the thing needs**.
 For a trait two tiers compose, that is the lower package, so `CanBeMarkedAsRequired` goes down.
-`FusedGroup` imports three forms concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes`, `HasHelperText` — a forms contract, and `Forms\Components\Field` for its error walk, and what it renders is forms' field-wrapper chrome; nothing it needs can move down with it, so the lowest package reaching all of it is `forms` and the class goes up.
-Filament can host it in schemas because Laravel ships every Filament package together; the CI split here publishes each one standalone, so a `sylament/schemas` importing a forms symbol breaks on install.
-Class name, factory, methods and behaviour are unchanged; only the namespace moves, taking the CSS class code with it — `fi-sc-fused-group` becomes `sy-fo-fused-group`, the [component code](../internals/styling.md#why-do-templates-carry-only-semantic-classes) naming the package that ships the component rather than the vendor directory the rules were copied from.
-See [forms/fused-group.md](forms/fused-group.md#fusedgroup-lives-in-forms-not-schemas).
+The reasoning, with the three forms concerns, the forms contract and the CSS class code, is in [forms/fused-group.md](forms/fused-group.md#fusedgroup-lives-in-forms-not-schemas).
 
 ### `HasCellState` and `CanAggregateRelatedRecords` move up into tables
 
@@ -186,6 +184,7 @@ Nothing to rename from, so they are listed rather than mapped — and listed at 
 | [`isBlankStateValue()`](schemas/has-nullable-branch.md#the-built-in-blank-test-asks-the-branchs-own-leaves) | `Sylament\Schemas\Components\Concerns\HasNullableBranch`, overridden on `Checkbox` / `Toggle` | Filament has no branch pass for the predicate to serve. |
 | [`ownsRecordSubtree()`](schemas/belongs-to-record.md#a-component-can-own-its-whole-record-subtree) | `Sylament\Schemas\Components\Concerns\HasChildComponents` | Filament maps by wholesale array assignment, so it has no record path map to mark. |
 | [`itemsAs()`](forms/repeater.md#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) | `Sylament\Forms\Components\Repeater` | Filament's nearest member, `relationship()`, is identity-keyed mapping, which is [exclusive with `itemsAs()`](forms/repeater-relationship.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope). |
+| [`RecordTypeReader`](schemas/record-type-reader.md), `RecordTarget`, `HasNullableBranch` | `Sylament\Schemas\State`, `Sylament\Schemas\State`, `Sylament\Schemas\Components\Concerns` | Eloquent attributes are untyped, so Filament has no write-side type question to answer ([why](#recordtypereader-recordtarget-and-hasnullablebranch-have-no-filament-counterpart)). |
 | [`ObjectStateCast`](schemas/object-state-cast.md) | `Sylament\Schemas\State\Casts` | Filament ships no object-constructing cast, so the name follows the shipped cast family (`BooleanStateCast`, `OptionStateCast`). |
 | [`getOptionComparisonState()`](forms/has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template) / `normalizeOptionComparisonValue()` | `Sylament\Forms\Components\Concerns\HasOptions` | Filament's Alpine writes `selected` / `checked` client-side, where the port [renders them in PHP](forms/select.md#the-template-renders-the-selected-state-itself); `normalizeOptionComparisonValue()` is the per-value half, public because `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` compares a sibling item's raw value through it from outside the field. |
 | [`isMultiple()`](forms/checkbox-list.md#ismultiple-is-port-plumbing-with-no-filament-counterpart) | `Sylament\Forms\Components\CheckboxList` | Filament reads multiplicity off `getRelationship(): ?BelongsToMany`'s return type. |

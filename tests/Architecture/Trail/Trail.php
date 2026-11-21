@@ -573,23 +573,21 @@ final class Trail
      */
     public function orphanViolations(): array
     {
+        $root = realpath($this->root);
+
+        if (false === $root) {
+            throw new UnexpectedValueException("{$this->root} does not exist");
+        }
+
         $entries = [];
         $linked = [];
 
         foreach ($this->trailPaths() as $path) {
-            $section = null;
-            $seen = [];
+            $headings = [];
 
             foreach (self::proseLines($this->read($path)) as $number => $line) {
                 if (1 === preg_match('/^(#{1,6})\s+(.+?)\s*#*$/', $line, $heading)) {
-                    $slug = DocumentationFiles::slug($heading[2]);
-                    $anchor = isset($seen[$slug]) ? "{$slug}-{$seen[$slug]}" : $slug;
-                    $seen[$slug] = ($seen[$slug] ?? 0) + 1;
-                    $section = '##' === $heading[1] ? $heading[2] : $section;
-
-                    if ('###' === $heading[1] && in_array($section, self::ENTRY_SECTIONS, true)) {
-                        $entries["{$path}#{$anchor}"] = "{$path}:{$number}: ### {$heading[2]}";
-                    }
+                    $headings[$number] = $heading;
 
                     continue;
                 }
@@ -601,8 +599,22 @@ final class Trail
                 preg_match_all('/\]\(([^)\s#]*)#([^)\s]+)\)/', (string) preg_replace('/`[^`]*`/', '``', $line), $links, PREG_SET_ORDER);
 
                 foreach ($links as $link) {
-                    $target = '' === $link[1] ? $path : self::joinPath(dirname($path), rawurldecode($link[1]));
-                    $linked[$target . '#' . rawurldecode($link[2])] = true;
+                    $target = '' === $link[1] ? "{$root}/{$path}" : realpath("{$root}/" . dirname($path) . '/' . rawurldecode($link[1]));
+
+                    if (false !== $target && str_starts_with($target, "{$root}/")) {
+                        $linked[mb_substr($target, mb_strlen($root) + 1) . '#' . rawurldecode($link[2])] = true;
+                    }
+                }
+            }
+
+            $anchors = array_combine(array_keys($headings), DocumentationFiles::headingAnchors(array_column($headings, 2)));
+            $section = null;
+
+            foreach ($headings as $number => [, $level, $title]) {
+                $section = '##' === $level ? $title : $section;
+
+                if ('###' === $level && in_array($section, self::ENTRY_SECTIONS, true)) {
+                    $entries["{$path}#{$anchors[$number]}"] = "{$path}:{$number}: ### {$title}";
                 }
             }
         }
@@ -884,24 +896,6 @@ final class Trail
         $title = (string) preg_replace('#\s*\n\s*(?:\*(?!\*)|//|\#)?\s*#', ' ', $title);
 
         return mb_trim((string) preg_replace('/\s+/', ' ', str_replace('`', '', $title)));
-    }
-
-    /**
-     * A repo-relative path joined onto a directory, with "." and ".." segments resolved.
-     */
-    private static function joinPath(string $directory, string $relative): string
-    {
-        $segments = [];
-
-        foreach (explode('/', "{$directory}/{$relative}") as $segment) {
-            if ('..' === $segment) {
-                array_pop($segments);
-            } elseif (!in_array($segment, ['', '.'], true)) {
-                $segments[] = $segment;
-            }
-        }
-
-        return implode('/', $segments);
     }
 
     private static function isYamlComment(string $line): bool

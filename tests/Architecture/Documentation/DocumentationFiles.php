@@ -74,6 +74,25 @@ final class DocumentationFiles
     }
 
     /**
+     * @param list<string> $headings one file's heading texts, in document order
+     *
+     * @return list<string> the anchor of each, in the same order, with GitHub's -1, -2 suffixes for repeats
+     */
+    public static function headingAnchors(array $headings): array
+    {
+        $anchors = [];
+        $seen = [];
+
+        foreach ($headings as $heading) {
+            $slug = self::slug($heading);
+            $anchors[] = isset($seen[$slug]) ? $slug . '-' . $seen[$slug] : $slug;
+            $seen[$slug] = ($seen[$slug] ?? 0) + 1;
+        }
+
+        return $anchors;
+    }
+
+    /**
      * @return list<string> the broken relative links in the markdown file at the path under the root, each as
      *                      "<target> (<reason>)"
      */
@@ -183,16 +202,7 @@ final class DocumentationFiles
     {
         if (!isset(self::$anchors[$file])) {
             preg_match_all('/^#{1,6}\s+(.+?)\s*#*$/m', self::withoutFences((string) file_get_contents($file)), $matches);
-            $anchors = [];
-            $seen = [];
-
-            foreach ($matches[1] as $heading) {
-                $slug = self::slug($heading);
-                $anchors[] = isset($seen[$slug]) ? $slug . '-' . $seen[$slug] : $slug;
-                $seen[$slug] = ($seen[$slug] ?? 0) + 1;
-            }
-
-            self::$anchors[$file] = $anchors;
+            self::$anchors[$file] = self::headingAnchors($matches[1]);
         }
 
         return self::$anchors[$file];

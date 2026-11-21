@@ -17,9 +17,9 @@ It ships no JavaScript: the control is a real checkbox bound with `data-model`, 
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering | [`Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | — |
+| Construction &amp; rendering | [`Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [semantics](#both-label-slots-are-declared-unconditionally) |
 | `default(false)` + `BooleanStateCast` | [`Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | — |
-| Boolean validation (`Type('bool')`) | [`rule('boolean')`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [semantics](#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live) |
+| Boolean validation (`Type('bool')`) | [`rule('boolean')`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [semantics](#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live) · [diverges](#required-on-a-checkbox-means-must-be-checked) |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | — | [detail](can-be-inline.md) |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
 | Checked state rendered server-side | [`Checkbox::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) |

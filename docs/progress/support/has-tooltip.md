@@ -14,7 +14,7 @@ Tables' column tier has its own [`Columns\Concerns\HasTooltip`](../../../package
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`tooltip()`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`tooltip()`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | [translations.md](../translations.md#idiom) · [semantics](#a-message-is-translated-by-the-getter-so-a-reader-still-gets-a-string-or-markup) |
+| [`tooltip()`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`tooltip()`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | [translations.md](../translations.md#idiom) · [semantics](#a-message-is-translated-by-the-getter-so-a-reader-still-gets-a-string-or-markup) · [diverges](#a-tooltip-renders-as-a-native-title-attribute) |
 | [`getTooltip()`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`getTooltip()`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | — |
 | [`hasTooltip()`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`hasTooltip()`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | — |
 

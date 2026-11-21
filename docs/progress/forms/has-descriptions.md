@@ -20,7 +20,7 @@ Both render the map under each option's label — [`Radio`](radio.md) and [`Chec
 | --- | --- | --- | --- | --- |
 | `descriptions()` / `getDescriptions()` — the literal map, the closure arm, and the memo the setter clears | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [diverges](#the-arrayable-arm-is-dropped) |
 | `hasDescription()` / `getDescription()` — the per-option lookups | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [semantics](#only-a-described-case-reaches-the-map) · [semantics](#a-markup-description-renders-raw-and-filaments-does-too) |
-| The enum fallback — support's [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) over [`getEnum()`](has-enum.md)'s cases | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [semantics](#only-a-described-case-reaches-the-map) |
+| The enum fallback — support's [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) over [`getEnum()`](has-enum.md)'s cases | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [semantics](#only-a-described-case-reaches-the-map) · [semantics](#the-enum-fallback-tests-the-array-not-blank) |
 
 ## Semantics
 

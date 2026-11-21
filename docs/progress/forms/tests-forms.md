@@ -15,7 +15,7 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`fillForm()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#fillform-sends-one-live-request-per-key) |
+| [`fillForm()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#fillform-sends-one-live-request-per-key) · [semantics](#fillform-with-no-state-empties-the-form) |
 | `fillForm()`'s uploaded-file values | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
 | [`assertFormSet()`](../../../packages/forms/src/Testing/TestsForms.php) | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | — |
 | [`assertHasFormErrors()` / `assertHasNoFormErrors()`](../../../packages/forms/src/Testing/TestsForms.php): a key alone, a constraint class or a message | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | done | — | [diverges](#a-constraint-class-stands-where-filament-names-a-rule) · [diverges](#a-bare-call-reads-the-errors-of-the-form-under-test) · [semantics](#the-errors-are-the-ones-the-last-response-showed) |

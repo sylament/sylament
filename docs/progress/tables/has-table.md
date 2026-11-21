@@ -24,7 +24,7 @@ A host can mix it in beside [`HasSchemas`](../schemas/has-schemas.md) and [`HasA
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`table(Table $table): Table`, the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
+| [`table(Table $table): Table`, the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [semantics](#a-host-trait-is-analysed-only-through-a-class-that-composes-it) · [semantics](#private-trait-methods-are-called-across-the-traits-hastable-composes) |
 | [`getTable(): Table`, build once and cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | `bootedInteractsWithTable()` / `mountInteractsWithTable()` | [`InteractsWithTable`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | skipped | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) · [can-persist-table-state.md](can-persist-table-state.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |

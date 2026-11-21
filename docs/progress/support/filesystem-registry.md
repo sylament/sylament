@@ -19,7 +19,7 @@ The storages themselves are not the registry's.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`get(?string $name = null)`: a storage by name, the default when null](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | `Storage::disk($name)` | done | — | [diverges](#the-registry-replaces-a-facade-and-keeps-the-disk-vocabulary) |
+| [`get(?string $name = null)`: a storage by name, the default when null](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | `Storage::disk($name)` | done | — | [diverges](#the-registry-replaces-a-facade-and-keeps-the-disk-vocabulary) · [diverges](#leagueflysystem-is-suggested-rather-than-required) |
 | [`get()` throws naming the storage, the registered names and how to register one](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | `Storage::disk()` on an unconfigured disk | done | — | [semantics](#an-unknown-storage-is-a-logicexception-not-an-empty-filesystem) |
 | [`get()` refuses a tagged service that is not a `FilesystemOperator`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | — (Laravel's disk factory builds the object itself) | done | — | [semantics](#an-unknown-storage-is-a-logicexception-not-an-empty-filesystem) |
 | [`has(string $name)`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | — | done | — | — |

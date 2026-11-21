@@ -23,7 +23,7 @@ The seam that switches the children off is schemas' [`Schema::fieldWrapperView()
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make(array\|Closure $schema = [])`](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::make()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
+| [`make(array\|Closure $schema = [])`](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::make()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [diverges](#fusedgroup-lives-in-forms-not-schemas) |
 | [`setUp()` → `gap(false)`](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::setUp()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`label()` / `hiddenLabel()`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) | [`Components\Concerns\HasLabel`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | [has-label.md](../schemas/has-label.md) |
 | [`helperText()`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components\Concerns\HasHelperText`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | [field.md](field.md) |

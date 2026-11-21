@@ -16,7 +16,7 @@ The class name follows the shipped family (`BooleanStateCast`, `OptionStateCast`
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`get()`](../../../packages/schemas/src/State/Casts/ObjectStateCast.php): item array → fresh object | — | done | — | [semantics](#construction-is-a-hand-mapper-over-the-graphs-existing-pieces) · [semantics](#the-name-set-is-the-fidelity-contract) |
+| [`get()`](../../../packages/schemas/src/State/Casts/ObjectStateCast.php): item array → fresh object | — | done | — | [semantics](#construction-is-a-hand-mapper-over-the-graphs-existing-pieces) · [semantics](#the-name-set-is-the-fidelity-contract) · [semantics](#fresh-construction-is-the-contract-because-value-objects-carry-no-identity) · [semantics](#the-cast-is-general-and-the-repeater-is-its-only-consumer) |
 | [`set()`](../../../packages/schemas/src/State/Casts/ObjectStateCast.php): object → item array | — | done | — | [semantics](#the-name-set-is-the-fidelity-contract) |
 | [`denormalizeUsing` / `normalizeUsing`](../../../packages/schemas/src/State/Casts/ObjectStateCast.php) conversion closures | — | done | — | [semantics](#the-user-can-own-either-half-of-the-conversion) |
 | [Guards](../../../packages/schemas/src/State/Casts/ObjectStateCast.php) at construction, in `get()` and in `set()` | — | done | — | [semantics](#every-failure-names-its-fix) |

@@ -21,7 +21,7 @@ One declaration therefore does two jobs: it is the option source [`HasOptions`](
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `enum()` / `getEnum()` on every `Field` | [`Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | — | — |
+| `enum()` / `getEnum()` on every `Field` | [`Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | — | [semantics](#one-declaration-two-type-contracts) |
 | [`Field::getDefaultStateCasts()`](../../../packages/forms/src/Components/Field.php) appending the enum cast | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#a-custom-cast-suppresses-the-option-casts-not-the-enum-one) |
 | [`Field::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Field.php) → [`EnumStateCast`](../schemas/enum-state-cast.md) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#a-pure-unitenum-is-refused-at-the-field-not-deep-in-the-cast) |
 | [`Select::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Select.php) → `EnumArrayStateCast` under `multiple()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |

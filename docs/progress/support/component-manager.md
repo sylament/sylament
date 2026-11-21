@@ -15,7 +15,7 @@ Components reach it through `resolve()`, the static-instance pattern, so they ne
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`configureUsing()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::configureUsing()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
+| [`configureUsing()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::configureUsing()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#the-manager-lives-in-configuration-not-components) |
 | [`configure()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::configure()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
 | [`resolve()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::resolve()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#resolve-uses-the-static-instance-pattern-not-a-scoped-container) |
 | `extractPublicMethods()` | [`ComponentManager::extractPublicMethods()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | skipped | — | [diverges](view-component.md#extractpublicmethods-is-not-ported) |

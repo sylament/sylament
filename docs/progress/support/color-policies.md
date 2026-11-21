@@ -49,7 +49,7 @@ Policies a package above support declares are tracked in that package, such as s
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php) | [`View/Components/Contracts/HasColor.php`](../../../vendor/filament/support/src/View/Components/Contracts/HasColor.php) | done | — | [diverges](#the-tier-is-filed-under-colors-not-under-twigcomponents) |
+| [`Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php) | [`View/Components/Contracts/HasColor.php`](../../../vendor/filament/support/src/View/Components/Contracts/HasColor.php) | done | — | [diverges](#the-tier-is-filed-under-colors-not-under-twigcomponents) · [diverges](#a-policy-is-a-public-container-service-resolved-by-class-string) |
 | [`Contracts\HasDefaultGrayColor`](../../../packages/support/src/Colors/Contracts/HasDefaultGrayColor.php) | [`View/Components/Contracts/HasDefaultGrayColor.php`](../../../vendor/filament/support/src/View/Components/Contracts/HasDefaultGrayColor.php) | done | — | — |
 | [`Maps\ComponentColorMap`](../../../packages/support/src/Colors/Maps/ComponentColorMap.php) | [`ColorMaps/ComponentColorMap.php`](../../../vendor/filament/support/src/View/Components/ColorMaps/ComponentColorMap.php) | done | — | — |
 | [`Maps\ButtonComponentColorMap`](../../../packages/support/src/Colors/Maps/ButtonComponentColorMap.php) | [`ColorMaps/ButtonComponentColorMap.php`](../../../vendor/filament/support/src/View/Components/ColorMaps/ButtonComponentColorMap.php) | done | — | [semantics](#the-filled-button-picks-a-background-first-and-a-text-shade-after) |

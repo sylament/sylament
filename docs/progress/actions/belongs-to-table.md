@@ -16,7 +16,7 @@ Covered by a case over a real `Sylament\Tables\Table`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`table()` / `getTable()` / `hasTable()`](../../../packages/actions/src/Concerns/BelongsToTable.php) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | — | [diverges](#the-table-reference-is-a-guarded-soft-dependency-not-a-declared-one) |
+| [`table()` / `getTable()` / `hasTable()`](../../../packages/actions/src/Concerns/BelongsToTable.php) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | — | [diverges](#the-table-reference-is-a-guarded-soft-dependency-not-a-declared-one) · [semantics](#the-trait-leans-on-belongstogroup-without-composing-it) |
 
 ## Semantics
 

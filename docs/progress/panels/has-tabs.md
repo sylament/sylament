@@ -29,7 +29,7 @@ It is a **record filter**, not a layout: the tabs hold no components, only a que
 | [`generateTabLabel()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `HasTabs::generateTabLabel()` | done | — | [semantics](#the-label-generator-is-two-replaces-because-symfonystring-takes-one-needle) |
 | [`updatedActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `HasTabs::updatedActiveTab()` | done | — | [diverges](#the-update-hook-heals-flushes-and-resets-where-filaments-resets-and-rebuilds-columns) |
 | [`getTabsSchema()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `HasTabs::getTabsContentComponent()` | done | — | [diverges](#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) · [renames.md](../renames.md#renames) |
-| [`modifyQueryWithActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `HasTabs::modifyQueryWithActiveTab()` | done | — | [semantics](#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that-is-what-heals-a-bookmark) |
+| [`modifyQueryWithActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `HasTabs::modifyQueryWithActiveTab()` | done | — | [semantics](#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that-is-what-heals-a-bookmark) · [diverges](#the-seeding-and-the-strip-are-duplicated-across-the-two-tiers-as-filaments-are) |
 | The column-manager half of `updatedActiveTab()` | `HasTabs::updatedActiveTab()`'s `$cachedDefaultTableColumnState` reset and `applyTableColumnManager()` call | todo | — | [detail](#updatedactivetab-does-not-re-apply-the-column-manager) |
 
 ## Details

@@ -19,7 +19,7 @@ Its whole API is `Hidden::make('token')` — everything else it exposes is `Fiel
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Construction &amp; rendering (`Hidden::make('token')`)](../../../packages/forms/src/Components/Hidden.php) | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
+| [Construction &amp; rendering (`Hidden::make('token')`)](../../../packages/forms/src/Components/Hidden.php) | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#a-hidden-field-is-not-a-private-one) |
 | [`columnSpan(['default' => 'hidden'])`](../../../packages/forms/src/Components/Hidden.php) collapsing the schema slot | [`Hidden::setUp()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#the-slot-collapse-is-the-whole-styling-story) |
 | [Embedded view → Twig template](../../../packages/forms/templates/partials/Hidden/index.html.twig), rendered with no field wrapper | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#nothing-wraps-the-input-and-nothing-should) |
 | [`id` / `data-model` binding](../../../packages/forms/templates/partials/Hidden/index.html.twig) | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |

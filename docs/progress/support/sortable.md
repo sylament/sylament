@@ -22,7 +22,7 @@ Tables' [`reorderable()`](../tables/table.md#the-drag-control-mounts-per-mode-wh
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [The directive → a Stimulus controller](../../../packages/support/assets/src/controllers/sortable_controller.ts) | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) `Alpine.directive('sortable', …)` | done | — | [diverges](#the-control-attaches-only-where-a-consumer-asks-for-drag) |
+| [The directive → a Stimulus controller](../../../packages/support/assets/src/controllers/sortable_controller.ts) | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) `Alpine.directive('sortable', …)` | done | — | [diverges](#the-control-attaches-only-where-a-consumer-asks-for-drag) · [diverges](#sortablejs-is-bundled-twice-pinned-to-one-version) |
 | [Item marker `x-sortable-item` → `data-sortable-item`](../../../packages/support/assets/src/controllers/sortable_controller.ts) | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) `draggable` + `dataIdAttr` | done | — | — |
 | [Handle marker `x-sortable-handle` → `data-sortable-handle`](../../../packages/support/assets/src/controllers/sortable_controller.ts) | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) `handle` | done | — | — |
 | [`x-sortable-group` → the `group` value](../../../packages/support/assets/src/controllers/sortable_controller.ts) | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) `group: el.getAttribute('x-sortable-group')` | done | — | [semantics](#an-empty-group-value-means-no-group) |
@@ -30,7 +30,7 @@ Tables' [`reorderable()`](../tables/table.md#the-drag-control-mounts-per-mode-wh
 | [Ghost class `fi-sortable-ghost` → `sy-sortable-ghost`](../../../packages/support/assets/src/styles/components/sortable.css) | [`sortable.css`](../../../vendor/filament/support/resources/css/sortable.css) | done | — | [diverges](#only-the-ghost-class-is-ours-the-other-three-stay-vendor-defaults) |
 | [The #17402 `onEnd` re-insert workaround](../../../packages/support/assets/src/controllers/sortable_controller.ts) | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) `onEnd` | done | — | [semantics](#the-17402-workaround-and-why-a-chrome-carrying-list-needs-it) |
 | `window.Sortable` | [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) line 3 | skipped | — | [diverges](#the-instance-is-private-and-nothing-is-assigned-to-window) |
-| [The `end` answer](../../../packages/support/assets/src/controllers/sortable_controller.ts) | — (Filament's consumers bind SortableJS' own bubbling `end` with `.stop`) | done | — | [diverges](#the-answer-is-a-namespaced-non-bubbling-event-dispatched-only-on-a-real-move) |
+| [The `end` answer](../../../packages/support/assets/src/controllers/sortable_controller.ts) | — (Filament's consumers bind SortableJS' own bubbling `end` with `.stop`) | done | — | [diverges](#the-answer-is-a-namespaced-non-bubbling-event-dispatched-only-on-a-real-move) · [semantics](#the-morph-round-trip-and-why-the-consumer-must-accept-the-clients-order) |
 
 ## Contract
 

@@ -61,7 +61,7 @@ trait HasOptions
 
         foreach ($options as $value => $label) {
             if (! is_array($label)) {
-                $translated[$value] = $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+                $translated[$value] = $this->translateOptionLabel($label);
 
                 continue;
             }
@@ -69,13 +69,26 @@ trait HasOptions
             $group = [];
 
             foreach ($label as $groupValue => $groupLabel) {
-                $group[$groupValue] = $groupLabel instanceof TranslatableInterface ? $groupLabel->trans($this->getTranslator()) : $groupLabel;
+                $group[$groupValue] = $this->translateOptionLabel($groupLabel);
             }
 
             $translated[$value] = $group;
         }
 
         return $translated;
+    }
+
+    /**
+     * A label outside its PHPDoc type, which nothing checks a closure's map
+     * against, returns as given rather than throwing as `translateText()` would.
+     *
+     * @param string|Markup|TranslatableInterface $label
+     *
+     * @return string|Markup
+     */
+    private function translateOptionLabel(mixed $label): mixed
+    {
+        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
     }
 
     public function hasDynamicOptions(): bool

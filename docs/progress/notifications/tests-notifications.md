@@ -26,6 +26,7 @@ Why the list is a recorder's and not the session's is [Notification's divergence
 
 With no argument, `assertNotified()` passes when any notification was sent and `assertNotNotified()` when none was.
 A string matches a sent notification's title, and a `Notification` matches one whose `toArray()` equals its own but for the id, as in Filament.
+The recorded title is the [translated text](notification.md#a-title-or-body-message-is-translated-at-send-and-flashed-as-text), so a string is the title in the test locale, and neither assertion accepts a message.
 The five failure messages are Filament's: `A notification was expected but none were sent.`, `A notification was not sent`, `No notification was expected but at least one was sent.`, `The notification with the given configuration was sent` and `The notification with the given title was sent`.
 The tester's two assertions consume the list they read, as Filament's pull from the session empties it, so each means "sent by the tester's requests since the last notification assertion".
 

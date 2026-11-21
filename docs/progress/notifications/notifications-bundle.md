@@ -29,7 +29,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 | [The package manifest's `symfony/*` requires](../../../packages/notifications/composer.json) | [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) | in progress | — | [detail](#no-test-pins-the-manifests-symfony-requires) · [diverges](#the-manifest-declares-every-symfony-package-src-imports) |
 | `Livewire::component('notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-stack-is-registered-as-a-twig-component-not-a-live-one) |
 | `Livewire::component('database-notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | blocked | the database-notifications panel | [detail](#the-database-notifications-registration-waits-on-its-panel) |
-| Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | todo | — | [detail](#the-translation-catalogue-is-unported-so-the-close-label-is-an-english-literal) |
+| [Translations (`->hasTranslations()`) — the `sylament-notifications` catalogue](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.xlf) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/lang/en/notification.php`](../../../vendor/filament/notifications/resources/lang/en/notification.php) | done | — | [diverges](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-close-label-alone) |
 | `Testable::mixin(new TestsNotifications)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
 
@@ -49,14 +49,6 @@ Nothing of it is ported, so there is nothing to register.
 
 **Next step:** build the database-notifications panel.
 Unlike the toast stack, that component is free to be a UX **live** component: it holds stored server-side state by nature, which is what the toast stack deliberately [does not](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported).
-
-### The translation catalogue is unported, so the close label is an English literal
-
-`->hasTranslations()` registers [`resources/lang/`](../../../vendor/filament/notifications/resources/lang): the close-button label (`notification.php`) and the database-modal string set (`database.php`).
-The visible consequence is in the toast template: the close button's `label` is the English literal `'Close notification'`, the way tables' `getEmptyStateHeading()` builds an English heading ([tables-bundle.md](../tables/tables-bundle.md#the-translations-namespace-is-not-registered)).
-
-**Next step:** port with the toolkit-wide i18n pass, which is the same destination tables' translations row names.
-Nothing about notifications makes its strings a special case, and doing them first would fix a catalogue shape the other packages then inherit.
 
 ## Semantics
 
@@ -139,6 +131,15 @@ One stylesheet for the toolkit, one build to keep byte-stable, and notifications
 `Livewire::component('notifications', Notifications::class)` names the stack for `@livewire('notifications')`.
 The port's equivalent registration is the `Twig\Components\` glob, which autoconfigures the class as a `#[AsTwigComponent]`: a plain class-backed Twig component, invoked as `<twig:SylamentNotifications:Notifications />`.
 The reasoning for **not** making it a live component is the stack's own [architecture note](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported); what belongs here is only that the bundle needs one glob rather than a named component registration, and that the same glob registers any later class in `Twig\Components\`, the database-notifications panel's live component included.
+
+### The catalogue is found by the bundle's translations directory and holds the close label alone
+
+`->hasTranslations()` registers Filament's `filament-notifications` namespace from [`resources/lang/`](../../../vendor/filament/notifications/resources/lang).
+The port registers nothing: FrameworkBundle scans every bundle's `translations/` directory, so [`translations/sylament-notifications+intl-icu.en.xlf`](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.xlf) is the `sylament-notifications` domain from the file name alone, and no prepend is needed.
+It holds `notification.actions.close.label`, the one text the toast ships; the title, the body and the actions' labels belong to the application.
+
+Filament's `database.php` keys (`database.modal.*`) have no site, because the database-notifications modal is [unported](#the-database-notifications-registration-waits-on-its-panel), and a catalogue holds only keys its package's code uses.
+They join the catalogue under Filament's key paths when that panel lands.
 
 ### The manifest declares every `symfony/*` package `src/` imports
 

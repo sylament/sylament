@@ -74,7 +74,7 @@
         color="gray"
         icon="heroicons:x-mark-20-solid"
         :iconAlias="constant('Sylament\\Notifications\\Twig\\NotificationsIconAlias::NOTIFICATION_CLOSE_BUTTON')"
-        label="Close notification"
+        :label="'notification.actions.close.label'|trans(domain: 'sylament-notifications')"
         :data-action="toastController ~ '#close'"
     />
 </div>

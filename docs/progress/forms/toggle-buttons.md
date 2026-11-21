@@ -23,8 +23,7 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#the-option-inputs-carry-aria-invalid-which-filaments-do-not) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
-| `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](#the-variants-keep-vendors-autofocus-and-inline-asymmetries) |
-| `wire:loading.attr="disabled"` on the grouped inputs | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [detail](#the-grouped-inputs-do-not-disable-themselves-while-a-request-is-in-flight) |
+| `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](#the-grouped-variant-drops-vendors-autofocus-and-keeps-its-inline-asymmetry) |
 | `multiple()` / `isMultiple()` — `role`, `type` and the dropped `name` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-multiple-arm-needs-a-model-that-rests-at-an-array) |
 | `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-catalogue-messages) |
 | `inline()` / `isInline()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#inline-is-this-fields-own-property-not-the-canbeinline-trait) |
@@ -38,7 +37,7 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | `hasNullableBooleanState()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
 | `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()`, replaced by a user `in()` list | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](can-disable-options.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
 | `required()` — the standard `RequiredValue`, in both multiplicities | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-at-least-one-answer-in-both-multiplicities) |
-| Tooltips — the per-option hover text | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title) |
+| Tooltips — the per-option hover text | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title) · [semantics](#a-tooltip-may-be-a-message-which-the-memoised-map-holds-translated) |
 | The grid, and its `Column` default | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) + [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [detail](can-disable-options.md) |
@@ -46,11 +45,13 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-extra-input-attributes-win-where-filaments-lose-by-going-last) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
 | [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-the-colour-and-icon-maps) |
 | [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-the-colour-and-icon-maps) |
-| [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#gettooltips-return-is-narrowed) |
+| [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#gettooltips-return-is-narrowed) · [semantics](#a-tooltip-may-be-a-message-which-the-memoised-map-holds-translated) |
 | [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](#the-nested-recursive-rules-trait-is-dead-api-in-filaments-own-class) |
 | `getPublishedViewOverrideCheckPath()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | skipped | — | [diverges](#there-is-nothing-to-publish-a-view-override-against) |
 | [`CanFixIndistinctState`](../../../packages/forms/src/Components/Concerns/CanFixIndistinctState.php) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
+| The non-required single-choice mode — `<button aria-pressed>` and the `toggleButtonsFormComponent` Alpine component | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [detail](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) |
+| `getRequiredDescription()` | [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [field.md](field.md#the-accessibility-members-are-not-ported) |
 
 ## Details
 
@@ -61,11 +62,11 @@ Filament's `size()` takes a `Size` or a string, and `getSize()` answers `Size::M
 The port has neither pair: both templates hardcode `sy-size-md` on the label, pass no size to the `Icon` tag, and emit no width class, and [`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) carries no `sy-width-full` arm.
 Porting them needs the two setters, the class in both templates, the icon-size mapping and the stylesheet arms, which [`styles.md`](styles.md) owns.
 
-### The grouped inputs do not disable themselves while a request is in flight
+### A non-required single choice renders as deselectable toggle buttons
 
-Filament's grouped variant writes `wire:loading.attr="disabled"` on every input, so a second click cannot land while Livewire is still answering the first; the default variant writes nothing of the kind.
-The port's `Grouped.html.twig` emits no loading directive.
-`ux-live-component`'s equivalent is `data-loading="addAttribute(disabled)"`, which [`Tabs`](../../../packages/schemas/templates/partials/Tabs/index.html.twig) and [`Table`](../../../packages/tables/templates/partials/Table/index.html.twig) already emit, so the grouped inputs can take it with no new mechanism.
+Filament renders a field that is neither `multiple()` nor `required()` as `<button aria-pressed>` elements driven by its `toggleButtonsFormComponent` Alpine component, so a chosen option can be clicked again to clear it (`$isToggleButton = (! $isMultiple) && (! $isRequired)`).
+The port always renders radios or checkboxes, so a single choice, once made, can only be changed, never cleared.
+Porting it needs a Stimulus controller that owns the pressed state and writes the model, beside the two templates.
 
 ## Semantics
 
@@ -181,6 +182,10 @@ Both templates emit the tree that needs — `<input>` immediately followed by `<
 The **adjacency** is what is load-bearing and it is invisible: putting anything between the two, or moving the input after the label the way a plain checkbox row does, leaves every option painted identically with nothing failing anywhere.
 A case pins the input directly followed by its label in both variants for exactly that reason, beside the direct-child assertion the group arm needs.
 
+### A tooltip may be a message, which the memoised map holds translated
+
+`tooltips()` takes a map whose values may also be messages, and `getTooltips()` translates each message value before it memoises the map, so the memo holds the request locale's text and `getTooltip()` keeps returning `string|Markup|null`.
+
 ## Divergences
 
 ### The `checked` attribute is rendered server-side
@@ -206,23 +211,23 @@ Nothing observable changes; the markup is one attribute shorter.
 Filament renders `tooltips()` through its global Tippy directive — `x-tooltip="{ content: …, theme: $store.theme, allowHTML: … }"` — which gives a styled, themed, HTML-capable popup.
 The port has no tooltip primitive anywhere — support ships none, and actions' [`Action::tooltip()`](../actions/action.md) renders the same native attribute from its trigger partials — so a tooltip renders as `title="…"`.
 
-The API is unchanged — `tooltips([…])` takes the same map and the same closures — and the behaviour is the browser's: no theming, no HTML, a delay the user's OS picks.
+The map has Filament's shape, and a value may also be a [message](#a-tooltip-may-be-a-message-which-the-memoised-map-holds-translated) — and the behaviour is the browser's: no theming, no HTML, a delay the user's OS picks.
 A `Markup` tooltip is the visible cost: an attribute value is text, so its tags reach the reader as literal `<b>…</b>` characters where Filament's `allowHTML` arm would render them.
 Nothing strips or rewrites them — silently discarding the caller's content would hide the gap rather than show it — and a case characterizes the literal output so a tooltip primitive has something to change against.
 **Reversible** as a whole: when that primitive lands, this field and actions' button trigger switch together, and neither public surface moves.
 
-### The variants keep vendor's autofocus and inline asymmetries
+### The grouped variant drops vendor's autofocus, and keeps its inline asymmetry
 
-Filament's two trees differ in three ways beyond their shape, none of them commented:
+Filament's two trees differ in two ways beyond their shape, neither of them commented:
 
 | Vendor asymmetry | Port |
 | --- | --- |
-| `autofocus` on the first option — default only, absent from grouped | preserved |
+| `autofocus` on the first option — default and grouped (on the grouped input and on its button) | default only: `Grouped.html.twig` emits none |
 | `fi-inline` and the grid — default only | preserved |
-| `wire:loading.attr="disabled"` on the inputs — grouped only, absent from default | [not emitted yet](#the-grouped-inputs-do-not-disable-themselves-while-a-request-is-in-flight) |
 
-The autofocus and inline asymmetries are preserved because they are observable API: a caller writing `->grouped()->autofocus()` gets Filament's behaviour, odd as it is, and a caller who wants the other one has a one-word change.
-They are recorded here so a reader diffing the two templates finds the missing branch and reaches for this table before "fixing" it.
+The inline asymmetry is preserved because it is observable API, and a caller who wants the other layout has a one-word change.
+A caller writing `->grouped()->autofocus()` gets no autofocus, where Filament focuses the first option; porting it is one `autofocus` in the grouped template.
+They are recorded here so a reader diffing the two templates finds the missing branch and reaches for this table first.
 
 ### The option inputs carry `aria-invalid`, which Filament's do not
 
@@ -233,7 +238,7 @@ Here it is for assistive technology only, and no stylesheet keys off it: a radio
 ### The extra input attributes win where Filament's lose by going last
 
 Vendor's `ToggleButtons` is the one field composing this trait that never merges the two attribute sets.
-It prints its own attributes as literal markup and appends `$extraInputAttributeBag->toHtml()` after them ([`:161-171`](../../../vendor/filament/forms/src/Components/ToggleButtons.php), and again in the grouped tree), and HTML duplicate-attribute parsing is **first**-wins — so in Filament the field's own `id`, `type` and `value` beat anything `extraInputAttributes()` sets, and an author trying to override one is silently ignored.
+It prints its own attributes as literal markup and appends `$extraInputAttributeBag->toHtml()` after them ([`:195`](../../../vendor/filament/forms/src/Components/ToggleButtons.php), and again in the grouped tree at `:323`), and HTML duplicate-attribute parsing is **first**-wins — so in Filament the field's own `id`, `type` and `value` beat anything `extraInputAttributes()` sets, and an author trying to override one is silently ignored.
 Its `merge()`-based siblings (`TextInput`, `Textarea`, `Select`, `Radio`) give the extras the win instead.
 
 The port's templates put `component.getExtraInputAttributes` as the final `attrs()` source, which is later-source-wins, so the **extras win** here as they do on every other field.

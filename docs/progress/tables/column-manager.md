@@ -217,7 +217,7 @@ The four keys that remain are exactly the ones the client is allowed an opinion 
 Filament has the same derived test this port uses: `hasReorderedTableColumns()` flattens the stored and declared states to `type:name` lists, narrows the declared one to the columns both know, and asks whether they differ.
 What it does with the answer is where the two part company.
 With `persistColumnsInSession()` on, its default, vendor **latches** it: `persistHasReorderedTableColumns()` writes `$wasReordered || $this->hasReorderedTableColumns()` into a **second** session entry (`tables.<md5>_has_reordered_columns`), and every later `applyTableColumnManager()` picks its sync direction by reading that entry back rather than by re-asking; with the flag off it re-asks, still OR-ing in `$wasReordered`.
-The latch's other half is the **client's**: it never reads the stored value back into the write, so what keeps the entry `true` over an order the test would call unreordered is `$wasReordered`, the Alpine component's own `hasReordered`, set on any drag (`column-manager.js:152`/`:184`) and cleared after a successful apply (`:225`) or when the draft is reset to the applied columns (`:238`).
+The latch's other half is the **client's**: it never reads the stored value back into the write, so what keeps the entry `true` over an order the test would call unreordered is `$wasReordered`, the Alpine component's own `hasReordered`, set on any drag (`column-manager.js:169`/`:201`) and cleared after a successful apply (`:351`) or when the draft is reset to the applied columns (`:398`).
 An apply that carries `false` over a restored order therefore writes `false || false` and lowers it again.
 
 Here the same test is `isReorderedTableColumnState()`, parameterised over a state so it can be asked of the draft as well as of the applied bag, and it is asked afresh at each sync.
@@ -245,6 +245,7 @@ Splitting them into a `#[PostMount]` seed and a `#[PostHydrate]` re-derivation m
 `content.blade.php` iterates `columns` with `x-for` (the client array `$wire.entangle('tableColumns')` seeds from the *applied* bag), while each row's `checked` and `disabled` bindings read the draft, through `getColumn(column.name, null)` off `deferredColumns`.
 So every row, its label and its disabled state are produced in the browser, and the row set and its order only change once Apply has written the draft back.
 Here `getTableColumnManagerItems()` produces the rows on the host, from `tableDeferredColumns` rather than the applied bag, and the `ColumnManagerContent` component iterates a plain Twig array.
+Each row's drag handle is named by `table.column_manager.actions.reorder.label`, whose English is `Reorder {column}` with the column's name where Filament's is `Reorder column`.
 The two therefore render *different* bags, which is the load-bearing half of this divergence: a dragged row moves in our list on the next render and in vendor's only after Apply.
 
 That is the same trade the rest of the package makes (the selection banner, the editable cells): the server is canonical, the controller repaints.
@@ -270,7 +271,6 @@ In the **modal** layout the partial renders the panel's items alone (`ColumnMana
 This is the filters modal's shape one component over, and deliberately so: a modal already has a footer, and a heading-row Reset inside a dialog whose own footer is empty reads as a mistake.
 Vendor reaches the same place by a different route (its modal *is* the trigger action's, with the footer assembled through `extraModalFooterActions()`), so upstream the setting is equally inert under the modal layout.
 The divergence is in the mechanism, not the outcome.
-The Reset button of the panel and of the modal footer both read `table.column_manager.actions.reset.label`, and the filters panel's pair read `table.filters.actions.reset.label`, which are two Filament keys of one English word.
 
 ### The item-list block sits at top level, where vendor's nests inside the panel
 

@@ -29,7 +29,7 @@ Everything [`Column`](column.md) carries, from the name and the state read to th
 | [`listWithLineBreaks()` / `isListWithLineBreaks()`](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::listWithLineBreaks()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | — |
 | [`getStateItems()` — the cell's icon list](../../../packages/tables/src/Columns/IconColumn.php) | — (Sylament-only) | done | — | [semantics](#an-item-whose-icon-resolves-blank-contributes-nothing-its-name-included) |
-| [The screen-reader text alternative beside each icon](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [semantics](#the-icon-is-hidden-and-the-span-beside-it-is-the-only-name) · [semantics](#the-screen-reader-text-translates-a-message-state) |
+| [The screen-reader text alternative beside each icon](../../../packages/tables/src/Columns/IconColumn.php) | [`IconColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [semantics](#the-icon-is-hidden-and-the-span-beside-it-is-the-only-name) |
 | [`$template`](../../../packages/tables/src/Columns/IconColumn.php) + [the partial it names](../../../packages/tables/templates/partials/IconColumn/index.html.twig) | [`IconColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [diverges](text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | [The blank-state placeholder and the empty tooltip](../../../packages/tables/templates/partials/IconColumn/index.html.twig) | [`IconColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
 | [The per-item tooltip and the per-item `<a>`](../../../packages/tables/templates/partials/IconColumn/index.html.twig) | [`IconColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | — | [column.md](column.md#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom) |
@@ -76,8 +76,8 @@ Keeping the dropped entries in the list rather than filtering them in PHP is wha
 ### The icon is hidden, and the span beside it is the only name
 
 Every icon renders `aria-hidden="true"`, so the `<span class="sy-ta-sr-only">` that follows it is the cell's whole accessible content, and the accessible name of any `<a>` the per-item link arm wraps around it.
-The name is chosen by the first arm that answers: the item's tooltip, then the `table.columns.icon.boolean.true` / `false` messages (*Yes* / *No*) on a boolean column, then the state's [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php), then a backed enum's value, then a `Markup`'s stripped text, then the scalar itself.
-A `HasLabel` label that is a message is translated through the column's translator in that arm ([contracts](../support/contracts.md#text-a-contract-answers-may-be-a-message-which-its-reader-translates)).
+The name is chosen by the first arm that answers: the item's tooltip, then the `table.columns.icon.boolean.true` / `false` messages (*Yes* / *No*) on a boolean column, then the state's [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php) label, then a state that is itself a `TranslatableInterface` (an enum with both keeps its `HasLabel` label), then a backed enum's value, then a `Markup`'s stripped text, then the scalar itself.
+The boolean, `HasLabel` and `TranslatableInterface` arms translate through the column's translator, so the alternative is text, never an id ([contracts](../support/contracts.md#text-a-contract-answers-may-be-a-message-which-its-reader-translates)).
 The result is stripped of tags and trimmed, so a `Markup` tooltip names the icon with its text rather than its markup, the same flattening the `title` attribute gets.
 
 ### The policy carries a map and the default-gray contract at once
@@ -86,10 +86,6 @@ The result is stripped of tags and trimmed, so a `Markup` tooltip names the icon
 `HasDefaultGrayColor` means `->color('gray')` emits nothing at all, so `icon-column.css`'s own `text-gray-400 dark:text-gray-500` stands; every other palette emits the two carriers plus the shade classes that set `--sy-text` and `--sy-dark-text`, which the `&.sy-color` branch reads.
 Contrast that with the text column, where [`gray` is a visible colour on the item and the absence of one on the icon](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon): there the both-contracts policy resolves an *empty* map, because the stylesheet picks the shade off the palette swap.
 Here the shade is resolved, because the icons are the cell's only content and owe their surface a measured ratio.
-
-### The screen-reader text translates a message state
-
-The text alternative of an item whose state is an enum that implements `TranslatableInterface` (an enum with a `HasLabel` keeps its label) or is a message translates it before the trim, so the alternative is text, not an id.
 
 ## Divergences
 

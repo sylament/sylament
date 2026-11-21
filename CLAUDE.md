@@ -14,7 +14,7 @@ A component's status is its row in the port trail; what to build next is decided
 | `packages/<pkg>/translations/` | its catalogues: `<domain>+intl-icu.en.yaml` under Filament's keys, `validators.en.yaml` (rules: `.claude/rules/catalogues.md`) |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
 | `tests/Packages/` | each package's tests: `tests/Packages/<Pkg>/` mirrors `packages/<pkg>/src/` |
-| `tests/Fixtures/` | its kernel and per-area fixtures, laid out as a Symfony app: `src/`, `config/`, `templates/`, `assets/` |
+| `tests/Fixtures/` | its kernel and per-area fixtures, laid out as a Symfony app: `src/`, `config/`, `templates/`, `assets/`, `translations/` |
 | `tests/Infrastructure/` | the machinery every test shares, and in `{Doctrine,PHPUnit}/` the Doctrine rig (dev-only) |
 | `tests/Architecture/` | the scans of the repository's files, the translation gates' scans (`Translations/`), the rule hook (`Rules/`) and the port-trail tools (`Trail/`) |
 | `vendor/filament/` | Filament's source: read it before designing anything |
@@ -79,7 +79,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `test-database.md` | `/tests/Fixtures/src/Entity/**`, `/tests/Infrastructure/Doctrine/**`, `/tests/Fixtures/src/*/Doctrine/**`, `/tests/Fixtures/config/packages/*.php` | How the root suite prepares its database, where its entities and Doctrine fixtures live, and how it counts statements and cleans up after a server test. |
 | `test-infrastructure.md` | `/tests/Fixtures/**`, `/tests/Infrastructure/**`, `/tests/TestCase.php`, `/tests/TestCaseTest.php`, `/tests/Pest.php`, `/phpunit.dist.xml` | How the root suite's kernel, configuration, fixture areas, writable paths, database and base class are laid out and kept apart between concurrent runs. |
-| `test-locales.md` | `/tests/Fixtures/translations/**`, `/tests/Fixtures/config/routes/*.php` | How a fixture overrides a shipped domain for one locale, how a test reaches a key in the default domain, and where a localised live route lives. |
+| `test-locales.md` | `/tests/Fixtures/translations/**`, `/tests/Fixtures/config/routes/*.php` | How a fixture names its own domain and overrides a shipped one for one locale, how a test reaches a key in the default domain, and where a localised live route lives. |
 | `test-renders.md` | `/tests/Packages/**`, `/tests/Fixtures/src/*/Selectors.php` | How a root-suite test queries a render, what it asserts first, and where a selector it shares is defined. |
 | `test-scope.md` | `/tests/Packages/**` | How much a package test covers, how a bug is pinned, and what never gets a test. |
 | `testing-api.md` | `packages/*/src/Testing/**` | When a testing-API helper is ported, what visibility and status it keeps, how it guards a suggested package, and what stays out of it. |

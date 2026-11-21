@@ -62,7 +62,7 @@ The payload changes ecosystem (Laravel rule strings → Symfony `Constraint` obj
 | `showAllValidationMessages()` / `shouldShowAllValidationMessages()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `allowHtmlValidationMessages()` / `areHtmlValidationMessagesAllowed()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#html-validation-messages-are-not-ported) |
 | `fieldComparisonRule()` / `multiFieldComparisonRule()` / `multiFieldValueComparisonRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-remaining-comparison-rule-string-builders-have-no-port) |
-| [`MinFileSize`](../../../packages/forms/src/Validation/MinFileSize.php) + its validator — no Filament source | [`BaseFileUpload::minSize()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) — `rule("min:{n}")` | done | — | [semantics](#a-file-field-validates-in-two-places-and-only-one-of-them-is-this-trait) |
+| [`MinFileSize`](../../../packages/forms/src/Validation/MinFileSize.php) + its validator — no Filament source | [`BaseFileUpload::minSize()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) — `rule("min:{n}")` | done | — | [diverges](#a-file-field-validates-in-two-places-and-only-one-of-them-is-this-trait) |
 | [Format sugar (`alpha`, `alphaDash`, `alphaNum`, `ascii`, `string`, `hexColor`, `json`, `macAddress`, `ip` / `ipv4` / `ipv6`, `uuid`, `ulid`, `activeUrl`)](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-format-sugar-is-stock-where-a-constraint-fits-and-first-party-where-none-does) · [semantics](#uuid-is-loose-so-the-nil-uuid-passes) |
 | [`regex()` / `notRegex()` / `getRegexPattern()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](text-input.md#tel-writes-the-shared-regex-slot) |
 | [`in()` / `notIn()` / `getInValidationConstraint()` / `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
@@ -421,16 +421,11 @@ An unknown option name **throws** `LogicException` naming the constraint and lis
 That message names the field's state path, so the `LogicException` is what a **wired** field raises; on a field never attached to a schema the state-path read fails first — a direct-call and test scenario only, since every validation path reaches the field through `dehydrateValidationConstraints()`, whose own unguarded state-path read already makes wiring the precondition.
 A key that is not a constraint class needs no runtime arm: PHPStan at level max rejects it at the call site.
 
+A stock constraint's message is an id that Symfony's validator translates through its `validators` catalogue, so the English a user reads is that catalogue's: `Ip`'s *This is not a valid IP address.* renders *This value is not a valid IP address.*
 `getValidationMessages()` keeps Filament's evaluation semantics — values run through `evaluate()`, the result is `array_filter`ed, and the string shorthand normalises onto the `message` key.
 Permanent while Symfony owns the message.
 
-One arm of that is narrower than Filament's, and it is worth stating because the type reads like an oversight.
-A leaf resolving to `''` is filtered out and the constraint keeps its own default — but a leaf closure **must return a string**.
-The evaluating closure is typed `fn (string|Closure $message): string`, so under `strict_types=1` a closure returning `null` is a `TypeError`, not a fallback to the default.
-
-That declaration is forced twice over, so do not "fix" it to `?string`.
-PHPStan binds `evaluate()`'s `@return T` to `string` here, by subtracting `Closure` from the property's union ([the closure-typing convention](../../internals/php.md#the-closure-typing-convention)), which makes `?string` a level-max `return.unusedType` error; and Rector's `typeDeclarations` set re-adds the declaration if it is dropped instead.
-It is also the contract the property already states — `$validationMessages` types its leaves `string|Closure`, so a closure handing back `null` violates its own declaration, and the fail-fast rule prefers the `TypeError` to a silent fallback that hides it.
+A leaf may be text or a message, and a closure may answer either; each is translated and cast to a string, so a leaf resolving to `null` or `''` is filtered out and the constraint keeps its own default.
 A conditional message meant to fall through to the constraint's default is spelled `fn () => $condition ? 'Give it a title.' : ''`.
 
 ### The condition-pair walk drops Filament's numeric-key rule shorthand

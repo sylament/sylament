@@ -101,8 +101,7 @@ A Doctrine association table carrying payload is an entity of its own, so a rela
 
 ### The texts are catalogue messages under Filament's keys
 
-`edit.single.label`, `edit.single.modal.heading` (`Edit {label}`), `edit.single.modal.actions.save.label` (`Save changes`) and `edit.single.notifications.saved.title` (`Saved`) are the messages Filament's [`resources/lang/en/edit.php`](../../../vendor/filament/actions/resources/lang/en/edit.php) keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records for the create side.
-The success title is `Saved`, not `Edited`: that is Filament's own wording, kept.
+The texts follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape under Filament's [`edit.php`](../../../vendor/filament/actions/resources/lang/en/edit.php) keys; the success title is `Saved`, not `Edited`, Filament's own wording.
 
 The heading's `{label}` argument is [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), which is why it is a closure: no title is known until the action is hosted and a record is bound.
-When the whole title chain answers `null`, Filament would render a trailing-space `Edit `, so the port answers the bare verb under the port-added key `edit.single.modal.heading_bare`.
+When the whole title chain answers `null`, Filament would render a trailing-space `Edit `, so the port answers the bare verb.

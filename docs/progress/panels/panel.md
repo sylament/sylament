@@ -216,15 +216,16 @@ A consumer who wants one calls `brandName()`, which is the call a Filament user 
 
 `brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside the arms they already had (Filament's are `string | Htmlable | Closure | null` and `string | Closure | null`), and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
 `navigationGroups()` takes a message for a bare registered group, and `getNavigation()` translates it before it matches the registered group against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
+`getNavigation()` buckets items by their translated group, so the translated text is a group's identity, as Filament's `__()`-translated group is, and two groups that translate to one text merge; a registered group's array key is the identity a user keeps stable across locales.
 A panel built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
 
 ### The catalogue is found by the bundle's translations directory and holds the texts panels renders
 
-`hasTranslations()` registers Filament's `filament-panels` namespace; the port registers nothing, because FrameworkBundle scans every bundle's `translations/` directory, so [`translations/sylament-panels+intl-icu.en.yaml`](../../../packages/panels/translations/sylament-panels+intl-icu.en.yaml) is the `sylament-panels` domain from the file name alone.
-Every key is Filament's key path (`layout.skip_to_content.label`, `resources/pages/create-record.title`), and a catalogue holds only keys panels' code uses, so the unported surface's keys (authentication, tenancy, widgets, database notifications, the unsaved-changes body, `create_another`, the dashboard filter and the view page) join it with their code.
-Two texts have no Filament key and take port-added keys in Filament's shape: `layout.actions.sidebar.toggle.label` for the one toggle button, where Filament keys an expand and a collapse label, and `global-search.result.detail_label` for the detail label with its colon.
+`hasTranslations()` registers Filament's `filament-panels` namespace; the port [registers nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and [`translations/sylament-panels+intl-icu.en.yaml`](../../../packages/panels/translations/sylament-panels+intl-icu.en.yaml) is the `sylament-panels` domain.
+The unported surface's keys (authentication, tenancy, widgets, database notifications, the unsaved-changes body, `create_another`, the dashboard filter and the view page) join it with their code.
+Two texts have no Filament key and take port-added keys in Filament's shape: `layout.actions.sidebar.toggle.label` for the one toggle button, where Filament keys an expand and a collapse label, and `global-search.result.detail_label`, which [global-search.md](global-search.md#a-result-title-or-detail-value-may-be-a-message-and-the-component-translates-it) records.
 Three texts keep the port's English under Filament's key: `layout.navigation.label` (`Navigation`, Filament `Sidebar navigation`), `layout.actions.open_user_menu.label` (`Open user menu`, Filament `User menu`) and `resources/pages/edit-record.form.actions.save.label` (`Save`, Filament `Save changes`).
-The document's `lang` attribute, a `dir` attribute and the ` — ` title separator are not text keys and stay as they are.
+The document's `lang` is the literal `en` and the ` — ` title separator is a literal, neither of them a text key.
 
 ### `getPages()` re-indexes where Filament keeps `array_unique()`'s gapped keys
 

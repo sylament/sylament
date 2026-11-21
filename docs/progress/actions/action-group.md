@@ -123,6 +123,7 @@ By type it resolves `Get::class`, which [diverges](action.md#getset-resolve-by-t
 The port's group inherits `template()` and `getTemplate()` from `ViewComponent`, but `toArray()` writes no key for its own template and `fromArray()` reads none, so a group restored from its array renders through the default `ActionGroup/index.html.twig`.
 Adding it means a `template` key and a restore whitelist beside the [trigger-template one](#fromarray-restores-only-the-four-built-in-trigger-templates).
 Vendor's `triggerView` is the key that survives, renamed `triggerTemplate` by the Blade to Twig translation in [`renames.md`](../renames.md).
+The label crosses already translated, [as an action's does](action.md#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl).
 
 ### `hasNonBulkAction()` waits for the table toolbar's non-bulk partition
 

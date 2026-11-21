@@ -15,7 +15,7 @@ owns:
 | --- | --- | --- | --- | --- |
 | [`$routePath`](../../../packages/panels/src/Pages/Dashboard.php) / `getRoutePath()` | [`Dashboard::getRoutePath()`](../../../vendor/filament/filament/src/Pages/Dashboard.php) | done | — | — |
 | [`$navigationSort`](../../../packages/panels/src/Pages/Dashboard.php) | the same static, `-2` | done | — | — |
-| [`$title`](../../../packages/panels/src/Pages/Dashboard.php), `getTitle()` and `getNavigationLabel()` | `Dashboard::getTitle()` / `getNavigationLabel()` | done | — | [diverges](#the-dashboard-title-is-read-from-the-catalogue-and-a-title-override-still-wins) |
+| [`getTitle()` and `getNavigationLabel()`](../../../packages/panels/src/Pages/Dashboard.php), with `Page`'s inherited `$title` as the override | `Dashboard::getTitle()` / `getNavigationLabel()` | done | — | [diverges](#the-dashboard-title-is-read-from-the-catalogue-and-a-title-override-still-wins) |
 | [`getNavigationIcon()`](../../../packages/panels/src/Pages/Dashboard.php) | `Dashboard::getNavigationIcon()` | done | — | [diverges](#the-icon-fallback-has-no-top-navigation-arm) |
 | `getWidgets()` / `getColumns()` / `content()` / `getFiltersFormContentComponent()` / `getWidgetsContentComponent()` | [`Pages/Dashboard.php`](../../../vendor/filament/filament/src/Pages/Dashboard.php) | blocked | a `Widget` class in `sylament/widgets` | [detail](#the-widget-half-waits-on-sylamentwidgets) |
 | `getVisibleWidgets()` | `Dashboard::getVisibleWidgets()`, deprecated | skipped | — | [diverges](#the-deprecated-getvisiblewidgets-is-not-ported) |
@@ -33,7 +33,7 @@ owns:
 
 Filament's `Dashboard` resolves its label through `__('filament-panels::pages/dashboard.title')`; ours reads the same key path, `pages/dashboard.title`, from the `sylament-panels` catalogue.
 The class sets no `$title`, because a static property initialiser cannot hold a message, and overrides two getters instead: the instance `getTitle()` returns the translated string, and the static `getNavigationLabel()` returns the message itself for [the navigation item to translate](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it).
-A subclass that sets `$title` wins in both, as before, and keeps a plain string.
+A subclass that sets `$title` wins in both and keeps a plain string.
 
 ### The icon fallback has no top-navigation arm
 

@@ -69,12 +69,19 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 | [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
 | The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | blocked | render hooks | [detail](#the-render-hooks-around-the-field-have-no-port-target) |
+| The field's screen-reader and status layer: the `field.instructions` text through `aria-describedby`, the `role="status"` live region, `results_label` with `aria-controls`, the `results_count` plural, `loading_message` and `failure_message` | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php), [`lang/en/global-search.php`](../../../vendor/filament/filament/resources/lang/en/global-search.php) | todo | — | [detail](#the-fields-screen-reader-and-status-layer-is-not-ported) |
 | Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [detail](#the-field-carries-no-busy-indicator) |
 | Results panel enter/leave fade | `x-transition:enter-start` / `x-transition:leave-end` on `fi-global-search-results-ctn` | skipped | — | [diverges](#the-panel-opens-and-closes-with-no-fade) |
 | Topbar-end `x-persist` | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `x-persist="topbar.end.panel-…"` | skipped | — | [diverges](#there-is-no-spa-navigation-for-the-field-to-survive) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
+
+### The field's screen-reader and status layer is not ported
+
+The template reads three of Filament's `global-search.*` keys, `field.label`, `field.placeholder` and `no_results_message`, and renders none of the layer Filament builds around them.
+Filament describes the field with its `field.instructions` keyboard help through `aria-describedby`, names the results list with `results_label` through `aria-controls`, and announces a `role="status"` live region holding the `results_count` plural, `loading_message` while a search runs and `failure_message` when one fails.
+Porting it brings those keys into the catalogue with the markup that reads them, and the count needs the [plural-form map](../../internals/i18n.md#a-count-the-browser-updates-reaches-it-as-a-map-of-plural-forms) only if the controller updates it.
 
 ### The field carries no busy indicator
 
@@ -159,7 +166,6 @@ Authorization revisits all three when it lands.
 Both widen to take a `TranslatableInterface`, and so do `getGlobalSearchResultTitle()` and the values of `getGlobalSearchResultDetails()`; the [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php), which holds a translator, translates each result before the template reads it, so a custom `GlobalSearchProvider` may return messages and the template meets text.
 A category name and a detail label are array keys, which cannot be messages: the default provider passes the resource's plural label, already text, and a provider translates a label itself.
 The detail label's trailing colon is the port-added `global-search.result.detail_label` message, `{label}:`, so a locale that spaces its colons says so in the catalogue.
-`Global search`, `Search` and `No search results found.` are Filament's keys under `global-search.*`.
 
 ### The value objects answer with arrays, not collections
 
@@ -229,7 +235,7 @@ Two search inputs in the same shell answering the same keystrokes differently wo
 ### The key binding is suppressed while a modal is open
 
 Filament binds ⌘K through `x-mousetrap.global`, which fires wherever focus is — including inside an open modal, where the shortcut pulls focus out of a dialog the user is still answering and past the modal's own focus trap.
-The `sylament--panels--global-search` controller tests for a visible `[aria-modal="true"]` element that does not contain the search field before it takes the keystroke, and does nothing when it finds one.
+The `sylament--panels--global-search` controller takes the first displayed match of `dialog:modal, [aria-modal="true"]` before it takes the keystroke, and does nothing when that one does not contain the search field.
 That is a deliberate behaviour difference rather than a mechanism translation, and it is the reason the binding is a bare `keydown` listener with a hand-written modifier test rather than Stimulus' own key filters: those demand an exact modifier match, so one `mod+k` binding covering both platforms cannot be expressed as a descriptor — the same call [`sidebar_controller.ts`](../../../packages/panels/assets/src/controllers/sidebar_controller.ts) already makes for its Escape handler.
 The binding **values** are Filament's mousetrap-style combos, unchanged.
 

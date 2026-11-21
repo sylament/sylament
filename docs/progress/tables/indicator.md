@@ -14,7 +14,7 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` / `label()` / `getLabel()`](../../../packages/tables/src/Filters/Indicator.php) | [`Indicator`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | — | [diverges](#make-runs-configure) |
+| [`make()` / `label()` / `getLabel()`](../../../packages/tables/src/Filters/Indicator.php) | [`Indicator`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | — | [diverges](#make-runs-configure) · [semantics](#an-indicators-label-may-be-a-message-which-the-indicator-translates-itself) |
 | [`removable()` / `isRemovable()`](../../../packages/tables/src/Filters/Indicator.php) | [`Indicator::removable()`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | — | — |
 | [`removeField()` / `getRemoveField()`](../../../packages/tables/src/Filters/Indicator.php) | [`Indicator::removeField()`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | — | — |
 | [`color()` — support's `HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) | [`Support\Concerns\HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
@@ -26,8 +26,7 @@ owns:
 ### An indicator's label may be a message, which the indicator translates itself
 
 `make()` and `label()` take `string|Markup|TranslatableInterface|Closure`, and `getLabel()` translates a message through the chip's own translator: an `Indicator` is a component built by `newInstance()` and registered as a service, so it holds a translator wherever it is made through `make()`.
-A chip built with `new` and handed a message throws a `LogicException` naming its class.
-`HasIndicators::getIndicators()` wraps a message an `indicateUsing()` closure answers in a chip, and `getIndicator()` translates a message given to `indicator()`.
+A filter's own chips are [base-filter.md](base-filter.md#the-default-chip-is-one-indicator-state-message)'s.
 
 ## Divergences
 

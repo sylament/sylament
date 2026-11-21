@@ -103,8 +103,7 @@ A case drives a selection through the live host and asserts both the prop and wh
 
 ### The boolean labels are catalogue messages
 
-`boolean()` falls back to `components.radio.boolean.true` and `components.radio.boolean.false` in `sylament-forms`, Filament's key paths, where a label the author passes, a string or a message, replaces either.
-The English is Filament's: `Yes` and `No`.
+`boolean()` falls back to `components.radio.boolean.true` and `components.radio.boolean.false`, where a label the author passes, a string or a message, replaces either.
 
 ### The option inputs carry `aria-invalid` instead of a `fi-valid` / `fi-invalid` class pair
 

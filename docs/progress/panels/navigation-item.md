@@ -66,8 +66,7 @@ A `new`-built item is unaffected, because the setter only fires through the cont
 
 `label()`, `badge()`, `group()` and `make()` take a `TranslatableInterface` beside the arms they already had, and `getLabel()`, `getBadge()` and `getGroup()` keep returning strings, translated through the item's own translator, so a template and the panel's navigation assembly never meet a message.
 A message passes `make()`'s `filled()` gate, as any object does.
-The translation runs before the group is used as a key: the panel buckets items by `getGroup()` and matches a registered group by key or by its label, so the translated text is the group's identity, as Filament's `__()`-translated group is, and two groups that translate to one text merge.
-A registered group's array key is the identity a user keeps stable across locales.
+The translation runs before the panel [uses the group as a key](panel.md#the-brand-name-and-a-registered-navigation-group-may-be-messages).
 An item built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
 A message badge is translated like a label; a numeric badge is the caller's string and is never touched.
 Page and resource navigation reach the item through [static getters that return messages](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it).

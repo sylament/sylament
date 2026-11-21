@@ -58,15 +58,15 @@ The blank arm is `null`, which `blank()` alone separates from `0`.
 
 ### The indicator reads the arm label, not the option map
 
-The `setUp()` override builds `"{indicator}: {trueLabel|falseLabel}"` directly from the two label getters rather than looking the state up in the option map the way `SelectFilter` does, and returns `[]` for a blank value.
+The `setUp()` override builds [the default chip](base-filter.md#the-default-chip-is-one-indicator-state-message) from the indicator and the arm label of the matching getter rather than looking the state up in the option map the way `SelectFilter` does, and returns `[]` for a blank value.
 An already-built `Indicator` still passes through verbatim, same rule as the parent.
 
 ### The arm labels and the placeholder may be messages
 
 `trueLabel()` and `falseLabel()` take a message, and their getters translate it, so the select, the placeholder and the chip receive strings.
 `setUp()` seeds the arms with Filament's keys `components.select.boolean.true` and `.false`, which live in the `sylament-forms` catalogue, since tables requires forms and the text is forms' own.
-The `'-'` placeholder stays a literal: Filament hardcodes that one too.
-The chip is worded as `<indicator>: <state>` through the port-added `table.filters.state_indicator` message.
+`placeholder()` takes a message too, which `getPlaceholder()` translates; the default `'-'` placeholder stays a literal, as Filament hardcodes it.
+The chip is worded as [the default chip](base-filter.md#the-default-chip-is-one-indicator-state-message).
 
 ## Divergences
 

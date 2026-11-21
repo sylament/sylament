@@ -149,8 +149,8 @@ The port decodes with `JSON_THROW_ON_ERROR`, and refuses a state that is neither
 
 ### The seven texts are catalogue messages
 
-The add, delete and reorder action labels and the key and value column labels read `components.key_value.actions.{add,delete,reorder}.label` and `components.key_value.fields.{key,value}.label`, and the two screen-reader column headings read `components.key_value.columns.{reorder,actions}.label`, all in `sylament-forms` under Filament's key paths and with Filament's English.
-Each setter takes a string or a message and its getter translates it, as do the two placeholder setters, which have no default.
+The add, delete and reorder action labels and the key and value column labels read `components.key_value.actions.{add,delete,reorder}.label` and `components.key_value.fields.{key,value}.label`, and the two screen-reader column headings read `components.key_value.columns.{reorder,actions}.label`.
+The two placeholder setters take a message as the label setters do, and have no default.
 
 ### Deprecated Filament members are not ported
 

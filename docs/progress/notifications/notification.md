@@ -41,7 +41,7 @@ Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view,
 | [`body()` (`HasBody`)](../../../packages/notifications/src/Concerns/HasBody.php) | [`Concerns/HasBody.php`](../../../vendor/filament/notifications/src/Concerns/HasBody.php) | done | — | [diverges](#a-title-or-body-message-is-translated-at-send-and-flashed-as-text) |
 | [`status()` + `success()`/`info()`/`warning()`/`danger()` (`HasStatus`)](../../../packages/notifications/src/Concerns/HasStatus.php) | [`Concerns/HasStatus.php`](../../../vendor/filament/notifications/src/Concerns/HasStatus.php) | done | — | — |
 | [`duration()` / `seconds()` / `persistent()` (`HasDuration`)](../../../packages/notifications/src/Concerns/HasDuration.php) | [`Concerns/HasDuration.php`](../../../vendor/filament/notifications/src/Concerns/HasDuration.php) | done | — | [diverges](#a-closure-duration-evaluating-to-null-throws-where-filament-falls-back-to-persistent) |
-| [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) · [semantics](#iconsize-does-not-survive-the-delivery-hop) |
+| [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) · [diverges](#iconsize-does-not-survive-the-delivery-hop) |
 | [`iconColor()` + the status colour fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIconColor.php`](../../../vendor/filament/notifications/src/Concerns/HasIconColor.php), support's `HasIconColor` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`color()` (support `HasColor`)](../../../packages/notifications/src/Notification.php) | [`Filament\Support\Concerns\HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`Colors\Components\NotificationComponent`](../../../packages/notifications/src/Colors/Components/NotificationComponent.php) — the toast's colour policy | [`View/Components/NotificationComponent.php`](../../../vendor/filament/notifications/src/View/Components/NotificationComponent.php) | done | — | [color-policies.md](../support/color-policies.md#an-empty-map-is-a-real-answer-not-a-missing-one) |
@@ -63,6 +63,7 @@ Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view,
 | `sendToDatabase()` / `toDatabase()` / `getDatabaseMessage()` / `fromDatabase()` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | blocked | notification storage | [detail](#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
 | [`assertNotified()` / `assertNotNotified()`, on `TestsNotifications`](../../../packages/notifications/src/Testing/TestsNotifications.php) | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#the-assertion-helpers-read-what-a-tests-requests-sent-not-a-stack-collection) · [tests-notifications.md](tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | `Arrayable` / `HasEmbeddedView` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) (the `implements` list) | skipped | — | [diverges](#the-laravel-array-and-embedded-view-contracts-have-no-counterpart) |
+| The toast's focus pause and Escape dismissal, with focus restored | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | todo | — | [detail](#the-toast-does-not-pause-on-focus-or-close-on-escape) |
 
 ## Details
 
@@ -98,11 +99,17 @@ The event name takes the [`sylament:` prefix](../translations.md#names-with-no-f
 
 ### `markAsRead()` and `markAsUnread()` belong to the database panel
 
-Filament's Alpine `notificationComponent` carries five behaviours beyond the transition and FLIP machinery that the [transition divergence](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) replaces wholesale.
-Three are ported by [`notification_controller.ts`](../../../packages/notifications/assets/src/controllers/notification_controller.ts): the auto-dismiss timer, its hover-pause (at expiry over a hovered toast, wait for `mouseleave`), and `close()`.
-The other two, `markAsRead()` and `markAsUnread()`, dispatch `markedNotificationAsRead` / `markedNotificationAsUnread` window events that only the `DatabaseNotifications` Livewire component listens for, and nothing in the port listens for them.
+Filament's Alpine `notificationComponent` carries more than the transition and FLIP machinery that the [transition divergence](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) replaces wholesale.
+[`notification_controller.ts`](../../../packages/notifications/assets/src/controllers/notification_controller.ts) ports the auto-dismiss timer, a hover wait (at expiry over a hovered toast, wait for `mouseleave`), `close()` and `handleActionClick()`; the keyboard and focus behaviours are [a gap of their own](#the-toast-does-not-pause-on-focus-or-close-on-escape).
+`markAsRead()` and `markAsUnread()` dispatch `markedNotificationAsRead` / `markedNotificationAsUnread` window events that only the `DatabaseNotifications` Livewire component listens for, and nothing in the port listens for them.
 
 **Next step:** port both with the database-notifications panel, in the same change that gives them a listener.
+
+### The toast does not pause on focus or close on Escape
+
+Filament pauses a toast's timer while focus is inside it (`handleFocusIn` / `handleFocusOut`, beside its hover pause), and closes it on Escape through `dismiss()`, which returns focus to the element that held it before the toast took it.
+The port's controller pauses only by waiting for `mouseleave` at expiry, binds no key, and restores no focus, so a keyboard user can lose a toast while reading it and cannot dismiss it from the keyboard but by its close button.
+Porting it is the two focus handlers, an Escape action and the focus origin the controller records.
 
 ### `date()` and `inline()` arrive with the database-notifications panel
 
@@ -148,12 +155,6 @@ So markup that survives in Filament (a styled `<span class="…">` in a body) is
 A consumer who wants Filament's latitude reconfigures `framework.html_sanitizer`; a sylament-tuned **named** sanitizer is the evolution path if the toolkit ever ships rich content of its own.
 Nothing about this is a divergence in the port (the same library, a different default config), but it is the one thing a reader would get wrong from the template alone.
 
-### `iconSize()` does not survive the delivery hop
-
-`toArray()` writes no size key and `fromArray()` never calls the setter, and both delivery paths (the session flash bag and the live round trip) rebuild the toast through that pair, so a **sent** notification renders its icon at the template's default size whatever `iconSize()` was set to; only a directly rendered instance (`render($twig)` on the live object) honours it.
-This is Filament parity, not a port gap: their [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) carry no size key either, and their delivered toasts rebuild through the same pair.
-Carrying the size across would be a Sylament-only extension, declined while the surface stays at parity.
-
 ### Toast actions are re-viewed as small links, and the `actions` key restores them
 
 [`getActions()`](../../../packages/notifications/src/Concerns/HasActions.php) re-views every entry at read time: `defaultTemplate(Action::LINK_TEMPLATE)` on an action, `defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)` on a group, `defaultSize(Size::Small)` on both, and a fourth call on the group alone that [Filament does not make](#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip).
@@ -171,6 +172,11 @@ The obvious reading of "actions on a notification" is that a toast can ask for c
 
 ## Divergences
 
+### `iconSize()` does not survive the delivery hop
+
+`toArray()` writes no size key and `fromArray()` never calls the setter, and both delivery paths (the session flash bag and the live round trip) rebuild the toast through that pair, so a **sent** notification renders its icon at the template's default size whatever `iconSize()` was set to; only a directly rendered instance (`render($twig)` on the live object) honours it.
+Filament's [`toArray()`](../../../vendor/filament/notifications/src/Notification.php) writes an `iconSize` key and its `fromArray()` restores it, so a delivered Filament toast keeps its size; the port drops it, and porting it is the key on both sides.
+
 ### A title or body message is translated at send and flashed as text
 
 `title()` and `body()` take a `TranslatableInterface` beside Filament's `string | Closure | null`, and `getTitle()` / `getBody()` keep their `?string` return type: the getter evaluates, then translates a message through the notification's own translator (`translateText()`), so every reader, the template and `toArray()` included, still receives a string.
@@ -178,11 +184,9 @@ A plain string stays a literal, and a `Markup` a closure returns becomes its str
 
 The message is translated when `send()` calls `toArray()`, in the sending request's locale, and the flash bag carries the resulting text.
 A redirecting action's toast therefore shows its title in the sender's locale on the page it lands on, and [`fromArray()`](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) restores plain strings that are never translated a second time.
-Filament does the same, since its `toArray()` calls the same getters on a string; the port cannot defer translation to the display, because a `TranslatableMessage` does not travel through the flash bag as a serialisable array.
+Filament does the same, since its `toArray()` calls the same getters on a string; the port cannot defer translation to the display, because the payload's contract is text: `toArray()` types the title and the body `?string`, and `fromArray()` keeps them only when they are strings, so a message would be dropped on the far side.
 
-A notification built with `new` has no translator, so handing it a message throws a `LogicException` naming the class, while the same notification handed a string renders it.
-The toast template runs title and body through `sanitize_html`, so a translated message renders as the sanitised string it became: a parameter carrying user data is sanitised there, not escaped, and a caller who wants it escaped escapes it before passing it.
-`assertNotified()` keeps taking a string, as in Filament, and compares it with the translated title the recorder holds, so a test passes the text in the test locale; it takes no message.
+The toast template runs title and body through `sanitize_html` ([i18n.md](../../internals/i18n.md#a-message-renders-exactly-as-the-string-it-becomes)), so a parameter carrying user data is sanitised there, not escaped, and a caller who wants it escaped escapes it before passing it.
 
 ### The close button's label is translated where the toast is displayed
 
@@ -211,9 +215,9 @@ A field that does not type is a data fact, not a bug, so it is dropped and the r
 
 ### A `ScalableIcon` crosses the session unflattened and resolves at render size
 
-Filament's `toArray()` resolves a scalable icon at serialization time (`$icon instanceof ScalableIcon` takes `getIconForSize(IconSize::Large)`, a hardcoded size chosen before anyone knows how the toast will render it), and only a plain `BackedEnum` falls through to `->value`.
+Filament's `toArray()` resolves a scalable icon at serialization time, at the notification's own `iconSize()` and at `IconSize::Large` only when none was set, and only a plain `BackedEnum` falls through to `->value`.
 The port inverts the order of the same two arms: a `BackedEnum` that implements [`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) is **kept as the enum** (the session PHP-serializes enums; `fromArray()` admits a `BackedEnum` back through `icon()`), and only a plain enum flattens to its value.
-Resolution then happens where every other icon resolves, in [`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php)'s `ScalableIcon` → `BackedEnum` cascade at the size the template passes, so a scalable icon is size-correct on the delivery path where Filament's is pinned to `Large` whatever renders it.
+Resolution then happens where every other icon resolves, in [`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php)'s `ScalableIcon` → `BackedEnum` cascade at the size the template passes, so a scalable icon is resolved at the size the template renders, where Filament's is resolved before anything renders it.
 
 ### The `actions` key is a list on both sides of the hop
 
@@ -225,9 +229,9 @@ The restoring map also skips a non-array entry rather than passing it into `Acti
 
 ### `send()` always writes the flash bag, and the live arm decides late
 
-Filament's `send()` pushes onto the Laravel session under `filament.notifications`; a Livewire `on('dehydrate')` hook then decides, per request, whether to hand the pending notifications to the live stack.
+Filament's `send()` pushes `toArray()` onto the request-scoped `NotificationMailbox`; its `PublishNotifications` middleware publishes the pending list once the response is built, and the stack pulls it, on a page load from its `mount()` and on a Livewire response by a follow-up `pullNotifications()` call.
 Sylament's `send()` does the same one thing, pushing `toArray()` onto the flash bag under [`sylament.notifications`](../../../packages/notifications/src/Delivery/SessionNotifications.php), with no branching at send time either.
-What changes is everything downstream of it, recorded where the machinery lives: the [`PreRenderEvent` subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) that replaces the dehydrate hook, and the [browser event carrying rendered HTML](notifications-bundle.md#there-is-no-claimed-notifications-key-because-the-toast-travels-in-the-same-response) that replaces Livewire's re-request.
+What changes is everything downstream of it, recorded where the machinery lives: the [`PreRenderEvent` subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) that replaces the publishing middleware, and the [browser event carrying rendered HTML](notifications-bundle.md#there-is-no-follow-up-pull-because-the-toast-travels-in-the-same-response) that replaces the follow-up pull.
 
 Two consequences belong to `send()` itself.
 It needs the container-built instance: `SessionNotifications` reaches the object through the `#[Required]` `setSessionNotifications()` setter, so `send()` on a `new Notification()` throws a `LogicException` naming the fix rather than silently dropping the notification.

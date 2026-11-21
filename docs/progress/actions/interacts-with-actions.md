@@ -35,7 +35,7 @@ This file covers the contract's method inventory and signatures; the behaviour o
 | `getMountedActionSchemaName()` | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [diverges](#getmountedactionschemaname-is-not-declared-because-the-name-is-built-inline) |
 | [`getDefaultActionUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | [`getDefaultActionSuccessRedirectUrl(Action $action)` / `getDefaultActionFailureRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| [`getDefaultActionSchemaResolver()`, `getDefaultActionRecord()`, `getDefaultActionRecordTitle()`, `getDefaultActionRecordClass()`, `getDefaultActionRecordLabel()`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| [`getDefaultActionSchemaResolver()`, `getDefaultActionRecord()`, `getDefaultActionRecordTitle()`, `getDefaultActionRecordClass()`, `getDefaultActionRecordLabel()`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) · [diverges](#the-host-record-hooks-may-answer-a-message) |
 | [`getDefaultActionRelationship(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | `getDefaultActionAuthorizationResponse()` / `getDefaultActionIndividualRecordAuthorizationResponseResolver()` | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `CanBeAuthorized` | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) |
 
@@ -71,13 +71,13 @@ So a host that answers unconditionally turns its [`DeleteAction`](delete-action.
 Filament's own implementation (`Resources\Pages\Page::getDefaultActionUrl()`) is a chain of `$action instanceof CreateAction` / `instanceof EditAction` guards for exactly this reason, and a host answering only for its `EditAction` keeps its `DeleteAction` a button whose confirmation opens.
 The default the trait ships returns `null`, so the trap is reachable only by a host that overrides it.
 
+## Divergences
+
 ### The host record hooks may answer a message
 
 `getDefaultActionRecordLabel()` and `getDefaultActionRecordTitle()` return `string|TranslatableInterface|null`, so a host that holds its label in a catalogue answers a message instead of translating it itself.
 `HasActions`' default answers `null`, and an implementation that returns a plain `?string` stays valid, since a narrower return type satisfies the contract.
 [`Action`](interacts-with-record.md#a-record-label-plural-label-or-title-is-a-string-or-a-message-translated-before-it-is-composed) translates the answer before it composes it.
-
-## Divergences
 
 ### Host methods are promoted onto the interface when a template calls them
 

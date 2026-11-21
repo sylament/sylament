@@ -105,7 +105,7 @@ The Livewire → UX LiveComponent, Blade → Twig and `Htmlable` → `Markup` tr
 | [`HasExtraModalOverlayAttributes`](../../../packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-closure-twice) · [modal](../support/modal.md#the-modal-is-re-architected-onto-native-dialog) |
 | [`HasExtraModalWindowAttributes`](../../../packages/actions/src/Concerns/HasExtraModalWindowAttributes.php) | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-closure-twice) · [modal](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit) |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
-| [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#the-name-derived-label-is-the-names-segment-before-the-first-dot) |
+| [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#the-name-derived-label-is-the-names-segment-before-the-first-dot) · [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`hiddenLabel()` / `isLabelHidden()` / `hasLabelHidden()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | [`translateLabel()` / `shouldTranslateLabel`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | `disableLabel()` (deprecated) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#the-deprecated-disablelabel-alias-is-not-ported) |
@@ -237,6 +237,7 @@ Every other key is present, with vendor's `view` named `template` (the Blade →
 
 Nothing closure-bearing is written either, and that *is* Filament-exact rather than a port decision: `action`, the modal configuration, the lifecycle hooks and the visibility closures are absent from both key lists, because a `Closure` does not survive a session.
 An action restored from an array is the **trigger** (label, colour, icon, url, dispatch, template), not the behaviour behind it.
+The label is written as `getLabel()` answers it, already translated, and `fromArray()` restores a string or a `Markup`, while `shouldTranslateLabel` is not written, so a persisted action keeps its label in the locale it was serialized in.
 
 ### `fromArray()` restores only the five built-in templates
 

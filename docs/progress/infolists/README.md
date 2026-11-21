@@ -7,7 +7,7 @@ Ports [`filament/infolists`](../../../vendor/filament/infolists) into [`packages
 <!-- trail-index:start -->
 | File | Status | Open | Ports | Description |
 | --- | --- | --- | --- | --- |
-| [infolists-bundle.md](infolists-bundle.md) | in progress | 2 in progress · 3 todo | `InfolistsServiceProvider.php`, `Commands/MakeEntryCommand.php`, `resources/css/index.css` | The infolists bundle class and the package's stylesheet entry point. |
+| [infolists-bundle.md](infolists-bundle.md) | in progress | 1 in progress · 3 todo | `InfolistsServiceProvider.php`, `Commands/MakeEntryCommand.php`, `resources/css/index.css` | The infolists bundle class and the package's stylesheet entry point. |
 <!-- trail-index:end -->
 
 ## Unported

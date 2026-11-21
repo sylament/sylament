@@ -17,7 +17,7 @@ owns:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal) · [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view) · [diverges](#a-client-side-close-unmounts-the-frame-through-a-wrapper-element) · [diverges](#the-modal-footer-renders-real-action-instances) · [diverges](#the-action-modal-renders-the-record-errors-that-name-no-field) · [diverges](../support/modal.md#returnsfocus-stays-true-where-filaments-action-modal-hardcodes-false) · [diverges](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit) |
-| [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) (the members not rowed below) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | done | — | [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) · [diverges](#modalicon-and-modalwidth-take-strings-where-filament-also-takes-enums) · [diverges](../support/modal.md#the-chrome-defaults-are-literal-constants-not-modalcomponent-statics) |
+| [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) (the members not rowed below) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | done | — | [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) · [diverges](#modalicon-and-modalwidth-take-strings-where-filament-also-takes-enums) · [diverges](../support/modal.md#the-chrome-defaults-are-literal-constants-not-modalcomponent-statics) · [semantics](#the-heading-the-description-and-the-two-button-labels-are-translated-in-their-getters) · [semantics](#a-modals-content-is-markup-and-is-never-translated) |
 | `unsavedChangesAlert()` / `hasUnsavedChangesAlert()` | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | todo | — | — |
 | The `->table()` binding in [`prepareModalAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) / `prepareModalActionGroup()` | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | todo | — | [detail](#preparemodalaction-drops-filaments-table-binding) |
 | `centerModal()` / `modalActions()` / `extraModalActions()` / `modalButton()` / `modalFooter()` / `modalSubheading()` / `makeExtraModalAction()` (deprecated) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | skipped | — | [diverges](#the-deprecated-modal-aliases-are-not-ported) |
@@ -28,15 +28,15 @@ owns:
 ### The action-modal template only renders part of the full action modal
 
 The template passes Filament's whole binding list to `<twig:SylamentSupport:Modal>` except two parts.
-Filament threads `alert` (`$action->isConfirmationRequired()`, `action-modal.blade.php:6,37`) through to the modal's `role="alertdialog"`; neither `CanOpenModal`'s template nor [`Modal/index.html.twig`](../../../packages/support/templates/components/Modal/index.html.twig) carries it (support's [`alert` row](../support/modal.md#the-remaining-filament-props-wait-on-their-first-consumer)).
-And Filament brackets the custom content, the schema and the content footer in four `FilamentView::renderHook()` pairs (`MODAL_CUSTOM_CONTENT_{BEFORE,AFTER}`, `MODAL_SCHEMA_{BEFORE,AFTER}`, `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`, `action-modal.blade.php:63-81`); Sylament has no render-hook facility.
+Filament threads `alert` (`$action->isConfirmationRequired()`, `action-modal.blade.php:6,38`) through to the modal's `role="alertdialog"`; neither `CanOpenModal`'s template nor [`Modal/index.html.twig`](../../../packages/support/templates/components/Modal/index.html.twig) carries it (support's [`alert` row](../support/modal.md#the-remaining-filament-props-wait-on-their-first-consumer)).
+And Filament brackets the custom content, the schema and the content footer in four `FilamentView::renderHook()` pairs (`MODAL_CUSTOM_CONTENT_{BEFORE,AFTER}`, `MODAL_SCHEMA_{BEFORE,AFTER}`, `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`, `action-modal.blade.php:65-83`); Sylament has no render-hook facility.
 The three slots themselves render in Filament's order, with the schema arriving as a `schema` prop from [`Modals`](modals.md) rather than being resolved in-template.
 Each missing part lands with the facility named beside it, and the support `Modal` component takes its matching prop in the same change.
 
 ### `prepareModalAction()` drops Filament's table binding
 
-Filament's `prepareModalAction()` and `prepareModalActionGroup()` end with `->table($this->getTable())` (`vendor/filament/actions/src/Concerns/CanOpenModal.php:475`, `:488`), so a footer or modal action inherits its parent's table.
-The port's two methods bind the schema container, schema component, live component and record (and `prepareModalAction()` the parent action), but not the table (`packages/actions/src/Concerns/CanOpenModal.php:546-583`).
+Filament's `prepareModalAction()` and `prepareModalActionGroup()` end with `->table($this->getTable())` (`vendor/filament/actions/src/Concerns/CanOpenModal.php:484`, `:497`), so a footer or modal action inherits its parent's table.
+The port's two methods bind the schema container, schema component, live component and record (and `prepareModalAction()` the parent action), but not the table (`packages/actions/src/Concerns/CanOpenModal.php:548-585`).
 Nothing blocks it: `BelongsToTable` gives `Action` its `table()` / `getTable()` pair ([`BelongsToTable.php`](../../../packages/actions/src/Concerns/BelongsToTable.php)), and tables already bind their record and toolbar actions to themselves ([`HasRecordActions.php:49`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php)).
 
 ## Semantics
@@ -47,6 +47,7 @@ Nothing blocks it: `BelongsToTable` gives `Action` its `table()` / `getTable()` 
 Each getter evaluates the value and translates it through the action's translator, before any presence test, so `hasCustomModalHeading()`, `hasModalDescription()` and [`shouldOpenModal()`](../../../packages/actions/src/Concerns/CanOpenModal.php) test the text the user would read.
 The two label getters keep returning a `string`, since they feed another action's `label()`, which treats a string as a literal.
 A message names its own domain, so the built-in texts and a developer's own translate alike.
+The built-in texts are catalogue messages: with no text of its own, `getModalDescription()` answers `modal.confirmation` on a confirmation modal, `getModalSubmitActionLabel()` answers `modal.actions.confirm.label` there and `modal.actions.submit.label` otherwise, and the cancel label falls back to `modal.actions.cancel.label`.
 
 ### A modal's content is markup and is never translated
 
@@ -63,9 +64,9 @@ Reversed once an `ActionsIconAlias`-equivalent registry lands in `actions` and `
 
 ### `modalIcon()` and `modalWidth()` take strings where Filament also takes enums
 
-Filament types `modalIcon` as `string | BackedEnum | Htmlable | Closure | null` and `modalWidth` as `Width | string | Closure | null` (`vendor/filament/actions/src/Concerns/CanOpenModal.php:80,98`); the port takes `string|Closure|null` for both.
+Filament types `modalIcon` as `string | BackedEnum | Htmlable | Closure | null` and `modalWidth` as `Width | string | Closure | null` (`vendor/filament/actions/src/Concerns/CanOpenModal.php:100,82`); the port takes `string|Closure|null` for both.
 No `Heroicon` enum or `Markup`-typed icon exists in Sylament, and support's `Width` enum exists but the support `Modal` keys its width on the bare string, a back-fill [deferred there](../support/modal.md#the-default-width-is-md-not-sm).
-The defaults are Filament's: `Width::Medium` on confirmation and `Width::FourExtraLarge` otherwise (`:662-673`) become `'md'` and `'4xl'`, so a confirmation stays a small box and a form modal gets room for two columns.
+The defaults are Filament's: `Width::Medium` on confirmation and `Width::FourExtraLarge` otherwise (`:681-692`) become `'md'` and `'4xl'`, so a confirmation stays a small box and a form modal gets room for two columns.
 
 ### The deprecated modal aliases are not ported
 
@@ -94,7 +95,7 @@ It is inert here, because the template declares every prop it reads, and it is t
 
 ### A client-side close unmounts the frame through a wrapper element
 
-Filament's modal carries `x-on:modal-closed`, which calls `$wire.unmountAction(…)` with `getParentActionsToCancelOnClose()` when the event's id is the modal's (`action-modal.blade.php:29-33,61`).
+Filament's modal carries `x-on:modal-closed`, which calls `$wire.unmountAction(…)` with `getParentActionsToCancelOnClose()` when the event's id is the modal's (`action-modal.blade.php:30-34,63`).
 The port wraps the support `Modal` in a `<div>` that binds the support controller's `sylament--support--modal:dismissed` event to `live_action('unmountAction', { cancelParentActions: action.getParentActionsToCancelOnClose })`, so a client-side close (ESC, click-away, the close button, a `close()` action) unmounts that frame server-side, cancelling as far up the stack as the action asked, and the next live re-render does not resurrect a modal the user already closed.
 It is a wrapper rather than a binding on the component tag because a caller `data-action` would replace the dialog's own Stimulus wiring inside `attributes.defaults()`; the event bubbles from the dialog, so the wrapper catches it.
 Its id is name-scoped where the dialog's is index-scoped ([why](modals.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper)).

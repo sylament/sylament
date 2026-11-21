@@ -50,6 +50,7 @@ The template renders every option and every target server side, and [`checkbox_l
 | [`CanFixIndistinctState`](../../../packages/forms/src/Components/Concerns/CanFixIndistinctState.php) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 | `getPublishedViewOverrideCheckPath()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
+| `getRequiredDescription()` | [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | todo | — | [field.md](field.md#the-accessibility-members-are-not-ported) |
 
 ## Semantics
 
@@ -198,8 +199,7 @@ The filter, the bulk toggle, the observer and the delegated listener are verifie
 
 The two labels read `components.checkbox_list.actions.select_all.label` and `components.checkbox_list.actions.deselect_all.label` in `sylament-forms`, Filament's key paths, with Filament's English.
 These are the only keys in this field's own `checkbox_list` family — everything the search box says comes from [`select.*`](can-be-searchable.md#the-four-message-defaults-are-catalogue-messages).
-The field's relationship-derived default label is a generated string, never a key, until `translateLabel()` is on: then it is handed to the translator in the default domain, as Filament does.
-`CheckboxList` translates only the label it derives itself, because the label of an explicit `label()` call is translated by the inherited getter.
+The field's relationship-derived default label follows [the field's default label](field.md#getdefaultlabel-translates-its-humanized-label-under-translatelabel), and an explicit `label()` is [`HasLabel`'s](../schemas/has-label.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter).
 
 ### `isMultiple()` is port plumbing with no Filament counterpart
 

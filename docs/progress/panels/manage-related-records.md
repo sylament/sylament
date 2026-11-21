@@ -35,7 +35,7 @@ registered as `'sections' => ManageArticleSections::route('/{record}/sections')`
 | [The class](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — a resource page composing `HasTable`, `InteractsWithRecord`, `InteractsWithRelationshipTable` | the same composition, plus `HasRelationManagers` | done | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
 | [`mount()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | `mount(int \| string $record)` | done | — | [diverges](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount) |
 | [`getOwnerRecord()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | — |
-| [`getTitle()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [diverges](#the-title-is-one-parameterised-message) · [diverges](#the-document-title-of-a-manage-page-carries-the-record-label-not-the-record-title) |
+| [`getTitle()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [create-record.md](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) · [diverges](#the-document-title-of-a-manage-page-carries-the-record-label-not-the-record-title) |
 | [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | — |
 | [`getNavigationLabel()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [diverges](#the-navigation-label-and-icon-drop-their-related-resource-arms) |
 | [`getNavigationIcon()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) + [the alias](../../../packages/panels/src/Twig/PanelsIconAlias.php) | same | done | — | [diverges](#the-navigation-label-and-icon-drop-their-related-resource-arms) |
@@ -123,15 +123,10 @@ Both close with [the static title chain](interacts-with-relationship-table.md#th
 
 The icon alias itself is `PanelsIconAlias::RESOURCES_PAGES_MANAGE_RELATED_RECORDS_NAVIGATION_ITEM` = `resources.pages.manage-related-records.navigation-item` — Filament's constant name with [the `panels::` prefix dropped](../renames.md#renames), like every other alias here — falling back to `heroicons:rectangle-stack`, the outline glyph Filament's `Heroicon::OutlinedRectangleStack` names.
 
-### The title is one parameterised message
-
-`getTitle()` is `static::$title ?? ` the `resources/pages/manage-related-records.title` message of the `sylament-panels` catalogue, Filament's key path, with the same two placeholders: `Manage {label} {relationship}` reads *Manage Apollo Tasks*.
-The record title and the relationship title are passed as arguments, so a locale can reorder them, and the page translates the message through its own translator.
-[The create page's titles](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) are read the same way.
-
 ### The document title of a manage page carries the record label, not the record title
 
 The document `<title>` is read off the un-mounted page, so it carries the owner resource's record label where the heading carries the record's title (*Manage Project Tasks* above *Manage Apollo Tasks*), as [the edit page's does](edit-record.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
+Both are Filament's `Manage {label} {relationship}` message, its two arguments the owner's title or label and the relationship title.
 
 ### `getPageClass()` has no reader here
 

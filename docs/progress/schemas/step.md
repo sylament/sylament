@@ -16,7 +16,7 @@ It extends the schemas base [`Component`](component.md) and implements the [`Can
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make(string\|TranslatableInterface $label)`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::make()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
+| [`make(string\|TranslatableInterface $label)`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::make()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [has-label.md](has-label.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [Key derivation](../../../packages/schemas/src/Components/Wizard/Step.php) (`slug(label)::{statePath}::wizard-step`, non-inheritable) | [`Step::setUp()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [semantics](wizard.md#the-key-keeps-filaments-state-path-segment-which-section-drops) |
 | [`beforeValidation()` / `callBeforeValidation()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::beforeValidation()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | [`afterValidation()` / `callAfterValidation()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::afterValidation()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |

@@ -27,5 +27,4 @@ The two lower copies are also narrower, taking no `Markup`, because an input's `
 
 ### A message is translated by the getter, so a reader still gets a string or `Markup`
 
-`placeholder()` accepts a `TranslatableInterface` beside a string, a `Markup` and a closure, and `getPlaceholder()` returns `$this->translateText($this->evaluate($this->placeholder))`, so a closure that answers a message is translated too.
-The translator is the component's own, [injected](component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks), and a plain string never reaches it.
+`placeholder()` accepts a `TranslatableInterface` beside a string, a `Markup` and a closure, and `getPlaceholder()` translates it, a closure's message included, as [every text getter does](../../internals/i18n.md#a-setter-takes-a-message-and-its-getter-translates-it).

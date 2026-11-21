@@ -18,7 +18,7 @@ It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-stat
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` / label forwarding](../../../packages/schemas/src/Components/Fieldset.php) | [`Fieldset::make()` / `__construct()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | — |
+| [`make()` / label forwarding](../../../packages/schemas/src/Components/Fieldset.php) | [`Fieldset::make()` / `__construct()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | [has-label.md](has-label.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`setUp()` → `columns(2)`](../../../packages/schemas/src/Components/Fieldset.php) | [`Fieldset::setUp()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | — |
 | [`contained()` / `isContained()`](../../../packages/support/src/Components/Concerns/CanBeContained.php) | [`Support\Concerns\CanBeContained`](../../../vendor/filament/support/src/Concerns/CanBeContained.php) | done | — | — |
 | [`hiddenLabel()` / `isLabelHidden()`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) | [`Components/Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | [has-label.md](has-label.md) |

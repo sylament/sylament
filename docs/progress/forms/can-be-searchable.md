@@ -62,7 +62,6 @@ The four defaults are keys of the **`select`** family, not `checkbox_list`: `com
 Filament's `CheckboxList` reads the same `select` keys for its two inline messages, so a `CheckboxList` speaks `Select`'s strings on both sides, and both fields share the one catalogue entry.
 Our `search_prompt` is `Start typing to search...`, with the ellipsis, where Filament's English has none.
 Each setter takes a string or a message and its getter translates it, falling back to the catalogue message when none was set.
-Only the checkbox list's two bulk-toggle labels have keys of that field's own ([checkbox-list.md](checkbox-list.md#the-bulk-toggle-labels-are-catalogue-messages)).
 
 ### The label and value switches take `null`
 

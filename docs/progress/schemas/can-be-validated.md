@@ -267,9 +267,9 @@ The same `getData()` carries it everywhere a managed record is written: `EditRec
 Tables' editable cells run the same pass themselves and answer it as the cell's own error ([has-columns.md](../tables/has-columns.md)).
 The same key in another PHP type is no change; a converting type's other spelling of it is one ([the detector](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
 
-All three messages — the taken, the changed and the blank one — are plain ids in private constants on the reader with no error code, since nothing in the toolkit reads one; the catalogue gate reads a constant written into the reader's refusal map, so the changed id it ships is checked against `validators.en.yaml`.
+All three messages — the taken, the changed and the blank one — are plain ids in private constants on the reader with no error code, since nothing in the toolkit reads one.
 No switch reaches this pass ([why](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)).
-*"This value cannot be changed."* is the toolkit's own, since Symfony ships no such message: schemas' `translations/validators.en.yaml` holds it as the id, and an application translates it by mapping that id in its own `translations/validators.*`.
+*"This value cannot be changed."* is the toolkit's own, since Symfony ships no such message ([schemas-bundle.md](schemas-bundle.md#the-catalogue-holds-only-the-keys-schemas-code-reads), [i18n.md](../../internals/i18n.md#validator-messages-keep-english-ids-in-validators)).
 `disabledOn('edit')` stays the UI and this is the server's guarantee, and it holds where the UI guard does not: a modal's operation is the action's **name**, so an `EditAction::make('editRenamed')` leaves a `disabledOn('edit')` key field enabled, and the refusal is what answers there.
 A key written into a related record **nobody loaded** is not seen — Doctrine drops that write itself — and is [recorded on the reader](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement).
 

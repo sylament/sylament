@@ -233,7 +233,7 @@ Vendor's fifth arm, the `CursorPaginator` branch at [`CanSummarizeRecords:46-55`
 ### A group with no heading closes with no summary row, except under `groupsOnly()`
 
 Vendor gates every per-group summary row — the in-loop one and the trailing one, in both of its layouts — on `filled($previousRecordGroupTitle)`, so the blank group gets a header row and no figure under it.
-The port gates the same way, and for the same reason: the heading a per-group row carries is `<title> summary`, which for the blank group would read as a bare `" summary"` naming nothing.
+The port gates the same way, and for the same reason: the heading a per-group row carries is the `table.summary.subheadings.group` message, `{group} summary`, which for the blank group would read as a bare `" summary"` naming nothing.
 
 The one arm that is the port's own is `groupsOnly()`.
 There the per-group row **is** the group — it carries the title in place of a header row that is not rendered at all — so it is emitted whether or not the title is filled, and the blank group keeps its row.
@@ -258,11 +258,12 @@ Both are vendor's own a11y notes, ported with their reasons.
 
 ### A label is a string, a Markup or a message, translated in the getter
 
-`label()`, `prefix()`, `suffix()` and `placeholder()` take a message, and each getter translates through the summarizer's translator.
+`label()`, `prefix()`, `suffix()` and `placeholder()` take a message: the label, prefix and suffix getters translate through the summarizer's translator, and the placeholder, which has no getter here as in Filament, is translated where `formatState()` falls back to it.
 A plain string stays a literal unless `translateLabel()` is on: then a string label is handed to the translator as a key in the default `messages` domain, as Filament does, and the default label is never passed through the flag.
 The blank test that drops a label reads the translated text, so a message resolving to blank drops the label as a blank string does.
-`getDefaultLabel()` may answer a message, which the getter translates.
-`formatState()` translates a message the pipeline holds (a `formatStateUsing()` or `using()` answer, or an enum that is a message itself) before the limit, the affixes and the string cast, so a message never reaches them as its id.
+`getDefaultLabel()` may answer a message, which the getter translates: `Sum`, `Average` and `Count` answer the `table.summary.summarizers.*.label` messages, and `Count` answers `null` under `icons()`, each declared with the trait's `string|Markup|TranslatableInterface|null`, so a subclass overriding one with Filament's `?string` stays compatible.
+The band's headings are messages too: `table.summary.heading` and the `table.summary.subheadings.page`, `.all` and `.group` subheadings, with the `Summary` component's `pluralRecordLabel` defaulting to `null`, which `.all` renders as an empty `{label}`.
+`formatState()` translates a message the pipeline holds (a `formatStateUsing()` or `using()` answer, or an enum that is a message itself) before the limit, the affixes and the string cast, so a message never reaches them as its id; it tests `HasLabel` before `TranslatableInterface`, so an enum implementing both keeps its `HasLabel` label.
 
 ## Divergences
 
@@ -280,7 +281,7 @@ The batched shape returns if a consuming application configures a `DATE()` DQL f
 A to-many join multiplies rows, and every aggregate over them reads the multiplied set — `COUNT` answers 4 for three artists once `a.songs` is joined.
 The port's own machinery never adds such a join (eager loading refuses to-many, search uses `EXISTS`, the relation lane uses `IN`), but a user's `query()` closure or a joining filter can, so `SummaryQuery` refuses it with a `LogicException` naming `Summarizer::using()` as the way out.
 Filament produces the inflated number instead.
-A wrong figure under a heading that says *All records* is worse than an error that names its own escape hatch.
+A wrong figure under the all-table heading (`table.summary.subheadings.all`, *All {label}*) is worse than an error that names its own escape hatch.
 
 ### Summarizing an aggregate column is refused where Filament produces a wrong number
 
@@ -324,7 +325,6 @@ The bundle's component glob leaves `Contracts/` unregistered.
 ### The formatting trait is a copy of the column's, and the hoist is owed
 
 `Summarizers\Concerns\CanFormatState` ports vendor's whole member set — `formatStateUsing`, `limit`, `money`, `numeric`, `placeholder`, `markdown`, `prefix`, `suffix`, `html`, `formatState`, and the getters — by **copying** the [column trait's](text-column.md) bodies wherever the two share a member, which is Filament's own shape: it files four copies of this trait (tables, infolists, summarizers, exports) and none of them in support.
-The copy includes the `HasLabel` unwrap, which translates a label that is a message before any cast ([contracts](../support/contracts.md#text-a-contract-answers-may-be-a-message-which-its-reader-translates)).
 So `money()` and `numeric()` format through `NumberFormatter` here exactly as a column's do, `html()` sanitizes through the app's own `HtmlSanitizerInterface` arriving by `#[Required]` setter, and `markdown()` [throws for `league/commonmark` rather than falling through](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through).
 
 **What the copy shares**, stated precisely because the debt below depends on it: `money()`, `numeric()`, `html()`, `markdown()`, the CommonMark pair, `prefix()`/`suffix()`, `limit()` and the private helpers `sanitizeState()`, `affixState()`, `escape()`, `formatterResult()` and `resolveNumberLocale()` are the column trait's bodies with two edits — the closure receiver retyped (`TextColumn $column` → `Summarizer $summarizer`, every call site inside `money()` and `numeric()` renamed with it), and four `LogicException` messages resubjected from the column and `$this->getName()` to the summarizer and `static::class` (`formatState()`'s stringable throw, `formatterResult()`, `sanitizeState()`'s commonmark throw and `getHtmlSanitizer()`'s).

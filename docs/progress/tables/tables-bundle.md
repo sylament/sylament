@@ -1,5 +1,5 @@
 ---
-description: 'The tables bundle class, its renderTable() Twig extension, the TablesIconAlias slots, the package manifest and the asset registration.'
+description: 'The tables bundle class, its renderTable() Twig extension, the TablesIconAlias slots, the package manifest, the translation catalogue and the asset registration.'
 ports:
   - vendor/filament/tables/src/TablesServiceProvider.php
   - vendor/filament/tables/src/View/TablesIconAlias.php
@@ -64,7 +64,7 @@ Either way the alias is overridable end to end.
 A consuming app that leaves `@sylament/tables` out of its `assets/controllers.json` gets markup whose controllers never connect, and nothing reports it.
 Filament needs Alpine the same way, but the cost here is graded, and some of it is worse than inert:
 
-- **Selection** renders its checkboxes and does nothing, and a `limitList()` cell renders its `and N more` toggles inert ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)).
+- **Selection** renders its checkboxes and does nothing, and a `limitList()` cell renders its Show-more and Show-less toggles inert ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)).
 - **A `deferLoading()` table** renders its loading indicator and nothing else, forever: the second request that fetches the records is the table controller's `loadTable` call on `connect()`.
 - **An editable cell** lets the user change its control and writes nothing, with no request and no error, because the commit is the [editable-cell controller](has-columns.md#one-editable-cell-controller-stands-in-for-filaments-four-column-components)'s `change` action.
 - **A grouping selector** never fires, and on a table with `collapsedGroupsByDefault()` the rows the server painted collapsed can never expand ([grouping.md](grouping.md#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open)).
@@ -73,14 +73,9 @@ No test in this repo can enforce the app's `controllers.json`.
 
 ### The catalogue is Filament's table lang file under the `sylament-tables` domain
 
-`translations/sylament-tables+intl-icu.en.yaml` holds the texts the package renders under Filament's `filament-tables::table.*` key paths (`table.empty.heading`), nested as Filament's lang array nests them, with `:name` placeholders as ICU `{name}`.
-FrameworkBundle registers the directory with no wiring, and `validators.en.yaml` ships the one tables-own validator message, `The value is invalid.`.
-The package requires `symfony/translation` and `symfony/translation-contracts`, and reads two keys of its dependencies: `components.select.boolean.*` of `sylament-forms` for the ternary filter's arms and `components/copyable.*` of `sylament` for a colour swatch's copy texts.
-
-Where the shipped English is not Filament's `en` text, the key stays and our text wins:
-`table.fields.bulk_select_page.label`, `bulk_select_record.label` and `bulk_select_group.label` say *record* where Filament says *item*, `table.loading` is `Loading` against `Loading...`, `table.column_manager.actions.reorder.label` is `Reorder {column}` against `Reorder column`, and `table.columns.actions.label` is always the plural `Actions`, against Filament's `Action|Actions` by the count of record actions, which the template still passes as `{count}` so a locale importing the plural arm resolves.
-Text Filament composes in code takes a port-added key beside its own: `table.fields.search.term_indicator` (*Search: {term}*), `table.fields.search.column_indicator` (*{column}: {term}*) and `table.fields.search.column_label` (*Search {column}*), `table.filters.state_indicator` (*{indicator}: {state}*) and `table.filters.select.labels_joined` (*{labels} & {last}*), `table.grouping.label_prefix` (*{label}: *), `table.selection_indicator.actions.select_all.label_bare` and `table.columns.color.copy_label`.
-`table.fields.search.indicator` is therefore not shipped, since the chips read the composed keys.
+`translations/sylament-tables+intl-icu.en.yaml` holds the texts the package renders under Filament's `filament-tables::table.*` key paths, and [loads with no wiring](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring); `validators.en.yaml` ships the one tables-own validator message, `The value is invalid.`.
+Filament's `table.fields.search.indicator` ships nowhere, because the search chips read port-added keys ([the global chip](host-can-search-records.md#search-is-the-global-term-and-one-term-per-column), [the column chips](host-can-search-records.md#the-column-search-chips-follow-the-bags-key-order-and-carry-the-trimmed-term)).
+The port-added keys and the English that differs from Filament's are recorded where the code using them is: [has-actions.md](has-actions.md), [table.md](table.md#the-table-partial-renders-no-in-flight-loading-indicator), [column-manager.md](column-manager.md#the-item-list-is-server-rendered-where-vendors-is-an-alpine-x-for), [can-search-records.md](can-search-records.md#a-per-column-search-field-is-named-search-column), [base-filter.md](base-filter.md#the-default-chip-is-one-indicator-state-message), [select-filter.md](select-filter.md#the-options-and-the-placeholder-may-be-messages), [grouping.md](grouping.md#a-groups-label-title-and-description-may-be-messages-and-the-boundaries-compare-the-translated-titles) and [color-column.md](color-column.md#an-unsanitizable-value-paints-nothing-and-a-plain-swatch-names-nothing); the keys it reads from forms and support are [ternary-filter.md](ternary-filter.md#the-arm-labels-and-the-placeholder-may-be-messages)'s and color-column.md's.
 
 ## Divergences
 
@@ -127,7 +122,7 @@ Support requires `ext-mbstring` as well, so the root graph always has it, but th
 
 ### The manifest requires `ext-intl` and two Symfony packages where the call is, and only suggests `league/commonmark`
 
-`ext-intl` is declared on the same grounds as `ext-mbstring`: [`TextColumn`](text-column.md)'s `money()` and `numeric()` and the summarizers format through `NumberFormatter`, which is intl's, so the package that calls it is the package that declares it.
+`ext-intl` is declared on the same grounds as `ext-mbstring`: [`TextColumn`](text-column.md)'s `money()` and `numeric()` and the summarizers format through `NumberFormatter`, which is intl's, so the package that calls it is the package that declares it; the shipped catalogue is the second reason, with the other requires [every catalogue brings](../../internals/dependencies.md#why-a-package-declares-what-a-sibling-already-pulls-in).
 Filament declares `ext-intl` too, but on **`filament/support`** rather than on `filament/tables`, and inheriting an extension through a sibling is the shape the split-repo rule exists to stop.
 The alternative considered and rejected was a guard around `NumberFormatter` with the two families throwing when intl is absent: a formatting column that throws at render time is worse than a manifest a composer install refuses.
 

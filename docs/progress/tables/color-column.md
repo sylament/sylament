@@ -22,7 +22,7 @@ Everything [`Column`](column.md) carries, from the name and the state read to th
 | [`getStateItems()` — the cell's swatch list](../../../packages/tables/src/Columns/ColorColumn.php) | — (Sylament-only) | done | — | [semantics](#the-copy-values-are-resolved-only-for-a-copyable-swatch) |
 | [The sanitized `background-color`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [helpers.md](../support/helpers.md#sanitize_css_color-is-the-second-macro-that-lands-as-a-helper) · [diverges](#only-a-string-or-a-backed-enums-value-reaches-the-sanitizer) |
 | [The `role="img"` swatch and its `aria-label`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [semantics](#an-unsanitizable-value-paints-nothing-and-a-plain-swatch-names-nothing) |
-| [The copyable swatch — `role="button"`, `aria-label="Copy …"` and the clipboard controller](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [diverges](#the-copyable-swatch-is-named-where-filament-leaves-it-nameless) · [copyable.md](../support/copyable.md) |
+| [The copyable swatch — `role="button"`, `aria-label="Copy …"` and the clipboard controller](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [diverges](#the-copyable-swatch-is-named-and-operable-server-side-where-filament-binds-both-client-side) · [copyable.md](../support/copyable.md) |
 | [`$template`](../../../packages/tables/src/Columns/ColorColumn.php) + [the partial it names](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [diverges](text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | [The blank-state placeholder and the empty tooltip](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
 | [The per-item tooltip](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
@@ -56,11 +56,11 @@ A value the sanitizer rejects is therefore still copyable, and copies what the r
 
 ## Divergences
 
-### The copyable swatch is named where Filament leaves it nameless
+### The copyable swatch is named and operable server-side, where Filament binds both client-side
 
-Upstream's own comment says the copyable swatch "is an interactive control that needs separate treatment (an accessible name and keyboard operability), so it is not named here", and then nothing names it: the `role` and `aria-label` are suppressed for exactly the copyable case, leaving a `<div>` with a click handler, no role, no name and no keyboard path.
+Filament suppresses the swatch's `role="img"` and name for the copyable case and hands both to `filamentCopyable`, which binds `role="button"`, the `components/copyable.label` name and the activation keys client-side, and only while the swatch is standalone.
 
-This port does the treatment the comment asks for.
+This port stamps them server-side for every copyable swatch.
 A copyable swatch renders `role="button"`, `aria-label="Copy {colour}"` and the three [clipboard](../support/copyable.md) activation bindings (`click`, `keydown.enter`, `keydown.space`); focus is stamped client-side by the controller, so no `tabindex` is served inside a cell that may sit within a record `<a>`.
 A non-copyable swatch keeps `role="img"` and the bare colour as its name.
 

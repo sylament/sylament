@@ -229,7 +229,7 @@ A halt thrown from the edit page's `beforeSave` is pinned stopping the ladder wh
 
 ### Header actions are bound lazily rather than at boot
 
-Filament caches header actions into the page's action registry at boot, through three hops: Livewire's `bootedInteractsWithActions()` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:120`) calls `cacheTraitActions()` (`:542`), which `class_uses_recursive()`-walks the class for every `cache<TraitBasename>` method and so reaches `cacheInteractsWithHeaderActions()` (`vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php:18`).
+Filament caches header actions into the page's action registry at boot, through three hops: Livewire's `bootedInteractsWithActions()` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:219`) calls `cacheTraitActions()` (`:651`), which `class_uses_recursive()`-walks the class for every `cache<TraitBasename>` method and so reaches `cacheInteractsWithHeaderActions()` (`vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php:20`).
 That last one walks `getHeaderActions()`, stamps `->livewire($this)` on each group, sets a dropdown placement, and registers every action through `cacheAction()`; Blade then renders `getCachedHeaderActions()`, the already-bound list.
 UX LiveComponent has no `booted*()`/`cache*()` trait hook to hang that on, so [`Pages\Concerns\InteractsWithHeaderActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php), composed by [`Pages\Page`](page.md) so **every** panel page has it, does the same work **lazily**, at whichever of the two reads comes first.
 [`InteractsWithFormActions`](form-actions.md) carries the identical walk for the form row one list over.

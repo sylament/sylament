@@ -24,8 +24,7 @@ Tables' column tier has its own [`Columns\Concerns\HasTooltip`](../../../package
 
 `tooltip()` accepts a `TranslatableInterface` beside a string, a `Markup` and a closure, and `getTooltip()` returns `$this->translateText($this->evaluate($this->tooltip))`, so a closure that answers a message is translated too.
 `hasTooltip()` still tests the stored value against `null`, which a message is not.
-The translator is the component's own, [injected](component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks), and a plain string never reaches it.
-The same holds for `badgeTooltip()`, `badge()` and `placeholder()`, with one rule for `badge()`: a number is cast to a string by `getBadge()` after any translation and never offered to the translator, since a count is not text.
+`badgeTooltip()` and `placeholder()` take a message the same way, and a numeric `badge()` is [never offered to the translator](../schemas/tab.md#getbadge-casts-an-evaluated-badge-to-string).
 
 ## Divergences
 

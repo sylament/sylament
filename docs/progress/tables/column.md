@@ -160,7 +160,7 @@ The capitalisation is `ucfirst`, not title case: Symfony's `title()` defaults to
 `label()` and the three tooltip setters take `string|Markup|TranslatableInterface|Closure|null`, and each getter evaluates the value and then translates it through the column's translator, so a template or a PHP reader always receives a string or a `Markup`.
 A plain string stays a literal, as in Filament, unless `translateLabel()` is on: then a string label, the [name-derived one](#the-default-label-reads-the-second-to-last-dotted-segment) included, is handed to the translator as a key in the default `messages` domain, Filament's `__($label)`.
 A message already names its own domain and is translated either way.
-A column built with `new` and handed a message or a `translateLabel()` key throws a `LogicException` naming its class, because it has no translator.
+A column built with `new` throws on a `translateLabel()` key as it does on a [message](../support/component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks).
 
 ## Divergences
 

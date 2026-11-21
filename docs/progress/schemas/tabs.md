@@ -56,6 +56,7 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 Filament gives the ellipsis "more" button `aria-label="More tabs"` and the active overflow-trigger tab `aria-label="More tabs: {tab label}"`, both from `filament-schemas::components.tabs.actions.more.label`.
 Ours renders neither: the button holds only its icon, and the trigger tab holds only the tab's label, so a screen reader announces an unnamed button.
 The key is `components.tabs.actions.more.label` in `sylament-schemas`, and the trigger's text is a second, parameterised message (`More tabs: {tab}`) rather than a join in Twig, as [`catalogues.md`](../../../.claude/rules/catalogues.md) requires of a composed text; neither is in the catalogue yet.
+A `Markup` tab label is reduced to plain text before it enters that message, as Filament's `strip_tags()` does (`Tabs.php`) and as [the `striptags` rule](../../internals/i18n.md#a-message-renders-exactly-as-the-string-it-becomes) requires.
 Next step: add both messages and render them as the two `aria-label` values.
 
 ### The render-hook trio waits on the render-hook design
@@ -116,7 +117,7 @@ It is inert (a `type="button"` element submits nothing) and the tabs' own wiring
 
 ### The locale of a live call is the request's, so a URL-locale application prefixes its live route
 
-A server-mode `Tabs` addresses its active tab by key across live calls, so a request that translates in another locale than the one that rendered the key reads no active tab.
+A server-mode `Tabs` re-keys every `Tab` to its array key, so it compares array keys and never meets a slugged label; the exposure is client mode, where the slugged label is `data-tab-key`, the remembered tab, the persisted `tabs-{id}` value, the `?tab=` value and the key the deferred-badge controller reads, so a request that translates in another locale than the one that rendered the key reads no active tab.
 The cause and the requirement are [Section's](section.md#the-locale-of-a-live-call-is-the-requests-so-a-url-locale-application-prefixes-its-live-route).
 
 ### The active tab is server-rendered and then owned by the controller

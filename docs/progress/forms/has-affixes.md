@@ -21,7 +21,7 @@ The contract extends schemas' [`HasAffixActions`](../schemas/has-actions.md#the-
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`prefix()` / `suffix()` / `postfix()` / `getPrefixLabel()` / `getSuffixLabel()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#every-setter-also-writes-the-inline-flag-so-the-last-call-wins) |
+| [`prefix()` / `suffix()` / `postfix()` / `getPrefixLabel()` / `getSuffixLabel()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#every-setter-also-writes-the-inline-flag-so-the-last-call-wins) · [semantics](#an-affix-label-may-be-a-message-and-the-templates-judge-the-translated-text) |
 | [`prefixIcon()` / `suffixIcon()` / `getPrefixIcon()` / `getSuffixIcon()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | — |
 | [`prefixIconColor()` / `suffixIconColor()` / `getPrefixIconColor()` / `getSuffixIconColor()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#the-icon-colour-defaults-nowhere-in-php) |
 | [`prefixAction()` / `prefixActions()` / `suffixAction()` / `suffixActions()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#the-plural-forms-append-and-a-closure-may-return-several-actions) |
@@ -30,6 +30,10 @@ The contract extends schemas' [`HasAffixActions`](../schemas/has-actions.md#the-
 | [The contract](../../../packages/forms/src/Components/Contracts/HasAffixes.php) — the eight getters, `extends HasAffixActions` | [`Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) | done | — | [translations](../translations.md#idiom) |
 
 ## Semantics
+
+### An affix label may be a message, and the templates judge the translated text
+
+`prefix()`, `suffix()` and `postfix()` take a message, which `getPrefixLabel()` and `getSuffixLabel()` translate, so the contract's getters stay `string|Markup|null` and the templates' `is filled` tests judge the translated text.
 
 ### Every setter also writes the inline flag, so the last call wins
 

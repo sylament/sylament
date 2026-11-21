@@ -2,6 +2,7 @@
 description: The `SylamentSupportBundle` service wiring, config, static-instance boot and asset registration, and the package's stylesheet entry and core controller.
 ports:
   - vendor/filament/support/src/SupportServiceProvider.php
+  - vendor/filament/support/resources/lang/en/
   - vendor/filament/support/resources/css/index.css
   - vendor/filament/support/resources/css/base.css
 owns:
@@ -35,9 +36,10 @@ The file also tracks the package's asset entry points: the stylesheet every pack
 | [Base layer (`base.css`)](../../../packages/support/assets/src/styles/base.css) | [`css/base.css`](../../../vendor/filament/support/resources/css/base.css) | done | — | [diverges](#the-base-layer-is-scoped-to-sy-and-adds-the-cloak-and-colour-scheme-rules) |
 | [`uncloak()` helper](../../../packages/support/assets/src/utils/cloak.ts) | Alpine's `x-cloak` | done | — | [diverges](#the-base-layer-is-scoped-to-sy-and-adds-the-cloak-and-colour-scheme-rules) |
 | [Eager `core` controller and its stylesheet autoimport](../../../packages/support/assets/src/controllers/core_controller.ts) | — | done | — | [semantics](#the-eager-core-controller-puts-the-toolkit-stylesheet-on-the-page) |
+| [Translations (`hasTranslations`)](../../../packages/support/translations) | [`configurePackage()`](../../../vendor/filament/support/src/SupportServiceProvider.php), [`resources/lang/en/`](../../../vendor/filament/support/resources/lang/en) | done | — | [semantics](#the-catalogue-holds-the-keys-supports-code-reads) |
 | Livewire request / component wiring | [`packageRegistered()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | blocked | live-component-state work | [detail](#livewire-request-and-component-wiring-is-not-ported) |
 | Blade directives & string macros | [`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#blade-directives-and-string-macros-are-not-ported) |
-| PackageServiceProvider bootstrapping: config, views and translations publishing, commands, `AboutCommand`, `optimizes` | [`configurePackage()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#packageserviceprovider-bootstrapping-is-replaced-by-abstractbundle-mechanics) |
+| PackageServiceProvider bootstrapping: config and views publishing, commands, `AboutCommand`, `optimizes` | [`configurePackage()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#packageserviceprovider-bootstrapping-is-replaced-by-abstractbundle-mechanics) |
 
 ## Details
 
@@ -77,6 +79,11 @@ Run after the decorations, the same removal would leave every consumer of `Sessi
 One pass serves every package, since each package that ships a test-only service requires support.
 [`RemoveTestOnlyServicesPassTest`](../../../tests/Packages/Support/DependencyInjection/Compiler/RemoveTestOnlyServicesPassTest.php) compiles the suite's kernel in `test` and in `test_mode_off`, the environment that turns `framework.test` off and nothing else.
 
+### The catalogue holds the keys support's code reads
+
+[`sylament+intl-icu.en.yaml`](../../../packages/support/translations/sylament+intl-icu.en.yaml) is the `sylament` domain, Filament's `filament::` namespace, and carries Filament's `components/*` keys for the badge, breadcrumbs, copyable, modal, pagination, section and tabs texts support's templates and traits render.
+Filament's `components/button` (`messages.uploading_file`), `components/input/one-time-code`, `loading` and `components/copyable.messages.failed` keys ship nowhere, because no ported code renders them: the button's upload state, the one-time-code input and the loading indicator's text are unported, and the copy failure is [a gap of the controller](copyable.md#a-failed-copy-shows-nothing-where-filament-says-could-not-copy).
+
 ## Divergences
 
 ### Static-instance boot replaces Laravel's container scoping
@@ -110,4 +117,4 @@ Of the four `Str` macros, `sanitizeCssColor` is a public method on the colour ma
 Filament's provider extends Spatie's `PackageServiceProvider`: `configurePackage()` declares commands, a config file, translations and views, and `packageBooted()` publishes config, wires `AboutCommand` info and calls `optimizes()`.
 None of these Laravel package-tooling affordances carries over, since Symfony handles the equivalents elsewhere: asset registration is the AssetMapper prepend above, configuration is Symfony bundle config, and console commands are auto-registered by tag when they exist.
 The command classes are their own rows in the [package README](README.md#unported).
-Translations need no provider duty: FrameworkBundle registers every bundle's `translations/` directory, so support's `sylament+intl-icu.en.yaml` loads with no wiring, and an application overrides a key in its own `translations/` directory instead of publishing a copy.
+Translations need [no provider duty](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and an application overrides a key in its own `translations/` directory instead of publishing a copy.

@@ -20,7 +20,7 @@ The schemas [`Section`](../schemas/section.md) component wraps it, embedding `<t
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Header + body structure](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php), with [`section/heading`](../../../vendor/filament/support/resources/views/components/section/heading.blade.php) and [`section/description`](../../../vendor/filament/support/resources/views/components/section/description.blade.php) rendered inline | done | — | — |
+| [Header + body structure](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php), with [`section/heading`](../../../vendor/filament/support/resources/views/components/section/heading.blade.php) and [`section/description`](../../../vendor/filament/support/resources/views/components/section/description.blade.php) rendered inline | in progress | — | [detail](#the-header-lacks-filaments-content-wrapper-and-its-css-differs-with-it) |
 | [Icon rendering (color + size)](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | — |
 | [Variant + state classes](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | — |
 | [Collapsible disclosure](../../../packages/support/assets/src/controllers/section_controller.ts) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-collapsed-state-is-rendered-server-side-not-bound-client-side) |
@@ -48,10 +48,18 @@ Until then a section renders no reset action.
 
 ### Two collapsed-state rules differ from Filament's with no recorded reason
 
-Apart from the prefix and the [dark-mode text colour](#section-css-adds-a-dark-mode-text-color-to-the-content-container), `section.css` follows Filament's stylesheet rule for rule except in two places.
+Besides the prefix, the [dark-mode text colour](#section-css-adds-a-dark-mode-text-color-to-the-content-container) and the [header differences](#the-header-lacks-filaments-content-wrapper-and-its-css-differs-with-it), two rules differ.
 A collapsed section's content container is `invisible absolute h-0 overflow-hidden border-none`, where Filament's is `hidden`.
 The non-aside section's `grid gap-y-4` on the content container applies whether or not the section is collapsed, where Filament gates it on `:not(.fi-collapsed)`.
 **Next step:** record why the collapsed body stays in the layout, as a divergence, or restore Filament's rules.
+
+### The header lacks Filament's content wrapper, and its CSS differs with it
+
+Filament wraps the icon's siblings, the text container and the after-header container, in `fi-section-header-content` (`fi-section-header-content-has-heading` when there is a heading or a description), a `flex min-w-0 flex-wrap items-start gap-3` row that grows with `flex-1`; the port's template has no such wrapper.
+Its CSS follows from that: the after-header rule is `& > .sy-section-header-after-ctn` with `self-center` alone, where Filament's sits under the wrapper and adds `max-w-full shrink-0`.
+The text container is `grid flex-1 gap-y-1`, where Filament's is `grid w-max max-w-full flex-auto gap-y-1`.
+The port also gives `.sy-sc-text` in the after-header container the `leading-6` Filament gives only `.fi-link`, and wraps the description with `wrap-break-word` where Filament uses `break-words`.
+**Next step:** re-true the template and `section.css` to Filament's header, or record each difference's reason as a divergence.
 
 ## Divergences
 
@@ -74,7 +82,8 @@ It is pinned: `sy-cloak` is absent on a collapsible section that persists nothin
 Filament resolves the disclosure button's labels inline with `__('filament::components/section.actions.expand.label')` / `…collapse.label`.
 The template exposes `expandLabel` / `collapseLabel` props whose defaults translate Filament's key paths, `components/section.actions.expand.label` and `components/section.actions.collapse.label`, from the `sylament` catalogue, in Filament's English.
 A caller can pass either prop to replace the catalogue's text.
-The button's `aria-label` and the controller's `expandLabel` / `collapseLabel` Stimulus values are rendered from the same two props, so the controller, which rewrites the `aria-label` on every toggle, carries no English default: the server's locale at render time fixes both texts, and a client-side locale change needs a re-render.
+Filament keys the pair twice, under `filament-schemas::components.section.actions.*` and `filament::components/section.actions.*`, and the port reads only the `sylament` pair, so a Filament locale's `filament-schemas` pair is imported onto the `sylament` key, and an override in `sylament-schemas` never reaches the widget.
+The button's `aria-label` and the controller's `expandLabel` / `collapseLabel` Stimulus values are rendered from the same two props, so the controller, which rewrites the `aria-label` on every toggle, reads both texts from them ([i18n.md](../../internals/i18n.md#a-count-the-browser-updates-reaches-it-as-a-map-of-plural-forms)): the server's locale at render time fixes both texts, and a client-side locale change needs a re-render.
 
 ### The live-component-state reset wiring is a Sylament addition
 

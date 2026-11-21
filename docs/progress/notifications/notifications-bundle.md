@@ -2,6 +2,9 @@
 description: The notifications bundle class, the session and live delivery pair it wires, its asset registration and the package manifest.
 ports:
   - vendor/filament/notifications/src/NotificationsServiceProvider.php
+  - vendor/filament/notifications/src/NotificationMailbox.php
+  - vendor/filament/notifications/src/Http/Middleware/
+  - vendor/filament/notifications/resources/lang/en/notification.php
   - vendor/filament/notifications/composer.json
   - vendor/filament/notifications/resources/css/index.css
   - vendor/filament/notifications/resources/js/index.js
@@ -21,8 +24,8 @@ What the port adds on top of the provider's responsibilities is container wiring
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Notification`, the delivery pair, the colour policies and the Twig component as services](../../../packages/notifications/src/SylamentNotificationsBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
-| [`SessionNotifications` — the `sylament.notifications` flash key](../../../packages/notifications/src/Delivery/SessionNotifications.php) | [`session()->push()`](../../../vendor/filament/notifications/src/Notification.php), [`session()->pull()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-flash-bag-replaces-laravels-session-push-and-owns-the-key) |
-| [`LiveDeliverySubscriber` — the live arm](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php) | [`on('dehydrate', …)`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) · [diverges](#there-is-no-claimed-notifications-key-because-the-toast-travels-in-the-same-response) · [diverges](#a-send-during-the-acting-components-own-render-waits-for-the-next-request) · [semantics](#a-redirecting-live-action-keeps-its-toast-for-the-destination-page-for-free) |
+| [`SessionNotifications` — the `sylament.notifications` flash key](../../../packages/notifications/src/Delivery/SessionNotifications.php) | [`NotificationMailbox::push()` / `pull()`](../../../vendor/filament/notifications/src/NotificationMailbox.php) | done | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
+| [`LiveDeliverySubscriber` — the live arm](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php) | [`PublishNotifications`](../../../vendor/filament/notifications/src/Http/Middleware/PublishNotifications.php) | done | — | [diverges](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) · [diverges](#there-is-no-follow-up-pull-because-the-toast-travels-in-the-same-response) · [diverges](#a-send-during-the-acting-components-own-render-waits-for-the-next-request) · [semantics](#a-redirecting-live-action-keeps-its-toast-for-the-destination-page-for-free) |
 | [AssetMapper prepend — `@sylament/notifications`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`FilamentAsset::register([Js::make('notifications', …)])`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/js/index.js`](../../../vendor/filament/notifications/resources/js/index.js) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [Stylesheet entry point](../../../packages/notifications/assets/src/styles/index.css) | [`resources/css/index.css`](../../../vendor/filament/notifications/resources/css/index.css) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [`@SylamentNotifications` template namespace](../../../packages/notifications/templates) | [`->hasViews()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
@@ -32,6 +35,10 @@ What the port adds on top of the provider's responsibilities is container wiring
 | [Translations (`->hasTranslations()`) — the `sylament-notifications` catalogue](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/lang/en/notification.php`](../../../vendor/filament/notifications/resources/lang/en/notification.php) | done | — | [diverges](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-close-label-alone) |
 | `Testable::mixin(new TestsNotifications)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
+| `$this->app->scoped(NotificationMailbox::class)` | [`packageRegistered()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`NotificationMailbox`](../../../vendor/filament/notifications/src/NotificationMailbox.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
+| The `PublishNotifications` middleware, prepended to the HTTP kernel | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`PublishNotifications`](../../../vendor/filament/notifications/src/Http/Middleware/PublishNotifications.php) | skipped | — | [diverges](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) |
+| The `InitializeNotificationMailbox` middleware and the `RouteMatched` listener that adds it to every route | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`InitializeNotificationMailbox`](../../../vendor/filament/notifications/src/Http/Middleware/InitializeNotificationMailbox.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
+| The `Login` / `Logout` listeners' `rotateScope()` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
 
 ## Details
 
@@ -40,7 +47,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 The monorepo resolves every package out of one root `vendor/`, so a require dropped from [`composer.json`](../../../packages/notifications/composer.json) fails nothing in this suite and breaks only the split repository.
 A manifest entry is assertable all the same: a manifest scan decodes a package's `composer.json` and pins the requires and suggests no other check sees, tables' `symfony/html-sanitizer` require among them.
 No test reads this manifest.
-What is missing is a case of that scan pinning each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names and `sylament/actions` as a require rather than a suggest.
+What is missing is a case of that scan pinning each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names, the catalogue's four requires among them, and `sylament/actions` as a require rather than a suggest.
 
 ### The database-notifications registration waits on its panel
 
@@ -54,7 +61,7 @@ Unlike the toast stack, that component is free to be a UX **live** component: it
 
 ### A redirecting live action keeps its toast for the destination page, for free
 
-Filament's dehydrate hook guards on the redirect store (`store($component)->has('redirect')`) and skips delivery when the component is redirecting, so the notification stays in the session and renders on the page the user lands on.
+Filament's `PublishNotifications` middleware publishes a redirecting component's notifications to the session-scoped mailbox like any other and flags the response with `X-Filament-Notifications-Redirect`, so the page the user lands on pulls them from its `mount()`.
 The port needs no equivalent check: a redirecting live action returns a `Response`, so UX's `onKernelView()` never renders the component, no `PreRenderEvent` fires, the subscriber never runs, and the flash survives to the next request untouched.
 Same semantics, arrived at by not having a code path rather than by adding a guard, which is why a reader looking for the redirect check finds nothing.
 
@@ -72,19 +79,20 @@ The `Delivery\` pair is `autoconfigure()`d, which is what tags `LiveDeliverySubs
 
 Permanent: the registration is the Symfony-idiom replacement for Laravel's reflective container, filed as a provider row because the provider is where the responsibility would sit if Laravel needed one, which is why the row's _Ports_ cell names no Filament source.
 
-### The flash bag replaces Laravel's session push, and owns the key
+### The flash bag replaces Filament's notification mailbox, and owns the key
 
-Filament writes with `session()->push('filament.notifications', $data)` and reads with `session()->pull(...)`, in two different files.
-Sylament routes both through one class, [`SessionNotifications`](../../../packages/notifications/src/Delivery/SessionNotifications.php), whose `FLASH_KEY` (`sylament.notifications`) is the only place the string appears and whose consumers are `send()`, the subscriber and the stack component.
+Filament's `send()` pushes onto a request-scoped `NotificationMailbox`, which holds the pending list in memory, publishes it into a cache store under a key derived from a per-session scope (`filament.notifications.mailbox`, set up by the `InitializeNotificationMailbox` middleware that a `RouteMatched` listener adds to every route), and answers `pull()` and `tryPull()` from there; a login or a logout rotates the scope, carrying the published notifications over.
+Sylament routes the write and the read through one class, [`SessionNotifications`](../../../packages/notifications/src/Delivery/SessionNotifications.php), whose `FLASH_KEY` (`sylament.notifications`) is the only place the string appears and whose consumers are `send()`, the subscriber and the stack component.
 
-The store is Symfony's **flash bag**, not a plain session array, and that is the substantive part: a flash entry is read-once by definition, so `pull()` is a `get()` and the "drain on read" behaviour both readers rely on is the bag's, not ours.
+The store is Symfony's **flash bag**, not a cache store, and that is the substantive part: a flash entry is read-once by definition, so `pull()` is a `get()` and the "drain on read" behaviour both readers rely on is the bag's, not ours.
+The bag lives in the session, so the port keeps no scope of its own to initialise or rotate, and whether a toast survives a login or a logout is the application's session handling.
 Two hardenings come with owning the accessor.
 `pull()` filters the bag: an entry that is not an array, or is an array with a non-string key, is dropped rather than handed to `fromArray()`, because session contents are attacker-adjacent input by the time they are read.
 And a session that is not `FlashBagAwareSessionInterface` raises a `LogicException` naming the type, while no session at all raises Symfony's own `SessionNotFoundException`, the fail-fast an out-of-request `send()` (console, worker) hits.
 
-### The live-delivery decision point is a `PreRenderEvent` subscriber, not a dehydrate hook
+### The live-delivery decision point is a `PreRenderEvent` subscriber, not a publishing middleware
 
-Filament decides late, in a `Livewire::on('dehydrate')` hook that fires per component after render: is this a Livewire request, is it redirecting, is anything pending.
+Filament decides late, in its `PublishNotifications` middleware, which the provider prepends to the HTTP kernel so it wraps the whole request: once the response is built it publishes anything pending and, on a Livewire response, tags the payload with the batch the stack then pulls.
 The port keeps "decide late" and moves the point earlier in the lifecycle, because the event it needs is ux-twig-component's [`PreRenderEvent`](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php), subscribed at **priority 20**.
 
 The priority is the whole reason the shape works, and it is not tunable: UX's own `AddLiveAttributesSubscriber` listens to the same event at priority 0 and drains `LiveResponder`'s queues into the component's root attributes (`LiveControllerAttributesCreator::attributesForRendering()` drains **and** resets).
@@ -97,14 +105,14 @@ The subscriber drains the flash at the start of a live component's render, on `P
 A `send()` that runs **after** that point, inside the acting component's own template rendering, finds the flash already read for this response, so the toast stays in the bag and appears on the next request that reads it (the next live round trip or page load) instead of the current one.
 Every legitimate call site runs before render: live actions, `afterStateUpdated`, and the hooks around them.
 
-Filament delivers that toast in the same response: Livewire renders the component and then triggers `dehydrate` ([`HandleComponents.php`](../../../vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php)), so a render-time `send()` is already in the session when the hook pulls it.
-The port cannot follow, because the [priority-20 `PreRenderEvent`](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) is the last point at which a queued browser event still reaches the response.
+Filament delivers that toast with the same response: its middleware publishes after the whole response is rendered ([`PublishNotifications.php`](../../../vendor/filament/notifications/src/Http/Middleware/PublishNotifications.php)), so a render-time `send()` is already pending when it publishes, and the batch it tags names it.
+The port cannot follow, because the [priority-20 `PreRenderEvent`](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) is the last point at which a queued browser event still reaches the response.
 
-### There is no claimed-notifications key, because the toast travels in the same response
+### There is no follow-up pull, because the toast travels in the same response
 
-Filament's hook moves the pending notifications from `filament.notifications` into a second session key, `filament.claimed_notifications`, dispatches `notificationsSent`, and lets the stack's listener re-request and read the second key: a two-key dance protecting a race, since between the dispatch and the follow-up request another request could drain the first key.
+Filament publishes the pending notifications into its mailbox under a batch id, marks the Livewire payload with it (and an `X-Filament-Notifications` header), and lets the stack's client call `pullNotifications()` with the batch in a second request, which takes that batch's entries and leaves the others for their own requests.
 
-The port has no race to protect against.
+The port has no second request to coordinate.
 The subscriber renders each notification to HTML and queues it as a `sylament:notification` browser event on the response already in flight, so the content never waits in the session for a second request to come and fetch it.
 A notification whose template resolves to nothing fails that request with a `LogicException` rather than dispatching an event with no toast in it, since the pull has already drained the flash.
 One key, one response, and the "multiple sends in one request" case is simply multiple events.
@@ -135,15 +143,15 @@ The reasoning for **not** making it a live component is the stack's own [archite
 ### The catalogue is found by the bundle's translations directory and holds the close label alone
 
 `->hasTranslations()` registers Filament's `filament-notifications` namespace from [`resources/lang/`](../../../vendor/filament/notifications/resources/lang).
-The port registers nothing: FrameworkBundle scans every bundle's `translations/` directory, so [`translations/sylament-notifications+intl-icu.en.yaml`](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) is the `sylament-notifications` domain from the file name alone, and no prepend is needed.
+The port registers nothing: [no wiring](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring) is needed, and [`translations/sylament-notifications+intl-icu.en.yaml`](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) is the `sylament-notifications` domain.
 It holds `notification.actions.close.label`, the one text the toast ships; the title, the body and the actions' labels belong to the application.
 
-Filament's `database.php` keys (`database.modal.*`) have no site, because the database-notifications modal is [unported](#the-database-notifications-registration-waits-on-its-panel), and a catalogue holds only keys its package's code uses.
+Filament's `database.php` keys (`database.modal.*`) have no site, because the database-notifications modal is [unported](#the-database-notifications-registration-waits-on-its-panel).
 They join the catalogue under Filament's key paths when that panel lands.
 
 ### The manifest declares every `symfony/*` package `src/` imports
 
-Filament's notifications manifest requires `filament/actions`, `filament/support` and the Laravel/Livewire stack.
+Filament's notifications manifest requires `php`, `filament/actions` and `filament/support`.
 The port's [manifest](../../../packages/notifications/composer.json) requires `sylament/actions`, `sylament/support` and one Symfony package per thing `src/` or `templates/` cannot work without: `symfony/ux-twig-component` (the stack's `AsTwigComponent`, the subscriber's `PreRenderEvent`), `symfony/ux-live-component` (`LiveResponder`), `symfony/http-foundation` (`RequestStack`, the flash-bag interfaces), `symfony/event-dispatcher` (`EventSubscriberInterface`), `symfony/service-contracts` (the `#[Required]` attribute), `symfony/uid` (the v7 id) and `symfony/html-sanitizer` (the `sanitize_html` filter the toast template pipes its title and body through; a template that cannot resolve the filter does not render).
 The [split-repo dependency rule](../../../CLAUDE.md) is why each is named rather than inherited through a sibling that already pulls it in.
 
@@ -151,6 +159,8 @@ The [split-repo dependency rule](../../../CLAUDE.md) is why each is named rather
 Two absences are deliberate.
 `twig/twig` is not declared despite `Twig\Markup` and `Twig\Environment` appearing in `src/`, on the same grounds every other package leaves it out: `sylament/support` declares it and Twig cannot leave the graph.
 `symfony/dependency-injection` is not declared despite the bundle class importing `ContainerBuilder` and `ContainerConfigurator`, because support's `symfony/stimulus-bundle` requires it ([manifests rule](../../../.claude/rules/manifests.md)).
+
+The package ships a catalogue, so it also requires `ext-intl`, `symfony/translation`, `symfony/translation-contracts` and `symfony/yaml`, the four [every catalogue brings](../../../.claude/rules/manifests.md).
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

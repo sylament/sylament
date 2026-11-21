@@ -56,9 +56,7 @@ Next step: port them with the `Commands/` subtree.
 
 ### The catalogue holds only the keys schemas' code reads
 
-FrameworkBundle registers the bundle's `translations/` directory by itself, so the bundle wires nothing.
-`sylament-schemas+intl-icu.en.yaml` holds the four keys the package renders under Filament's key paths: `components.wizard.actions.next_step.label`, `components.wizard.actions.previous_step.label`, `components.wizard.header.step.statuses.completed` and `components.wizard.header.step.statuses.upcoming`.
-The English matches Filament's.
+The bundle [wires nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and `sylament-schemas+intl-icu.en.yaml` holds the [wizard's](wizard.md#the-default-back-and-next-labels-and-the-step-status-texts-come-from-the-catalogue) texts.
 Filament's other keys have no host here and ship nowhere until one exists: `components.callout.statuses.*`, `components.js_component.failed_to_load`, `components.tabs.actions.more.label`, and the support-namespace `loading.*`.
 The Section collapse and expand labels, and the Tabs navigation label, are support's own keys in the `sylament` domain, because support's templates render them.
 `validators.en.yaml` holds *This value cannot be changed.*, the record-key refusal Symfony's own catalogue lacks; *This value is already used.* and *This value should not be blank.* are Symfony's and need no entry.
@@ -260,8 +258,8 @@ It declares no targets: both handlers `querySelector` over their own subtree.
 | `startStep` | Number, default `1` | the server's active step, 1-based; the server has already resolved the query string into it, so the controller never reads the URL on connect |
 | `skippable` | Boolean | `true` ⇒ every step is reachable from the header; otherwise only steps before the current one are |
 | `queryStringKey` | String | non-empty ⇒ `history.replaceState`d on change (and the reset handler stands down) |
-| `completedText` | String | the text the status span of a completed step shows, from `components.wizard.header.step.statuses.completed`; the controller has no default |
-| `notCompletedText` | String | the text the status span of an upcoming step shows, from `components.wizard.header.step.statuses.upcoming`; the controller has no default |
+| `completedText` | String | the text the status span of a completed step shows; the controller has no default |
+| `notCompletedText` | String | the text the status span of an upcoming step shows; the controller has no default |
 
 | Target | What it is |
 | --- | --- |

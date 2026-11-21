@@ -41,8 +41,7 @@ Neither is ported, because no panels template renders a group attribute bag, so 
 ### A label may be a message, translated in its getter
 
 `make()` and `label()` take a `TranslatableInterface`, and `getLabel()` keeps returning `?string`, translated through the group's own translator.
-The sidebar persists a group's collapsed state in the browser under the label text, so a locale switch, like a renamed label, forgets which groups were collapsed; [Filament's store is keyed by the label too](layout-templates.md#sidebar-group-ids-are-positional-not-derived-from-the-label).
-The panel's [group assembly](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) matches a registered group by key or by its translated label.
+The translated label is what the [sidebar persists a group's collapsed state under](layout-templates.md#sidebar-group-ids-are-positional-not-derived-from-the-label) and what the [panel matches a registered group by](panel.md#the-brand-name-and-a-registered-navigation-group-may-be-messages).
 
 ### `collapsed()` does not also make the group collapsible
 

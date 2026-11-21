@@ -52,9 +52,16 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) · [diverges](#gethintactions-returns-a-list-not-a-gapped-array) · [semantics](#hint-and-helper-text-are-judged-by-their-translated-text) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 | [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php), no Filament concern of its own | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
+| `hasValidationError()`, `getDescriptionIds()`, `getRequiredDescription()` and `getAccessibilityAttributes()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#the-accessibility-members-are-not-ported) |
 | [`data-field-wrapper` on the wrapper root](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) | [`field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/field-wrapper.blade.php) · [`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) | done | — | [semantics](#data-field-wrapper-is-the-scroll-target-of-a-validation-error) |
 
 ## Details
+
+### The accessibility members are not ported
+
+Filament's `Field` answers `hasValidationError()` for its own path and, for a field with nested recursive rules, its children's; `getDescriptionIds()` lists the helper text's, the error's and the required description's ids; `getRequiredDescription()` is `null` unless a subclass overrides it; and `getAccessibilityAttributes()` turns them into `aria-describedby` and `aria-invalid`, which every control spreads.
+The port has none of the four: each control renders `aria-invalid` from `getErrorMessages()` itself, and no field renders `aria-describedby` or a required description.
+`CheckboxList`, `Select` and `ToggleButtons` override `getRequiredDescription()` with their `*.required_description` texts, which ship nowhere until this lands.
 
 ### `inlineLabelVerticalAlignment` waits on schemas' HasInlineLabel
 
@@ -87,7 +94,7 @@ So a custom `Filter::make(…)->schema([Select::make(…)->boolean()])` that dec
 
 ### Hint and helper text are judged by their translated text
 
-`hint()`, `helperText()` and the hint icon's tooltip take a string, a `Markup` or a message.
+`hint()` and `helperText()` take a string, a `Markup` or a message, and the hint icon's tooltip a string or a message, which `getHintIconTooltip()` returns as `?string`.
 `hasHint()` tests the translated `getHint()` where Filament tests the raw property, and `helperText()` tests the translated content for blankness before it builds its `Text`, so a message that translates to nothing, or a closure that answers null, adds no row.
 The hint closure is therefore evaluated once more per render than Filament's raw test needs.
 
@@ -131,8 +138,8 @@ It reverses only if a first-message-only default is wanted, which would make the
 
 The same list drives the control's invalid state: the controls render `aria-invalid` from `component.getErrorMessages is not empty`, and the text-like ones pass the inverse to the input wrapper's `valid` prop, whose `sy-invalid` class swaps the ring to the danger token.
 The attribute is on the control for accessibility rather than for styling, since the ring sits on [the input wrapper](#the-wrapper-owns-the-chrome-and-the-control-is-transparent).
-Filament's fields emit no `aria-invalid`; they toggle an `fi-invalid` class, statically or through an Alpine binding (`vendor/filament/forms/src/Components/Field.php:573`), and only `FusedGroup`'s inner group carries the attribute (`vendor/filament/schemas/src/Components/FusedGroup.php:293`).
-So on a field the attribute is an accessibility addition of this port, not a translation, and it renders with a *value* rather than as a bare attribute because [`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a false one.
+Filament's fields emit `aria-invalid` too, through `getAccessibilityAttributes()` (`vendor/filament/forms/src/Components/Field.php:329-336`), which the controls spread, beside the `fi-invalid` class they toggle statically or through an Alpine binding (`:655`, `:666`); the port's per-control attribute mirrors it without that method ([detail](#the-accessibility-members-are-not-ported)).
+It renders with a *value* rather than as a bare attribute because [`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a false one.
 [`TagsInput`](tags-input.md#the-text-box-is-scratch-state-and-carries-no-data-model) and [`KeyValue`](key-value.md#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) are the text-like controls that render none, for one reason: neither has a control that *is* the field's value.
 The tags input's box holds the tag being typed rather than the state, and the key-value field has no single control at all, each cell binding one half of one row, so in both the invalid state rides the input wrapper's `sy-invalid` and the field wrapper's messages alone, which is also where Filament leaves it.
 
@@ -178,7 +185,7 @@ It can still be nulled afterwards: the inherited [`HasName::name()`](../../../pa
 ### `getDefaultLabel` translates its humanized label under `translateLabel()`
 
 Filament's `getDefaultLabel` runs the humanized string through `__()` when `shouldTranslateLabel` is set and always returns a non-null `string`.
-The port's [`getDefaultLabel`](../../../packages/forms/src/Components/Field.php) does the same through the field's translator, in the default domain, so the generated English becomes a lookup key a catalogue can answer; without the flag it stays the generated text.
+The port's [`getDefaultLabel`](../../../packages/forms/src/Components/Field.php) does the same through the field's translator, so the generated English becomes a lookup key a catalogue can answer; without the flag it stays the generated text.
 It returns `?string` (null when the name is null, which [`make()` never produces](#the-name-moves-from-the-constructor-to-a-setter) but the nullable `name()` setter admits).
 Humanization itself is faithful: `u($name)->afterLast('.')->kebab()->replace('-', ' ')->title()` matches Filament's `str(...)->afterLast('.')->kebab()->replace(['-','_'],' ')->ucfirst()` on the tested cases.
 

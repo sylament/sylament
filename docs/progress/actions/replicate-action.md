@@ -184,8 +184,8 @@ Porting a deprecated alias would publish an API we would then have to deprecate,
 
 ### The texts are catalogue messages under Filament's keys
 
-`replicate.single.label`, `replicate.single.modal.heading` (`Replicate {label}`), `replicate.single.modal.actions.replicate.label` and `replicate.single.notifications.replicated.title` are the messages Filament's [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php) keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
-The `{label}` argument is [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry, the port-added key `replicate.single.modal.heading_bare`, where Filament would render a trailing-space `Replicate `.
+The texts follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape under Filament's [`replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php) keys.
+The heading's `{label}` argument is [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry, where Filament would render a trailing-space `Replicate `.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

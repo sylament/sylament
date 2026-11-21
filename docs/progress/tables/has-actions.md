@@ -176,6 +176,7 @@ The controller picks the category `Intl.PluralRules` answers for the document's 
 The ceiling in the server-rendered _"Select all {count}"_ label is the bare integer, since an untyped ICU argument is not grouped.
 The two are deliberately not aligned: `Intl.NumberFormat()` groups by the **browser's** locale and Twig's `number_format` by the template's, so matching them would trade a visible inconsistency for a locale-dependent one.
 A locale with a plural category beyond `one` and `other` needs its map extended on the server.
+With no known ceiling, the select-all link reads the port-added `table.selection_indicator.actions.select_all.label_bare`, *Select all*, beside Filament's counted `select_all.label`.
 
 The banner is server-gated on `isSelectionEnabled()` and client-gated on the count, as vendor's is, and it renders on an overflow (empty) page too: a selection outlives a page that lost its rows.
 Of vendor's two extra server gates one is ported (the banner does not render while a deferred table's window is still open), while `maxSelectableRecords(1)` stays unported.

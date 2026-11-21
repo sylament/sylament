@@ -23,7 +23,7 @@ owns:
 | [`makeTable()`](../../../packages/panels/src/Resources/Pages/ListRecords.php), the row-click seeding | `makeTable()`'s `recordAction()` / `recordUrl()` closures | done | — | [diverges](#the-row-click-falls-through-to-the-resources-own-view-or-edit-page) |
 | [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | the page's `#[Url]` properties | done | — | [diverges](#the-query-string-binding-is-one-hook-and-reordering-stays-unbound) |
 | [`getTitle()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getTitle()` | done | — | [semantics](#gettitle-runs-before-the-page-mounts) |
-| [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getBreadcrumb()` | done | — | [diverges](#the-breadcrumb-is-read-from-the-catalogue) |
+| [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getBreadcrumb()` | done | — | [diverges](#getbreadcrumb-narrows-to-string-because-its-fallback-is-never-null) |
 | [`form()` / `infolist()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | the same two | done | — | [semantics](#a-page-with-only-an-index-still-gets-every-record-action-as-a-modal) |
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getDefaultActionSchemaResolver()` | done | — | [diverges](#a-modals-schema-keeps-the-resource-forms-own-column-count) |
 | [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#renames) |
@@ -132,10 +132,9 @@ Filament binds seven names on this page: six `#[Url]` properties (`reordering`, 
 Ours overrides [`getTableUrlMapping()`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) to map six of them — `page` (prefixed by the host's query-string identifier), `sort`, `search`, `filters`, [`grouping`](../tables/grouping.md) and `tab` — in one method.
 `reordering` is [deliberately unbound](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page).
 
-### The breadcrumb is read from the catalogue
+### `getBreadcrumb()` narrows to `string`, because its fallback is never null
 
-Filament's `getBreadcrumb()` falls back to `__('filament-panels::resources/pages/list-records.breadcrumb')`; ours falls back to the same key path in the `sylament-panels` catalogue, translated through the page's own translator.
-Filament types the return `?string`; ours is `string`, because the fallback is never null.
+Filament types the return `?string`; ours is `string`, because the fallback, the `List` message [read from the catalogue](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths), is never null.
 
 ### A header action's record title comes from the resource
 
@@ -150,7 +149,7 @@ Filament deprecates `getTableQuery()` and `getPluralModelLabel()` on this page, 
 
 ### A modal's schema keeps the resource form's own column count
 
-Filament's resource pages force a two-column grid onto every modal schema they resolve: `ListRecords`, `EditRecord` and `ViewRecord` each build `$schema->hasCustomColumns() ? $schema : $schema->columns(2)` before handing it to the resource's `form()`, and the full-page `defaultForm()` does the same with an inline-labels arm (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:94`, `EditRecord.php:300`, `CreateRecord.php:315`).
+Filament's resource pages force a two-column grid onto every modal schema they resolve: `ListRecords`, `EditRecord` and `ViewRecord` each build `$schema->hasCustomColumns() ? $schema : $schema->columns(2)` before handing it to the resource's `form()`, and the full-page `defaultForm()` does the same with an inline-labels arm (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:104-105`, `EditRecord.php:314-316`, `ViewRecord.php:155`; the inline-labels arm `CreateRecord.php:328`, `EditRecord.php:383`).
 The port's resolvers pass the seeded schema through untouched — the list page's, which carries both actions on one arm, reads:
 
 ```php

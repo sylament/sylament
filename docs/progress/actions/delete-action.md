@@ -62,7 +62,7 @@ The by-key arm is the exception: it has no record to ask the registry about, so 
 
 ### The headings interpolate, and fall back to the bare verb
 
-`DeleteAction`'s heading is `($title = $this->getRecordTitle()) === null ? 'Delete' : "Delete {$title}"`, and `DeleteBulkAction`'s is the same shape over `getTitleCasePluralRecordLabel()`: Filament's `__('…delete.single.modal.heading', ['label' => …])` minus the catalogue, the shape `EditAction` and `ReplicateAction` share.
+`DeleteAction`'s heading is a closure answering the `delete.single.modal.heading` message over the record title, or `delete.single.modal.heading_bare` when there is none, and `DeleteBulkAction`'s is the same shape over `getTitleCasePluralRecordLabel()` with the `delete.multiple.modal.*` pair: Filament's `__('…delete.single.modal.heading', ['label' => …])`, the shape `EditAction` and `ReplicateAction` share.
 Both getters answer `null` for an action with nothing to name (no record, no record class, no table), so a hostless `DeleteAction` reads `Delete` and a hostless `DeleteBulkAction` reads `Delete selected`, where Filament's catalogue would leave a trailing space.
 Bind either to a table, or give it a record or a `recordClass()`, and the heading fills itself: _"Delete Airbag"_, _"Delete selected Songs"_.
 Where the title should be quoted or phrased differently, a caller passes a closure: `->modalHeading(fn (Article $record): string => sprintf('Delete "%s"?', $record->getTitle()))`.
@@ -129,7 +129,7 @@ Filament sets `modalIcon(…OutlinedTrash)` and `modalSubmitActionLabel(__('…d
 `DeleteAction` sets neither, because [`CanOpenModal`'s confirmation fallbacks](can-open-modal.md#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) answer both: `getModalIcon()` returns `heroicons:exclamation-triangle` whenever confirmation is required, and `getModalSubmitActionLabel()` returns `Confirm`.
 The icon is an alias lookup in Filament (`ActionsIconAlias::DELETE_ACTION_MODAL`), and `ActionsIconAlias` is [unported](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection).
 
-`DeleteBulkAction` splits the pair: it skips the modal icon for the same alias reason, but it *does* set `modalSubmitActionLabel('Delete')`, because the fallback `Confirm` reads wrong under a heading that already says *Delete selected*, and Filament gives the bulk modal its own key there too.
+`DeleteBulkAction` splits the pair: it skips the modal icon for the same alias reason, but it *does* set its submit label, the `delete.multiple.modal.actions.delete.label` message whose English is *Delete*, because the fallback `Confirm` reads wrong under a heading that already says *Delete selected*, and Filament gives the bulk modal its own key there too.
 
 The visible cost: the port's delete confirmation is headed by the generic warning triangle every confirming action shows, where Filament's is headed by an outlined trash that says *what* is being confirmed.
 That is a missing feature rather than an icon-variant slip: the two cases are `Heroicon::OutlinedExclamationTriangle` and `Heroicon::OutlinedTrash`, both outline, so [the mini/outline rule](../support/icon-manager.md#an-unprefixed-heroicon-case-is-the-mini-20px-set-and-our-literals-must-spell-it) has nothing to say about it.
@@ -137,12 +137,11 @@ Porting `ActionsIconAlias` reverses the icon half.
 
 ### The texts are catalogue messages under Filament's keys
 
-`delete.single.label`, `delete.single.modal.heading` and `delete.single.notifications.deleted.title` are the messages Filament's `delete.single…` keys give, and the bulk class reads `delete.multiple.label`, `delete.multiple.modal.heading`, `delete.multiple.modal.actions.delete.label` and `delete.multiple.notifications.deleted.title`, all from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
-The headings pass the record title and the plural label the way Filament's catalogue entries do ([semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb)), and each falls back to the port-added `heading_bare` key when no label is known.
+Both classes follow [create-action.md's shape](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys), the bulk one under `delete.multiple.…` with its own `modal.actions.delete.label`, and the headings pass the record title and the plural label ([semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb)).
 Filament's `delete.single.modal.actions.delete.label` has no reader, since [`DeleteAction` sets no submit label](#the-confirmation-chrome-is-left-to-the-defaults), and so is not in the catalogue.
 
-`DeleteBulkAction`'s failure title turns Filament's two `trans_choice` branches into two messages over the same `successCount` and `totalCount` injections: `delete.multiple.notifications.deleted_partial.title` (`Deleted {count} of {total}`) and `delete.multiple.notifications.deleted_none.title`, whose English, `Failed to delete {count} records`, differs from Filament's `Failed to delete`: ours carries the count, and keeps the unconditional plural it has always printed.
-The counts are passed as digits, not numbers, so the ICU formatter adds no locale grouping; locale-aware number formatting is a follow-up beyond the message catalogues.
+`DeleteBulkAction`'s failure title turns Filament's two `trans_choice` branches into two messages over the same `successCount` and `totalCount` injections: `delete.multiple.notifications.deleted_partial.title` (`Deleted {count} of {total}`) and `delete.multiple.notifications.deleted_none.title`, whose English, `Failed to delete {count} records`, differs from Filament's `Failed to delete`: ours carries the count, in an unconditional plural.
+The counts are passed as digits, not numbers, so the ICU formatter adds no locale grouping ([i18n.md](../../internals/i18n.md#plural-and-the-other-english-shapes-stay-english)).
 
 ### There is no soft-delete arm to hide behind
 

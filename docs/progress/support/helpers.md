@@ -177,7 +177,7 @@ It is written the Carbon way anyway, because the modulo is what makes the arm re
 
 Two deliberate narrowings.
 Carbon's `$syntax`, `$short`, `$parts` and `$options` arguments have no port: the behaviours they select (absolute phrasing, `before`/`after` instead of `ago`/`from now`, short units, multi-part output, `a_second`-style rounding, `JUST_NOW`) have no consumer, and adding one is additive.
-And the English unit names and word order are fixed in the function rather than read from a catalogue, because a free function reaches no translator: locale-aware relative times are a follow-up beyond the message catalogues.
+And the English unit names and word order are fixed in the function rather than read from a catalogue, because a free function reaches no translator ([i18n.md](../../internals/i18n.md#plural-and-the-other-english-shapes-stay-english)).
 
 The `$now` argument is required rather than defaulted to the current time, so the function stays pure and testable: the consuming column passes `new DateTimeImmutable('now', $timezone)`.
 The reading is `$date->diff($now)`, Carbon's own operand order ([`Difference.php`](../../../vendor/nesbot/carbon/src/Carbon/Traits/Difference.php) `$this->diff($other)`), so `invert === 1` means the date is in the future and reads `from now`, while everything at or before `$now`, the zero difference included, reads `ago`, exactly as Carbon does.

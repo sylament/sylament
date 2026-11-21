@@ -70,8 +70,7 @@ The whole inverse family is therefore not ported.
 
 ### The texts are catalogue messages under Filament's keys
 
-`dissociate.single.label`, `dissociate.single.modal.heading` (`Dissociate {label}`), `dissociate.single.modal.actions.dissociate.label` and `dissociate.single.notifications.dissociated.title`, and on the bulk class the `dissociate.multiple.…` counterparts, are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
-Each heading falls back to a port-added `heading_bare` key when no label is known.
+Both classes follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape, the bulk one under `dissociate.multiple.…`.
 The counting failure titles beside them, `dissociate.multiple.notifications.dissociated_partial.title` and `dissociate.multiple.notifications.dissociated_none.title`, have no Filament key; they are [an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
 
 ### The fetching arm is atomic where Filament's is per-record

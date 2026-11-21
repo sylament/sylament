@@ -64,15 +64,16 @@ need reverses it without reopening this principle.
 
 ### Mechanisms, not names
 
-[`translations.md`](../progress/translations.md#idiom) maps the *naming* translations:
-`Htmlable` → `Markup`, Blade → Twig, Alpine → Stimulus. These are the *mechanism*
-ones, which have no rename to record because the Laravel side is simply absent.
+[`translations.md`](../progress/translations.md#idiom) maps the idiom translations a
+migrating user greps for, mechanisms included (`Htmlable` → `Markup`, Blade → Twig,
+`__()` → a message). These are the mechanisms behind the first principle, which have
+no rename to record because the Laravel side is simply absent.
 
 | Laravel | Sylament |
 | --- | --- |
 | `app()`, facades, `resolve()` | constructor or `#[Required]` injection |
 | `data_get()` / `Arr::get()` against an object | `symfony/property-access` |
-| `__()` | a `TranslatableMessage` in the package's domain, translated through a `#[Required]` `TranslatorInterface` ([the convention](i18n.md)) |
+| `__()` | an injected translator ([translations.md](../progress/translations.md#idiom)) |
 | `config()` | bundle configuration and injected parameters |
 
 The table is not exhaustive, and an unmapped case is a decision waiting to be

@@ -87,8 +87,7 @@ Same skip as [`AttachAction`](attach-action.md#pivot-data-duplicates-morphs-and-
 
 ### The texts are catalogue messages under Filament's keys
 
-`detach.single.label`, `detach.single.modal.heading` (`Detach {label}`), `detach.single.modal.actions.detach.label` and `detach.single.notifications.detached.title`, and on the bulk class `detach.multiple.label`, `detach.multiple.modal.heading`, `detach.multiple.modal.actions.detach.label` and `detach.multiple.notifications.detached.title`, are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
-Each heading falls back to a port-added `heading_bare` key when no label is known.
+Both classes follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape, the bulk one under `detach.multiple.…`.
 The bulk class's two failure titles, `detach.multiple.notifications.detached_partial.title` and `detach.multiple.notifications.detached_none.title`, are port-added: Filament sends no failure toast there, so the keys follow the shape of the delete class's pair.
 
 ### The no-fetch arm detaches through references, not a join-table DELETE

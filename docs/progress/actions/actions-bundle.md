@@ -54,7 +54,7 @@ Filament runs those jobs on Laravel's queue; their Symfony counterpart is Messen
 ### Every action class is a service, so its `#[Required]` setters run
 
 `configureComponents()` registers `Action`, `ActionGroup` and every prebuilt action with `->set()`, autowired and autoconfigured.
-A class the bundle does not name falls back to `new $class()` in [`ComponentResolver::instantiate()`](../../../packages/support/src/DependencyInjection/ComponentResolver.php), where every `#[Required]` setter on it (the manager registry a write body persists through, the event dispatcher) silently never runs and nothing errors.
+A class the bundle does not name falls back to `new $class()` in [`ComponentResolver::instantiate()`](../../../packages/support/src/DependencyInjection/ComponentResolver.php), where every `#[Required]` setter on it (the manager registry a write body persists through, the event dispatcher, the translator) never runs: the first two fail silently, and a prebuilt action, whose `setUp()` labels it with a message, throws the `LogicException` naming its class the moment that label is read, while only a plain-string text still renders ([component.md](../support/component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks)).
 A bundle case derives the classes from the package root, `Action`, `ActionGroup` and every concrete subclass of either there, and requires the container to hold each one.
 A new prebuilt action therefore lands with a line in `configureComponents()`, and that case fails until it does.
 The root suite's kernel registers DoctrineBundle, `SylamentNotificationsBundle` and a session beside the bundle, because a record action's write body persists through the manager registry and sends a titled toast, and `Notification::send()` throws on an instance the container did not build.
@@ -208,6 +208,7 @@ The rule and its omissions are in [`.claude/rules/manifests.md`](../../../.claud
   Filament carries the same cycle: `filament/schemas` requires `filament/actions` directly, and `filament/actions` reaches `filament/schemas` only through `filament/forms`; the port states the edge directly.
 - `sylament/forms`: [`AttachAction::getRecordSelect()`](attach-action.md#the-record-select-is-a-forms-select-which-is-why-actions-requires-forms) and [`AssociateAction`'s](attach-action.md#the-record-select-is-a-forms-select-which-is-why-actions-requires-forms) build a `Sylament\Forms\Components\Select` and **return** it, so no `instanceof` can stand in front of it.
   `forms` requires `actions` back for its own field-level actions, the edge Filament's manifests carry too (`filament/actions` requires `filament/forms`, and `filament/forms` requires `filament/actions`).
+- `ext-intl`, `symfony/translation`, `symfony/translation-contracts` and `symfony/yaml`: the package ships a catalogue, which [brings all four](../../../.claude/rules/manifests.md).
 
 Two integrations stay a `suggest` behind a guard.
 `sylament/tables`: `HasActions` names tables' [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php) in `src/` behind an `instanceof` guard, so the branch is dead in an install without the package ([has-actions.md](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)); `filament/actions` does not require `filament/tables` either.

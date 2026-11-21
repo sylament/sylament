@@ -1,5 +1,5 @@
 ---
-description: The HasLabel concern that schema components and forms fields share for label(), hiddenLabel() and hasCustomLabel().
+description: The HasLabel concern that schema components and forms fields share for label(), hiddenLabel(), hasCustomLabel() and translateLabel().
 ports:
   - vendor/filament/schemas/src/Components/Concerns/HasLabel.php
 owns:
@@ -7,7 +7,7 @@ owns:
 ---
 # HasLabel (schemas)
 
-[`Sylament\Schemas\Components\Concerns\HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) is the human-facing label surface: `label()` / `getLabel()`, the `hiddenLabel()` / `isLabelHidden()` screen-reader toggle, and `hasCustomLabel()`.
+[`Sylament\Schemas\Components\Concerns\HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) is the human-facing label surface: `label()` / `getLabel()`, the `hiddenLabel()` / `isLabelHidden()` screen-reader toggle, `hasCustomLabel()`, and `translateLabel()`.
 Schemas' layout components such as [`Section`](section.md) and [`Fieldset`](fieldset.md) compose it, and so do forms' [`Field`](../../../packages/forms/src/Components/Field.php) and `FusedGroup`; actions and tables carry label concerns of their own.
 
 ## Surface
@@ -24,11 +24,12 @@ Schemas' layout components such as [`Section`](section.md) and [`Fieldset`](fiel
 
 ### A label is a string, a Markup or a message, translated in the getter
 
-`label()` takes `string|Markup|TranslatableInterface|Closure|null`, and `getLabel()` evaluates it and then translates it through the component's translator, so a template or a PHP reader always receives a string or a `Markup`.
+`label()` takes `string|Markup|TranslatableInterface|Closure|null`, and `getLabel()` evaluates it and then translates it through the component's translator, so a template or a PHP reader always receives a string, a `Markup` or `null`.
 A plain string stays a literal, as in Filament, unless `translateLabel()` is on: then a string label is handed to the translator as a key in the default `messages` domain, Filament's `__($label)`.
 A message already names its own domain and is translated either way.
 `hasCustomLabel()` still tests the raw property, so an unset label stays distinguishable from one that translates to an empty string.
-A component built with `new` and handed a message or a `translateLabel()` key throws a `LogicException` naming its class, because it has no translator.
+A component built with `new` throws on a `translateLabel()` key as it does on a [message](../support/component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks).
+A field's default label under `translateLabel()` is [field.md](../forms/field.md#getdefaultlabel-translates-its-humanized-label-under-translatelabel)'s, and a key slugged from a translated label is [section.md](section.md#a-translated-heading-keys-the-component-as-in-filament)'s and [tabs.md](tabs.md#a-translated-label-keys-the-tabs-and-each-tab-as-in-filament)'s.
 
 ## Divergences
 

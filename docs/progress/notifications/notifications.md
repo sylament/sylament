@@ -55,10 +55,10 @@ Filament's stack subscribes to the authenticated user's private Echo channel: `g
 
 ### The first reader of the flash wins, and both readers are idempotent
 
-Two things drain `sylament.notifications`: this component's `getFlashed()` on a full page load, and the [live-delivery subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) on a live request.
+Two things drain `sylament.notifications`: this component's `getFlashed()` on a full page load, and the [live-delivery subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) on a live request.
 Both call the same [`SessionNotifications::pull()`](../../../packages/notifications/src/Delivery/SessionNotifications.php), which is a flash-bag `get()` — it empties the bag as it reads.
 So whichever runs first in a given request takes everything, and any later reader finds nothing: several live components rendering in one batched request produce one delivery, not one per component, and a page load that renders the stack twice renders the toasts once.
-Filament reaches the same outcome because `session()->pull()` drains too, and adds a second `claimed_notifications` key between its hook and the stack's re-request; here it falls out of the flash bag's own semantics, with no second key to keep in sync.
+Filament reaches the same outcome because its mailbox's `pull()` consumes the entries it returns, and keys a Livewire response's entries by batch for the stack's follow-up pull; here it falls out of the flash bag's own semantics, with no batch to keep in sync.
 
 ## Divergences
 
@@ -86,8 +86,8 @@ It says nothing about the **database-notifications panel**, which is a separate 
 
 ### Live delivery appends server-rendered HTML instead of re-requesting the stack
 
-Filament's live path is: the dehydrate hook stashes the pending notifications and dispatches `notificationsSent`; the stack's `#[On('notificationsSent')]` listener fires a **second** Ajax request; that request pulls the session and re-renders the whole stack.
-Sylament's [subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) renders each toast server-side and queues a `sylament:notification` browser event carrying the HTML on the response already in flight; the [stack controller](../../../packages/notifications/assets/src/controllers/notifications_controller.ts) listens on `window` and appends it with `insertAdjacentHTML`.
+Filament's live path is: the publishing middleware tags the Livewire response with a batch; the stack's client sees it and fires a **second** request, `pullNotifications()`, which takes that batch from the mailbox and re-renders the stack.
+Sylament's [subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) renders each toast server-side and queues a `sylament:notification` browser event carrying the HTML on the response already in flight; the [stack controller](../../../packages/notifications/assets/src/controllers/notifications_controller.ts) listens on `window` and appends it with `insertAdjacentHTML`.
 
 One response instead of two, and no client-side renderer — the toast is Twig's output either way, so there is no second implementation to drift.
 The trust level is the one a live morph already has (server-rendered markup written into the page by the framework's own transport), and the payload is type-checked before it is written: a `detail.html` that is not a string is ignored.

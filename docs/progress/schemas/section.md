@@ -100,7 +100,7 @@ Nothing checks it.
 ### The array-heading constructor shorthand is dropped
 
 Filament's `__construct`/`make()` accept `array` and branch `is_array($heading) ? $this->components($heading) : $this->heading($heading)`, so `Section::make([...components])` doubles as a components shorthand.
-Sylament types the argument `string|Markup|Closure|null` and always calls `heading()`, so callers pass children through `->components()` explicitly.
+Sylament types the argument `string|Markup|TranslatableInterface|Closure|null` and always calls `heading()`, so callers pass children through `->components()` explicitly.
 **Provisional:** re-adding the `array` arm (and `array` in the signature) restores parity if a consumer wants the shorthand.
 
 ### A hidden label stays in the DOM as screen-reader-only text

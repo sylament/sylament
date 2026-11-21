@@ -144,13 +144,12 @@ It is a setter rather than a constructor argument, so a subclass declaring its o
 
 ### The page's texts are read from the `sylament-panels` catalogue under Filament's key paths
 
-`getCreatedNotificationTitle()` and `getSavedNotificationTitle()` read `resources/pages/create-record.notifications.created.title` and its edit-page twin, where Filament returns `__('filament-panels::…')`, and `getTitle()`, `getBreadcrumb()` and the two form actions' labels read the other `resources/pages/create-record.*` keys.
+`getCreatedNotificationTitle()`, `getSavedNotificationTitle()` (the edit page's), `getTitle()`, `getBreadcrumb()` and the two form actions' labels read the `sylament-panels` catalogue where Filament returns `__('filament-panels::…')`.
 `getTitle()` is `Create {label}`, with the title-cased record label as the argument, so a locale can move the label.
 The **override points** are Filament's exactly (`getCreatedNotificationTitle()` / `getSavedNotificationTitle()` for the copy, `getCreatedNotification()` / `getSavedNotification()` for the whole notification), and each returns `null` when its title is `blank()`, Filament's own "no title, no toast" contract.
-The getters keep their `string` return types and translate in place, through the page's own translator, in the request that builds them; a page override returns text, or translates a message itself with `translateText()`.
+The getters keep their `string` return types and translate in place, through the page's own translator, in the request that builds them; a page override returns text, or translates a message itself through `getTranslator()`.
 The notification title is therefore text before it reaches `Notification::title()`, and the flash carries it in the sender's locale.
 The two form actions' labels are handed to `Action::label()` as messages, which the action's label getter translates.
-The `Create` label and the `Create` breadcrumb are two keys with one English text, as Filament has them.
 
 ### The record page's schema is named `form`, and `schemas()` is narrowed to it
 

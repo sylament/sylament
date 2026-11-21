@@ -103,14 +103,14 @@ A consumer who wants one wires it themselves with `emitUp()` + a `#[LiveListener
 
 `getTitle()`, `getBadge()` and `getBadgeTooltip()` are static, so no translator sits on the object that supplies them, and each return type widens to take a `TranslatableInterface`.
 The tab built by `getTabComponent()` translates them through its own getters, and `makeTable()` hands the title to the table's heading as it is, which the table's heading getter translates, so the tab, the heading and every other reader receive text.
-A static property cannot hold a message, so `$title` and `$badge` stay `?string` and `$badgeTooltip` `string|Markup|null`, and a manager supplies a message by overriding the getter.
+`$title` and `$badge` stay `?string` and `$badgeTooltip` `string|Markup|null`, and a manager supplies a message by overriding the getter ([i18n.md](../../internals/i18n.md#where-no-translator-sits-on-the-source-the-reader-translates)).
 [`RelationGroup`](relation-group.md#the-label-may-be-a-message-translated-in-its-getter) takes a message label through its setter.
 
 ### The manager stands beside the resource page base rather than under it
 
-Filament's `RelationManager` extends `Livewire\Component`; ours implements the three host contracts directly and composes `DefaultActionTrait` + `HasActions` + `HasSchemas` + `HasTable` beside the shared trait.
+Filament's `RelationManager` extends `Livewire\Component`; ours implements the three host contracts directly and composes `DefaultActionTrait` + `HasActions` + `HasSchemas` + `HasTable` + `HasTranslator` beside the shared trait.
 It deliberately does **not** extend [`Resources\Pages\Page`](resource-pages.md): that base answers route and navigation statics for a route a manager does not have.
-The cost is a few duplicated members (`getComponentName()`, `getTemplate()`, the registry setter), and it is the same trade Filament makes.
+The cost is a few duplicated members (`getComponentName()`, `getTemplate()`, the `#[Required]` registry and translator setters), and it is the same trade Filament makes.
 
 ### The owner rides the wire as a route key behind a dehydration bridge
 

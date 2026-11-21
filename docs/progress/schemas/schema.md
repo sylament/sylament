@@ -53,7 +53,7 @@ The host contract it binds to is [`InteractsWithSchemas`](interacts-with-schemas
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | [detail](component.md#the-render-wrappers-client-half-waits-on-the-live-component-state-runtime) |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
 | [`Cloneable`](../../../packages/schemas/src/Concerns/Cloneable.php) (`getClone()`, `afterCloned()`, `cloneComponents()`) | [`Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Concerns/Cloneable.php) | done | — | [diverges](#clonecomponents-never-stamps-the-original-and-always-resets-the-cache) |
-| [`components()` / `getComponents(bool $withActions = true, bool $withHidden = true)`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | done | — | [semantics](#child-coercion-and-action-children-follow-filaments-unions) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) · [diverges](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization) |
+| [`components()` / `getComponents(bool $withActions = true, bool $withHidden = true)`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | done | — | [semantics](#child-coercion-and-action-children-follow-filaments-unions) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) · [diverges](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization) · [semantics](#a-message-child-is-an-escaped-text) |
 | [`getAction(string $actionName, ?string $nestedContainerKey = null)`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | done | — | [semantics](#getaction-searches-visible-components-depth-first-by-nested-key) |
 | [`getComponent(string\|Closure $findComponentUsing, bool $withActions = true, bool $withHidden = false, bool $isAbsoluteKey = false)`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | done | — | [diverges](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization) |
 | `getComponent()`'s `$skipComponentsChildContainersWhileSearching` arm | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | todo | — | [detail](#getcomponent-lacks-the-skip-child-containers-arm) |
@@ -115,13 +115,13 @@ The schema-tier `getLiveComponentKey()` has its prerequisite, the host id [`getS
 
 ### Child coercion and action children follow Filament's unions
 
-`getComponents()` resolves a `components()` closure lazily, stamps each child's container, coerces a `string` or a message child to `Text` and any other non-component to `Html`, and filters on visibility.
+`getComponents()` resolves a `components()` closure lazily, stamps each child's container, [coerces a child that is no component](#a-message-child-is-an-escaped-text), and filters on visibility.
 An `Action` or `ActionGroup` child is passed through the container's `modifyAction()`/`modifyActionGroup()` hook, stamped `schemaContainer($this)` and left uncoerced; `getComponents()` and `getFlatComponents()` drop them when `$withActions` is false, and `getFlatComponents()` appends them but never descends into them.
 The state walks in `HasState` and [`HasSchemas`](has-schemas.md) and `getComponentByStatePath()` all pass `withActions: false`, and both accessors declare PHPStan conditional return types, so those call sites keep `array<Component>` inference.
 
 ### A message child is an escaped Text
 
-`getComponents()` coerces a `TranslatableInterface` child to a `Text`, the way it coerces a string, so the translated message is escaped like any text; a parameter carrying user data reaches the page as text, and only a `Markup` child becomes raw `Html`.
+`getComponents()` coerces a `string` or a `TranslatableInterface` child to a `Text` and any other non-component to `Html`, so a translated message is escaped like any text; a parameter carrying user data reaches the page as text, and only a `Markup` child becomes raw `Html`.
 
 ### `getAction()` searches visible components depth-first by nested key
 

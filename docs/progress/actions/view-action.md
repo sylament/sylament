@@ -45,7 +45,7 @@ Nothing in `ViewAction` names a form, so neither changes this class.
 
 ### The footer is a Close button because nothing else is there
 
-`modalSubmitAction(false)` makes `getModalSubmitAction()` answer `null`, because the evaluated `false` is not an `Action`, so the `submit` key never enters `getModalFooterActions()`; `modalCancelAction(fn (Action $action): Action => $action->label('Close'))` relabels the one that remains.
+`modalSubmitAction(false)` makes `getModalSubmitAction()` answer `null`, because the evaluated `false` is not an `Action`, so the `submit` key never enters `getModalFooterActions()`; a `modalCancelAction()` closure relabels the one that remains with the Close message.
 There is no guard anywhere against *calling* the action: `getAction()` is `null`, so a mounted `ViewAction` that somehow reached `callMountedAction()` evaluates nothing and reports the default status.
 Filament is identical, and the port keeps it: a throw would be a divergence with no failure mode behind it.
 
@@ -53,9 +53,9 @@ Filament is identical, and the port keeps it: a throw would be a divergence with
 
 ### The texts are catalogue messages under Filament's keys
 
-`view.single.label`, `view.single.modal.heading` (`View {label}`) and the cancel action's `view.single.modal.actions.close.label` (`Close`) are the messages Filament's [`resources/lang/en/view.php`](../../../vendor/filament/actions/resources/lang/en/view.php) keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records for the create side.
+The texts follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape under Filament's [`view.php`](../../../vendor/filament/actions/resources/lang/en/view.php) keys, the cancel action's `view.single.modal.actions.close.label` (`Close`) among them.
 
-The heading's `{label}` argument is [`Action::getRecordTitle()`](interacts-with-record.md), so it is a closure, with the same bare-verb fallback [`EditAction`](edit-action.md#the-texts-are-catalogue-messages-under-filaments-keys) carries under the port-added key `view.single.modal.heading_bare`.
+The heading's `{label}` argument is [`Action::getRecordTitle()`](interacts-with-record.md), so it is a closure, with the same bare-verb fallback [`EditAction`](edit-action.md#the-texts-are-catalogue-messages-under-filaments-keys) carries.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

@@ -57,15 +57,15 @@ It is wanted for parity once the TableSelect field exists: the field, its `Modal
 
 ### The catalogue holds the keys forms' code reads
 
-FrameworkBundle registers the bundle's `translations/` directory by itself, so the bundle wires nothing.
-`sylament-forms+intl-icu.en.yaml` holds every text the ported components render, under Filament's key paths and with Filament's English, with these exceptions.
-Port-added keys, for texts Filament builds another way: `components.file_upload.max_files_message`, `components.file_upload.errors.*` and `components.tags_input.actions.delete_tag.label` (`Delete: {tag}`, one message where Filament joins `Delete` and the tag in its template).
-English that differs from Filament's: `components.select.search_prompt` keeps its ellipsis, `components.file_upload.editor.svg.messages.confirmation` holds a real newline, and `components.select.max_items_message` and `components.repeater.actions.add.label` use ICU arguments where Filament uses `:count` and `:label`.
-Filament's keys for the unported surface (`Builder`, `RichEditor`, `MarkdownEditor`, `ColorPicker`, the reorder announcements and `required_description`) ship nowhere until a host exists.
+The bundle [wires nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and `sylament-forms+intl-icu.en.yaml` holds every text the ported components render.
+Its port-added keys and its English differences are recorded where the code using them is: [file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages), [tags-input.md](tags-input.md) and [can-be-searchable.md](can-be-searchable.md).
+Filament's keys for the unported surface ship nowhere until a host exists: `Builder`, `RichEditor`, `MarkdownEditor`, `ColorPicker` and `ModalTableSelect` (`modal_table_select.*`), the JS-rendered field's `js_field.failed_to_load`, and `KeyValue`'s keyboard move actions and reorder announcements (`key_value.actions.move_up`, `move_down`, `key_value.reordering.*`).
+Some keys of ported fields ship nowhere because no ported branch renders them: `select.error_message`, `file_upload.placeholder` and the date-time picker's `month_select`, `year_input`, `hour_input`, `minute_input` and `second_input` labels, which belong to Filament's JS pickers and panels, and the `*.required_description` texts, which wait on [the accessibility members](field.md#the-accessibility-members-are-not-ported).
+`tags_input.actions.delete.label` is replaced by a port-added key ([tags-input.md](tags-input.md)).
 The one text a component renders as a literal is `Select::boolean()`'s placeholder `-`, a symbol Filament passes as a literal too.
-`validators.en.yaml` holds the English id of each constraint message in `Validation/`, the `notRegex()` and `notIn()` messages and the tampering refusal, and one entry for `prohibits()`, *This value cannot be combined with {{ others }}.*, whose labels travel as the constraint's `others` parameter so the id stays fixed.
+`validators.en.yaml` holds the English id of each constraint message in `Validation/`, the `notRegex()` and `notIn()` messages, the tampering refusal ([file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages)) and the `prohibits()` message ([can-be-validated.md](can-be-validated.md)).
 *This value should not be blank.* and *This value is not a valid date.* are Symfony's own and need no entry.
-Filament's `validation.distinct.*` and `validation.tampered_file_path` keys word the same refusals differently, and the toolkit's English wins.
+Filament's `validation.distinct.*` keys word the same refusal differently, and the toolkit's English wins.
 
 ### Each field's script ships with its field, and the bundle registers the built directory once
 
@@ -218,8 +218,7 @@ Ours is [`file_upload_controller.ts`](../../../packages/forms/assets/src/control
 - **The `<input>` is captured once.**
   `FilePond.create()` detaches the element it replaces, so `this.inputTarget` throws afterwards while `FilePond.destroy()` needs that same element (and restores it, which is what lets a later `connect()` find the target again).
   Everything downstream reads the captured reference.
-- **The controller's texts are Stimulus values.**
-  The four refusal texts and the type-undetected text reach the controller from `components.file_upload.errors.*`, the type-undetected one with a `__NAME__` token, so the controller keeps no English; [file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages) lists the rest.
+- **The controller's texts are Stimulus values**, filled from the catalogue as [file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages) lists them.
   `The file could not be uploaded.` is Filament's; `The file could not be removed.`, `The file could not be loaded.` and `The files could not be reordered.` are ours, because Filament's `revert`/`remove` never call FilePond's `error` at all, its `load` hands FilePond whatever body a failed response carries, and its `reorderfiles` handler `await`s the server inside an event listener nothing catches, a silent failure every time.
 
 Two shipped-type gaps are worked around in the file and will bite anyone upgrading FilePond: `initfile` is a real event (`filepond.esm.js:8842`) missing from the `FilePondEvent` union, and `maxFileSize`/`minFileSize` are `Type.INT` options declared `string`, so the controller passes the byte ceiling as a decimal string, which FilePond parses back to exactly that integer.

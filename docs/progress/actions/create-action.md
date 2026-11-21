@@ -175,13 +175,12 @@ It is **skipped**, not blocked: nothing will make it necessary.
 
 ### The texts are catalogue messages under Filament's keys
 
-Every user-visible string is a `TranslatableMessage` in the `sylament-actions` domain, kept in [`sylament-actions+intl-icu.en.yaml`](../../../packages/actions/translations/sylament-actions+intl-icu.en.yaml) under the key Filament's [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php) gives it: `create.single.label` (`New {label}`) for the trigger, `create.single.modal.heading` (`Create {label}`), `create.single.modal.actions.create.label`, `create.single.modal.actions.create_another.label` and `create.single.notifications.created.title`.
-Filament's `:label` placeholders are ICU `{label}` arguments, and the getters translate the message, so a locale or an override needs no change to the action.
+Every user-visible string is a `TranslatableMessage` in the `sylament-actions` domain, from Filament's [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php): the trigger's `create.single.label` (`New {label}`), the heading, the two submit labels and the notification title, which the getters translate.
 
 The two `{label}` arguments are fed by [`Action::getRecordLabel()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and `getTitleCaseRecordLabel()`, which is why the label and the heading are closures: neither label is known until the action is hosted.
 Both carry a fallback Filament does not have: when nothing names a record class the label is `null`, and Filament would render a trailing-space `New ` and `Create `, so the port falls back to the bare verb for each.
 That fallback is reachable only by an action with no record class from any source, which is a misconfiguration everywhere except url mode, where the trigger's text is all that renders.
-The bare verbs are port-added keys beside Filament's in the same shape, `create.single.label_bare` and `create.single.modal.heading_bare`, rather than a branch folded into Filament's keys, so Filament's locales still map one-to-one; they are separate keys from the submit button's `Create`, because a heading and a button translate differently in inflected languages.
+The bare verbs are port-added keys, `create.single.label_bare` and `create.single.modal.heading_bare`, separate from the submit button's `Create`, because a heading and a button translate differently in inflected languages.
 Every sibling action follows the shape: `<verb>.single.label`, `<verb>.single.modal.heading`, `<verb>.single.modal.heading_bare` and the notification title, with the bulk classes under `<verb>.multiple.…`.
 
 ### Icons are literal heroicon names with no alias indirection

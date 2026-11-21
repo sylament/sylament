@@ -24,7 +24,7 @@ owns:
 ### The empty-state texts read the record labels
 
 `getEmptyStateHeading()` falls back to the `table.empty.heading` message (*"No {model}"*) over the plural record label, and `Table::setUp()` stores a default `emptyStateDescription()` closure answering the `table.empty.description` message (*"Create a {model} to get started."*) over the record label when the table carries an action named `create`, and `null` otherwise.
-Both are Filament's keys and English in the `sylament-tables` catalogue, and both interpolate what the table's own getters answer, so a `recordLabel()` given as a message is translated before it names the records.
+Both interpolate what the table's own getters answer, so a `recordLabel()` given as a message is translated before it names the records.
 The heading and the description given as a message are translated by their getters, as are the [header texts](table.md#the-header-and-the-record-labels-may-be-messages-translated-in-the-getter).
 
 The heading says `No records` only where the table has no record class to read — a `records()` table, or one configured with neither; a `query()` table over `Song` says `No songs`, through [`plural()`](../support/helpers.md).

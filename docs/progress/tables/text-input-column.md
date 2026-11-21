@@ -52,6 +52,7 @@ Moving the class onto the input also needs the `.sy-align-*` arms that forms' in
 
 Filament declares the affix setters and getters on the column rather than composing forms' `HasAffixes`, whose prefix and suffix actions a table cell has nowhere to put, and the port follows.
 So `prefix()` and `suffix()` take an `isInline` second argument that forwards to `inlinePrefix()` / `inlineSuffix()`, and `prefixIcon()` / `suffixIcon()` do the same: one setter call decides both the affix and its placement.
+Both affixes may be messages, which the column's `getPrefixLabel()` and `getSuffixLabel()` translate.
 
 ### The placeholder is the input's, not the empty-cell copy
 
@@ -63,10 +64,6 @@ The setter, the getter and the closure evaluation are the same trait.
 
 The cell renders `<twig:SylamentSupport:InputWrapper>`, the input chrome every text-like forms control renders inside, around `input.sy-fo-input`, without the `id`, `name` and `data-model` a schema field carries and with an `aria-label` taken from the column label with any markup stripped.
 The wrapper's `valid` prop is what paints the refusal ring, and its affix props render the prefix and suffix labels and icons.
-
-### The affixes may be messages
-
-`prefix()` and `suffix()` take a message, and `getPrefixLabel()` and `getSuffixLabel()` translate it.
 
 ## Divergences
 

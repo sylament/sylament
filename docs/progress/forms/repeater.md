@@ -100,6 +100,7 @@ Because the descent reads the item schemas the default produced, a defaults fill
 `getAddActionLabel()` falls back to `components.repeater.actions.add.label`, `Add to {label}`, with the field's label, its first letter lower-cased, as `label`, where Filament passes `Str::lcfirst($this->getLabel())`.
 The lower-casing is English-oriented and stays out of the message, so a locale whose labels keep their case needs `addActionLabel()` set.
 A `Markup` label reaches the parameter as its string, which the action's label escapes.
+The structural actions' labels (delete, clone, move up and down, reorder, collapse and expand, collapse all and expand all, add between) are catalogue messages under `components.repeater.actions.*` too, and `addActionLabel()`, `addBetweenActionLabel()`, `labelBetweenItems()`, `itemLabel()` and `TableColumn::label()` each take a message.
 
 ### A structural action fires the repeater's afterStateUpdated hooks itself
 
@@ -219,7 +220,7 @@ The demo's table card is the live example, declaring `Hidden::make('id')` first 
 The column's `verticalAlignment()` reaches the cell, not the header; its `alignment()`, `width()` and `wrapHeader()` reach the header, not the cell.
 
 The reorder and actions columns are conditional in their own right: the reorder header cell renders only with more than one item *and* some reorder surface on, and the actions header cell only when the row can carry an extra item action, a clone or a delete.
-Each header cell carries an `sy-sr-only` label ("Reorder", "Actions") so the table is still readable to a screen reader.
+Each header cell carries an `sy-sr-only` label, the `components.repeater.columns.reorder.label` and `.actions.label` messages, so the table is still readable to a screen reader.
 An item schema that contains anything other than a schema component — an `Action`, say — is refused with a `LogicException` naming the class, because there is no cell such a thing could sit in.
 
 ### A save records which collection key each item was written to

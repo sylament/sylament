@@ -34,18 +34,18 @@ Filament's carrier is Laravel's `LengthAwarePaginator`, a framework class Sylame
 | [Simple paging: the null-total branch](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
 | Cursor paging: the `CursorPaginator` arm | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([can-paginate-records.md](../tables/can-paginate-records.md#cursor-pagination-waits-on-a-keyset-carrier)) | — |
 | [Translated copy: the overview, the labels and the per-page choices](../../../packages/support/templates/components/Pagination/index.html.twig) | `__('filament::components/pagination.*')` and `trans_choice()` in the same view | done | — | [diverges](#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths) |
-| Locale-formatted page numbers on the buttons and the per-page choices | `Number::format()` in the same view | todo | — | [detail](#the-page-buttons-and-the-per-page-choices-print-raw-digits) |
+| Locale-formatted page numbers on the buttons and in the `Go to page` label | `Number::format()` in the same view | todo | — | [detail](#the-page-buttons-print-raw-digits) |
 | [Styles: the footer, the overview, the item list and its items](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination`, `.fi-pagination-overview`, `.fi-pagination-items`, `.fi-pagination-item*`](../../../vendor/filament/support/resources/css/components/pagination.css) | done | — | [diverges](#the-item-styles-collapse-filaments-three-elements-onto-one) |
 | [Styles: the per-page select and its label](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination-records-per-page-select*`](../../../vendor/filament/support/resources/css/components/pagination.css) + input wrapper and select | in progress | — | [detail](#the-selects-compact-twin-is-the-last-unported-arm) · [diverges](#the-per-page-select-carries-the-input-wrappers-chrome-because-it-has-no-wrapper) |
 | Vendor's responsive layout arms (`hidden` bases, `@4xl:`/`md:` swaps, `@container`, both `@supports` blocks) | [`pagination.css`](../../../vendor/filament/support/resources/css/components/pagination.css) | skipped | — | [diverges](#the-responsive-arms-are-dropped-with-the-mobile-layout-they-serve) |
 
 ## Details
 
-### The page buttons and the per-page choices print raw digits
+### The page buttons print raw digits
 
 The overview formats its three numbers through ICU's `number` type, so `5000` reads `5,000` in English, as Filament's `Number::format()` does.
-The numbers a button shows and the per-page choices still print as raw digits, and the `Go to page {page}` label takes `page` untyped for the same reason: it names the button's own text, which has no formatter, so the two stay in step.
-A locale-aware formatter on all three changes each button's text and its label together.
+The numbers a button shows still print as raw digits, where Filament formats each button's text and the page in its `go_to_page` label with `Number::format()`; the per-page choices print raw in both.
+The `Go to page {page}` label takes `page` untyped for the same reason: it names the button's own text, which has no formatter, so the two stay in step, and a locale-aware formatter changes the button's text and its label together.
 
 ### The component renders one of Filament's two layouts
 

@@ -60,6 +60,7 @@ Hoisting it into `Query\SearchTermSplitter` — a pure static, the tier tables' 
 
 Filament walks the table's columns and reads each one's term out of the bag, so its chips follow declaration order and carry the term as typed.
 The port walks `getTableColumnSearches()`, the flat, trimmed map keyed by column name, so the chips follow the bag's key order and carry the **trimmed** term; keying is what lets `getFilterIndicators()` pair each chip with its column.
+Each chip is the port-added `table.fields.search.column_indicator` message, `{column}: {term}`, one message where Filament joins the label and the term in code, with a `Markup` column label reduced to its text.
 
 ### A full seed replaces Filament's reserved-key list, and a blank is kept
 

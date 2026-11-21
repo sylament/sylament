@@ -31,5 +31,5 @@ No stylesheet rule matches either.
 
 ### `make()` takes the full `components()` union
 
-Filament types `Group::__construct()` as `array | Closure`; ours takes `components()`' union verbatim, so a single component, a `Schema`, a string or a `Markup` all pass.
+Filament types `Group::__construct()` as `array | Closure`; ours takes `components()`' union verbatim.
 That is the [components()/childComponents() accept a single component](component.md#componentschildcomponents-accept-a-single-component-not-just-an-array) divergence reaching the factory, because the factory cannot be narrower than the setter it forwards to.

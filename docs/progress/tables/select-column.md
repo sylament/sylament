@@ -18,8 +18,8 @@ Everything [`Column`](column.md) carries is tracked there, and the write-back se
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Editable` — `validate()` + `updateState()`](../../../packages/tables/src/Columns/Contracts/Editable.php) | [`Contracts\Editable`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | done | — | [has-columns.md](has-columns.md#surface) |
-| [`setUp()` — `disabledClick()` and the default placeholder](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::setUp()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [tables-bundle.md](tables-bundle.md#the-catalogue-is-filaments-table-lang-file-under-the-sylament-tables-domain) |
-| [`options()` / `getOptions()`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Forms\Concerns\HasOptions`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [diverges](#the-option-comparison-reads-the-client-state-not-getoptioncomparisonstate) |
+| [`setUp()` — `disabledClick()` and the default placeholder](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::setUp()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [tables-bundle.md](tables-bundle.md#the-catalogue-is-filaments-table-lang-file-under-the-sylament-tables-domain) · [semantics](#the-default-placeholder-and-the-option-labels-may-be-messages) |
+| [`options()` / `getOptions()`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Forms\Concerns\HasOptions`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [diverges](#the-option-comparison-reads-the-client-state-not-getoptioncomparisonstate) · [semantics](#the-default-placeholder-and-the-option-labels-may-be-messages) |
 | [`rememberOptions()` / `areOptionsRemembered()` — memoise a closure option map](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::rememberOptions()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [semantics](#remembered-options-are-memoised-per-column-instance-not-per-row) |
 | [`enum()` and its option/label derivation](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Forms\Concerns\HasEnum`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | — | — |
 | [`disableOptionWhen()` / `isOptionDisabled()` / `getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Forms\Concerns\CanDisableOptions`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#the-only-state-cast-a-column-carries-is-the-enum-arms) |
@@ -53,6 +53,10 @@ That control is forms' [select engine](../forms/forms-bundle.md#the-select-contr
 The relationship family also needs a Doctrine translation of Filament's Eloquent relation walk.
 
 ## Semantics
+
+### The default placeholder and the option labels may be messages
+
+`setUp()` seeds the placeholder with the `table.columns.select.placeholder` message, and an option label may be a message, which forms' [`HasOptions`](../forms/has-options.md#an-option-label-may-be-a-message-translated-label-by-label) translates label by label.
 
 ### Remembered options are memoised per column instance, not per row
 

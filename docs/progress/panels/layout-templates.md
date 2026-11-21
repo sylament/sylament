@@ -23,15 +23,15 @@ The simple shell (`SimpleLayout`, `SimpleHeader`) is [simple-page.md](simple-pag
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Layout`](../../../packages/panels/templates/components/Layout/index.html.twig) — the shell root, skip link, overlay and `<main>` | [`layout/index.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/index.blade.php) | done | — | [simple-page.md](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) · [custom-pages.md](custom-pages.md#a-third-shell-layout-is-a-document-override-not-a-getlayout-value) |
-| [`Sidebar`](../../../packages/panels/templates/components/Sidebar/index.html.twig) | [`livewire/sidebar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/sidebar.blade.php) | done | — | [diverges](#the-shell-is-not-live) |
+| [`Layout`](../../../packages/panels/templates/components/Layout/index.html.twig) — the shell root, skip link, overlay and `<main>` | [`layout/index.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/index.blade.php) | done | — | [simple-page.md](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) · [custom-pages.md](custom-pages.md#a-third-shell-layout-is-a-document-override-not-a-getlayout-value) · [diverges](#the-shells-fixed-texts-are-catalogue-keys) |
+| [`Sidebar`](../../../packages/panels/templates/components/Sidebar/index.html.twig) | [`livewire/sidebar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/sidebar.blade.php) | done | — | [diverges](#the-shell-is-not-live) · [diverges](#the-shells-fixed-texts-are-catalogue-keys) |
 | [`SidebarGroup`](../../../packages/panels/templates/components/SidebarGroup/index.html.twig) | [`sidebar/group.blade.php`](../../../vendor/filament/filament/resources/views/components/sidebar/group.blade.php) | done | — | [semantics](#a-sidebar-groups-label-is-a-disclosure-only-when-the-group-is-collapsible) · [diverges](#sidebar-group-ids-are-positional-not-derived-from-the-label) |
 | [`SidebarItem`](../../../packages/panels/templates/components/SidebarItem/index.html.twig) | [`sidebar/item.blade.php`](../../../vendor/filament/filament/resources/views/components/sidebar/item.blade.php) | done | — | — |
-| [`Topbar`](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php) | done | — | [diverges](#the-shell-is-not-live) · [diverges](#one-toggle-button-replaces-v5s-shownhidden-pair) |
+| [`Topbar`](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php) | done | — | [diverges](#the-shell-is-not-live) · [diverges](#one-toggle-button-replaces-v5s-shownhidden-pair) · [diverges](#the-shells-fixed-texts-are-catalogue-keys) |
 | The mobile drawer's open state | `$store.sidebar` and `fi-sidebar-open` | done | — | [diverges](#the-drawer-state-class-sits-on-the-shell-root-not-on-the-sidebar) |
 | [`Logo`](../../../packages/panels/templates/components/Logo/index.html.twig) | [`logo.blade.php`](../../../vendor/filament/filament/resources/views/components/logo.blade.php) | done | — | [diverges](#the-brand-settings-thread-down-as-props-where-filaments-blades-read-the-facade) |
 | [`ThemeSwitcher`](../../../packages/panels/templates/components/ThemeSwitcher/index.html.twig) | [`theme-switcher/`](../../../vendor/filament/filament/resources/views/components/theme-switcher/index.blade.php) | done | — | [semantics](#the-theme-switchers-pressed-state-is-client-only-and-survives-only-because-the-shell-is-outside-the-live-root) · [semantics](#the-theme-switchers-three-buttons-are-written-out-not-looped) |
-| [`UserMenu`](../../../packages/panels/templates/components/UserMenu/index.html.twig) — the dropdown holding the theme switcher | [`user-menu.blade.php`](../../../vendor/filament/filament/resources/views/components/user-menu.blade.php) | done | — | [diverges](#the-theme-switchers-dropdown-is-not-teleported) |
+| [`UserMenu`](../../../packages/panels/templates/components/UserMenu/index.html.twig) — the dropdown holding the theme switcher | [`user-menu.blade.php`](../../../vendor/filament/filament/resources/views/components/user-menu.blade.php) | done | — | [diverges](#the-theme-switchers-dropdown-is-not-teleported) · [diverges](#the-shells-fixed-texts-are-catalogue-keys) |
 | The user menu's account half — the user name, avatar, `getUserMenuItems()` and the topbar's `auth()->check()` gate | same | blocked | auth | [detail](#the-user-menu-is-a-stub-until-auth-is-ported) |
 | The panel's theme toggles — `hasDarkMode()`, `hasDarkModeForced()`, `hasThemeSwitcher()`, `getDefaultThemeMode()` | the gates in `user-menu.blade.php` and `theme-switcher/index.blade.php` | todo | — | [detail](#the-user-menu-is-a-stub-until-auth-is-ported) |
 | [`PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) — the constants the shell, the dashboard, global search, the band and the related-records page read | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | done | — | [semantics](#the-shells-icons-are-overridable-aliases) |
@@ -123,6 +123,7 @@ Ours is `sy-pa-sidebar-group-items-<loop index>`, assigned by `Sidebar` from the
 It is stable per render and needs no label at all (a group may have none), and it rests on the shell's **single-sidebar-per-page** assumption — the same assumption the singleton ids `sy-pa-sidebar`, `sy-pa-topbar` and `sy-pa-main` already encode.
 Revisit the moment two sidebars can render on one page: groups at the same index would then collide, pointing one group's button at another's item list.
 The label-hash approach is the fix if that day comes — noting that collapse *persistence* is keyed the other way, on `data-group-label`, so two groups sharing a label share their stored collapse state and a renamed group loses what it had stored, which is inherent to keying on the label and a property Filament's label-slug ids carry too.
+The label is the translated text the template renders, so a locale switch forgets a group's stored state as a rename does.
 
 ### The drawer state class sits on the shell root, not on the sidebar
 
@@ -153,12 +154,10 @@ Revisit if the topbar ever gains a vertical clip of its own.
 The `<img>` alt is the `layout.logo.alt` message, `{name} logo`, trimmed so a panel with no brand name reads `logo`, where Filament passes `:name logo` the name untrimmed.
 When `darkModeBrandLogo()` is set both renditions render, `sy-pa-logo-light` and `sy-pa-logo-dark` — Filament's `fi-logo-light`/`fi-logo-dark` pair, CSS-toggled.
 
-### The shell's fixed texts are catalogue keys, two of them port-added
+### The shell's fixed texts are catalogue keys
 
 Every fixed text the layout, the topbar, the sidebar, the theme switcher, the user menu and the global search render is a `'<key>'|trans(domain: 'sylament-panels')` call, with Filament's key path where Filament has one ([panel.md](panel.md#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) lists the keys whose English differs).
-The skip link reads one key in both shells.
-The topbar's one toggle button reads the port-added `layout.actions.sidebar.toggle.label`, because Filament's pair is an expand and a collapse label for its two buttons.
-A sidebar group's collapsed state persists under the label text the template renders, so a translated label is a different key per locale.
+The skip link reads one key in both shells, and the topbar's one toggle button reads [a port-added key](panel.md#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders).
 
 ### `USER_MENU_TRIGGER` is an addition, not a rename
 

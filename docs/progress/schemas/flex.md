@@ -54,7 +54,7 @@ The parameter stays **required**, so the API reads the same at the call site; `s
 
 Filament wraps each non-action child in a `div` carrying `x-data="filamentSchemaComponent({path, containerPath, $wire})"`, an `x-init` that installs `$wire.watch` callbacks for `afterStateUpdatedJs()`, and an `x-bind:class` toggling `fi-hidden` from `hiddenJs`/`visibleJs`.
 None of that arm exists in this port — there is no `hiddenJs`/`visibleJs` ([`CanBeHidden`](can-be-hidden.md)), no `afterStateUpdatedJs`, and no per-component client state object — so the wrapper is a bare `div` that carries `sy-growable` or nothing.
-A child hidden on the server is left out on both sides, and only Filament's client-side visibility condition adds `fi-hidden`, so the ported `> .fi-hidden` rule never matches ([styles.md](styles.md#flex-css-keeps-the-hidden-child-rule-the-port-never-emits)).
+A child hidden on the server is left out on both sides, and only Filament's client-side visibility condition adds `fi-hidden`, so the ported `> .sy-hidden` rule never matches ([styles.md](styles.md#flex-css-keeps-the-hidden-child-rule-the-port-never-emits)).
 The [`Schema` partial](schema.md#the-schema-renders-visible-children-only-without-hidden-placeholders) makes the same call for the same reasons, and both reverse together if the client-side state arm is ported.
 
 ### `Flex` implements `CanEntangleWithSingularRelationships`, which Filament's `Flex` omits

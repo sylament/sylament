@@ -1,6 +1,7 @@
 ---
 description: The shared copy-to-clipboard Stimulus controller and its stylesheet, the port of the inline Alpine click handler Filament writes in every copyable component.
 ports:
+  - vendor/filament/support/resources/js/components/copyable.js
   - vendor/filament/tables/src/Columns/TextColumn.php
   - vendor/filament/tables/resources/css/columns/color.css
 owns:
@@ -19,8 +20,9 @@ It is host-agnostic, with no live action, no `@symfony/ux-live-component` import
 | --- | --- | --- | --- | --- |
 | [The click handler → a Stimulus controller](../../../packages/support/assets/src/controllers/clipboard_controller.ts) | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) `x-on:click.prevent.stop` | done | — | — |
 | [`navigator.clipboard.writeText()`](../../../packages/support/assets/src/controllers/clipboard_controller.ts) | the same call, inline in that handler | done | — | [semantics](#a-non-secure-context-is-a-no-op-not-an-error) |
-| [Keyboard operability (Enter / Space) + the stamped `tabindex`](../../../packages/support/assets/src/controllers/clipboard_controller.ts) | — (Filament's copyable element has neither) | done | — | [diverges](#the-control-is-keyboard-operable-and-its-tabindex-is-stamped-client-side) |
+| [Keyboard operability (Enter / Space) + the stamped `tabindex`](../../../packages/support/assets/src/controllers/clipboard_controller.ts) | [`copyable.js`](../../../vendor/filament/support/resources/js/components/copyable.js)'s `isStandalone` bindings | done | — | [diverges](#the-control-is-keyboard-operable-and-its-tabindex-is-stamped-client-side) |
 | [The confirmation](../../../packages/support/assets/src/controllers/clipboard_controller.ts) | `$tooltip(message, { timeout })` | done | — | [semantics](#the-live-region-is-one-element-for-the-whole-page) · [diverges](#the-confirmation-is-a-css-chip-plus-an-aria-live-region-not-a-tooltip) |
+| The failure message | `copyable.js`'s `catch` around `writeText()`, `components/copyable.messages.failed` | todo | — | [detail](#a-failed-copy-shows-nothing-where-filament-says-could-not-copy) |
 | [`.sy-copyable` cursor + focus ring](../../../packages/support/assets/src/styles/components/copyable.css) | [`columns/color.css`](../../../vendor/filament/tables/resources/css/columns/color.css) `&.fi-copyable` | done | — | — |
 
 ## Contract
@@ -37,12 +39,19 @@ Consumers build against this.
 | Accessible name | the consuming template's, never the controller's ([semantics](#a-contentless-copy-control-owes-its-own-aria-label)) |
 | While confirming | the element carries `data-copied` and `data-copy-message="<message>"` for `duration` ms, and one `div.sy-copyable-live-region` at the end of `<body>` carries the message as its text |
 
+## Details
+
+### A failed copy shows nothing, where Filament says *Could not copy*
+
+Filament's `copy()` catches a rejected `writeText()` and shows `components/copyable.messages.failed` (*Could not copy*) the way it shows the confirmation.
+The port's controller returns without a word, so neither the chip nor the live region tells the user the copy did not happen; porting it adds the `failed` key to the `sylament` catalogue and a second message value to the controller.
+
 ## Semantics
 
 ### A non-secure context is a no-op, not an error
 
 `navigator.clipboard` is undefined outside a secure context (plain `http://` on anything but `localhost`), so `copy()` returns before writing and nothing is stamped: no throw, no confirmation, no console noise.
-A rejected `writeText()` (the permission denied, the document not focused) takes the same path: the promise is awaited inside a `try`, and a failure returns without confirming.
+A rejected `writeText()` (the permission denied, the document not focused) takes the same path: the promise is awaited inside a `try`, and a failure returns without confirming, where Filament shows *Could not copy* ([detail](#a-failed-copy-shows-nothing-where-filament-says-could-not-copy)).
 Confirmation therefore means the write happened, which is the property the `aria-live` announcement rests on.
 
 ### The live region is one element for the whole page
@@ -54,22 +63,22 @@ Clearing is guarded on the region's text still equalling this controller's messa
 ### A contentless copy control owes its own `aria-label`
 
 `role="button"` names itself from the element's text content, which is right for a text item or a badge pill and empty for a contentless control.
-[`ColorColumn`](../tables/color-column.md)'s swatch is the live case, a `<span>` painted by `background-color` with nothing inside it, so its partial writes `aria-label="Copy <colour>"` of its own.
+[`ColorColumn`](../tables/color-column.md)'s swatch is the live case, a `<span>` painted by `background-color` with nothing inside it, so its partial writes `aria-label` of its own, from `components/copyable.label` (*Copy {label}*, in `sylament`) or [the port-added fallback](../tables/color-column.md#an-unsanitizable-value-paints-nothing-and-a-plain-swatch-names-nothing).
 The controller stamps no name, because only the template knows what the copy is of.
 
 ## Divergences
 
 ### The confirmation is a CSS chip plus an `aria-live` region, not a tooltip
 
-Filament calls Alpine's `$tooltip(message, { theme, timeout })` magic, which mounts a tippy.js popper.
+Filament's `filamentCopyable` shows the message in a tippy.js tooltip and also writes it into a `span.fi-sr-only[role=status][aria-live=polite]` it places after each standalone copyable element.
 Neither tippy nor Alpine ships here, and the toolkit's tooltip shape is the native `title` attribute, which cannot be shown programmatically.
-The port therefore splits the job in two: the element stamps `data-copied` + `data-copy-message` and `copyable.css` renders the chip with `&[data-copied]::after { content: attr(data-copy-message) }`, while the message is also written into a visually hidden `aria-live="polite"` region so the confirmation is announced rather than only drawn.
-Filament's tippy tooltip is both at once; two mechanisms are what it costs to get the same outcome without the dependency.
+The port therefore draws the chip in CSS: the element stamps `data-copied` + `data-copy-message` and `copyable.css` renders it with `&[data-copied]::after { content: attr(data-copy-message) }`.
+The announcement is a live region in both; the port's is [one for the whole page](#the-live-region-is-one-element-for-the-whole-page) where Filament's is one per element.
 
 ### The control is keyboard operable, and its `tabindex` is stamped client-side
 
-Filament's copyable element is a `div` or `span` with a click handler, no `tabindex` and no key bindings; its own source comments the gap ([`ColorColumn.php`](../../../vendor/filament/tables/src/Columns/ColorColumn.php)), and it still styles `:focus-visible` for a focus it can never receive.
-The port renders `role="button"` server-side, binds `keydown.enter` and `keydown.space` beside `click`, and stamps `tabindex="0"` from `connect()`.
+Filament's `filamentCopyable` binds `role="button"`, `tabindex="0"` and Enter and Space handlers only while the element is standalone, and withholds all three inside interactive content, such as a cell that is a link.
+The port always renders `role="button"` server-side, on a `span` too, binds `keydown.enter` and `keydown.space` beside `click`, and always stamps `tabindex="0"` from `connect()`.
 
 The stamping is not decoration: a copyable cell may render inside a record `<a>`, where interactive content and a server-rendered `tabindex` descendant are invalid HTML.
 Adding the attribute after boot is the same trick Filament uses for its editable columns' toggles (`x-bind:tabindex`), and it means a page with JavaScript disabled ships valid markup carrying a control that does nothing, which is correct for a client-only capability.

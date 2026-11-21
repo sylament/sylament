@@ -6,10 +6,11 @@ The reasoning behind `.claude/rules/manifests.md`: what each package's `composer
 
 The monorepo resolves every package out of one root `vendor/`, so a class autoloads whether or not the importing package's manifest names its vendor. Nothing in the monorepo fails when a line is missing. The failure appears only after the `split-monorepo` job in `.github/workflows/ci.yml` publishes the package alone and someone installs it. For example, every package requires `sylament/support`, but each still declares its own `symfony/ux-twig-component` or `symfony/ux-live-component`.
 
-Three things count as using a package:
+Four things count as using a package:
 - a PHP symbol imported by `src/`, such as `actions`' `Twig\Components\Modals` type-hinting `AsTwigComponent` and `ComponentStack`;
 - a Twig tag or extension that a shipped template cannot parse without, such as `{% props %}` from `symfony/ux-twig-component`, which templates in `actions`, `forms`, `panels`, `support` and `tables` use;
-- a PHP extension a call needs. `tables` declares `ext-intl` because `TextColumn::money()`/`numeric()` and the summarizers format through `NumberFormatter`. Filament declares `ext-intl` on `filament/support` instead of `filament/tables`, which is the inherit-through-a-sibling shape the split would publish broken, so here it sits where the call is.
+- a PHP extension a call needs. `tables` declares `ext-intl` for `NumberFormatter` too, because `TextColumn::money()`/`numeric()` and the summarizers format through it. Filament declares `ext-intl` on `filament/support` instead of `filament/tables`, which is the inherit-through-a-sibling shape the split would publish broken, so here it sits where the call is;
+- a shipped catalogue, which no PHP file imports for: the translator loads `translations/*.yaml` only through `symfony/yaml` and formats a `+intl-icu` message only through `ext-intl`, and FrameworkBundle enables the translator by default only when `symfony/translation` is a non-dev require, so every package that ships a catalogue requires `symfony/translation`, `symfony/translation-contracts`, `symfony/yaml` and `ext-intl`.
 
 ## Require, suggest or root require-dev
 
@@ -67,7 +68,7 @@ An omission is safe only while a package the importer requires hard-requires the
 | `symfony/polyfill-php86` | `schemas`, `tables` (the global `SortDirection` enum) | `doctrine/orm` requires `^1.37` |
 | `psr/container` | `support`, `panels` | `symfony/service-contracts`, which support requires, requires `^1.1\|^2.0` |
 | `symfony/config` | `support`, `forms` (`DefinitionConfigurator`), `panels` (`FileResource`) | `symfony/stimulus-bundle`, which `support` and `forms` require, requires `^7.4\|^8.0` |
-| `symfony/twig-bridge` | every bundle's templates (the `trans` filter) | through `support`: its `symfony/ux-icons` requires `symfony/twig-bundle`, which requires `^7.4\|^8.0` |
+| `symfony/twig-bridge` | the templates of `forms`, `notifications`, `panels`, `schemas`, `support` and `tables` (the `trans` filter) | through `support`: its `symfony/ux-icons` requires `symfony/twig-bundle`, which requires `^7.4\|^8.0` |
 | `symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle` | every bundle | through `support`: its `symfony/stimulus-bundle` requires the first two and its `symfony/ux-icons` requires framework-bundle, all `^7.4\|^8.0` |
 | `league/flysystem` | `tables` (`Columns\ImageColumn`) | `sylament/forms` requires `^3` |
 

@@ -67,6 +67,11 @@ Ours is the same, kept for API parity: the Stimulus controller likewise walks ba
 `Wizard` and [`Step`](step.md) both build their key as Filament does — `{statePath}::wizard` / `slug(label)::{statePath}::wizard-step` — so a wizard in a `statePath('data')` form is keyed `data::wizard`.
 `Section`'s key [drops that segment](section.md#the-heading-derived-key-omits-the-state-path-segment); the wizard does not follow it, because the segment is what keeps two same-labelled wizards at different state paths from colliding.
 
+### The default Back and Next labels and the step status texts come from the catalogue
+
+`getPreviousAction()` and `getNextAction()` label their actions with `components.wizard.actions.previous_step.label` and `components.wizard.actions.next_step.label`, handed over as messages the action's label getter translates, and a `previousAction()` or `nextAction()` closure still replaces either.
+The header's `Completed` and `Not completed` status texts are the keys `components.wizard.header.step.statuses.completed` and `.upcoming`, rendered by the template and handed to the controller as [its two text values](schemas-bundle.md#the-controllers-values-targets-and-actions), so the text the controller writes on every step change is the text the server rendered.
+
 ## Divergences
 
 ### Every index is an index into the visible steps
@@ -97,12 +102,6 @@ The `Htmlable` → `Markup` translation cannot carry that, since our `Action` is
 Filament's getters return the raw property; ours evaluate it, so a closure may return any of the five, and translate a message into the string it becomes, which the slot then escapes as it escapes any string.
 Because Twig has no `instanceof` test, the split is done in `getExtraTemplateData()`: an `Action` becomes `cancelActionComponent`/`submitActionComponent` for `renderComponent()`, and a `Markup` (as-is) or a plain string (escaped into a `Markup`) becomes `cancelActionHtml`/`submitActionHtml` for a raw print.
 An `Action` handed to a slot is **rendered, not registered** on the Wizard — its click resolves wherever it was defined.
-
-### The default Back and Next labels and the step status texts come from the catalogue
-
-`getPreviousAction()` and `getNextAction()` label their actions with `components.wizard.actions.previous_step.label` and `components.wizard.actions.next_step.label`, handed over as messages the action's label getter translates, and a `previousAction()` or `nextAction()` closure still replaces either.
-The header's `Completed` and `Not completed` status texts are the keys `components.wizard.header.step.statuses.completed` and `.upcoming`, rendered by the template and handed to the controller as its `completed-text` and `not-completed-text` values, so the controller keeps no English and the text it writes on every step change is the text the server rendered.
-All four keys are in the `sylament-schemas` domain under Filament's key paths, and the English is Filament's.
 
 ### The query-string arm reads through an injected RequestStack and compares the absolute step key
 

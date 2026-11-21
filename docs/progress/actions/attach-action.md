@@ -135,7 +135,7 @@ Doctrine maps no polymorphic association and no through-relation, so there is no
 
 ### The title ordering applies to both arms, not only the projected one
 
-Filament's `if (empty($relationshipQuery->getQuery()->orders)) { $relationshipQuery->orderBy($titleAttribute); }` sits **inside** the pluck branch ([`AttachAction.php:289-300`](../../../vendor/filament/actions/src/AttachAction.php), and [`AssociateAction.php:269-280`](../../../vendor/filament/actions/src/AssociateAction.php) alike), so the hydrate-and-title arm below it emits no `ORDER BY` at all and lists in whatever order the driver returns.
+Filament's `if (empty($relationshipQuery->getQuery()->orders)) { $relationshipQuery->orderBy($titleAttribute); }` sits **inside** the pluck branch ([`AttachAction.php:289-300`](../../../vendor/filament/actions/src/AttachAction.php), and [`AssociateAction.php:292-293`](../../../vendor/filament/actions/src/AssociateAction.php) alike), so the hydrate-and-title arm below it emits no `ORDER BY` at all and lists in whatever order the driver returns.
 The port applies the order **before** the branch, in both classes: both arms order by the title attribute when the query carries no order of its own, so the option list reads the same whichever arm built it and a `recordTitle()` closure does not silently cost the sort.
 A caller wanting the unordered arm back orders the builder itself in `recordSelectOptionsQuery()`; any order of its own suppresses this one.
 
@@ -170,4 +170,4 @@ The action binds `record()` only when exactly one record was picked.
 
 `attach.single.label`, `attach.single.modal.heading` (`Attach {label}`), `attach.single.modal.actions.attach.label`, `attach.single.modal.actions.attach_another.label`, `attach.single.notifications.attached.title` and the record select's `attach.single.modal.fields.record_id.label` (`Record`) are Filament's keys, read from the `sylament-actions` catalogue as [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys) records.
 The heading falls back to the port-added `attach.single.modal.heading_bare` when no label is known.
-The select's label is handed to forms as a message, so the `required()` message it feeds reads the translated label.
+The select's hidden label is handed to forms as a message, which the select's own `getLabel()` translates into its accessible name.

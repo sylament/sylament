@@ -51,6 +51,8 @@ All three take the component as an injected parameter (`static function (self $c
 
 The option map is memoized on the component, and reset by `relationship()` itself — again Filament-exact, and load-bearing here because a non-searchable select's map is the *whole* target table: `getOptions()` runs at least twice per request (once through `getEnabledOptionValues()` during validation, once from the template) and without the memo each is another unbounded `SELECT`.
 A field declaring `modifyQueryUsing` neither reads nor writes the memo, because a scoping closure may read state that changes within the request and a cached first answer would freeze it.
+`getOptionLabelFromRecordUsing()` may return a message, which `getOptionLabelFromRecord()` translates record by record; the title-attribute arm reads a record's text and never translates it.
+The memo therefore holds translated text, fixed to the locale of the request that built it, as [`HasDescriptions`' memo](has-descriptions.md) is.
 The map is read exactly once per render, in [`getExtraTemplateData()`](select.md#getextratemplatedata-makes-the-one-getoptions-read-both-branches-share), for the same reason.
 
 The concern imports `Doctrine\ORM\QueryBuilder` directly, so `forms` declares `doctrine/orm` in its own `require` rather than inheriting it through `schemas` — the split-repo rule, since each package is published standalone.

@@ -274,13 +274,13 @@ it('refuses an entry that no table row of any trail file links, a prose link not
     }
 });
 
-it('refuses a detail, semantics or diverges label that names another section than its target sits under, in a row or in prose', function (): void {
+it('refuses a detail, semantics or diverges label that names another section than its target sits under, or a whole file, in a row or in prose', function (): void {
     $files = TrailFixture::greenTree();
     $files[TrailFixture::docs('alpha/widget.md')] .= "\nSee [diverges](#widget-waits-on-the-engine) and [detail](#widget%2Dwaits-on-the-engine).\n"
         . "\n## Divergences\n\n### Widget renders eagerly\n\nOne sentence.\n";
     $files[TrailFixture::docs('alpha/has-thing.md')] = str_replace(
         '| `legacyThing()` | `HasThing.php` | skipped | — | — |',
-        "| `legacyThing()` | `HasThing.php` | skipped | — | [detail](#thing-is-subtle) · [semantics](./../alpha/widget.md#widget-renders-eagerly) |\n| `otherThing()` | `HasThing.php` | done | — | [semantics](#surface) |",
+        "| `legacyThing()` | `HasThing.php` | skipped | — | [detail](#thing-is-subtle) · [semantics](./../alpha/widget.md#widget-renders-eagerly) |\n| `otherThing()` | `HasThing.php` | done | — | [semantics](#surface) · [widget.md](widget.md) · [detail](widget.md) |",
         $files[TrailFixture::docs('alpha/has-thing.md')],
     ) . "\nNot `[detail](#thing-is-subtle)`.\n\n```\n[detail](#thing-is-subtle)\n```\n";
     $root = TrailFixture::tree($files);
@@ -290,6 +290,7 @@ it('refuses a detail, semantics or diverges label that names another section tha
             TrailFixture::docs('alpha/has-thing.md') . ':15: [detail] links ' . TrailFixture::docs('alpha/has-thing.md') . '#thing-is-subtle, which sits under ## Semantics; label it [semantics]',
             TrailFixture::docs('alpha/has-thing.md') . ':15: [semantics] links ' . TrailFixture::docs('alpha/widget.md') . '#widget-renders-eagerly, which sits under ## Divergences; label it [diverges]',
             TrailFixture::docs('alpha/has-thing.md') . ':16: [semantics] links ' . TrailFixture::docs('alpha/has-thing.md') . '#surface, which is not a Details, Semantics or Divergences entry',
+            TrailFixture::docs('alpha/has-thing.md') . ':16: [detail] links ' . TrailFixture::docs('alpha/widget.md') . ', a whole file rather than an entry; label it [widget.md]',
             TrailFixture::docs('alpha/widget.md') . ':25: [diverges] links ' . TrailFixture::docs('alpha/widget.md') . '#widget-waits-on-the-engine, which sits under ## Details; label it [detail]',
         ]);
     } finally {

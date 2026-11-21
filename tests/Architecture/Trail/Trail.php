@@ -616,7 +616,8 @@ final class Trail
 
     /**
      * Check 10: a link labelled detail, semantics or diverges, in a row or in prose, targets an entry under the section
-     * its label names: "## Details", "## Semantics" or "## Divergences" respectively.
+     * its label names: "## Details", "## Semantics" or "## Divergences" respectively; a link to a whole file takes the
+     * file's name as its label instead.
      *
      * @return list<string>
      */
@@ -627,6 +628,12 @@ final class Trail
 
         foreach ($this->headingLinks() as ['at' => $at, 'label' => $label, 'target' => $target]) {
             if (null === $label) {
+                continue;
+            }
+
+            if (!str_contains($target, '#')) {
+                $violations[] = "{$at}: [{$label}] links {$target}, a whole file rather than an entry; label it [" . basename($target) . ']';
+
                 continue;
             }
 
@@ -1015,9 +1022,10 @@ final class Trail
     }
 
     /**
-     * Every link to a heading in the trail's prose, inline code ignored, as its "{path}:{line}", whether that line is a
-     * table row, its label when that is detail, semantics or diverges, and its target as "{path}#{anchor}"; a link
-     * that resolves to no file or outside the root is left out, since DocumentationFilesTest fails it.
+     * Every link to a heading in the trail's prose, and every detail, semantics or diverges link to a whole file,
+     * inline code ignored, as its "{path}:{line}", whether that line is a table row, its label when that is detail,
+     * semantics or diverges, and its target as "{path}#{anchor}", or "{path}" for a whole file; a link that resolves
+     * to no file or outside the root is left out, since DocumentationFilesTest fails it.
      *
      * @return list<array{at: string, row: bool, label: string|null, target: string}>
      */
@@ -1033,9 +1041,13 @@ final class Trail
 
         foreach ($this->trailPaths() as $path) {
             foreach (self::proseLines($this->read($path)) as $number => $line) {
-                preg_match_all('/(?:\[(detail|semantics|diverges))?\]\(([^)\s#]*)#([^)\s]+)\)/', (string) preg_replace('/`[^`]*`/', '``', $line), $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
+                preg_match_all('/(?:\[(detail|semantics|diverges))?\]\(([^)\s#]*)(?:#([^)\s]+))?\)/', (string) preg_replace('/`[^`]*`/', '``', $line), $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
 
                 foreach ($matches as [, $label, $file, $anchor]) {
+                    if (null === $anchor && null === $label) {
+                        continue;
+                    }
+
                     $target = '' === $file ? "{$root}/{$path}" : realpath("{$root}/" . dirname($path) . '/' . rawurldecode((string) $file));
 
                     if (false !== $target && str_starts_with($target, "{$root}/")) {
@@ -1043,7 +1055,7 @@ final class Trail
                             'at' => "{$path}:{$number}",
                             'row' => str_starts_with($line, '|'),
                             'label' => $label,
-                            'target' => mb_substr($target, mb_strlen($root) + 1) . '#' . rawurldecode((string) $anchor),
+                            'target' => mb_substr($target, mb_strlen($root) + 1) . (null === $anchor ? '' : '#' . rawurldecode($anchor)),
                         ];
                     }
                 }

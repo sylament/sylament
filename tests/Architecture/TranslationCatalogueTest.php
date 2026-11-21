@@ -131,6 +131,44 @@ it('reads every shape a validator message ships in, and reports one validators.e
     }
 });
 
+it('reads a string constant a violation id or a refusal map names, and only there', function (): void {
+    $directory = PlantedPackages::plant([
+        'schemas/src/State/Reader.php' => <<<'PHP'
+            <?php
+            class Reader
+            {
+                private const string CHANGED = 'A refusal constant.';
+
+                private const string HELD = 'A held refusal constant.';
+
+                private const string VIOLATION = 'A violation constant.';
+
+                private const string ICON = 'heroicons:x-mark';
+
+                public function refusals(string $path): array
+                {
+                    $refusals[$path] = self::CHANGED;
+                    $refusals[$path . '.held'] = static::HELD;
+                    $icons[$path] = self::ICON;
+                    $context->buildViolation(self::VIOLATION)->addViolation();
+
+                    return $refusals;
+                }
+            }
+            PHP,
+        'schemas/translations/validators.en.yaml' => PlantedPackages::catalogue(['A held refusal constant.']),
+    ]);
+
+    try {
+        expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'schemas', $directory))->toBe([
+            'missing validators: A refusal constant.',
+            'missing validators: A violation constant.',
+        ]);
+    } finally {
+        PlantedPackages::remove($directory);
+    }
+});
+
 it('reads a named domain inside a component block', function (): void {
     $directory = PlantedPackages::plant([
         'support/templates/components/Panel/index.html.twig' => "<twig:SylamentSupport:Section>{{ 'k'|trans(domain: 'sylament') }}</twig:SylamentSupport:Section>",

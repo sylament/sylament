@@ -6,8 +6,10 @@ namespace Sylament\Tests\Architecture\Translations;
 
 use LogicException;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\BinaryOp\Coalesce;
+use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
@@ -20,6 +22,7 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\ClassConst;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
@@ -113,8 +116,9 @@ final class CatalogueScan
     /**
      * Every validator message the package ships as a literal: in its own `Validation/` constraints, a `…message`
      * property or promoted-parameter default, a `…message: $message ?? '…'` argument to `parent::__construct()` and a
-     * `$this->…message = $message ?? …` assignment; and every literal `buildViolation()` id anywhere in its `src/`.
-     * The extractor sees none of these shapes.
+     * `$this->…message = $message ?? …` assignment; and anywhere in its `src/`, a `buildViolation()` id and a value
+     * written into a `$refusals[…]` map, which `RecordKeyGuard::constraint()` turns into violations, each a literal
+     * or a `self::`/`static::` string constant of the file. The extractor sees none of these shapes.
      *
      * @return list<string>
      */
@@ -130,12 +134,19 @@ final class CatalogueScan
 
         foreach (Finder::create()->files()->in($sourceDirectory)->name('*.php')->sortByName() as $file) {
             $nodes = $parser->parse($file->getContents()) ?? [];
+            $constants = self::stringConstants($finder->findInstanceOf($nodes, ClassConst::class));
 
             foreach ($finder->findInstanceOf($nodes, MethodCall::class) as $call) {
                 $id = $call->name instanceof Identifier && $call->name->toString() === 'buildViolation' && !$call->isFirstClassCallable() ? ($call->getArgs()[0] ?? null)?->value : null;
 
-                if ($id instanceof String_) {
-                    $messages[] = $id->value;
+                if ($id instanceof Expr) {
+                    $messages = [...$messages, ...self::violationId($id, $constants)];
+                }
+            }
+
+            foreach ($finder->findInstanceOf($nodes, Assign::class) as $assign) {
+                if ($assign->var instanceof ArrayDimFetch && $assign->var->var instanceof Variable && $assign->var->var->name === 'refusals') {
+                    $messages = [...$messages, ...self::violationId($assign->expr, $constants)];
                 }
             }
 
@@ -177,6 +188,44 @@ final class CatalogueScan
         }
 
         return $messages;
+    }
+
+    /**
+     * @param array<ClassConst> $declarations
+     *
+     * @return array<string, string> each constant a file declares with a string literal, by name
+     */
+    private static function stringConstants(array $declarations): array
+    {
+        $constants = [];
+
+        foreach ($declarations as $declaration) {
+            foreach ($declaration->consts as $constant) {
+                if ($constant->value instanceof String_) {
+                    $constants[$constant->name->toString()] = $constant->value->value;
+                }
+            }
+        }
+
+        return $constants;
+    }
+
+    /**
+     * @param array<string, string> $constants
+     *
+     * @return list<string> the id an expression names: a literal, or a `self::` or `static::` constant of the file
+     */
+    private static function violationId(Expr $expression, array $constants): array
+    {
+        if ($expression instanceof String_) {
+            return [$expression->value];
+        }
+
+        if ($expression instanceof ClassConstFetch && $expression->class instanceof Name && in_array($expression->class->toLowerString(), ['self', 'static'], true) && $expression->name instanceof Identifier) {
+            return isset($constants[$expression->name->toString()]) ? [$constants[$expression->name->toString()]] : [];
+        }
+
+        return [];
     }
 
     /**

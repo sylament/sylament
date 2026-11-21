@@ -99,7 +99,7 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNest
     public function getSelectAllAction(): Action
     {
         $action = Action::make($this->getSelectAllActionName())
-            ->label(new TranslatableMessage('components.checkbox_list.actions.select_all.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.checkbox_list.actions.select_all.label', domain: 'sylament-forms'))
             ->liveComponentClickHandlerEnabled(false)
             ->link()
             ->size(Size::Small);
@@ -122,7 +122,7 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNest
     public function getDeselectAllAction(): Action
     {
         $action = Action::make($this->getDeselectAllActionName())
-            ->label(new TranslatableMessage('components.checkbox_list.actions.deselect_all.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.checkbox_list.actions.deselect_all.label', domain: 'sylament-forms'))
             ->liveComponentClickHandlerEnabled(false)
             ->link()
             ->size(Size::Small);

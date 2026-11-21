@@ -164,7 +164,7 @@ abstract class CreateRecord extends Page
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
-            ->label($this->translateText(new TranslatableMessage('resources/pages/create-record.form.actions.create.label', [], 'sylament-panels')))
+            ->label(new TranslatableMessage('resources/pages/create-record.form.actions.create.label', [], 'sylament-panels'))
             ->submit($this->getSubmitFormLiveComponentMethodName());
     }
 
@@ -175,7 +175,7 @@ abstract class CreateRecord extends Page
     protected function getCancelFormAction(): Action
     {
         return Action::make('cancel')
-            ->label($this->translateText(new TranslatableMessage('resources/pages/create-record.form.actions.cancel.label', [], 'sylament-panels')))
+            ->label(new TranslatableMessage('resources/pages/create-record.form.actions.cancel.label', [], 'sylament-panels'))
             ->color('gray')
             ->url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]));
     }

@@ -773,7 +773,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         $action = Action::make($this->getCreateOptionActionName())
-            ->label(new TranslatableMessage('components.select.actions.create_option.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.select.actions.create_option.label', domain: 'sylament-forms'))
             ->schema(static fn (Select $component, Schema $schema): array|Schema|null => $component->getCreateOptionActionForm(
                 $schema->record($component->hasRelationship()
                     ? $component->getRelationshipTarget()->targetClass
@@ -814,11 +814,11 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             ->color('gray')
             ->icon($this->resolveOptionActionIcon(FormsIconAlias::COMPONENTS_SELECT_ACTIONS_CREATE_OPTION, 'heroicons:plus-20-solid'))
             ->iconButton()
-            ->modalHeading($this->getCreateOptionModalHeading() ?? new TranslatableMessage('components.select.actions.create_option.modal.heading', domain: 'sylament-forms')->trans($this->getTranslator()))
-            ->modalSubmitActionLabel(new TranslatableMessage('components.select.actions.create_option.modal.actions.create.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->modalHeading($this->getCreateOptionModalHeading() ?? new TranslatableMessage('components.select.actions.create_option.modal.heading', domain: 'sylament-forms'))
+            ->modalSubmitActionLabel(new TranslatableMessage('components.select.actions.create_option.modal.actions.create.label', domain: 'sylament-forms'))
             ->extraModalFooterActions(static fn (Action $action, Select $component): array => $component->isMultiple() ? [
                 $action->makeModalSubmitAction('createAnother', arguments: ['another' => true])
-                    ->label(new TranslatableMessage('components.select.actions.create_option.modal.actions.create_another.label', domain: 'sylament-forms')->trans($component->getTranslator())),
+                    ->label(new TranslatableMessage('components.select.actions.create_option.modal.actions.create_another.label', domain: 'sylament-forms')),
             ] : []);
 
         return $this->applyOptionActionModifiers($action, $this->modifyCreateOptionActionUsing);
@@ -914,7 +914,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         $action = Action::make($this->getEditOptionActionName())
-            ->label(new TranslatableMessage('components.select.actions.edit_option.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.select.actions.edit_option.label', domain: 'sylament-forms'))
             ->schema(static fn (Select $component, Schema $schema): array|Schema|null => $component->getEditOptionActionForm(
                 $schema->record($component->getSelectedRecord()),
             ))
@@ -939,8 +939,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             ->color('gray')
             ->icon($this->resolveOptionActionIcon(FormsIconAlias::COMPONENTS_SELECT_ACTIONS_EDIT_OPTION, 'heroicons:pencil-square-20-solid'))
             ->iconButton()
-            ->modalHeading($this->getEditOptionModalHeading() ?? new TranslatableMessage('components.select.actions.edit_option.modal.heading', domain: 'sylament-forms')->trans($this->getTranslator()))
-            ->modalSubmitActionLabel(new TranslatableMessage('components.select.actions.edit_option.modal.actions.save.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->modalHeading($this->getEditOptionModalHeading() ?? new TranslatableMessage('components.select.actions.edit_option.modal.heading', domain: 'sylament-forms'))
+            ->modalSubmitActionLabel(new TranslatableMessage('components.select.actions.edit_option.modal.actions.save.label', domain: 'sylament-forms'))
             ->visible(fn (): bool => filled($this->getState()));
 
         return $this->applyOptionActionModifiers($action, $this->modifyEditOptionActionUsing);

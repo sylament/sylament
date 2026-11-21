@@ -100,7 +100,7 @@ An `Action` handed to a slot is **rendered, not registered** on the Wizard — i
 
 ### The default Back and Next labels and the step status texts come from the catalogue
 
-`getPreviousAction()` and `getNextAction()` label their actions with `components.wizard.actions.previous_step.label` and `components.wizard.actions.next_step.label`, translated by the wizard before it hands the label over, and a `previousAction()` or `nextAction()` closure still replaces either.
+`getPreviousAction()` and `getNextAction()` label their actions with `components.wizard.actions.previous_step.label` and `components.wizard.actions.next_step.label`, handed over as messages the action's label getter translates, and a `previousAction()` or `nextAction()` closure still replaces either.
 The header's `Completed` and `Not completed` status texts are the keys `components.wizard.header.step.statuses.completed` and `.upcoming`, rendered by the template and handed to the controller as its `completed-text` and `not-completed-text` values, so the controller keeps no English and the text it writes on every step change is the text the server rendered.
 All four keys are in the `sylament-schemas` domain under Filament's key paths, and the English is Filament's.
 

@@ -102,7 +102,7 @@ A consumer who wants one wires it themselves with `emitUp()` + a `#[LiveListener
 ### A title, a badge and a badge tooltip are static getters that may return messages
 
 `getTitle()`, `getBadge()` and `getBadgeTooltip()` are static, so no translator sits on the object that supplies them, and each return type widens to take a `TranslatableInterface`.
-The tab built by `getTabComponent()` translates them through its own getters, and `makeTable()` translates the title for the table heading through the manager's translator, so the tab, the heading and every other reader receive text.
+The tab built by `getTabComponent()` translates them through its own getters, and `makeTable()` hands the title to the table's heading as it is, which the table's heading getter translates, so the tab, the heading and every other reader receive text.
 A static property cannot hold a message, so `$title` and `$badge` stay `?string` and `$badgeTooltip` `string|Markup|null`, and a manager supplies a message by overriding the getter.
 [`RelationGroup`](relation-group.md#the-label-may-be-a-message-translated-in-its-getter) takes a message label through its setter.
 

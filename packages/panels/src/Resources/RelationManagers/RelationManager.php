@@ -257,7 +257,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     protected function makeTable(): Table
     {
         return $this->makeBaseRelationshipTable()
-            ->heading(fn (): string|Markup|null => $this->translateText(static::getTitle($this->getOwnerRecord(), $this->getPageClass())));
+            ->heading(fn (): string|TranslatableInterface => static::getTitle($this->getOwnerRecord(), $this->getPageClass()));
     }
 
     protected function getResourceRegistry(): ResourceRegistry

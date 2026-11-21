@@ -182,7 +182,7 @@ abstract class EditRecord extends Page
     protected function getSaveFormAction(): Action
     {
         return Action::make('save')
-            ->label($this->translateText(new TranslatableMessage('resources/pages/edit-record.form.actions.save.label', [], 'sylament-panels')))
+            ->label(new TranslatableMessage('resources/pages/edit-record.form.actions.save.label', [], 'sylament-panels'))
             ->submit($this->getSubmitFormLiveComponentMethodName());
     }
 
@@ -193,7 +193,7 @@ abstract class EditRecord extends Page
     protected function getCancelFormAction(): Action
     {
         return Action::make('cancel')
-            ->label($this->translateText(new TranslatableMessage('resources/pages/edit-record.form.actions.cancel.label', [], 'sylament-panels')))
+            ->label(new TranslatableMessage('resources/pages/edit-record.form.actions.cancel.label', [], 'sylament-panels'))
             ->color('gray')
             ->url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]));
     }

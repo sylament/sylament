@@ -62,7 +62,7 @@ class CopyAction extends Action
         parent::setUp();
 
         $this
-            ->label(static fn (CopyAction $action): string => new TranslatableMessage('components.text_input.actions.copy.label', domain: 'sylament-forms')->trans($action->getTranslator()))
+            ->label(new TranslatableMessage('components.text_input.actions.copy.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_COPY, 'heroicons:clipboard-document-list-20-solid'))
             ->defaultColor('gray')
             ->liveComponentClickHandlerEnabled(false)

@@ -32,7 +32,7 @@ class ShowPasswordAction extends Action
         parent::setUp();
 
         $this
-            ->label(static fn (ShowPasswordAction $action): string => new TranslatableMessage('components.text_input.actions.show_password.label', domain: 'sylament-forms')->trans($action->getTranslator()))
+            ->label(new TranslatableMessage('components.text_input.actions.show_password.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_SHOW_PASSWORD, 'heroicons:eye-20-solid'))
             ->defaultColor('gray')
             ->liveComponentClickHandlerEnabled(false)

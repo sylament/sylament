@@ -422,13 +422,13 @@ The return type is therefore `object|array<string, mixed>|null`; an array still 
 
 The seven strings sit under `components.select.actions.create_option.*` and `components.select.actions.edit_option.*` in `sylament-forms`, Filament's key paths and English: the label, the modal heading and the submit label of each, and `Create & create another`.
 A heading from `createOptionModalHeading()` or `editOptionModalHeading()`, a string, a `Markup` or a message, takes the place of the catalogue heading.
-`Select` translates each text with its own translator and hands the action the resulting string, since the action's label and modal setters take text.
+`Select` hands each catalogue text to the action as a message, which the action's label and modal getters translate; a heading from `createOptionModalHeading()` or `editOptionModalHeading()` reaches it already translated by the field's own getter.
 The two icons are overridable, though — they resolve through [`FormsIconAlias`](forms-icon-alias.md)'s `COMPONENTS_SELECT_ACTIONS_CREATE_OPTION` and `COMPONENTS_SELECT_ACTIONS_EDIT_OPTION`, falling back to `heroicons:plus-20-solid` and `heroicons:pencil-square-20-solid`.
 
 Resolving them needs an `IconManager`, and Filament reaches its `FilamentIcon` facade.
 A component cannot: the manager is a private service the container's `has()` does not answer for, so the closure form (`fn (IconManager $icons) => …`, which [`NavigationItem`](../panels/README.md) can use because it injects the manager itself) resolves nothing here.
 `Select` therefore takes the manager through a `#[Required]` setter and falls back to a bare `new IconManager()` when it was built with `new` rather than through the container — the same shape [`CanAccessProperties`](../schemas/property-accessor.md#the-accessor-is-injected-not-reached-for) uses, and the same trade: a hand-built field resolves no registered overrides and renders the default icon.
-A hand-built field has no translator either, so the create and edit actions, like every default text, throw a `LogicException` naming the class until `setTranslator()` runs.
+A hand-built field has no translator either, so a default text it translates itself, its placeholder among them, throws a `LogicException` naming the class until `setTranslator()` runs; the option actions come from `Action::make()` and translate their own labels.
 
 ### The default placeholder is a catalogue message
 

@@ -149,7 +149,7 @@ It is a setter rather than a constructor argument, so a subclass declaring its o
 The **override points** are Filament's exactly (`getCreatedNotificationTitle()` / `getSavedNotificationTitle()` for the copy, `getCreatedNotification()` / `getSavedNotification()` for the whole notification), and each returns `null` when its title is `blank()`, Filament's own "no title, no toast" contract.
 The getters keep their `string` return types and translate in place, through the page's own translator, in the request that builds them; a page override returns text, or translates a message itself with `translateText()`.
 The notification title is therefore text before it reaches `Notification::title()`, and the flash carries it in the sender's locale.
-The two form actions' labels are translated on the page and passed to `Action::label()` as text, because the action's label setter takes a string here.
+The two form actions' labels are handed to `Action::label()` as messages, which the action's label getter translates.
 The `Create` label and the `Create` breadcrumb are two keys with one English text, as Filament has them.
 
 ### The record page's schema is named `form`, and `schemas()` is narrowed to it

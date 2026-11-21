@@ -972,7 +972,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getDeleteAction(): Action
     {
         $action = Action::make($this->getDeleteActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.delete.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.delete.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_DELETE, 'heroicons:trash-20-solid'))
             ->color('danger')
             ->action(function (array $arguments, Repeater $component): void {
@@ -1007,7 +1007,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getCloneAction(): Action
     {
         $action = Action::make($this->getCloneActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.clone.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.clone.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_CLONE, 'heroicons:square-2-stack-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
@@ -1056,7 +1056,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getMoveUpAction(): Action
     {
         $action = Action::make($this->getMoveUpActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.move_up.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.move_up.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_MOVE_UP, 'heroicons:arrow-up-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
@@ -1088,7 +1088,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getMoveDownAction(): Action
     {
         $action = Action::make($this->getMoveDownActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.move_down.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.move_down.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_MOVE_DOWN, 'heroicons:arrow-down-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
@@ -1190,7 +1190,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getReorderAction(): Action
     {
         $action = Action::make($this->getReorderActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.reorder.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.reorder.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_REORDER, 'heroicons:arrows-up-down-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
@@ -1237,7 +1237,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getCollapseAction(): Action
     {
         $action = Action::make($this->getCollapseActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.collapse.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.collapse.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_COLLAPSE, 'heroicons:chevron-up-20-solid'))
             ->color('gray')
             ->liveComponentClickHandlerEnabled(false)
@@ -1262,7 +1262,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getExpandAction(): Action
     {
         $action = Action::make($this->getExpandActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.expand.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.expand.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_EXPAND, 'heroicons:chevron-down-20-solid'))
             ->color('gray')
             ->liveComponentClickHandlerEnabled(false)
@@ -1287,7 +1287,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getCollapseAllAction(): Action
     {
         $action = Action::make($this->getCollapseAllActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.collapse_all.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.collapse_all.label', domain: 'sylament-forms'))
             ->color('gray')
             ->liveComponentClickHandlerEnabled(false)
             ->link()
@@ -1311,7 +1311,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function getExpandAllAction(): Action
     {
         $action = Action::make($this->getExpandAllActionName())
-            ->label(new TranslatableMessage('components.repeater.actions.expand_all.label', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->label(new TranslatableMessage('components.repeater.actions.expand_all.label', domain: 'sylament-forms'))
             ->color('gray')
             ->liveComponentClickHandlerEnabled(false)
             ->link()

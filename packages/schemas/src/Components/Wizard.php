@@ -152,7 +152,7 @@ class Wizard extends Component
     public function getNextAction(): Action
     {
         $action = Action::make($this->getNextActionName())
-            ->label($this->translateText(new TranslatableMessage('components.wizard.actions.next_step.label', [], 'sylament-schemas')))
+            ->label(new TranslatableMessage('components.wizard.actions.next_step.label', [], 'sylament-schemas'))
             ->iconPosition(IconPosition::After)
             ->liveComponentClickHandlerEnabled(false)
             ->button();
@@ -177,7 +177,7 @@ class Wizard extends Component
     public function getPreviousAction(): Action
     {
         $action = Action::make($this->getPreviousActionName())
-            ->label($this->translateText(new TranslatableMessage('components.wizard.actions.previous_step.label', [], 'sylament-schemas')))
+            ->label(new TranslatableMessage('components.wizard.actions.previous_step.label', [], 'sylament-schemas'))
             ->color('gray')
             ->liveComponentClickHandlerEnabled(false)
             ->button();

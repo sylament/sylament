@@ -32,7 +32,7 @@ class HidePasswordAction extends Action
         parent::setUp();
 
         $this
-            ->label(static fn (HidePasswordAction $action): string => new TranslatableMessage('components.text_input.actions.hide_password.label', domain: 'sylament-forms')->trans($action->getTranslator()))
+            ->label(new TranslatableMessage('components.text_input.actions.hide_password.label', domain: 'sylament-forms'))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD, 'heroicons:eye-slash-20-solid'))
             ->defaultColor('gray')
             ->liveComponentClickHandlerEnabled(false)

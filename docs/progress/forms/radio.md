@@ -115,7 +115,7 @@ A case drives a selection through the live host and asserts both the prop and wh
 
 ### The option inputs drop the `fi-valid` / `fi-invalid` class pair, and `radio.css` keys off `aria-invalid`
 
-Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every radio input, and keys the danger ring off the latter ([`support/…/input/radio.css:8`](../../../vendor/filament/support/resources/css/components/input/radio.css) matches `&.fi-invalid`); it also spreads `aria-invalid` on the radiogroup container (`Radio.php:52`, `:70`, `:98-99`).
+Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every radio input (`Radio.php:52`, `:98-99`), and keys the danger ring off the class ([`support/…/input/radio.css:8`](../../../vendor/filament/support/resources/css/components/input/radio.css) matches `&.fi-invalid`).
 The port keeps only the attribute on each input and emits no class pair, with [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css) keying its danger arm off `[aria-invalid='true']`.
 
 This is not a Radio decision — it is the translation already made for [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css), whose vendor source keys off `.fi-invalid` in exactly the same way, and it holds for the same two reasons: the attribute is the part a screen reader reads, and one emission serves both jobs where the vendor pair serves only styling.

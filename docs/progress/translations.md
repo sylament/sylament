@@ -180,11 +180,12 @@ Nothing to rename from, so they are listed rather than mapped — and listed at 
 
 | Sylament | On | Why it is not a rename |
 | --- | --- | --- |
+| [`HasNullableBranch`](schemas/has-nullable-branch.md) | `Sylament\Schemas\Components\Concerns` | It holds `nullWhenBlank()` and `isBlankStateValue()`, and Filament has no branch pass for them to belong to. |
 | [`nullWhenBlank()`](schemas/has-nullable-branch.md#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) | `Sylament\Schemas\Components\Concerns\HasNullableBranch` | Filament's nearest member, `relationship(condition:)`, has the inverted polarity (true means *save*) and no built-in blank test. |
 | [`isBlankStateValue()`](schemas/has-nullable-branch.md#the-built-in-blank-test-asks-the-branchs-own-leaves) | `Sylament\Schemas\Components\Concerns\HasNullableBranch`, overridden on `Checkbox` / `Toggle` | Filament has no branch pass for the predicate to serve. |
 | [`ownsRecordSubtree()`](schemas/belongs-to-record.md#a-component-can-own-its-whole-record-subtree) | `Sylament\Schemas\Components\Concerns\HasChildComponents` | Filament maps by wholesale array assignment, so it has no record path map to mark. |
 | [`itemsAs()`](forms/repeater.md#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) | `Sylament\Forms\Components\Repeater` | Filament's nearest member, `relationship()`, is identity-keyed mapping, which is [exclusive with `itemsAs()`](forms/repeater-relationship.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope). |
-| [`RecordTypeReader`](schemas/record-type-reader.md), `RecordTarget`, `HasNullableBranch` | `Sylament\Schemas\State`, `Sylament\Schemas\State`, `Sylament\Schemas\Components\Concerns` | Eloquent attributes are untyped, so Filament has no write-side type question to answer ([why](#recordtypereader-recordtarget-and-hasnullablebranch-have-no-filament-counterpart)). |
+| [`RecordTypeReader`](schemas/record-type-reader.md), `RecordTarget` | `Sylament\Schemas\State` | Eloquent attributes are untyped, so Filament has no write-side type question to answer ([why](#recordtypereader-and-recordtarget-have-no-filament-counterpart)). |
 | [`ObjectStateCast`](schemas/object-state-cast.md) | `Sylament\Schemas\State\Casts` | Filament ships no object-constructing cast, so the name follows the shipped cast family (`BooleanStateCast`, `OptionStateCast`). |
 | [`getOptionComparisonState()`](forms/has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template) / `normalizeOptionComparisonValue()` | `Sylament\Forms\Components\Concerns\HasOptions` | Filament's Alpine writes `selected` / `checked` client-side, where the port [renders them in PHP](forms/select.md#the-template-renders-the-selected-state-itself); `normalizeOptionComparisonValue()` is the per-value half, public because `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` compares a sibling item's raw value through it from outside the field. |
 | [`isMultiple()`](forms/checkbox-list.md#ismultiple-is-port-plumbing-with-no-filament-counterpart) | `Sylament\Forms\Components\CheckboxList` | Filament reads multiplicity off `getRelationship(): ?BelongsToMany`'s return type. |
@@ -273,7 +274,7 @@ So a migrating user grepping the suffix lands on the panel tier, not on this.
 Filament's components name neither list, repeating `$this->getChildSchema()->getComponents()` at each use site — five in `Tabs`, four in `Wizard` — and filtering by type only where `toEmbeddedHtml()` needs it.
 [`Panels\Resources\Concerns\HasTabs::getTabs()`](panels/has-tabs.md) ships under Filament's spelling, so both meanings of `getTabs()` exist in this codebase, as they do in Filament's.
 
-### `RecordTypeReader`, `RecordTarget` and `HasNullableBranch` have no Filament counterpart
+### `RecordTypeReader` and `RecordTarget` have no Filament counterpart
 
 They are Sylament-only classes rather than renamed Filament ones.
 Eloquent attributes are untyped, so the write-side type question these answer cannot be asked there; [record-type-reader.md](schemas/record-type-reader.md) records the reasoning.

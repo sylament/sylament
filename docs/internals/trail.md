@@ -64,7 +64,7 @@ Both must hold: a reader re-deriving the behaviour from the source would plausib
 
 ## Cells hold links
 
-A Detail cell holds only links to entries, and a Feature or Ports cell holds a name with at most a short qualifier.
+A Detail cell holds only links, to an entry or to a whole file, and a Feature or Ports cell holds a name with at most a short qualifier.
 A cell has no anchor and no line of its own, so reasoning written into one can be neither linked nor edited without rewriting the whole row, and a long row hides the table in a terminal slice.
 
 ## One sentence per line

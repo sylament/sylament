@@ -130,7 +130,7 @@ Filament sub-groups no `Concerns/` directory: actions alone ships fifty traits f
 
 ### Engines
 
-The engine a trait delegates to is filed by capability at `src/` level, never under `Concerns/` with its trait and never beside the class it operates on: `EvaluatesClosures` → `Evaluation/Invoker`, `Configurable` → `Configuration/ComponentManager`. Filament files `ComponentManager` under `Components/`, which is not where it belongs here, because the bundle's `Components/*.php` glob registers every top-level class there as a component service ([component-manager.md](../progress/support/component-manager.md#the-manager-lives-in-configuration-not-components)). A static instance defined twice is also not a harmless duplicate: both definitions are tagged, and the registry calls `setInstance()` for each.
+The engine a trait delegates to is filed by capability at `src/` level, never under `Concerns/` with its trait and never beside the class it operates on: `EvaluatesClosures` → `Evaluation/Invoker`, `Configurable` → `Configuration/ComponentManager`. Filament files `ComponentManager` under `Components/`, which is not where it belongs here ([component-manager.md](../progress/support/component-manager.md#the-manager-lives-in-configuration-not-components) says why).
 
 ## Helpers
 

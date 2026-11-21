@@ -36,6 +36,7 @@ it("draws the home icon in navigation unless the application aliases the dashboa
 });
 
 it('titles the dashboard from the catalogue, in the locale the translator answers', function (): void {
+    // Reads the getters: a visit cannot carry a request locale, so no render can pick 'sk'.
     $this::getContainer()->get('translator')->setLocale('sk');
 
     expect($this::getContainer()->get(Dashboard::class)->getTitle())->toBe('Nástenka')

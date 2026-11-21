@@ -173,8 +173,8 @@ function get_record_label(string $class): string
  * Laravel's `Str::plural`, as far as the port needs it: the last word of
  * `$value` inflected through symfony/string's `EnglishInflector`, taking its
  * last candidate, the other words untouched — `blog post` → `blog posts`.
- * English only: i18n is deferred, so Filament's `locale_has_pluralization()`
- * guard has no port yet.
+ * English only: a free function reaches no translator, so Filament's
+ * `locale_has_pluralization()` guard is not ported (helpers.md).
  */
 function plural(string $value): string
 {

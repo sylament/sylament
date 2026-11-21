@@ -12,6 +12,7 @@ use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Wizard;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -26,13 +27,13 @@ class Step extends Component implements CanConcealComponents
 
     protected ?Closure $beforeValidation = null;
 
-    protected string|Closure|null $description = null;
+    protected string|TranslatableInterface|Closure|null $description = null;
 
     protected string|BackedEnum|Markup|Closure|null $icon = null;
 
     protected string|BackedEnum|Markup|Closure|null $completedIcon = null;
 
-    public static function make(string $label): static
+    public static function make(string|TranslatableInterface $label): static
     {
         $step = static::newInstance();
 
@@ -69,7 +70,7 @@ class Step extends Component implements CanConcealComponents
         return $this;
     }
 
-    public function description(string|Closure|null $description): static
+    public function description(string|TranslatableInterface|Closure|null $description): static
     {
         $this->description = $description;
 
@@ -102,7 +103,9 @@ class Step extends Component implements CanConcealComponents
 
     public function getDescription(): ?string
     {
-        return $this->evaluate($this->description);
+        $description = $this->evaluate($this->description);
+
+        return $description instanceof TranslatableInterface ? $description->trans($this->getTranslator()) : $description;
     }
 
     public function getIcon(): string|BackedEnum|Markup|null

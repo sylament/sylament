@@ -33,6 +33,7 @@ use Sylament\Support\Components\Concerns\HasAlignment;
 use Sylament\Support\Components\Concerns\HasExtraAttributes;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Environment;
 use Twig\Markup;
 
@@ -207,9 +208,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components
      */
-    public static function start(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
+    public static function start(array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -217,9 +218,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components
      */
-    public static function end(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
+    public static function end(array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -227,9 +228,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components
      */
-    public static function center(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
+    public static function center(array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -237,9 +238,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components
      */
-    public static function between(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
+    public static function between(array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components): static
     {
         return static::make()
             ->components($components)

@@ -10,6 +10,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship;
 use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
 use Sylament\Schemas\Schema;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class Group extends Component implements CanEntangleWithSingularRelationships
@@ -19,9 +20,9 @@ class Group extends Component implements CanEntangleWithSingularRelationships
     protected string|Closure|null $template = '@SylamentSchemas/partials/Group/index.html.twig';
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $schema
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $schema
      */
-    public static function make(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $schema = []): static
+    public static function make(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $schema = []): static
     {
         $group = static::newInstance();
 

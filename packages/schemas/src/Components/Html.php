@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class Html extends Component
 {
     protected string|Closure|null $template = '@SylamentSchemas/partials/Html/index.html.twig';
 
-    protected string|Markup|Closure|null $content = null;
+    protected string|Markup|TranslatableInterface|Closure|null $content = null;
 
-    public static function make(string|Markup|Closure|null $content): static
+    public static function make(string|Markup|TranslatableInterface|Closure|null $content): static
     {
         $html = static::newInstance();
 
@@ -24,7 +25,7 @@ class Html extends Component
         return $html;
     }
 
-    public function content(string|Markup|Closure|null $content): static
+    public function content(string|Markup|TranslatableInterface|Closure|null $content): static
     {
         $this->content = $content;
 
@@ -33,6 +34,6 @@ class Html extends Component
 
     public function getContent(): string|Markup|null
     {
-        return $this->evaluate($this->content);
+        return $this->translateText($this->evaluate($this->content));
     }
 }

@@ -11,6 +11,7 @@ use Sylament\Support\Components\Concerns\HasFontFamily;
 use Sylament\Support\Components\Concerns\HasWeight;
 use Sylament\Support\Enums\Size;
 use Sylament\Support\Enums\TextSize;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -23,11 +24,11 @@ class Text extends Component
 
     protected string|Closure|null $template = '@SylamentSchemas/partials/Text/index.html.twig';
 
-    protected string|Markup|Closure|null $content = null;
+    protected string|Markup|TranslatableInterface|Closure|null $content = null;
 
     protected TextSize|Size|string|Closure|null $size = null;
 
-    public static function make(string|Markup|Closure|null $content): static
+    public static function make(string|Markup|TranslatableInterface|Closure|null $content): static
     {
         $text = static::newInstance();
 
@@ -38,7 +39,7 @@ class Text extends Component
         return $text;
     }
 
-    public function content(string|Markup|Closure|null $content): static
+    public function content(string|Markup|TranslatableInterface|Closure|null $content): static
     {
         $this->content = $content;
 
@@ -47,7 +48,7 @@ class Text extends Component
 
     public function getContent(): string|Markup|null
     {
-        return $this->evaluate($this->content);
+        return $this->translateText($this->evaluate($this->content));
     }
 
     public function size(TextSize|Size|string|Closure|null $size): static

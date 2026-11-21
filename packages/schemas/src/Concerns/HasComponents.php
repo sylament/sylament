@@ -10,6 +10,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Html;
 use Sylament\Schemas\Components\Text;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -19,9 +20,9 @@ use function Sylament\Support\wrap;
 trait HasComponents
 {
     /**
-     * @var array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure
+     * @var array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure
      */
-    protected array|Component|Action|ActionGroup|string|Markup|Closure $components = [];
+    protected array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components = [];
 
     /**
      * @var array<Component|Action|ActionGroup>|null
@@ -29,9 +30,9 @@ trait HasComponents
     protected ?array $cachedComponents = null;
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components
      */
-    public function components(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
+    public function components(array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure $components): static
     {
         $this->components = $components;
         $this->cachedComponents = null;
@@ -47,7 +48,7 @@ trait HasComponents
     {
         if (!$this->components instanceof Closure) {
             $this->components = array_map(
-                static fn (Component|Action|ActionGroup|string|Markup $component): Component|Action|ActionGroup|string|Markup => match (true) {
+                static fn (Component|Action|ActionGroup|string|Markup|TranslatableInterface $component): Component|Action|ActionGroup|string|Markup|TranslatableInterface => match (true) {
                     $component instanceof Component => $component->getClone(),
                     $component instanceof Action, $component instanceof ActionGroup => clone $component,
                     default => $component,
@@ -186,7 +187,7 @@ trait HasComponents
                     continue;
                 }
 
-                if (is_string($component)) {
+                if (is_string($component) || $component instanceof TranslatableInterface) {
                     $component = Text::make($component);
                 } elseif (!$component instanceof Component) {
                     $component = Html::make($component);

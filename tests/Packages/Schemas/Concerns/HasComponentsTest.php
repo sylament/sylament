@@ -12,6 +12,8 @@ use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Twig\Markup;
 
+use function Symfony\Component\Translation\t;
+
 describe('components', function (): void {
     it('resolves children given as a closure when it renders, a string as text and markup as HTML', function (): void {
         $schema = Schema::make()->components(static fn (): array => [
@@ -22,6 +24,14 @@ describe('components', function (): void {
         expect($this->renderViewComponent($schema))
             ->toContainElement(Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Plain words')
             ->toContainElement(Selectors::COMPONENT_CELL . ' em', 'Marked up');
+    });
+
+    it('renders a message child escaped, as the text it translates to', function (): void {
+        $schema = Schema::make()->components([t('raw', ['x' => '<b>x</b>'], 'fixtures-schemas')]);
+
+        expect($this->renderViewComponent($schema))
+            ->toContainElement(Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Hello <b>x</b>')
+            ->not->toContainElement(Selectors::COMPONENT_CELL . ' b');
     });
 });
 

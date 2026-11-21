@@ -9,12 +9,13 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 trait HasChildComponents
 {
     /**
-     * @var array<string, Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null>
+     * @var array<string, Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null>
      */
     protected array $childComponents = [];
 
@@ -24,9 +25,9 @@ trait HasChildComponents
     protected ?array $cachedDefaultChildSchemas = null;
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function components(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function components(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components);
 
@@ -34,9 +35,9 @@ trait HasChildComponents
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function childComponents(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components, string $key = 'default'): static
+    public function childComponents(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components, string $key = 'default'): static
     {
         $this->childComponents[$key] = $components;
         $this->cachedDefaultChildSchemas = null;
@@ -198,7 +199,7 @@ trait HasChildComponents
         foreach ($this->childComponents as $key => $childComponents) {
             if (is_array($childComponents)) {
                 $this->childComponents[$key] = array_map(
-                    static fn (Component|Action|ActionGroup|string|Markup $component): Component|Action|ActionGroup|string|Markup => match (true) {
+                    static fn (Component|Action|ActionGroup|string|Markup|TranslatableInterface $component): Component|Action|ActionGroup|string|Markup|TranslatableInterface => match (true) {
                         $component instanceof Component => $component->getClone(),
                         $component instanceof Action, $component instanceof ActionGroup => clone $component,
                         default => $component,

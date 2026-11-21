@@ -16,6 +16,7 @@ use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -28,9 +29,9 @@ class Wizard extends Component
 
     protected string|Closure|null $template = '@SylamentSchemas/partials/Wizard/index.html.twig';
 
-    protected string|Markup|Action|null $cancelAction = null;
+    protected string|Markup|TranslatableInterface|Action|Closure|null $cancelAction = null;
 
-    protected string|Markup|Action|null $submitAction = null;
+    protected string|Markup|TranslatableInterface|Action|Closure|null $submitAction = null;
 
     protected bool|Closure $isSkippable = false;
 
@@ -214,14 +215,14 @@ class Wizard extends Component
         return $this;
     }
 
-    public function cancelAction(string|Markup|Action|null $action): static
+    public function cancelAction(string|Markup|TranslatableInterface|Action|Closure|null $action): static
     {
         $this->cancelAction = $action;
 
         return $this;
     }
 
-    public function submitAction(string|Markup|Action|null $action): static
+    public function submitAction(string|Markup|TranslatableInterface|Action|Closure|null $action): static
     {
         $this->submitAction = $action;
 
@@ -251,12 +252,12 @@ class Wizard extends Component
 
     public function getCancelAction(): string|Markup|Action|null
     {
-        return $this->cancelAction;
+        return $this->translateSlot($this->evaluate($this->cancelAction));
     }
 
     public function getSubmitAction(): string|Markup|Action|null
     {
-        return $this->submitAction;
+        return $this->translateSlot($this->evaluate($this->submitAction));
     }
 
     /**
@@ -361,6 +362,11 @@ class Wizard extends Component
             'submitActionComponent' => $submitAction instanceof Action ? $submitAction : null,
             'submitActionHtml' => $this->renderSlotHtml($submitAction),
         ];
+    }
+
+    private function translateSlot(string|Markup|TranslatableInterface|Action|null $slot): string|Markup|Action|null
+    {
+        return $slot instanceof Action ? $slot : $this->translateText($slot);
     }
 
     /**

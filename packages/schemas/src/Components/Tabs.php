@@ -21,6 +21,7 @@ use Sylament\Support\Twig\Extension\IconExtension;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -50,7 +51,7 @@ class Tabs extends Component
 
     protected ?RequestStack $requestStack = null;
 
-    public static function make(string|Markup|Closure|null $label = null): static
+    public static function make(string|Markup|TranslatableInterface|Closure|null $label = null): static
     {
         $tabs = static::newInstance();
 

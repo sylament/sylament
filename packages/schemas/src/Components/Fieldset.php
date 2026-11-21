@@ -10,6 +10,7 @@ use Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
 use Sylament\Support\Components\Concerns\CanBeContained;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class Fieldset extends Component implements CanEntangleWithSingularRelationships
@@ -21,7 +22,7 @@ class Fieldset extends Component implements CanEntangleWithSingularRelationships
 
     protected string|Closure|null $template = '@SylamentSchemas/partials/Fieldset/index.html.twig';
 
-    public static function make(string|Markup|Closure|null $label = null): static
+    public static function make(string|Markup|TranslatableInterface|Closure|null $label = null): static
     {
         $fieldset = static::newInstance();
 

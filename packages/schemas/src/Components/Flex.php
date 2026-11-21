@@ -13,6 +13,7 @@ use Sylament\Support\Components\Concerns\HasAlignment;
 use Sylament\Support\Components\Concerns\HasFromBreakpoint;
 use Sylament\Support\Components\Concerns\HasVerticalAlignment;
 use Sylament\Support\Enums\VerticalAlignment;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class Flex extends Component implements CanEntangleWithSingularRelationships
@@ -25,7 +26,7 @@ class Flex extends Component implements CanEntangleWithSingularRelationships
     protected string|Closure|null $template = '@SylamentSchemas/partials/Flex/index.html.twig';
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Closure $schema
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Closure $schema
      */
     public static function make(array|Closure $schema): static
     {

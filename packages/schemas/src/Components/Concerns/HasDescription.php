@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 trait HasDescription
 {
-    protected string|Markup|Closure|null $description = null;
+    protected string|Markup|TranslatableInterface|Closure|null $description = null;
 
-    public function description(string|Markup|Closure|null $description = null): static
+    public function description(string|Markup|TranslatableInterface|Closure|null $description = null): static
     {
         $this->description = $description;
 
@@ -20,6 +21,6 @@ trait HasDescription
 
     public function getDescription(): string|Markup|null
     {
-        return $this->evaluate($this->description);
+        return $this->translateText($this->evaluate($this->description));
     }
 }

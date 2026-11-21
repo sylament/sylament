@@ -29,6 +29,7 @@ use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\Size;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -67,7 +68,7 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
 
     protected string|Closure|null $template = '@SylamentSchemas/partials/Section/index.html.twig';
 
-    public static function make(string|Markup|Closure|null $heading = null): static
+    public static function make(string|Markup|TranslatableInterface|Closure|null $heading = null): static
     {
         $section = static::newInstance();
 
@@ -102,9 +103,9 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function afterHeader(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function afterHeader(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_HEADER_SCHEMA_KEY);
 
@@ -112,9 +113,9 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function footer(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function footer(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::FOOTER_SCHEMA_KEY);
 
@@ -122,9 +123,9 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function beforeLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function beforeLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BEFORE_LABEL_SCHEMA_KEY);
 
@@ -132,9 +133,9 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function afterLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function afterLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_LABEL_SCHEMA_KEY);
 
@@ -142,9 +143,9 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_CONTENT_SCHEMA_KEY);
 
@@ -152,9 +153,9 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_CONTENT_SCHEMA_KEY);
 

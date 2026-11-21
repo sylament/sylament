@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 trait HasHeading
 {
-    protected string|Markup|Closure|null $heading = null;
+    protected string|Markup|TranslatableInterface|Closure|null $heading = null;
 
-    public function heading(string|Markup|Closure|null $heading = null): static
+    public function heading(string|Markup|TranslatableInterface|Closure|null $heading = null): static
     {
         $this->heading = $heading;
 
@@ -20,6 +21,6 @@ trait HasHeading
 
     public function getHeading(): string|Markup|null
     {
-        return $this->evaluate($this->heading);
+        return $this->translateText($this->evaluate($this->heading));
     }
 }

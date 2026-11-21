@@ -6,6 +6,8 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Text;
 use Twig\Markup;
 
+use function Symfony\Component\Translation\t;
+
 it('shows its heading in its header, text as text and markup as markup, and no header for a blank one', function (): void {
     expect($this->renderSchemaComponent(Section::make()->heading('<em>Shipping</em>')->components([Text::make('Body')])))
         ->toContainElement('section header h2', '<em>Shipping</em>')
@@ -15,4 +17,9 @@ it('shows its heading in its header, text as text and markup as markup, and no h
         ->and($this->renderSchemaComponent(Section::make()->heading('   ')->components([Text::make('Body')])))
         ->toContainElement('section', 'Body')
         ->not->toContainElement('header');
+});
+
+it('translates a heading given as a message', function (): void {
+    expect($this->renderSchemaComponent(Section::make(t('section.heading', [], 'fixtures-schemas'))->components([Text::make('Body')])))
+        ->toContainElement('section header h2', 'Shipping (translated)');
 });

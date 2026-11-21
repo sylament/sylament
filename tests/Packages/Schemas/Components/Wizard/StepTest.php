@@ -14,6 +14,8 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Error\RuntimeError;
 
+use function Symfony\Component\Translation\t;
+
 it('shows its label on its header button and what it holds in its panel', function (): void {
     expect($this->renderSchemaComponent(Wizard::make([Step::make('Account')->components([TextInput::make('name')])])))
         ->toContainElement(Selectors::WIZARD_STEP_BUTTON, 'check 01 Account')
@@ -53,6 +55,11 @@ it('runs its after-validation hook once the step passes, and not when it fails',
 it('shows its description under its label', function (): void {
     expect($this->renderSchemaComponent(Wizard::make([Step::make('Account')->description('Who you are')])))
         ->toContainElement(Selectors::WIZARD_STEP_BUTTON, 'check 01 Account Who you are');
+});
+
+it('shows a label and a description given as messages in its header', function (): void {
+    expect($this->renderSchemaComponent(Wizard::make([Step::make(t('account.label', [], 'fixtures-schemas'))->description(t('account.step.description', [], 'fixtures-schemas'))])))
+        ->toContainElement(Selectors::WIZARD_STEP_BUTTON, 'check 01 Account (translated) Who you are (translated)');
 });
 
 it('shows its icon in place of its number', function (): void {

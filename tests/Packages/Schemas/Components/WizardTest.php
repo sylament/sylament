@@ -13,7 +13,10 @@ use Sylament\Tests\Fixtures\Schemas\WizardForm;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Translation\TranslatableMessage;
 use Twig\Markup;
+
+use function Symfony\Component\Translation\t;
 
 describe('render', function (): void {
     it('shows each step it holds as a header button and a panel, in order, the last list it is given winning, and none when it holds none', function (): void {
@@ -151,6 +154,8 @@ describe('footer', function (): void {
             ->and($wizard->getAction('leave'))->toBeNull();
     })->with([
         'a string' => [static fn (): string => '<b>Leave</b>', '', '<b>Leave</b>'],
+        'a message' => [static fn (): TranslatableMessage => t('cancel', [], 'fixtures-schemas'), '', 'Never mind (translated)'],
+        'a message carrying markup in a parameter' => [static fn (): TranslatableMessage => t('raw', ['x' => '<b>x</b>'], 'fixtures-schemas'), '', 'Hello <b>x</b>'],
         'a Markup' => [static fn (): Markup => new Markup('<a href="/orders">Leave</a>', 'UTF-8'), ' a[href="/orders"]', 'Leave'],
         'an action' => [static fn (): Action => Action::make('leave'), ' ' . SupportSelectors::BUTTON, 'Leave'],
     ]);

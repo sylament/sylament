@@ -18,6 +18,7 @@ use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconPosition;
 use Sylament\Support\Enums\IconPosition;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -42,7 +43,7 @@ class Tab extends Component implements CanConcealComponents
 
     protected bool|Closure $isBadgeDeferred = false;
 
-    public static function make(string|Markup|Closure|null $label = null): static
+    public static function make(string|Markup|TranslatableInterface|Closure|null $label = null): static
     {
         $tab = static::newInstance();
 

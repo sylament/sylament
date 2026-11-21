@@ -92,7 +92,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      */
     protected ?array $searchColumns = null;
 
-    protected string|Closure|null $maxItemsMessage = null;
+    protected string|TranslatableInterface|Closure|null $maxItemsMessage = null;
 
     protected string|Closure|null $position = null;
 
@@ -115,9 +115,9 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     protected ?Closure $createOptionUsing = null;
 
-    protected string|Markup|Closure|null $createOptionModalHeading = null;
+    protected string|Markup|TranslatableInterface|Closure|null $createOptionModalHeading = null;
 
-    protected string|Markup|Closure|null $editOptionModalHeading = null;
+    protected string|Markup|TranslatableInterface|Closure|null $editOptionModalHeading = null;
 
     protected ?Closure $modifyCreateOptionActionUsing = null;
 
@@ -171,7 +171,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         $this->iconManager = $iconManager;
     }
 
-    public function boolean(?string $trueLabel = null, ?string $falseLabel = null, ?string $placeholder = null): static
+    public function boolean(string|TranslatableInterface|null $trueLabel = null, string|TranslatableInterface|null $falseLabel = null, string|TranslatableInterface|null $placeholder = null): static
     {
         $this->options([
             1 => $trueLabel ?? 'Yes',
@@ -291,7 +291,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return $this->evaluate($this->optionsLimit);
     }
 
-    public function maxItemsMessage(string|Closure|null $message): static
+    public function maxItemsMessage(string|TranslatableInterface|Closure|null $message): static
     {
         $this->maxItemsMessage = $message;
 
@@ -300,8 +300,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     public function getMaxItemsMessage(): string
     {
-        return $this->evaluate($this->maxItemsMessage)
-            ?? str_replace(':count', (string) $this->getMaxItems(), 'Only :count can be selected.');
+        return (string) ($this->translateText($this->evaluate($this->maxItemsMessage))
+            ?? str_replace(':count', (string) $this->getMaxItems(), 'Only :count can be selected.'));
     }
 
     public function position(string|Closure|null $position): static
@@ -824,14 +824,14 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return $this->applyOptionActionModifiers($action, $this->modifyCreateOptionActionUsing);
     }
 
-    public function createOptionModalHeading(string|Markup|Closure|null $heading): static
+    public function createOptionModalHeading(string|Markup|TranslatableInterface|Closure|null $heading): static
     {
         $this->createOptionModalHeading = $heading;
 
         return $this;
     }
 
-    public function editOptionModalHeading(string|Markup|Closure|null $heading): static
+    public function editOptionModalHeading(string|Markup|TranslatableInterface|Closure|null $heading): static
     {
         $this->editOptionModalHeading = $heading;
 
@@ -966,12 +966,12 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     public function getCreateOptionModalHeading(): string|Markup|null
     {
-        return $this->evaluate($this->createOptionModalHeading);
+        return $this->translateText($this->evaluate($this->createOptionModalHeading));
     }
 
     public function getEditOptionModalHeading(): string|Markup|null
     {
-        return $this->evaluate($this->editOptionModalHeading);
+        return $this->translateText($this->evaluate($this->editOptionModalHeading));
     }
 
     /**

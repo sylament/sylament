@@ -29,6 +29,7 @@ use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Url;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\filled;
 
@@ -138,7 +139,7 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
 
     public function copyable(
         bool|Closure $condition = true,
-        string|Closure|null $copyMessage = null,
+        string|TranslatableInterface|Closure|null $copyMessage = null,
         int|Closure|null $copyMessageDuration = null,
     ): static {
         $this->isCopyable = $condition;

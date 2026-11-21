@@ -37,6 +37,7 @@ use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Forms\array_move_after;
@@ -127,7 +128,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     protected ?Closure $mutateRelationshipDataBeforeSaveUsing = null;
 
-    protected string|Markup|Closure|null $itemLabel = null;
+    protected string|Markup|TranslatableInterface|Closure|null $itemLabel = null;
 
     protected bool|Closure $hasItemNumbers = false;
 
@@ -145,11 +146,11 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     protected bool|Closure $isReorderableWithDragAndDrop = true;
 
-    protected string|Closure|null $addActionLabel = null;
+    protected string|TranslatableInterface|Closure|null $addActionLabel = null;
 
-    protected string|Closure|null $addBetweenActionLabel = null;
+    protected string|TranslatableInterface|Closure|null $addBetweenActionLabel = null;
 
-    protected string|Closure|null $labelBetweenItems = null;
+    protected string|TranslatableInterface|Closure|null $labelBetweenItems = null;
 
     /**
      * @var array<TableColumn>|Closure|null
@@ -678,7 +679,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         return $this;
     }
 
-    public function itemLabel(string|Markup|Closure|null $label): static
+    public function itemLabel(string|Markup|TranslatableInterface|Closure|null $label): static
     {
         $this->itemLabel = $label;
 
@@ -689,7 +690,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     {
         $container = $this->getChildSchema($key);
 
-        return $this->evaluate($this->itemLabel, [
+        return $this->translateText($this->evaluate($this->itemLabel, [
             'container' => $container,
             'index' => $index,
             'item' => $container,
@@ -697,7 +698,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
             'schema' => $container,
             'state' => $container?->getStateSnapshot() ?? [],
             'uuid' => $key,
-        ]);
+        ]));
     }
 
     public function hasItemLabels(): bool
@@ -824,7 +825,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         return $this->evaluate($this->isReorderableWithDragAndDrop) && $this->isReorderable();
     }
 
-    public function labelBetweenItems(string|Closure|null $label): static
+    public function labelBetweenItems(string|TranslatableInterface|Closure|null $label): static
     {
         $this->labelBetweenItems = $label;
 
@@ -833,7 +834,9 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     public function getLabelBetweenItems(): ?string
     {
-        return $this->evaluate($this->labelBetweenItems);
+        $label = $this->translateText($this->evaluate($this->labelBetweenItems));
+
+        return $label === null ? null : (string) $label;
     }
 
     /**
@@ -916,7 +919,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         return 'add';
     }
 
-    public function addActionLabel(string|Closure|null $label): static
+    public function addActionLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->addActionLabel = $label;
 
@@ -925,10 +928,10 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     public function getAddActionLabel(): string
     {
-        $label = $this->evaluate($this->addActionLabel);
+        $label = $this->translateText($this->evaluate($this->addActionLabel));
 
         if ($label !== null) {
-            return $label;
+            return (string) $label;
         }
 
         $componentLabel = u((string) $this->getLabel());
@@ -1171,7 +1174,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         return 'addBetween';
     }
 
-    public function addBetweenActionLabel(string|Closure|null $label): static
+    public function addBetweenActionLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->addBetweenActionLabel = $label;
 
@@ -1180,7 +1183,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     public function getAddBetweenActionLabel(): string
     {
-        return $this->evaluate($this->addBetweenActionLabel) ?? 'Insert between';
+        return (string) ($this->translateText($this->evaluate($this->addBetweenActionLabel)) ?? 'Insert between');
     }
 
     public function getReorderAction(): Action

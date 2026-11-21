@@ -10,6 +10,7 @@ use Sylament\Support\Components\Concerns\CanWrapHeader;
 use Sylament\Support\Components\Concerns\HasAlignment;
 use Sylament\Support\Components\Concerns\HasVerticalAlignment;
 use Sylament\Support\Components\Concerns\HasWidth;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class TableColumn extends Component
@@ -21,13 +22,13 @@ class TableColumn extends Component
 
     protected string $evaluationIdentifier = 'column';
 
-    protected string|Markup|Closure $label = '';
+    protected string|Markup|TranslatableInterface|Closure $label = '';
 
     protected bool|Closure $isHeaderLabelHidden = false;
 
     protected bool|Closure $isMarkedAsRequired = false;
 
-    public static function make(string|Markup|Closure $label): static
+    public static function make(string|Markup|TranslatableInterface|Closure $label): static
     {
         $static = static::newInstance();
         $static->label($label);
@@ -36,7 +37,7 @@ class TableColumn extends Component
         return $static;
     }
 
-    public function label(string|Markup|Closure $label): static
+    public function label(string|Markup|TranslatableInterface|Closure $label): static
     {
         $this->label = $label;
 
@@ -45,7 +46,7 @@ class TableColumn extends Component
 
     public function getLabel(): string|Markup
     {
-        return $this->evaluate($this->label);
+        return $this->translateText($this->evaluate($this->label)) ?? '';
     }
 
     public function hiddenHeaderLabel(bool|Closure $condition = true): static

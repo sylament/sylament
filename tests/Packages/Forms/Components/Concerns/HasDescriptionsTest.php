@@ -7,6 +7,8 @@ use Sylament\Tests\Fixtures\Forms\DeliveryMode;
 use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 
+use function Symfony\Component\Translation\t;
+
 describe('descriptions()', function (): void {
     it('describes the options its map names, and those of the map a later descriptions() call gives after a render', function (): void {
         $radio = Radio::make('plan')->options(['basic' => 'Basic', 'pro' => 'Pro'])->descriptions(['basic' => 'For one']);
@@ -51,4 +53,9 @@ describe('enum descriptions', function (): void {
                 ['pickup', null],
             ]);
     });
+});
+
+it('translates a description given as a message', function (): void {
+    expect($this->radioDescriptions($this->renderSchemaComponent(Radio::make('plan')->options(['basic' => 'Basic', 'pro' => 'Pro'])->descriptions(['basic' => t('option.basic_description', [], 'fixtures-forms')]))))
+        ->toBe([['basic', 'For one (translated)'], ['pro', null]]);
 });

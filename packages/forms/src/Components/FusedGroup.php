@@ -14,6 +14,7 @@ use Sylament\Schemas\Components\Concerns\CanBeMarkedAsRequired;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Size;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -55,7 +56,7 @@ class FusedGroup extends Component
     protected string|Closure|null $template = '@SylamentForms/partials/FusedGroup/index.html.twig';
 
     /**
-     * @param array<Component|Action|ActionGroup|string|Markup>|Closure $schema
+     * @param array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Closure $schema
      */
     public static function make(array|Closure $schema = []): static
     {
@@ -76,9 +77,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_LABEL_SCHEMA_KEY);
 
@@ -86,9 +87,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_LABEL_SCHEMA_KEY);
 
@@ -96,9 +97,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function beforeLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function beforeLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BEFORE_LABEL_SCHEMA_KEY);
 
@@ -106,9 +107,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function afterLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function afterLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_LABEL_SCHEMA_KEY);
 
@@ -116,9 +117,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_CONTENT_SCHEMA_KEY);
 
@@ -126,9 +127,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_CONTENT_SCHEMA_KEY);
 
@@ -136,9 +137,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function beforeContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function beforeContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BEFORE_CONTENT_SCHEMA_KEY);
 
@@ -146,9 +147,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function afterContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function afterContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_CONTENT_SCHEMA_KEY);
 
@@ -156,9 +157,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_ERROR_MESSAGE_SCHEMA_KEY);
 
@@ -166,9 +167,9 @@ class FusedGroup extends Component
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_ERROR_MESSAGE_SCHEMA_KEY);
 

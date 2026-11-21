@@ -15,6 +15,7 @@ use Sylament\Support\Components\Concerns\HasReorderAnimationDuration;
 use Sylament\Support\Enums\Size;
 use Sylament\Support\Icons\IconManager;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 class KeyValue extends Field
@@ -25,11 +26,11 @@ class KeyValue extends Field
 
     protected string|Closure|null $template = '@SylamentForms/partials/KeyValue/index.html.twig';
 
-    protected string|Closure|null $addActionLabel = null;
+    protected string|TranslatableInterface|Closure|null $addActionLabel = null;
 
-    protected string|Closure|null $deleteActionLabel = null;
+    protected string|TranslatableInterface|Closure|null $deleteActionLabel = null;
 
-    protected string|Closure|null $reorderActionLabel = null;
+    protected string|TranslatableInterface|Closure|null $reorderActionLabel = null;
 
     protected bool|Closure $isAddable = true;
 
@@ -41,13 +42,13 @@ class KeyValue extends Field
 
     protected bool|Closure $isReorderable = false;
 
-    protected string|Closure|null $keyLabel = null;
+    protected string|TranslatableInterface|Closure|null $keyLabel = null;
 
-    protected string|Closure|null $valueLabel = null;
+    protected string|TranslatableInterface|Closure|null $valueLabel = null;
 
-    protected string|Closure|null $keyPlaceholder = null;
+    protected string|TranslatableInterface|Closure|null $keyPlaceholder = null;
 
-    protected string|Closure|null $valuePlaceholder = null;
+    protected string|TranslatableInterface|Closure|null $valuePlaceholder = null;
 
     protected Action|Closure|null $modifyAddActionUsing = null;
 
@@ -195,21 +196,21 @@ class KeyValue extends Field
         return 'reorder';
     }
 
-    public function addActionLabel(string|Closure|null $label): static
+    public function addActionLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->addActionLabel = $label;
 
         return $this;
     }
 
-    public function deleteActionLabel(string|Closure|null $label): static
+    public function deleteActionLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->deleteActionLabel = $label;
 
         return $this;
     }
 
-    public function reorderActionLabel(string|Closure|null $label): static
+    public function reorderActionLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->reorderActionLabel = $label;
 
@@ -251,28 +252,28 @@ class KeyValue extends Field
         return $this;
     }
 
-    public function keyLabel(string|Closure|null $label): static
+    public function keyLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->keyLabel = $label;
 
         return $this;
     }
 
-    public function valueLabel(string|Closure|null $label): static
+    public function valueLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->valueLabel = $label;
 
         return $this;
     }
 
-    public function keyPlaceholder(string|Closure|null $placeholder): static
+    public function keyPlaceholder(string|TranslatableInterface|Closure|null $placeholder): static
     {
         $this->keyPlaceholder = $placeholder;
 
         return $this;
     }
 
-    public function valuePlaceholder(string|Closure|null $placeholder): static
+    public function valuePlaceholder(string|TranslatableInterface|Closure|null $placeholder): static
     {
         $this->valuePlaceholder = $placeholder;
 
@@ -318,37 +319,41 @@ class KeyValue extends Field
 
     public function getAddActionLabel(): string
     {
-        return $this->evaluate($this->addActionLabel) ?? 'Add row';
+        return (string) ($this->translateText($this->evaluate($this->addActionLabel)) ?? 'Add row');
     }
 
     public function getDeleteActionLabel(): string
     {
-        return $this->evaluate($this->deleteActionLabel) ?? 'Delete row';
+        return (string) ($this->translateText($this->evaluate($this->deleteActionLabel)) ?? 'Delete row');
     }
 
     public function getReorderActionLabel(): string
     {
-        return $this->evaluate($this->reorderActionLabel) ?? 'Reorder row';
+        return (string) ($this->translateText($this->evaluate($this->reorderActionLabel)) ?? 'Reorder row');
     }
 
     public function getKeyLabel(): string
     {
-        return $this->evaluate($this->keyLabel) ?? 'Key';
+        return (string) ($this->translateText($this->evaluate($this->keyLabel)) ?? 'Key');
     }
 
     public function getValueLabel(): string
     {
-        return $this->evaluate($this->valueLabel) ?? 'Value';
+        return (string) ($this->translateText($this->evaluate($this->valueLabel)) ?? 'Value');
     }
 
     public function getKeyPlaceholder(): ?string
     {
-        return $this->evaluate($this->keyPlaceholder);
+        $placeholder = $this->translateText($this->evaluate($this->keyPlaceholder));
+
+        return $placeholder === null ? null : (string) $placeholder;
     }
 
     public function getValuePlaceholder(): ?string
     {
-        return $this->evaluate($this->valuePlaceholder);
+        $placeholder = $this->translateText($this->evaluate($this->valuePlaceholder));
+
+        return $placeholder === null ? null : (string) $placeholder;
     }
 
     public function hydrateRows(): void

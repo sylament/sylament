@@ -21,6 +21,8 @@ use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Schemas\TaggingStateCast;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\Translator;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
@@ -321,4 +323,15 @@ describe('relationship', function (): void {
 
         expect(fn (): mixed => $schema->fill($garden))->toThrow(LogicException::class, 'The [supplier] field declares relationship("supplier"), but that association holds a single ' . Product::class . ' rather than a collection, so the list of selections the field always speaks could not map it. Point relationship() at a to-many association.');
     });
+});
+
+it('translates the label it takes from its relationship as a key in the default domain under translateLabel()', function (): void {
+    $translator = new Translator('en');
+    $translator->addLoader('array', new ArrayLoader());
+    $translator->addResource('array', ['Plants' => 'Greenery (from the default domain)'], 'en');
+
+    $list = CheckboxList::make('plantIds')->relationship('plants', 'name')->translateLabel();
+    $list->setTranslator($translator);
+
+    expect($this->renderSchemaComponent(Group::make([$list])->record(Garden::class))->filter('[id="schema.plantIds-label"]')->text())->toBe('Greenery (from the default domain)');
 });

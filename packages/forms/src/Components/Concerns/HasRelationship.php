@@ -93,11 +93,11 @@ trait HasRelationship
      */
     public function getOptionLabelFromRecord(object $record): string|Markup
     {
-        return $this->evaluate($this->getOptionLabelFromRecordUsing, [
+        return $this->translateText($this->evaluate($this->getOptionLabelFromRecordUsing, [
             'record' => $record,
         ], [
             $record::class => $record,
-        ]) ?? '';
+        ])) ?? '';
     }
 
     /**

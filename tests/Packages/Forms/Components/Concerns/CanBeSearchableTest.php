@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Sylament\Forms\Components\Select;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 
+use function Symfony\Component\Translation\t;
+
 it('switches the select to the JS control with its search box on, and searchable(false) leaves it native', function (): void {
     $searchable = $this->renderSchemaComponent(Select::make('plant')->options(['fern' => 'Fern'])->searchable());
 
@@ -49,3 +51,20 @@ it('matches typed text against the option labels by default, and against what th
     'values instead' => [static fn (Select $select): Select => $select->searchValues()->searchLabels(false), ['value']],
     'labels switched off by null' => [static fn (Select $select): Select => $select->searchLabels(null), []],
 ]);
+
+it('translates each of the four messages given as a message', function (): void {
+    $messages = ['noOptionsMessage', 'noSearchResultsMessage', 'searchPrompt', 'searchingMessage'];
+    $select = Select::make('plant')->options(['fern' => 'Fern'])->searchable()
+        ->noOptionsMessage(t('search.no_options', [], 'fixtures-forms'))
+        ->noSearchResultsMessage(t('search.no_results', [], 'fixtures-forms'))
+        ->searchPrompt(t('search.prompt', [], 'fixtures-forms'))
+        ->searchingMessage(t('search.searching', [], 'fixtures-forms'));
+    $render = $this->renderSchemaComponent($select);
+
+    expect(array_map(fn (string $name): mixed => $this->selectControllerValue($render, $name), $messages))->toBe([
+        'Nothing to pick (translated)',
+        'No plant matches (translated)',
+        'Type a plant name (translated)',
+        'Looking (translated)',
+    ]);
+});

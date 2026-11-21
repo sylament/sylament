@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 trait HasTooltips
 {
     /**
-     * @var array<string|int, string|Markup>|Closure|null
+     * @var array<string|int, string|Markup|TranslatableInterface>|Closure|null
      */
     protected array|Closure|null $tooltips = null;
 
@@ -22,7 +23,7 @@ trait HasTooltips
     protected bool $hasCachedTooltips = false;
 
     /**
-     * @param array<string|int, string|Markup>|Closure|null $tooltips
+     * @param array<string|int, string|Markup|TranslatableInterface>|Closure|null $tooltips
      */
     public function tooltips(array|Closure|null $tooltips): static
     {
@@ -48,7 +49,19 @@ trait HasTooltips
             return $this->cachedTooltips;
         }
 
-        $this->cachedTooltips = $this->evaluate($this->tooltips);
+        $tooltips = $this->evaluate($this->tooltips);
+
+        if ($tooltips !== null) {
+            $translated = [];
+
+            foreach ($tooltips as $value => $tooltip) {
+                $translated[$value] = $tooltip instanceof TranslatableInterface ? $tooltip->trans($this->getTranslator()) : $tooltip;
+            }
+
+            $tooltips = $translated;
+        }
+
+        $this->cachedTooltips = $tooltips;
         $this->hasCachedTooltips = true;
 
         return $this->cachedTooltips;

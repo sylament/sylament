@@ -10,13 +10,14 @@ use Sylament\Actions\Action;
 use Sylament\Forms\Components\Field;
 use Sylament\Schemas\Components\Icon;
 use Sylament\Schemas\Components\Text;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
 
 trait HasHint
 {
-    protected string|Markup|Closure|null $hint = null;
+    protected string|Markup|TranslatableInterface|Closure|null $hint = null;
 
     /**
      * @var array<Action|Closure>
@@ -30,7 +31,7 @@ trait HasHint
 
     protected string|BackedEnum|Markup|Closure|null $hintIcon = null;
 
-    protected string|Closure|null $hintIconTooltip = null;
+    protected string|TranslatableInterface|Closure|null $hintIconTooltip = null;
 
     protected function setUpHint(): void
     {
@@ -92,7 +93,7 @@ trait HasHint
         });
     }
 
-    public function hint(string|Markup|Closure|null $hint): static
+    public function hint(string|Markup|TranslatableInterface|Closure|null $hint): static
     {
         $this->hint = $hint;
 
@@ -109,7 +110,7 @@ trait HasHint
         return $this;
     }
 
-    public function hintIcon(string|BackedEnum|Markup|Closure|null $icon, string|Closure|null $tooltip = null): static
+    public function hintIcon(string|BackedEnum|Markup|Closure|null $icon, string|TranslatableInterface|Closure|null $tooltip = null): static
     {
         $this->hintIcon = $icon;
 
@@ -120,7 +121,7 @@ trait HasHint
         return $this;
     }
 
-    public function hintIconTooltip(string|Closure|null $tooltip): static
+    public function hintIconTooltip(string|TranslatableInterface|Closure|null $tooltip): static
     {
         $this->hintIconTooltip = $tooltip;
 
@@ -149,12 +150,12 @@ trait HasHint
 
     public function hasHint(): bool
     {
-        return filled($this->hint);
+        return filled($this->getHint());
     }
 
     public function getHint(): string|Markup|null
     {
-        return $this->evaluate($this->hint);
+        return $this->translateText($this->evaluate($this->hint));
     }
 
     /**
@@ -177,7 +178,9 @@ trait HasHint
 
     public function getHintIconTooltip(): ?string
     {
-        return $this->evaluate($this->hintIconTooltip);
+        $tooltip = $this->translateText($this->evaluate($this->hintIconTooltip));
+
+        return $tooltip === null ? null : (string) $tooltip;
     }
 
     /**

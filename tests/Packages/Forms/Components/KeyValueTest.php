@@ -14,6 +14,8 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Count;
 
+use function Symfony\Component\Translation\t;
+
 describe('rendering', function (): void {
     it('renders one row per pair with both cells, under the field label', function (): void {
         $crawler = $this->renderSchemaComponent(KeyValue::make('pairs'), ['pairs' => [['key' => 'colour', 'value' => 'red'], ['key' => 'size', 'value' => 'L']]]);
@@ -282,4 +284,23 @@ describe('disabled()', function (): void {
         expect($tester->component()->data['locked'])->toBe($rows)
             ->and($tester->component()->getMountedActions())->toBe([]);
     });
+});
+
+it('translates its labels and placeholders given as messages', function (): void {
+    $row = ['pairs' => [['key' => 'colour', 'value' => 'red']]];
+    $field = KeyValue::make('pairs')->reorderable()
+        ->addActionLabel(t('keyvalue.add', [], 'fixtures-forms'))
+        ->deleteActionLabel(t('keyvalue.delete', [], 'fixtures-forms'))
+        ->reorderActionLabel(t('keyvalue.reorder', [], 'fixtures-forms'))
+        ->keyLabel(t('keyvalue.key', [], 'fixtures-forms'))
+        ->valueLabel(t('keyvalue.value', [], 'fixtures-forms'))
+        ->keyPlaceholder(t('keyvalue.key_placeholder', [], 'fixtures-forms'))
+        ->valuePlaceholder(t('keyvalue.value_placeholder', [], 'fixtures-forms'));
+    $render = $this->renderSchemaComponent($field, $row);
+
+    expect($render->filter('thead th:not(.sy-fo-key-value-action-col)')->each(static fn (Crawler $heading): string => $heading->text()))->toBe(['Name (translated)', 'Amount (translated)'])
+        ->and($render->filter('tbody input')->each(static fn (Crawler $input): array => [$input->attr('aria-label'), $input->attr('placeholder')]))
+        ->toBe([['Name (translated)', 'Name here (translated)'], ['Amount (translated)', 'Amount here (translated)']])
+        ->and($render)->toContainButtons('tbody button', ['Move a pair (translated)', 'Drop a pair (translated)'])
+        ->and($render->filter('.sy-fo-key-value-add-action-ctn button')->text())->toBe('Add a pair (translated)');
 });

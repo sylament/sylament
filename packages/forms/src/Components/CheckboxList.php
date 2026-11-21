@@ -156,11 +156,11 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNest
 
     public function getOptionDescriptionFromRecord(object $record): string|Markup|null
     {
-        return $this->evaluate($this->getOptionDescriptionFromRecordUsing, [
+        return $this->translateText($this->evaluate($this->getOptionDescriptionFromRecordUsing, [
             'record' => $record,
         ], [
             $record::class => $record,
-        ]);
+        ]));
     }
 
     /**
@@ -226,7 +226,9 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNest
         $relationshipName = $this->getRelationshipName();
 
         if (filled($relationshipName)) {
-            return (string) u($relationshipName)->before('.')->kebab()->replace('-', ' ')->title();
+            $label = (string) u($relationshipName)->before('.')->kebab()->replace('-', ' ')->title();
+
+            return $this->shouldTranslateLabel ? $this->getTranslator()->trans($label) : $label;
         }
 
         return parent::getDefaultLabel();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Select;
+use Sylament\Schemas\Components\Group;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Tests\Fixtures\Entity\Allotment;
 use Sylament\Tests\Fixtures\Entity\Charter;
@@ -19,7 +20,10 @@ use Sylament\Tests\Fixtures\Entity\SeedPacket;
 use Sylament\Tests\Fixtures\Entity\SeedVault;
 use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Uid\Uuid;
+
+use function Symfony\Component\Translation\t;
 
 describe('relationship()', function (): void {
     it("lists every target row keyed by its identifier and labelled by the title attribute, and fills the keys the record holds, the field's own name naming the association", function (): void {
@@ -314,4 +318,10 @@ describe('a composite-keyed owner', function (): void {
         'two scalars' => [fn (): Terrace => new Terrace(1, 2), 'terrace_plant'],
         'an association plus a scalar' => [fn (): Allotment => new Allotment(new Garden('Plot'), 3), 'allotment_plant'],
     ]);
+});
+
+it('translates a record label given as a message', function (): void {
+    $this->seed(new Plant('Fern'));
+
+    expect($this->renderSchemaComponent(Group::make([CheckboxList::make('plants')->relationship('plants', 'name')->getOptionLabelFromRecordUsing(static fn (Plant $record): TranslatableMessage => t('record.label', ['name' => $record->name], 'fixtures-forms'))])->record(Garden::class))->filter('[role="group"] label')->text())->toBe('Plant Fern (translated)');
 });

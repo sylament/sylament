@@ -8,6 +8,7 @@ use BackedEnum;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Support\Enums\Size;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\wrap;
@@ -24,7 +25,7 @@ trait HasAffixes
      */
     protected array $suffixActions = [];
 
-    protected string|Markup|Closure|null $suffixLabel = null;
+    protected string|Markup|TranslatableInterface|Closure|null $suffixLabel = null;
 
     /**
      * @var array<string, Action>|null
@@ -36,7 +37,7 @@ trait HasAffixes
      */
     protected array $prefixActions = [];
 
-    protected string|Markup|Closure|null $prefixLabel = null;
+    protected string|Markup|TranslatableInterface|Closure|null $prefixLabel = null;
 
     protected string|BackedEnum|Markup|Closure|null $prefixIcon = null;
 
@@ -56,7 +57,7 @@ trait HasAffixes
 
     protected bool|Closure $isSuffixInline = false;
 
-    public function prefix(string|Markup|Closure|null $label, bool|Closure $isInline = false): static
+    public function prefix(string|Markup|TranslatableInterface|Closure|null $label, bool|Closure $isInline = false): static
     {
         $this->prefixLabel = $label;
         $this->inlinePrefix($isInline);
@@ -64,12 +65,12 @@ trait HasAffixes
         return $this;
     }
 
-    public function postfix(string|Markup|Closure|null $label, bool|Closure $isInline = false): static
+    public function postfix(string|Markup|TranslatableInterface|Closure|null $label, bool|Closure $isInline = false): static
     {
         return $this->suffix($label, $isInline);
     }
 
-    public function suffix(string|Markup|Closure|null $label, bool|Closure $isInline = false): static
+    public function suffix(string|Markup|TranslatableInterface|Closure|null $label, bool|Closure $isInline = false): static
     {
         $this->suffixLabel = $label;
         $this->inlineSuffix($isInline);
@@ -227,12 +228,12 @@ trait HasAffixes
 
     public function getPrefixLabel(): string|Markup|null
     {
-        return $this->evaluate($this->prefixLabel);
+        return $this->translateText($this->evaluate($this->prefixLabel));
     }
 
     public function getSuffixLabel(): string|Markup|null
     {
-        return $this->evaluate($this->suffixLabel);
+        return $this->translateText($this->evaluate($this->suffixLabel));
     }
 
     public function getPrefixIcon(): string|BackedEnum|Markup|null

@@ -49,6 +49,8 @@ use Symfony\Component\Validator\Constraints\Type;
 use Twig\Error\RuntimeError;
 use Twig\Markup;
 
+use function Symfony\Component\Translation\t;
+
 describe('native render', function (): void {
     it('renders one option per entry, a group as an optgroup, the placeholder first, and the field bound by its id, name and model', function (): void {
         $select = $this->renderSchemaComponent(Select::make('plant')->options(['Ferns' => ['fern' => 'Fern', 'bracken' => 'Bracken'], 'moss' => 'Moss']))->filter(Selectors::NATIVE_SELECT);
@@ -1231,4 +1233,12 @@ describe('composite relationship targets', function (): void {
             return $berth;
         }],
     ]);
+});
+
+it('translates the labels of boolean() and the max-items message given as messages', function (): void {
+    $options = static fn (Crawler $render): array => $render->filter('option')->each(static fn (Crawler $option): array => [$option->attr('value'), $option->text()]);
+
+    expect($options($this->renderSchemaComponent(Select::make('done')->boolean(t('select.yes', [], 'fixtures-forms'), t('select.no', [], 'fixtures-forms'), t('select.either', [], 'fixtures-forms')))))
+        ->toBe([['', 'Either (translated)'], ['1', 'Done (translated)'], ['0', 'Open (translated)']])
+        ->and($this->selectControllerValue($this->renderSchemaComponent(Select::make('plants')->multiple()->options(['fern' => 'Fern'])->maxItems(2)->maxItemsMessage(t('select.max_items', ['count' => 2], 'fixtures-forms'))), 'maxItemsMessage'))->toBe('At most 2 plants (translated)');
 });

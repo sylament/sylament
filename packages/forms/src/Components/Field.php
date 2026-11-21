@@ -27,6 +27,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Support\Enums\Size;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -116,7 +117,9 @@ abstract class Field extends Component implements HasValidationConstraints
             return null;
         }
 
-        return (string) u($name)->afterLast('.')->kebab()->replace('-', ' ')->title();
+        $label = (string) u($name)->afterLast('.')->kebab()->replace('-', ' ')->title();
+
+        return $this->shouldTranslateLabel ? $this->getTranslator()->trans($label) : $label;
     }
 
     /**
@@ -182,9 +185,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_LABEL_SCHEMA_KEY);
 
@@ -192,9 +195,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_LABEL_SCHEMA_KEY);
 
@@ -202,9 +205,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function beforeLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function beforeLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BEFORE_LABEL_SCHEMA_KEY);
 
@@ -212,9 +215,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function afterLabel(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function afterLabel(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_LABEL_SCHEMA_KEY);
 
@@ -222,9 +225,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_CONTENT_SCHEMA_KEY);
 
@@ -232,9 +235,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_CONTENT_SCHEMA_KEY);
 
@@ -242,9 +245,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function beforeContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function beforeContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BEFORE_CONTENT_SCHEMA_KEY);
 
@@ -252,9 +255,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function afterContent(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function afterContent(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_CONTENT_SCHEMA_KEY);
 
@@ -262,9 +265,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function aboveErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function aboveErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_ERROR_MESSAGE_SCHEMA_KEY);
 
@@ -272,9 +275,9 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup|TranslatableInterface>|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components
      */
-    public function belowErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
+    public function belowErrorMessage(Schema|array|Component|Action|ActionGroup|string|Markup|TranslatableInterface|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_ERROR_MESSAGE_SCHEMA_KEY);
 

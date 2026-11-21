@@ -26,6 +26,138 @@
                 <source>status.published</source>
                 <target>Published (translated)</target>
             </trans-unit>
+            <trans-unit id="field.placeholder" resname="field.placeholder">
+                <source>field.placeholder</source>
+                <target>Type a plant (translated)</target>
+            </trans-unit>
+            <trans-unit id="field.prefix" resname="field.prefix">
+                <source>field.prefix</source>
+                <target>per kg (translated)</target>
+            </trans-unit>
+            <trans-unit id="field.hint" resname="field.hint">
+                <source>field.hint</source>
+                <target>Forgotten? (translated)</target>
+            </trans-unit>
+            <trans-unit id="field.hint_tooltip" resname="field.hint_tooltip">
+                <source>field.hint_tooltip</source>
+                <target>Kept private (translated)</target>
+            </trans-unit>
+            <trans-unit id="field.helper" resname="field.helper">
+                <source>field.helper</source>
+                <target>As on your passport (translated)</target>
+            </trans-unit>
+            <trans-unit id="search.no_options" resname="search.no_options">
+                <source>search.no_options</source>
+                <target>Nothing to pick (translated)</target>
+            </trans-unit>
+            <trans-unit id="search.no_results" resname="search.no_results">
+                <source>search.no_results</source>
+                <target>No plant matches (translated)</target>
+            </trans-unit>
+            <trans-unit id="search.prompt" resname="search.prompt">
+                <source>search.prompt</source>
+                <target>Type a plant name (translated)</target>
+            </trans-unit>
+            <trans-unit id="search.searching" resname="search.searching">
+                <source>search.searching</source>
+                <target>Looking (translated)</target>
+            </trans-unit>
+            <trans-unit id="select.loading" resname="select.loading">
+                <source>select.loading</source>
+                <target>Fetching plants (translated)</target>
+            </trans-unit>
+            <trans-unit id="select.max_items" resname="select.max_items">
+                <source>select.max_items</source>
+                <target>At most {count} plants (translated)</target>
+            </trans-unit>
+            <trans-unit id="select.yes" resname="select.yes">
+                <source>select.yes</source>
+                <target>Done (translated)</target>
+            </trans-unit>
+            <trans-unit id="select.no" resname="select.no">
+                <source>select.no</source>
+                <target>Open (translated)</target>
+            </trans-unit>
+            <trans-unit id="select.either" resname="select.either">
+                <source>select.either</source>
+                <target>Either (translated)</target>
+            </trans-unit>
+            <trans-unit id="option.basic_description" resname="option.basic_description">
+                <source>option.basic_description</source>
+                <target>For one (translated)</target>
+            </trans-unit>
+            <trans-unit id="option.low_tooltip" resname="option.low_tooltip">
+                <source>option.low_tooltip</source>
+                <target>Cheap (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.add" resname="keyvalue.add">
+                <source>keyvalue.add</source>
+                <target>Add a pair (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.delete" resname="keyvalue.delete">
+                <source>keyvalue.delete</source>
+                <target>Drop a pair (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.reorder" resname="keyvalue.reorder">
+                <source>keyvalue.reorder</source>
+                <target>Move a pair (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.key" resname="keyvalue.key">
+                <source>keyvalue.key</source>
+                <target>Name (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.value" resname="keyvalue.value">
+                <source>keyvalue.value</source>
+                <target>Amount (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.key_placeholder" resname="keyvalue.key_placeholder">
+                <source>keyvalue.key_placeholder</source>
+                <target>Name here (translated)</target>
+            </trans-unit>
+            <trans-unit id="keyvalue.value_placeholder" resname="keyvalue.value_placeholder">
+                <source>keyvalue.value_placeholder</source>
+                <target>Amount here (translated)</target>
+            </trans-unit>
+            <trans-unit id="repeater.item" resname="repeater.item">
+                <source>repeater.item</source>
+                <target>Line (translated)</target>
+            </trans-unit>
+            <trans-unit id="repeater.between" resname="repeater.between">
+                <source>repeater.between</source>
+                <target>or (translated)</target>
+            </trans-unit>
+            <trans-unit id="repeater.add" resname="repeater.add">
+                <source>repeater.add</source>
+                <target>Add a line (translated)</target>
+            </trans-unit>
+            <trans-unit id="repeater.insert" resname="repeater.insert">
+                <source>repeater.insert</source>
+                <target>Slot in (translated)</target>
+            </trans-unit>
+            <trans-unit id="repeater.column" resname="repeater.column">
+                <source>repeater.column</source>
+                <target>Quantity (translated)</target>
+            </trans-unit>
+            <trans-unit id="tags.prefix" resname="tags.prefix">
+                <source>tags.prefix</source>
+                <target># (translated)</target>
+            </trans-unit>
+            <trans-unit id="text_input.copied" resname="text_input.copied">
+                <source>text_input.copied</source>
+                <target>Copied it (translated)</target>
+            </trans-unit>
+            <trans-unit id="record.label" resname="record.label">
+                <source>record.label</source>
+                <target>Plant {name} (translated)</target>
+            </trans-unit>
+            <trans-unit id="record.description" resname="record.description">
+                <source>record.description</source>
+                <target>About {name} (translated)</target>
+            </trans-unit>
+            <trans-unit id="label.first_name" resname="label.first_name">
+                <source>label.first_name</source>
+                <target>Given name (translated)</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

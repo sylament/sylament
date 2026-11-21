@@ -45,6 +45,8 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Error\RuntimeError;
 
+use function Symfony\Component\Translation\t;
+
 describe('make() and components()', function (): void {
     it('renders one item per item in the state, each holding its own fields', function (): void {
         $crawler = $this->renderSchemaComponent(
@@ -1719,4 +1721,19 @@ describe('relationship()', function (): void {
             });
         });
     });
+});
+
+it('translates its item label, the label between items and its add labels given as messages', function (): void {
+    $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+    $render = $this->renderSchemaComponent(Repeater::make('lines')
+        ->itemLabel(t('repeater.item', [], 'fixtures-forms'))
+        ->labelBetweenItems(t('repeater.between', [], 'fixtures-forms'))
+        ->addActionLabel(t('repeater.add', [], 'fixtures-forms'))
+        ->components([TextInput::make('name')]), $items);
+
+    expect($render->filter('.sy-fo-repeater-item-header-label')->each(static fn (Crawler $label): string => $label->text()))->toBe(['Line (translated)', 'Line (translated)'])
+        ->and($render->filter('.sy-fo-repeater-label-between-items')->each(static fn (Crawler $label): string => $label->text()))->toBe(['or (translated)'])
+        ->and($render)->toContainElement(FormsSelectors::REPEATER_ADD_BUTTON, 'Add a line (translated)');
+
+    expect($this->renderSchemaComponent(Repeater::make('lines')->addBetweenActionLabel(t('repeater.insert', [], 'fixtures-forms'))->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), $items)->filter('.sy-fo-repeater-add-between-items button')->text())->toBe('Slot in (translated)');
 });

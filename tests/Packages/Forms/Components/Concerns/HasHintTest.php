@@ -10,6 +10,8 @@ use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
+use function Symfony\Component\Translation\t;
+
 describe('hint', function (): void {
     it('shows its text, coloured, its icon with its tooltip, and its actions beside the label', function (): void {
         $render = $this->renderSchemaComponent(TextInput::make('password')
@@ -47,4 +49,10 @@ describe('hint', function (): void {
             ->callAction(TestAction::make('suggest')->schemaComponent('code'))
             ->assertFormSet(['code' => 'X9']);
     });
+});
+
+it('translates a hint and its icon tooltip given as messages', function (): void {
+    expect($this->renderSchemaComponent(TextInput::make('password')->hint(t('field.hint', [], 'fixtures-forms'))->hintIcon('support:star', tooltip: t('field.hint_tooltip', [], 'fixtures-forms'))))
+        ->toContainElement(Selectors::LABEL_ROW . ' ' . SchemasSelectors::TEXT, 'Forgotten? (translated)')
+        ->toContainElement(Selectors::LABEL_ROW . ' svg' . SchemasSelectors::ICON . '[title="Kept private (translated)"]', 'Star');
 });

@@ -13,6 +13,8 @@ use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Infrastructure\ComponentRegistry;
 
+use function Symfony\Component\Translation\t;
+
 it('renders prefix and suffix labels around the input, postfix() being suffix()', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('price')->prefix('€')->suffix('per kg')))
         ->toContainElement(SupportSelectors::PREFIX, '€')
@@ -98,3 +100,9 @@ it('runs an affix action when it is clicked, against the field it sits on', func
 it('renders the prefix on every field that offers one', function (string $field): void {
     expect($this->renderSchemaComponent($field::make('a')->prefix('€')))->toContainElement(SupportSelectors::PREFIX, '€');
 })->with(fn (): array => ComponentRegistry::componentsImplementing(HasAffixes::class));
+
+it('translates a prefix or suffix given as a message', function (): void {
+    expect($this->renderSchemaComponent(TextInput::make('weight')->prefix(t('field.prefix', [], 'fixtures-forms'))->suffix(t('field.prefix', [], 'fixtures-forms'))))
+        ->toContainElement(SupportSelectors::PREFIX, 'per kg (translated)')
+        ->toContainElement(SupportSelectors::SUFFIX, 'per kg (translated)');
+});

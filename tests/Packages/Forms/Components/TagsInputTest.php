@@ -12,6 +12,8 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Length;
 
+use function Symfony\Component\Translation\t;
+
 describe('rendering', function (): void {
     it('renders the unbound text box, a chip per tag inside the ignored container and the blueprint outside it', function (): void {
         $crawler = $this->renderSchemaComponent(TagsInput::make('tags'), ['tags' => ['php', 'twig']]);
@@ -266,4 +268,8 @@ describe('validation', function (): void {
         'a tag that is one letter once cleaned' => [[' p# ', 'twig'], false],
         'tags of two letters once cleaned' => [[' #ph ', 'tw'], true],
     ]);
+});
+
+it('translates a tag prefix given as a message', function (): void {
+    expect($this->renderSchemaComponent(TagsInput::make('tags')->tagPrefix(t('tags.prefix', [], 'fixtures-forms')), ['tags' => ['php']])->filter('#schema\.tags-tags ' . SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_LABEL)->text())->toBe('# (translated)php');
 });

@@ -15,6 +15,7 @@ use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\StripCharactersStateCast;
 use Sylament\Support\Components\Concerns\HasColor;
 use Sylament\Support\Components\Concerns\HasReorderAnimationDuration;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\blank;
 
@@ -44,9 +45,9 @@ class TagsInput extends Field implements Contracts\HasAffixes, Contracts\HasNest
      */
     protected array|Closure|null $suggestions = null;
 
-    protected string|Closure|null $tagPrefix = null;
+    protected string|TranslatableInterface|Closure|null $tagPrefix = null;
 
-    protected string|Closure|null $tagSuffix = null;
+    protected string|TranslatableInterface|Closure|null $tagSuffix = null;
 
     protected function setUp(): void
     {
@@ -101,14 +102,14 @@ class TagsInput extends Field implements Contracts\HasAffixes, Contracts\HasNest
         $this->state($tags);
     }
 
-    public function tagPrefix(string|Closure|null $prefix): static
+    public function tagPrefix(string|TranslatableInterface|Closure|null $prefix): static
     {
         $this->tagPrefix = $prefix;
 
         return $this;
     }
 
-    public function tagSuffix(string|Closure|null $suffix): static
+    public function tagSuffix(string|TranslatableInterface|Closure|null $suffix): static
     {
         $this->tagSuffix = $suffix;
 
@@ -151,12 +152,16 @@ class TagsInput extends Field implements Contracts\HasAffixes, Contracts\HasNest
 
     public function getTagPrefix(): ?string
     {
-        return $this->evaluate($this->tagPrefix);
+        $tag = $this->translateText($this->evaluate($this->tagPrefix));
+
+        return $tag === null ? null : (string) $tag;
     }
 
     public function getTagSuffix(): ?string
     {
-        return $this->evaluate($this->tagSuffix);
+        $tag = $this->translateText($this->evaluate($this->tagSuffix));
+
+        return $tag === null ? null : (string) $tag;
     }
 
     public function getSeparator(): ?string

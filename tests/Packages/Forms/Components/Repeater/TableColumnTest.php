@@ -10,6 +10,8 @@ use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 
+use function Symfony\Component\Translation\t;
+
 it("renders each column's header label, for screen readers only when hidden, with a required mark when asked", function (): void {
     $crawler = $this->renderSchemaComponent(
         Repeater::make('lines')
@@ -41,4 +43,13 @@ it("puts a column's alignment, width and header wrapping on its header cell", fu
 
     expect($headers->eq(0)->matches(SupportSelectors::align('end') . SupportSelectors::WRAPPED . '[style="width: 10rem"]'))->toBeTrue()
         ->and($headers->eq(1)->matches(SupportSelectors::NO_ALIGN . ':not(' . SupportSelectors::WRAPPED . '):not([style])'))->toBeTrue();
+});
+
+it('translates a header label given as a message', function (): void {
+    $crawler = $this->renderSchemaComponent(
+        Repeater::make('lines')->reorderable(false)->deletable(false)->table([TableColumn::make(t('repeater.column', [], 'fixtures-forms'))])->components([TextInput::make('quantity')]),
+        ['lines' => ['a' => ['quantity' => '2']]],
+    );
+
+    expect($crawler->filter(FormsSelectors::TABLE_REPEATER_HEADER_CELL)->each(static fn (Crawler $header): string => $header->text()))->toBe(['Quantity (translated)']);
 });

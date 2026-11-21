@@ -10,6 +10,8 @@ use Sylament\Tests\Fixtures\Forms\MessageListForm;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\Translator;
 
 describe('make()', function (): void {
     it('names the field and binds it to its name before configure() runs, so a configureUsing() closure reads both', function (): void {
@@ -123,4 +125,19 @@ describe('required marker', function (): void {
             ->call('save')
             ->assertHasNoFormErrors();
     });
+});
+
+it('translates the label it generates from its name as a key in the default domain under translateLabel(), and shows it as generated without', function (): void {
+    $translator = new Translator('en');
+    $translator->addLoader('array', new ArrayLoader());
+    $translator->addResource('array', ['First name' => 'Given name (from the default domain)'], 'en');
+
+    $translated = TextInput::make('first_name')->translateLabel();
+    $translated->setTranslator($translator);
+
+    $generated = TextInput::make('first_name');
+    $generated->setTranslator($translator);
+
+    expect($this->renderSchemaComponent($translated))->toContainElement('label', 'Given name (from the default domain)')
+        ->and($this->renderSchemaComponent($generated))->toContainElement('label', 'First name');
 });

@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components\Concerns;
 use BackedEnum;
 use Closure;
 use Sylament\Support\Contracts\HasDescription;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -14,7 +15,7 @@ use function Sylament\Support\filled;
 trait HasDescriptions
 {
     /**
-     * @var array<string|int, string|Markup>|Closure
+     * @var array<string|int, string|Markup|TranslatableInterface>|Closure
      */
     protected array|Closure $descriptions = [];
 
@@ -26,7 +27,7 @@ trait HasDescriptions
     protected bool $hasCachedDescriptions = false;
 
     /**
-     * @param array<string|int, string|Markup>|Closure $descriptions
+     * @param array<string|int, string|Markup|TranslatableInterface>|Closure $descriptions
      */
     public function descriptions(array|Closure $descriptions): static
     {
@@ -58,6 +59,10 @@ trait HasDescriptions
         }
 
         $descriptions = $this->evaluate($this->descriptions);
+
+        foreach ($descriptions as $value => $description) {
+            $descriptions[$value] = $description instanceof TranslatableInterface ? $description->trans($this->getTranslator()) : $description;
+        }
 
         if ($descriptions === [] && ($enum = $this->getEnum()) !== null && is_a($enum, HasDescription::class, allow_string: true)) {
             $descriptions = [];

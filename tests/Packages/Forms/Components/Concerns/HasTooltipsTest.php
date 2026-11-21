@@ -6,6 +6,8 @@ use Sylament\Forms\Components\ToggleButtons;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Twig\Markup;
 
+use function Symfony\Component\Translation\t;
+
 it("renders a tooltip as the option's native title, a Markup one as its literal markup, and none for an option without one", function (bool $grouped): void {
     expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High', 'mid' => 'Mid'])->tooltips(['low' => 'Cheap', 'high' => new Markup('<b>Dear</b>', 'UTF-8')])->grouped($grouped)))
         ->toContainElement(Selectors::TOGGLE_BUTTONS_OPTION . '[title="Cheap"]', 'Low')
@@ -15,3 +17,8 @@ it("renders a tooltip as the option's native title, a Markup one as its literal 
     'the default tree' => [false],
     'the grouped tree' => [true],
 ]);
+
+it('translates a tooltip given as a message', function (): void {
+    expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->tooltips(['low' => t('option.low_tooltip', [], 'fixtures-forms')])))
+        ->toContainElement(Selectors::TOGGLE_BUTTONS_OPTION . '[title="Cheap (translated)"]', 'Low');
+});

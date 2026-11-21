@@ -18,6 +18,7 @@ use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -36,7 +37,7 @@ class Radio extends Field implements Contracts\CanDisableOptions
 
     protected bool|Closure $isInline = false;
 
-    public function boolean(?string $trueLabel = null, ?string $falseLabel = null): static
+    public function boolean(string|TranslatableInterface|null $trueLabel = null, string|TranslatableInterface|null $falseLabel = null): static
     {
         $this->options([
             1 => $trueLabel ?? 'Yes',

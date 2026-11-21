@@ -37,7 +37,7 @@ describe('the trigger', function (): void {
             ->and($this->renderViewComponent(CreateAction::make()))->toContainElement('button', 'Create');
     });
 
-    it('translates its label and its modal heading around a record label given as a message', function (): void {
+    it('translates the create action label around a translated record label', function (): void {
         $action = fn (): CreateAction => CreateAction::make()->recordClass(CappedHeadline::class)->recordLabel(t('record.label', [], 'fixtures-actions'));
 
         expect($this->renderViewComponent($action()))->toContainElement('button', 'New crate')

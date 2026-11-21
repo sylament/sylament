@@ -418,13 +418,11 @@ describe('context', function (): void {
     ]);
 });
 
-describe('a localised live route', function (): void {
-    it('keeps a section-registered action mounted across a live call, the section keyed by a heading the locale translates', function (): void {
-        $tester = $this->createLiveComponent(LocalisedSectionHost::class)->setRouteLocale('sk');
+it('keeps a section-hosted action mounted across a live call on a localised route', function (): void {
+    $tester = $this->createLiveComponent(LocalisedSectionHost::class)->setRouteLocale('sk');
 
-        $tester->call('mountAction', ['name' => 'stamp', 'context' => ['schemaComponent' => 'form.zasielky::section'], 'arguments' => []]);
-        $tester->call('callMountedAction', ['arguments' => []]);
+    $tester->call('mountAction', ['name' => 'stamp', 'context' => ['schemaComponent' => 'form.zasielky::section'], 'arguments' => []]);
+    $tester->call('callMountedAction', ['arguments' => []]);
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['stamped']);
-    });
+    expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['stamped']);
 });

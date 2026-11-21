@@ -151,8 +151,8 @@ it('parses every shipped catalogue', function (): void {
         ->and($tester->getDisplay())->toContain('All translations are valid.');
 });
 
-it("keeps each package's catalogue problems to its baseline", function (string $package): void {
+it("matches each package's catalogues to the keys its code uses", function (string $package): void {
     $problems = CatalogueScan::problems($this::getContainer()->get('translation.extractor'), $package);
 
-    expect($problems)->toBe(CatalogueScan::baseline($package), "The {$package} catalogues differ from tests/Architecture/Translations/catalogue-baseline/{$package}.txt: add the missing key, drop the unused one, or delete the baseline line you fixed (.claude/rules/catalogues.md):\n" . implode("\n", $problems));
+    expect($problems)->toBe([], "The {$package} catalogues differ from the keys its code uses: add a missing key to the catalogue holding its domain, drop an unused one, and name only a domain the package may (.claude/rules/catalogues.md; what the scan reads: docs/internals/i18n.md):\n" . implode("\n", $problems));
 })->with(Packages::names());

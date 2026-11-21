@@ -38,8 +38,6 @@ use Symfony\Component\Validator\Validation;
  */
 final class CatalogueScan
 {
-    public const string BASELINE_DIRECTORY = __DIR__ . '/catalogue-baseline';
-
     private const string VALIDATORS = 'validators';
 
     /**
@@ -110,14 +108,6 @@ final class CatalogueScan
         sort($problems, SORT_STRING);
 
         return $problems;
-    }
-
-    /**
-     * @return list<string> the package's `catalogue-baseline/<package>.txt` lines, or none once the file is gone
-     */
-    public static function baseline(string $package): array
-    {
-        return Packages::baseline(self::BASELINE_DIRECTORY . '/' . $package . '.txt');
     }
 
     /**

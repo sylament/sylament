@@ -7,8 +7,7 @@ namespace Sylament\Tests\Architecture\Translations;
 use LogicException;
 
 /**
- * The package tree the translation gates read: the repository's packages/ by default, a planted tree in their own
- * cases, and the baseline files each gate compares its lines with.
+ * The package tree the translation gates read: the repository's packages/, or a planted tree in their own cases.
  */
 final class Packages
 {
@@ -68,20 +67,5 @@ final class Packages
             self::names($packagesDirectory),
             static fn (string $candidate): bool => in_array($package, self::requires($candidate, $packagesDirectory), true),
         ));
-    }
-
-    /**
-     * @return list<string> a baseline file's lines, sorted as a scan sorts its own, or none once the file is gone
-     */
-    public static function baseline(string $path): array
-    {
-        if (!is_file($path)) {
-            return [];
-        }
-
-        $lines = array_values(array_filter(explode("\n", (string) file_get_contents($path)), static fn (string $line): bool => $line !== ''));
-        sort($lines, SORT_STRING);
-
-        return $lines;
     }
 }

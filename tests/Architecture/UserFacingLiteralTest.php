@@ -99,8 +99,8 @@ it('leaves translated text, keys, classes, comparisons and tokens alone', functi
     }
 });
 
-it("keeps each package's user-facing literals to its baseline", function (string $package): void {
+it('finds no user-facing literal in any package', function (string $package): void {
     $literals = LiteralScan::literals($this::getContainer()->get('twig'), $package);
 
-    expect($literals)->toBe(LiteralScan::baseline($package), "The {$package} literals differ from tests/Architecture/Translations/baseline/{$package}.txt: make a new literal a TranslatableMessage or a |trans key, or delete the baseline line you moved (.claude/rules/php.md, .claude/rules/twig.md):\n" . implode("\n", $literals));
+    expect($literals)->toBe([], "The {$package} package ships user-facing literals: make each a TranslatableMessage or a |trans key, or, in TypeScript, a Stimulus value its template fills (.claude/rules/php.md, .claude/rules/twig.md, .claude/rules/frontend.md; what the scan reads: docs/internals/i18n.md):\n" . implode("\n", $literals));
 })->with(Packages::names());

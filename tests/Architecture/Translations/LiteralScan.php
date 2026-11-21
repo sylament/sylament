@@ -45,12 +45,10 @@ use Twig\Token;
  * Finds the user-facing text a package ships as a literal: text and text attributes in its templates, string
  * literals in its template expressions and `<twig:>` text props, literals handed to a text setter or returned by a
  * text getter in its PHP, and string defaults and text assignments in its TypeScript. Each line is `<path>: <text>`,
- * the path relative to the package and without a line number, so an edit elsewhere in a file never shifts a baseline.
+ * the path relative to the package and without a line number, so a failure names what to move rather than where it sat.
  */
 final class LiteralScan
 {
-    public const string BASELINE_DIRECTORY = __DIR__ . '/baseline';
-
     /**
      * The text setters of the inventory's accepting sites (§1 of each package file), less the ones whose first
      * argument is a name, an identifier, a format or an object rather than text.
@@ -138,14 +136,6 @@ final class LiteralScan
         sort($lines, SORT_STRING);
 
         return $lines;
-    }
-
-    /**
-     * @return list<string> the package's `baseline/<package>.txt` lines, or none once the file is gone
-     */
-    public static function baseline(string $package): array
-    {
-        return Packages::baseline(self::BASELINE_DIRECTORY . '/' . $package . '.txt');
     }
 
     /**

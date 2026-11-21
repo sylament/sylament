@@ -31,7 +31,6 @@ templates/components/Summary/index.html.twig: Summary
 templates/components/Summary/index.html.twig: Summary
 templates/components/Summary/index.html.twig: Summary
 templates/components/Summary/index.html.twig: This page
-templates/partials/ColorColumn/index.html.twig: Copy
 templates/partials/ColorColumn/index.html.twig: Copy colour
 templates/partials/Table/index.html.twig: 1 record selected
 templates/partials/Table/index.html.twig: :

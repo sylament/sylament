@@ -5,6 +5,7 @@ components/badge:
 components/breadcrumbs:
     label: 'Breadcrumbs'
 components/copyable:
+    label: 'Copy {label}'
     messages:
         copied: 'Copied'
 components/modal:

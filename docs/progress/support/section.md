@@ -20,14 +20,14 @@ The schemas [`Section`](../schemas/section.md) component wraps it, embedding `<t
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Header + body structure](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php), with [`section/heading`](../../../vendor/filament/support/resources/views/components/section/heading.blade.php) and [`section/description`](../../../vendor/filament/support/resources/views/components/section/description.blade.php) rendered inline | in progress | — | [detail](#the-header-lacks-filaments-content-wrapper-and-its-css-differs-with-it) |
+| [Header + body structure](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php), with [`section/heading`](../../../vendor/filament/support/resources/views/components/section/heading.blade.php) and [`section/description`](../../../vendor/filament/support/resources/views/components/section/description.blade.php) rendered inline | done | — | — |
 | [Icon rendering (color + size)](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | — |
 | [Variant + state classes](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | — |
 | [Collapsible disclosure](../../../packages/support/assets/src/controllers/section_controller.ts) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-collapsed-state-is-rendered-server-side-not-bound-client-side) |
 | [Element ids + ARIA landmark](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#element-ids-and-aria-landmark-wiring-are-rendered-from-server-computed-props) |
 | [Disclosure labels](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-expand-and-collapse-labels-are-props-defaulting-to-the-catalogue-and-the-controller-holds-no-text) |
 | [Live-state reset wiring](../../../packages/support/templates/components/Section/index.html.twig) | — | in progress | — | [detail](#the-live-state-reset-branch-has-no-caller) · [diverges](#the-live-component-state-reset-wiring-is-a-sylament-addition) |
-| [`section.css`](../../../packages/support/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/support/resources/css/components/section.css) | in progress | — | [detail](#two-collapsed-state-rules-differ-from-filaments-with-no-recorded-reason) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) |
+| [`section.css`](../../../packages/support/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/support/resources/css/components/section.css) | in progress | — | [detail](#two-collapsed-state-rules-differ-from-filaments-with-no-recorded-reason) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) · [diverges](#the-after-header-text-leading-rule-is-written-in-supports-stylesheet) |
 
 ## Details
 
@@ -48,18 +48,10 @@ Until then a section renders no reset action.
 
 ### Two collapsed-state rules differ from Filament's with no recorded reason
 
-Besides the prefix, the [dark-mode text colour](#section-css-adds-a-dark-mode-text-color-to-the-content-container) and the [header differences](#the-header-lacks-filaments-content-wrapper-and-its-css-differs-with-it), two rules differ.
+Besides the prefix, the [dark-mode text colour](#section-css-adds-a-dark-mode-text-color-to-the-content-container) and the [placement of the after-header text rule](#the-after-header-text-leading-rule-is-written-in-supports-stylesheet), two rules differ.
 A collapsed section's content container is `invisible absolute h-0 overflow-hidden border-none`, where Filament's is `hidden`.
 The non-aside section's `grid gap-y-4` on the content container applies whether or not the section is collapsed, where Filament gates it on `:not(.fi-collapsed)`.
 **Next step:** record why the collapsed body stays in the layout, as a divergence, or restore Filament's rules.
-
-### The header lacks Filament's content wrapper, and its CSS differs with it
-
-Filament wraps the icon's siblings, the text container and the after-header container, in `fi-section-header-content` (`fi-section-header-content-has-heading` when there is a heading or a description), a `flex min-w-0 flex-wrap items-start gap-3` row that grows with `flex-1`; the port's template has no such wrapper.
-Its CSS follows from that: the after-header rule is `& > .sy-section-header-after-ctn` with `self-center` alone, where Filament's sits under the wrapper and adds `max-w-full shrink-0`.
-The text container is `grid flex-1 gap-y-1`, where Filament's is `grid w-max max-w-full flex-auto gap-y-1`.
-The port also gives `.sy-sc-text` in the after-header container the `leading-6` Filament gives only `.fi-link`, and wraps the description with `wrap-break-word` where Filament uses `break-words`.
-**Next step:** re-true the template and `section.css` to Filament's header, or record each difference's reason as a divergence.
 
 ## Divergences
 
@@ -94,3 +86,9 @@ The branch has no caller, which is why the row is in progress rather than done; 
 
 Support's `section.css` applies `.sy-section-content-ctn { @apply dark:text-white }`, which Filament's support `section.css` has no counterpart for: Filament colors only the schemas label container and lets the content inherit its base text color from the panels layout.
 Support's Section also renders outside panels' layout, whose root sets `dark:text-white` ([`layout.css`](../../../packages/panels/assets/src/styles/components/layout.css)), so the stylesheet supplies the color locally on the content container, dark mode only; light mode inherits the host app.
+
+### The after-header text leading rule is written in support's stylesheet
+
+Filament's `leading-6` for a `.fi-sc-text` inside the after-header container is a rule of the schemas package's `section.css`, nested under `.fi-section > .fi-section-header > .fi-section-header-content > .fi-section-header-after-ctn`, and its support `section.css` gives that container's `leading-6` to `.fi-link` alone.
+Support's `section.css` writes both selectors in the one rule, `.sy-sc-text` beside `.sy-link`, under the same `.sy-section-header-content > .sy-section-header-after-ctn` path, so the rendered result matches Filament's.
+Schemas' [Text](../schemas/text.md) partial emits `.sy-sc-text`, which is why a class of a schemas component is named in support; its stylesheet lives in support too ([styles](../schemas/styles.md#text-css-was-ported-into-the-support-package)).

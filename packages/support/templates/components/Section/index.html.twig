@@ -99,35 +99,45 @@
                 {{ iconHtml }}
             {% endif %}
 
-            {% if hasHeading or hasDescription %}
-                <div class="sy-section-header-text-ctn">
-                {% if hasHeading %}
-                    <{{ headingTag }}
+            {% if hasHeading or hasDescription or hasAfterHeader %}
+                <div
                         {{ attrs({
-                            id: headingId,
-                            class: ['sy-section-header-heading'],
+                            class: ['sy-section-header-content', {
+                                'sy-section-header-content-has-heading': hasHeading or hasDescription,
+                            }],
                         }) }}
-                    >
-                        {{ heading }}
-                    </{{ headingTag }}>
-                {% endif %}
+                >
+                    {% if hasHeading or hasDescription %}
+                        <div class="sy-section-header-text-ctn">
+                            {% if hasHeading %}
+                                <{{ headingTag }}
+                                    {{ attrs({
+                                        id: headingId,
+                                        class: ['sy-section-header-heading'],
+                                    }) }}
+                                >
+                                    {{ heading }}
+                                </{{ headingTag }}>
+                            {% endif %}
 
-                {% if hasDescription %}
-                    <p
-                        {{ attrs({
-                            id: descriptionId,
-                            class: ['sy-section-header-description'],
-                        }) }}
-                    >
-                        {{ description }}
-                    </p>
-                {% endif %}
-                </div>
-            {% endif %}
+                            {% if hasDescription %}
+                                <p
+                                    {{ attrs({
+                                        id: descriptionId,
+                                        class: ['sy-section-header-description'],
+                                    }) }}
+                                >
+                                    {{ description }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
 
-            {% if hasAfterHeader %}
-                <div class="sy-section-header-after-ctn">
-                    {{ afterHeader }}
+                    {% if hasAfterHeader %}
+                        <div class="sy-section-header-after-ctn">
+                            {{ afterHeader }}
+                        </div>
+                    {% endif %}
                 </div>
             {% endif %}
 

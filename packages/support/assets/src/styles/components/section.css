@@ -176,8 +176,8 @@
             }
         }
 
-        & > .sy-section-header-after-ctn {
-            @apply self-center;
+        & > .sy-section-header-content > .sy-section-header-after-ctn {
+            @apply max-w-full shrink-0 self-center;
 
             &
             .sy-sc-text:not(
@@ -214,8 +214,16 @@
         }
     }
 
+    & .sy-section-header-content {
+        @apply flex min-w-0 flex-wrap items-start gap-3;
+
+        &.sy-section-header-content-has-heading {
+            @apply flex-1;
+        }
+    }
+
     & .sy-section-header-text-ctn {
-        @apply grid flex-1 gap-y-1;
+        @apply grid w-max max-w-full flex-auto gap-y-1;
     }
 
     & .sy-section-header-heading {
@@ -223,7 +231,7 @@
     }
 
     & .sy-section-header-description {
-        @apply overflow-hidden text-sm wrap-break-word text-gray-500 dark:text-gray-400;
+        @apply overflow-hidden text-sm break-words text-gray-500 dark:text-gray-400;
     }
 
     & .sy-section-content-ctn {

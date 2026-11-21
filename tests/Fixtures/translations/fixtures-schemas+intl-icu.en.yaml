@@ -1,0 +1,9 @@
+account:
+    label: 'Account (translated)'
+    step:
+        description: 'Who you are (translated)'
+cancel: 'Never mind (translated)'
+section:
+    description: 'Where it goes (translated)'
+    heading: 'Shipping (translated)'
+raw: 'Hello {x}'

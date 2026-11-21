@@ -1,0 +1,185 @@
+components:
+    checkbox_list:
+        actions:
+            deselect_all:
+                label: 'Deselect all'
+            select_all:
+                label: 'Select all'
+    file_upload:
+        actions:
+            download:
+                label: 'Download'
+            open:
+                label: 'Open in new tab'
+        editor:
+            actions:
+                cancel:
+                    label: 'Cancel'
+                drag_crop:
+                    label: 'Drag mode "crop"'
+                drag_move:
+                    label: 'Drag mode "move"'
+                flip_horizontal:
+                    label: 'Flip image horizontally'
+                flip_vertical:
+                    label: 'Flip image vertically'
+                move_down:
+                    label: 'Move image down'
+                move_left:
+                    label: 'Move image to left'
+                move_right:
+                    label: 'Move image to right'
+                move_up:
+                    label: 'Move image up'
+                reset:
+                    label: 'Reset'
+                rotate_left:
+                    label: 'Rotate image to left'
+                rotate_right:
+                    label: 'Rotate image to right'
+                save:
+                    label: 'Save'
+                set_aspect_ratio:
+                    label: 'Set aspect ratio to {ratio}'
+                zoom_100:
+                    label: 'Zoom image to 100%'
+                zoom_in:
+                    label: 'Zoom in'
+                zoom_out:
+                    label: 'Zoom out'
+            aspect_ratios:
+                label: 'Aspect ratios'
+                no_fixed:
+                    label: 'Free'
+            fields:
+                height:
+                    label: 'Height'
+                    unit: 'px'
+                rotation:
+                    label: 'Rotation'
+                    unit: 'deg'
+                width:
+                    label: 'Width'
+                    unit: 'px'
+                x_position:
+                    label: 'X'
+                    unit: 'px'
+                y_position:
+                    label: 'Y'
+                    unit: 'px'
+            label: 'Image editor'
+            svg:
+                messages:
+                    confirmation: "Editing SVG files is not recommended as it can result in quality loss when scaling.\nAre you sure you want to continue?"
+                    disabled: 'Editing SVG files is disabled as it can result in quality loss when scaling.'
+        errors:
+            load: 'The file could not be loaded.'
+            remove: 'The file could not be removed.'
+            reorder: 'The files could not be reordered.'
+            type_undetected: 'The type of {name} could not be detected.'
+            upload: 'The file could not be uploaded.'
+        max_files_message: '{count, plural, one {The {label} field must not have more than # item.} other {The {label} field must not have more than # items.}}'
+    key_value:
+        actions:
+            add:
+                label: 'Add row'
+            delete:
+                label: 'Delete row'
+            reorder:
+                label: 'Reorder row'
+        columns:
+            actions:
+                label: 'Actions'
+            reorder:
+                label: 'Reorder'
+        fields:
+            key:
+                label: 'Key'
+            value:
+                label: 'Value'
+    radio:
+        boolean:
+            'false': 'No'
+            'true': 'Yes'
+    repeater:
+        actions:
+            add:
+                label: 'Add to {label}'
+            add_between:
+                label: 'Insert between'
+            clone:
+                label: 'Clone'
+            collapse:
+                label: 'Collapse'
+            collapse_all:
+                label: 'Collapse all'
+            delete:
+                label: 'Delete'
+            expand:
+                label: 'Expand'
+            expand_all:
+                label: 'Expand all'
+            move_down:
+                label: 'Move down'
+            move_up:
+                label: 'Move up'
+            reorder:
+                label: 'Move'
+        columns:
+            actions:
+                label: 'Actions'
+            reorder:
+                label: 'Reorder'
+    select:
+        actions:
+            clear:
+                label: 'Clear selection'
+            create_option:
+                label: 'Create'
+                modal:
+                    actions:
+                        create:
+                            label: 'Create'
+                        create_another:
+                            label: 'Create & create another'
+                    heading: 'Create'
+            edit_option:
+                label: 'Edit'
+                modal:
+                    actions:
+                        save:
+                            label: 'Save'
+                    heading: 'Edit'
+            remove_option:
+                label: 'Remove {label}'
+        boolean:
+            'false': 'No'
+            'true': 'Yes'
+        loading_message: 'Loading...'
+        max_items_message: 'Only {count} can be selected.'
+        no_options_message: 'No options available.'
+        no_search_results_message: 'No options match your search.'
+        placeholder: 'Select an option'
+        search_label: 'Search'
+        search_prompt: 'Start typing to search...'
+        searching_message: 'Searching...'
+    tags_input:
+        actions:
+            delete_tag:
+                label: 'Delete: {tag}'
+        placeholder: 'New tag'
+        tag_added: 'Added: {tag}'
+        tag_removed: 'Removed: {tag}'
+    text_input:
+        actions:
+            copy:
+                label: 'Copy'
+                message: 'Copied'
+            hide_password:
+                label: 'Hide password'
+            show_password:
+                label: 'Show password'
+    toggle_buttons:
+        boolean:
+            'false': 'No'
+            'true': 'Yes'

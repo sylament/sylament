@@ -1,0 +1,12 @@
+components:
+    wizard:
+        actions:
+            next_step:
+                label: 'Next'
+            previous_step:
+                label: 'Back'
+        header:
+            step:
+                statuses:
+                    completed: 'Completed'
+                    upcoming: 'Not completed'

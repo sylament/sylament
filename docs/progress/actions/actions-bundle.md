@@ -72,7 +72,7 @@ A bundle case pins it: `@SylamentActions` maps to `packages/actions/templates` w
 ### The catalogue loads from the `translations/` directory with no wiring
 
 `->hasTranslations()` registers Filament's `resources/lang` namespace.
-The port ships one ICU catalogue, [`sylament-actions+intl-icu.en.xlf`](../../../packages/actions/translations/sylament-actions+intl-icu.en.xlf), in the `sylament-actions` domain, and FrameworkBundle registers a bundle's `translations/` directory itself, so the bundle class does nothing.
+The port ships one ICU catalogue, [`sylament-actions+intl-icu.en.yaml`](../../../packages/actions/translations/sylament-actions+intl-icu.en.yaml), in the `sylament-actions` domain, and FrameworkBundle registers a bundle's `translations/` directory itself, so the bundle class does nothing.
 It carries the keys of Filament's `modal`, `create`, `edit`, `view`, `delete`, `detach`, `dissociate`, `replicate`, `attach`, `associate` and `group` catalogues that the ported classes read, the port-added keys beside them, and the `table.actions.open_bulk_actions.label` key re-homed from the tables namespace.
 The keys of the unported Export, Import, ForceDelete, Restore and rate-limiting surface wait for their classes, so the catalogue never holds a key nothing reads.
 

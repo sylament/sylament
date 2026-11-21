@@ -1,0 +1,176 @@
+associate:
+    single:
+        label: 'Associate'
+        modal:
+            actions:
+                associate:
+                    label: 'Associate'
+                associate_another:
+                    label: 'Associate & associate another'
+            fields:
+                record_id:
+                    label: 'Record'
+            heading: 'Associate {label}'
+            heading_bare: 'Associate'
+        notifications:
+            associated:
+                title: 'Associated'
+attach:
+    single:
+        label: 'Attach'
+        modal:
+            actions:
+                attach:
+                    label: 'Attach'
+                attach_another:
+                    label: 'Attach & attach another'
+            fields:
+                record_id:
+                    label: 'Record'
+            heading: 'Attach {label}'
+            heading_bare: 'Attach'
+        notifications:
+            attached:
+                title: 'Attached'
+create:
+    single:
+        label: 'New {label}'
+        label_bare: 'Create'
+        modal:
+            actions:
+                create:
+                    label: 'Create'
+                create_another:
+                    label: 'Create & create another'
+            heading: 'Create {label}'
+            heading_bare: 'Create'
+        notifications:
+            created:
+                title: 'Created'
+delete:
+    multiple:
+        label: 'Delete selected'
+        modal:
+            actions:
+                delete:
+                    label: 'Delete'
+            heading: 'Delete selected {label}'
+            heading_bare: 'Delete selected'
+        notifications:
+            deleted:
+                title: 'Deleted'
+            deleted_none:
+                title: 'Failed to delete {count} records'
+            deleted_partial:
+                title: 'Deleted {count} of {total}'
+    single:
+        label: 'Delete'
+        modal:
+            heading: 'Delete {label}'
+            heading_bare: 'Delete'
+        notifications:
+            deleted:
+                title: 'Deleted'
+detach:
+    multiple:
+        label: 'Detach selected'
+        modal:
+            actions:
+                detach:
+                    label: 'Detach'
+            heading: 'Detach selected {label}'
+            heading_bare: 'Detach selected'
+        notifications:
+            detached:
+                title: 'Detached'
+            detached_none:
+                title: 'Failed to detach {count} records'
+            detached_partial:
+                title: 'Detached {count} of {total}'
+    single:
+        label: 'Detach'
+        modal:
+            actions:
+                detach:
+                    label: 'Detach'
+            heading: 'Detach {label}'
+            heading_bare: 'Detach'
+        notifications:
+            detached:
+                title: 'Detached'
+dissociate:
+    multiple:
+        label: 'Dissociate selected'
+        modal:
+            actions:
+                dissociate:
+                    label: 'Dissociate'
+            heading: 'Dissociate selected {label}'
+            heading_bare: 'Dissociate selected'
+        notifications:
+            dissociated:
+                title: 'Dissociated'
+            dissociated_none:
+                title: 'Failed to dissociate {count} records'
+            dissociated_partial:
+                title: 'Dissociated {count} of {total}'
+    single:
+        label: 'Dissociate'
+        modal:
+            actions:
+                dissociate:
+                    label: 'Dissociate'
+            heading: 'Dissociate {label}'
+            heading_bare: 'Dissociate'
+        notifications:
+            dissociated:
+                title: 'Dissociated'
+edit:
+    single:
+        label: 'Edit'
+        modal:
+            actions:
+                save:
+                    label: 'Save changes'
+            heading: 'Edit {label}'
+            heading_bare: 'Edit'
+        notifications:
+            saved:
+                title: 'Saved'
+group:
+    trigger:
+        label: 'Actions'
+modal:
+    actions:
+        cancel:
+            label: 'Cancel'
+        confirm:
+            label: 'Confirm'
+        submit:
+            label: 'Submit'
+    confirmation: 'Are you sure you would like to do this?'
+replicate:
+    single:
+        label: 'Replicate'
+        modal:
+            actions:
+                replicate:
+                    label: 'Replicate'
+            heading: 'Replicate {label}'
+            heading_bare: 'Replicate'
+        notifications:
+            replicated:
+                title: 'Replicated'
+table:
+    actions:
+        open_bulk_actions:
+            label: 'Bulk actions'
+view:
+    single:
+        label: 'View'
+        modal:
+            actions:
+                close:
+                    label: 'Close'
+            heading: 'View {label}'
+            heading_bare: 'View'

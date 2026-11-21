@@ -23,6 +23,7 @@
         "symfony/translation-contracts": "^3.6",
         "symfony/ux-icons": "^3.3",
         "symfony/ux-twig-component": "^3.5",
+        "symfony/yaml": "^8.1",
         "twig/twig": "^3.27"
     },
     "suggest": {

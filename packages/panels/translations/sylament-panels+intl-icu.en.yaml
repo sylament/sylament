@@ -1,0 +1,60 @@
+global-search:
+    field:
+        label: 'Global search'
+        placeholder: 'Search'
+    no_results_message: 'No search results found.'
+    result:
+        detail_label: '{label}:'
+layout:
+    actions:
+        open_user_menu:
+            label: 'Open user menu'
+        sidebar:
+            toggle:
+                label: 'Toggle sidebar'
+        theme_switcher:
+            dark:
+                label: 'Enable dark theme'
+            label: 'Theme'
+            light:
+                label: 'Enable light theme'
+            system:
+                label: 'Enable system theme'
+    logo:
+        alt: '{name} logo'
+    navigation:
+        label: 'Navigation'
+    skip_to_content:
+        label: 'Skip to content'
+    topbar:
+        label: 'Topbar'
+pages/dashboard:
+    title: 'Dashboard'
+resources/pages/create-record:
+    breadcrumb: 'Create'
+    form:
+        actions:
+            cancel:
+                label: 'Cancel'
+            create:
+                label: 'Create'
+    notifications:
+        created:
+            title: 'Created'
+    title: 'Create {label}'
+resources/pages/edit-record:
+    breadcrumb: 'Edit'
+    form:
+        actions:
+            cancel:
+                label: 'Cancel'
+            save:
+                label: 'Save'
+    notifications:
+        saved:
+            title: 'Saved'
+    title: 'Edit {label}'
+resources/pages/list-records:
+    breadcrumb: 'List'
+resources/pages/manage-related-records:
+    title: 'Manage {label} {relationship}'

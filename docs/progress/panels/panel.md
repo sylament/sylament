@@ -89,7 +89,7 @@ Four of the panel's traits are documented with the code that reads them: [`HasSu
 | --- | --- | --- | --- | --- |
 | [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php): autoconfiguration tags, compiler passes, services and the `@sylament/panels` AssetMapper path | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | done | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
 | `Make*` commands (`hasCommands()`) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | todo | — | — |
-| [Translations (`hasTranslations()`) — the `sylament-panels` catalogue](../../../packages/panels/translations/sylament-panels+intl-icu.en.xlf) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php), [`resources/lang/en/`](../../../vendor/filament/filament/resources/lang/en) | done | — | [diverges](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) |
+| [Translations (`hasTranslations()`) — the `sylament-panels` catalogue](../../../packages/panels/translations/sylament-panels+intl-icu.en.yaml) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php), [`resources/lang/en/`](../../../vendor/filament/filament/resources/lang/en) | done | — | [diverges](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
@@ -220,7 +220,7 @@ A panel built with `new` has no translator, so a message throws a `LogicExceptio
 
 ### The catalogue is found by the bundle's translations directory and holds the texts panels renders
 
-`hasTranslations()` registers Filament's `filament-panels` namespace; the port registers nothing, because FrameworkBundle scans every bundle's `translations/` directory, so [`translations/sylament-panels+intl-icu.en.xlf`](../../../packages/panels/translations/sylament-panels+intl-icu.en.xlf) is the `sylament-panels` domain from the file name alone.
+`hasTranslations()` registers Filament's `filament-panels` namespace; the port registers nothing, because FrameworkBundle scans every bundle's `translations/` directory, so [`translations/sylament-panels+intl-icu.en.yaml`](../../../packages/panels/translations/sylament-panels+intl-icu.en.yaml) is the `sylament-panels` domain from the file name alone.
 Every key is Filament's key path (`layout.skip_to_content.label`, `resources/pages/create-record.title`), and a catalogue holds only keys panels' code uses, so the unported surface's keys (authentication, tenancy, widgets, database notifications, the unsaved-changes body, `create_another`, the dashboard filter and the view page) join it with their code.
 Two texts have no Filament key and take port-added keys in Filament's shape: `layout.actions.sidebar.toggle.label` for the one toggle button, where Filament keys an expand and a collapse label, and `global-search.result.detail_label` for the detail label with its colon.
 Three texts keep the port's English under Filament's key: `layout.navigation.label` (`Navigation`, Filament `Sidebar navigation`), `layout.actions.open_user_menu.label` (`Open user menu`, Filament `User menu`) and `resources/pages/edit-record.form.actions.save.label` (`Save`, Filament `Save changes`).

@@ -175,7 +175,7 @@ It is **skipped**, not blocked: nothing will make it necessary.
 
 ### The texts are catalogue messages under Filament's keys
 
-Every user-visible string is a `TranslatableMessage` in the `sylament-actions` domain, kept in [`sylament-actions+intl-icu.en.xlf`](../../../packages/actions/translations/sylament-actions+intl-icu.en.xlf) under the key Filament's [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php) gives it: `create.single.label` (`New {label}`) for the trigger, `create.single.modal.heading` (`Create {label}`), `create.single.modal.actions.create.label`, `create.single.modal.actions.create_another.label` and `create.single.notifications.created.title`.
+Every user-visible string is a `TranslatableMessage` in the `sylament-actions` domain, kept in [`sylament-actions+intl-icu.en.yaml`](../../../packages/actions/translations/sylament-actions+intl-icu.en.yaml) under the key Filament's [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php) gives it: `create.single.label` (`New {label}`) for the trigger, `create.single.modal.heading` (`Create {label}`), `create.single.modal.actions.create.label`, `create.single.modal.actions.create_another.label` and `create.single.notifications.created.title`.
 Filament's `:label` placeholders are ICU `{label}` arguments, and the getters translate the message, so a locale or an override needs no change to the action.
 
 The two `{label}` arguments are fed by [`Action::getRecordLabel()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and `getTitleCaseRecordLabel()`, which is why the label and the heading are closures: neither label is known until the action is hosted.

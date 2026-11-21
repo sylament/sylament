@@ -28,7 +28,8 @@
         "symfony/translation-contracts": "^3.6",
         "symfony/uid": "^8.1",
         "symfony/ux-twig-component": "^3.5",
-        "symfony/validator": "^8.1"
+        "symfony/validator": "^8.1",
+        "symfony/yaml": "^8.1"
     },
     "suggest": {
         "symfony/security-bundle": "To validate a TextInput::currentPassword() field against the signed-in user, whose validator this bundle registers",

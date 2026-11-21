@@ -27,7 +27,8 @@
         "symfony/translation": "^8.1",
         "symfony/translation-contracts": "^3.6",
         "symfony/ux-live-component": "^3.5",
-        "symfony/ux-twig-component": "^3.5"
+        "symfony/ux-twig-component": "^3.5",
+        "symfony/yaml": "^8.1"
     },
     "suggest": {
         "sylament/notifications": "Turns an action's success and failure notification titles into rendered toasts.",

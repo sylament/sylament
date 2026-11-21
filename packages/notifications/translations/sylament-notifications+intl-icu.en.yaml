@@ -1,0 +1,4 @@
+notification:
+    actions:
+        close:
+            label: 'Close notification'

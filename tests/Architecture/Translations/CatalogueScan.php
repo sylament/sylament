@@ -27,6 +27,7 @@ use ReflectionClass;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Translation\Extractor\ExtractorInterface;
 use Symfony\Component\Translation\Loader\XliffFileLoader;
+use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Validator\Validation;
 
@@ -248,7 +249,7 @@ final class CatalogueScan
      */
     private static function catalogues(string $packagesDirectory, string $package): array
     {
-        $loader = new XliffFileLoader();
+        $loader = new YamlFileLoader();
         $keys = [];
 
         foreach (self::catalogueFiles($packagesDirectory, $package) as $file => $domain) {
@@ -260,15 +261,15 @@ final class CatalogueScan
     }
 
     /**
-     * @return array<string, string> each `translations/*.en.xlf` file name, mapped to the domain it holds
+     * @return array<string, string> each `translations/*.en.yaml` file name, mapped to the domain it holds
      */
     private static function catalogueFiles(string $packagesDirectory, string $package): array
     {
         $files = [];
 
         foreach (glob($packagesDirectory . '/' . $package . '/translations/*') ?: [] as $path) {
-            if (preg_match('/^(?:validators\.en\.xlf|(?!validators\+)(?<domain>[a-z0-9-]+)\+intl-icu\.en\.xlf)$/', basename($path), $match) !== 1) {
-                throw new LogicException(sprintf('%s is not named <domain>+intl-icu.en.xlf or validators.en.xlf (.claude/rules/catalogues.md).', $path));
+            if (preg_match('/^(?:validators\.en\.yaml|(?!validators\+)(?<domain>[a-z0-9-]+)\+intl-icu\.en\.yaml)$/', basename($path), $match) !== 1) {
+                throw new LogicException(sprintf('%s is not named <domain>+intl-icu.en.yaml or validators.en.yaml (.claude/rules/catalogues.md).', $path));
             }
 
             $files[basename($path)] = $match['domain'] ?? self::VALIDATORS;

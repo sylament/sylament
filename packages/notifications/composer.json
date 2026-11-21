@@ -25,7 +25,8 @@
         "symfony/translation-contracts": "^3.6",
         "symfony/uid": "^8.1",
         "symfony/ux-live-component": "^3.5",
-        "symfony/ux-twig-component": "^3.5"
+        "symfony/ux-twig-component": "^3.5",
+        "symfony/yaml": "^8.1"
     },
     "autoload": {
         "psr-4": {

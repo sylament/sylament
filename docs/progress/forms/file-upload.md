@@ -390,7 +390,7 @@ Four texts have no Filament key and take port-added ones.
 `components.file_upload.max_files_message` is an ICU plural over `count` that names the field's label, tag-stripped, as `label`, where Filament formats Laravel's core `validation.max.array`.
 `components.file_upload.errors.{upload,remove,load,reorder}` are the controller's refusal texts, and `errors.type_undetected` carries a `__NAME__` token the controller replaces with the file's name.
 The template hands all of them to the controller as Stimulus values, and the controller keeps no English default.
-`The submitted file path is not authorised.` is an id in `validators.en.xlf`, which Filament's `validation.tampered_file_path` words differently.
+`The submitted file path is not authorised.` is an id in `validators.en.yaml`, which Filament's `validation.tampered_file_path` words differently.
 
 `MAX_FILES_WARNING` is FilePond's own warning body, compared and never shown, and the `Expects  or` patch rewrites FilePond's own English error text.
 FilePond's built-in interface text stays English, since no FilePond locale is configured.

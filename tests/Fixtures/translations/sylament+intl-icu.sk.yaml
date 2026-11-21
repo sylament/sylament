@@ -1,0 +1,6 @@
+components/section:
+    actions:
+        collapse:
+            label: 'Zbaliť sekciu'
+        expand:
+            label: 'Rozbaliť sekciu'

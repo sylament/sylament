@@ -1,0 +1,13 @@
+modal:
+    cancel: 'Keep it (translated)'
+    description: 'It leaves the list (translated)'
+    heading: 'Archive the order (translated)'
+    submit: 'Archive now (translated)'
+notification:
+    title: 'Archived (translated)'
+record:
+    label: 'crate'
+    title: 'The crate'
+section: 'Shipments'
+trigger:
+    label: 'Archive (translated)'

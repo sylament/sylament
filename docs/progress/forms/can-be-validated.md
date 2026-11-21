@@ -445,7 +445,7 @@ Permanent.
 Filament's `validationAttribute()` / `getValidationAttribute()` supply the field name Laravel interpolates into `:attribute` in a rule message, defaulting to the field's label.
 Symfony's violation messages carry no field-name placeholder — `RequiredValue`'s default is "This value should not be blank." with no slot to fill — and the message that reaches the user is rendered *next to* its field by the `FieldWrapper`, so the name is redundant.
 **Skipped**; a user who wants the name in the text writes it into `validationMessages()`.
-Reverses only if the toolkit's validator messages gain an attribute placeholder, which the ids of `validators.en.xlf` have none of.
+Reverses only if the toolkit's validator messages gain an attribute placeholder, which the ids of `validators.en.yaml` have none of.
 
 ### HTML validation messages are not ported
 

@@ -1,0 +1,15 @@
+brand: 'Acme (translated)'
+crumb:
+    here: '{page} here (translated)'
+    home: 'Home (translated)'
+manager:
+    badge: 'Sown (translated)'
+    title: 'Sprouts (translated)'
+    tooltip: 'Sown this season (translated)'
+page:
+    badge: 'New (translated)'
+    group: 'Library (translated)'
+    label: 'Desk (translated)'
+search:
+    detail: '{words} words (translated)'
+    title: 'Shelf of {term} (translated)'

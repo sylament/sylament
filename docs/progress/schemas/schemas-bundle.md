@@ -57,11 +57,11 @@ Next step: port them with the `Commands/` subtree.
 ### The catalogue holds only the keys schemas' code reads
 
 FrameworkBundle registers the bundle's `translations/` directory by itself, so the bundle wires nothing.
-`sylament-schemas+intl-icu.en.xlf` holds the four keys the package renders under Filament's key paths: `components.wizard.actions.next_step.label`, `components.wizard.actions.previous_step.label`, `components.wizard.header.step.statuses.completed` and `components.wizard.header.step.statuses.upcoming`.
+`sylament-schemas+intl-icu.en.yaml` holds the four keys the package renders under Filament's key paths: `components.wizard.actions.next_step.label`, `components.wizard.actions.previous_step.label`, `components.wizard.header.step.statuses.completed` and `components.wizard.header.step.statuses.upcoming`.
 The English matches Filament's.
 Filament's other keys have no host here and ship nowhere until one exists: `components.callout.statuses.*`, `components.js_component.failed_to_load`, `components.tabs.actions.more.label`, and the support-namespace `loading.*`.
 The Section collapse and expand labels, and the Tabs navigation label, are support's own keys in the `sylament` domain, because support's templates render them.
-`validators.en.xlf` holds *This value cannot be changed.*, the record-key refusal Symfony's own catalogue lacks; *This value is already used.* and *This value should not be blank.* are Symfony's and need no entry.
+`validators.en.yaml` holds *This value cannot be changed.*, the record-key refusal Symfony's own catalogue lacks; *This value is already used.* and *This value should not be blank.* are Symfony's and need no entry.
 
 ### The asset prepend needs the built `dist` to exist
 

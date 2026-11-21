@@ -15,7 +15,7 @@ it('reports a key the code uses and the catalogue lacks', function (): void {
     $directory = PlantedPackages::plant([
         'support/src/Greeting.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('greeting.label', [], 'sylament');\n\$b = new TranslatableMessage('held.label', [], 'sylament');\n",
         'support/templates/components/Greeting/index.html.twig' => "{{ 'components/greeting.heading'|trans(domain: 'sylament') }}",
-        'support/translations/sylament+intl-icu.en.xlf' => PlantedPackages::catalogue(['held.label']),
+        'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['held.label']),
     ]);
 
     try {
@@ -31,7 +31,7 @@ it('reports a key the code uses and the catalogue lacks', function (): void {
 it('reports a catalogue key nothing uses', function (): void {
     $directory = PlantedPackages::plant([
         'support/src/Greeting.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('used.label', [], 'sylament');\n",
-        'support/translations/sylament+intl-icu.en.xlf' => PlantedPackages::catalogue(['dependent.label', 'stale.label', 'used.label']),
+        'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['dependent.label', 'stale.label', 'used.label']),
         'tables/src/Column.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('dependent.label', [], 'sylament');\n",
     ], requires: ['tables' => ['support']]);
 
@@ -44,10 +44,10 @@ it('reports a catalogue key nothing uses', function (): void {
 
 it('reports a domain the package may not name', function (): void {
     $directory = PlantedPackages::plant([
-        'support/translations/sylament+intl-icu.en.xlf' => PlantedPackages::catalogue(['components/copyable.messages.copied']),
+        'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['components/copyable.messages.copied']),
         'tables/src/Column.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('components/copyable.messages.copied', [], 'sylament');\n\$b = new TranslatableMessage('resources/pages/list-records.title', [], 'sylament-panels');\n",
         'tables/templates/partials/Table/index.html.twig' => "{{ 'table.empty.heading'|trans }}",
-        'panels/translations/sylament-panels+intl-icu.en.xlf' => PlantedPackages::catalogue(['resources/pages/list-records.title']),
+        'panels/translations/sylament-panels+intl-icu.en.yaml' => PlantedPackages::catalogue(['resources/pages/list-records.title']),
     ], requires: ['tables' => ['support']]);
 
     try {
@@ -62,11 +62,11 @@ it('reports a domain the package may not name', function (): void {
 
 it('reports a catalogue of a domain the package does not own', function (): void {
     $directory = PlantedPackages::plant([
-        'support/translations/sylament-forms+intl-icu.en.xlf' => PlantedPackages::catalogue(['components.select.placeholder']),
+        'support/translations/sylament-forms+intl-icu.en.yaml' => PlantedPackages::catalogue(['components.select.placeholder']),
     ]);
 
     try {
-        expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'support', $directory))->toBe(['misplaced sylament-forms: translations/sylament-forms+intl-icu.en.xlf']);
+        expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'support', $directory))->toBe(['misplaced sylament-forms: translations/sylament-forms+intl-icu.en.yaml']);
     } finally {
         PlantedPackages::remove($directory);
     }
@@ -79,16 +79,17 @@ it('refuses a catalogue named in neither shape', function (string $file): void {
 
     try {
         expect(fn (): array => CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'forms', $directory))
-            ->toThrow(LogicException::class, '/' . $file . ' is not named <domain>+intl-icu.en.xlf or validators.en.xlf');
+            ->toThrow(LogicException::class, '/' . $file . ' is not named <domain>+intl-icu.en.yaml or validators.en.yaml');
     } finally {
         PlantedPackages::remove($directory);
     }
 })->with([
-    'an own-domain catalogue without ICU' => ['sylament-forms.en.xlf'],
-    'a validators catalogue with ICU' => ['validators+intl-icu.en.xlf'],
+    'an own-domain catalogue without ICU' => ['sylament-forms.en.yaml'],
+    'a validators catalogue with ICU' => ['validators+intl-icu.en.yaml'],
+    'an XLIFF catalogue' => ['sylament-forms+intl-icu.en.xlf'],
 ]);
 
-it('reads every shape a validator message ships in, and reports one validators.en.xlf lacks or no longer ships', function (): void {
+it('reads every shape a validator message ships in, and reports one validators.en.yaml lacks or no longer ships', function (): void {
     $directory = PlantedPackages::plant([
         'forms/src/Validation/Shapes.php' => <<<'PHP'
             <?php
@@ -112,7 +113,7 @@ it('reads every shape a validator message ships in, and reports one validators.e
             }
             PHP,
         'forms/src/Components/Upload.php' => "<?php\nuse Sylament\\Forms\\Validation\\Prohibited;\n\$context->buildViolation('A violation id.')->addViolation();\n\$context->buildViolation(\$message)->addViolation();\n\$constraint = new Prohibited(message: 'A constraint argument.');\n",
-        'forms/translations/validators.en.xlf' => PlantedPackages::catalogue(['A held property default.', 'A stale message.']),
+        'forms/translations/validators.en.yaml' => PlantedPackages::catalogue(['A held property default.', 'A stale message.']),
     ]);
 
     try {

@@ -40,18 +40,16 @@ final class PlantedPackages
     }
 
     /**
-     * An XLIFF 1.2 catalogue holding each key with itself as its English.
+     * A YAML catalogue holding each key, flat and quoted, with itself as its English.
      *
      * @param list<string> $keys
      */
     public static function catalogue(array $keys): string
     {
-        $units = implode('', array_map(
-            static fn (string $key): string => sprintf('<trans-unit id="%1$s" resname="%1$s"><source>%1$s</source><target>%1$s</target></trans-unit>', htmlspecialchars($key, ENT_XML1)),
+        return implode('', array_map(
+            static fn (string $key): string => sprintf('\'%1$s\': \'%1$s\'' . "\n", str_replace("'", "''", $key)),
             $keys,
         ));
-
-        return '<?xml version="1.0" encoding="utf-8"?><xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2"><file source-language="en" target-language="en" datatype="plaintext" original="file.ext"><body>' . $units . '</body></file></xliff>';
     }
 
     public static function remove(string $directory): void

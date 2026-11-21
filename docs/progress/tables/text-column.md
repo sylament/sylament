@@ -82,6 +82,7 @@ The `number_format()` arm that a separator argument selects is unaffected, becau
 ### A `Markup` state skips truncation, and affixing escapes whichever side is not already `Markup`
 
 `formatState()` captures `$isMarkup` before deciding whether to call `truncateState()`, and skips it whenever the state is already `Markup`, either because it arrived that way or because the `HasLabel` unwrap returned one.
+The unwrap translates a label that is a message first ([contracts](../support/contracts.md#text-a-contract-answers-may-be-a-message-which-its-reader-translates)), and a translation is a string, so a translated label is truncated and escaped like any plain state.
 That check runs on the state alone, before `affixState()` ever sees a prefix or suffix, so a `Markup` *affix* against a still-plain state does not suppress it: `limit()` / `words()` still truncate the state first, and only then does the affix step decide whether to escape or promote.
 Cutting into already-escaped markup mid-tag would corrupt it; cutting a plain string that only later picks up an escaped affix cannot.
 

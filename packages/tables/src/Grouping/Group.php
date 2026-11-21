@@ -415,7 +415,7 @@ class Group extends Component
             : $this->readColumn($record);
 
         if ($title instanceof HasLabel) {
-            $title = $title->getLabel();
+            $title = $this->translateText($title->getLabel());
         }
 
         if ($title instanceof BackedEnum) {

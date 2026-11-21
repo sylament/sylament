@@ -7,18 +7,19 @@ namespace Sylament\Forms\Components\Concerns;
 use BackedEnum;
 use Closure;
 use Sylament\Support\Contracts\HasLabel;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 use UnitEnum;
 
 trait HasOptions
 {
     /**
-     * @var array<string|int, string|Markup|array<string|int, string|Markup>>|class-string<UnitEnum>|Closure|null
+     * @var array<string|int, string|Markup|TranslatableInterface|array<string|int, string|Markup|TranslatableInterface>>|class-string<UnitEnum>|Closure|null
      */
     protected array|string|Closure|null $options = null;
 
     /**
-     * @param array<string|int, string|Markup|array<string|int, string|Markup>>|class-string<UnitEnum>|Closure|null $options
+     * @param array<string|int, string|Markup|TranslatableInterface|array<string|int, string|Markup|TranslatableInterface>>|class-string<UnitEnum>|Closure|null $options
      */
     public function options(array|string|Closure|null $options): static
     {
@@ -39,10 +40,42 @@ trait HasOptions
         $options = $this->evaluate($this->options) ?? $this->getEnum() ?? [];
 
         if (is_string($options) && enum_exists($options)) {
-            return self::getOptionsFromEnum($options);
+            return $this->translateOptions(self::getOptionsFromEnum($options));
         }
 
-        return is_array($options) ? $options : [];
+        return is_array($options) ? $this->translateOptions($options) : [];
+    }
+
+    /**
+     * Each label of the map as the text it renders: a message translated, a
+     * string or a `Markup` as given, one group level deep. A group's label is the
+     * array key, which cannot be a message, so it stays as given.
+     *
+     * @param array<string|int, string|Markup|TranslatableInterface|array<string|int, string|Markup|TranslatableInterface>> $options
+     *
+     * @return array<string|int, string|Markup|array<string|int, string|Markup>>
+     */
+    private function translateOptions(array $options): array
+    {
+        $translated = [];
+
+        foreach ($options as $value => $label) {
+            if (! is_array($label)) {
+                $translated[$value] = $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+
+                continue;
+            }
+
+            $group = [];
+
+            foreach ($label as $groupValue => $groupLabel) {
+                $group[$groupValue] = $groupLabel instanceof TranslatableInterface ? $groupLabel->trans($this->getTranslator()) : $groupLabel;
+            }
+
+            $translated[$value] = $group;
+        }
+
+        return $translated;
     }
 
     public function hasDynamicOptions(): bool
@@ -95,18 +128,24 @@ trait HasOptions
     }
 
     /**
+     * Each case's label as the enum gives it, for `getOptions()` to translate: a
+     * `HasLabel` case's label, else the case itself when it is a message, else
+     * its name.
+     *
      * @param class-string<UnitEnum> $enum
      *
-     * @return array<string|int, string|Markup>
+     * @return array<string|int, string|Markup|TranslatableInterface>
      */
     private static function getOptionsFromEnum(string $enum): array
     {
         $options = [];
 
         foreach ($enum::cases() as $case) {
-            $options[$case instanceof BackedEnum ? $case->value : $case->name] = $case instanceof HasLabel
-                ? ($case->getLabel() ?? $case->name)
-                : $case->name;
+            $options[$case instanceof BackedEnum ? $case->value : $case->name] = match (true) {
+                $case instanceof HasLabel => $case->getLabel() ?? $case->name,
+                $case instanceof TranslatableInterface => $case,
+                default => $case->name,
+            };
         }
 
         return $options;

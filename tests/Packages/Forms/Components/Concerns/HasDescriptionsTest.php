@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Forms\Components\Radio;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
+use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 
 describe('descriptions()', function (): void {
@@ -32,7 +33,8 @@ describe('enum descriptions', function (): void {
             ['courier', null],
             ['pickup', null],
         ])
-            ->and($this->radioDescriptions($this->renderSchemaComponent(Radio::make('letter')->enum(StringBackedLetter::class))))->toBe([['a', null], ['b', null], ['c', null]]);
+            ->and($this->radioDescriptions($this->renderSchemaComponent(Radio::make('letter')->enum(StringBackedLetter::class))))->toBe([['a', null], ['b', null], ['c', null]])
+            ->and($this->radioDescriptions($this->renderSchemaComponent(Radio::make('status')->enum(TranslatedStatus::class))))->toBe([['draft', 'Not yet public (translated)'], ['published', null]]);
     });
 
     it("takes the enum's descriptions only while its own map is empty, a closure answering an empty map included", function (): void {

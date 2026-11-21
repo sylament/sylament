@@ -27,6 +27,7 @@ Both render the map under each option's label — [`Radio`](radio.md) and [`Chec
 
 The enum fallback filters on [`filled()`](../support/helpers.md): a case whose `getDescription()` answers `null` — or an empty string — is **left out of the map entirely** rather than being stored against a null value.
 `hasDescription()` is `array_key_exists()` over that map, so it answers `false` for such a case and the render site emits no description element at all, instead of an empty one.
+A description that is a message is translated before the test ([contracts](../support/contracts.md#text-a-contract-answers-may-be-a-message-which-its-reader-translates)), so `filled()` reads the text, where the message object itself would always count as filled.
 
 This is Filament's behaviour, and it is the one asymmetry among the enum-backed map concerns: `HasColors` and `HasIcons` add **every** case, including the ones answering `null`, so their maps carry null values and their `getColor()` / `getIcon()` lookups lean on `?? null` instead.
 Only descriptions filter.

@@ -14,6 +14,7 @@ use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Forms\ColoredLevel;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
+use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -119,6 +120,7 @@ describe('its icons', function (): void {
         'a tooltip' => [fn (): IconColumn => IconColumn::make('item')->icon('support:star')->tooltip(new Markup(' <b>Top</b> shelf ', 'UTF-8')), 'oak', 'Top shelf'],
         'a tooltip on a boolean column' => [fn (): IconColumn => IconColumn::make('item')->boolean()->tooltip('Stocked'), true, 'Stocked'],
         'a state that labels itself' => [fn (): IconColumn => IconColumn::make('item')->icon('support:star'), DeliveryMode::Standard, 'Standard delivery'],
+        'a state that labels itself with a message' => [fn (): IconColumn => IconColumn::make('item')->icon('support:star'), TranslatedStatus::Draft, 'Draft (translated)'],
         'a backed enum' => [fn (): IconColumn => IconColumn::make('item')->icon('support:star'), StringBackedLetter::A, 'a'],
         'a markup state' => [fn (): IconColumn => IconColumn::make('item')->icon('support:star'), new Markup(' <i>oak</i> ', 'UTF-8'), 'oak'],
         'a scalar' => [fn (): IconColumn => IconColumn::make('item')->icon('support:star'), ' <b>ash</b> ', 'ash'],

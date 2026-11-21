@@ -63,7 +63,7 @@ trait HasDescriptions
             $descriptions = [];
 
             foreach ($enum::cases() as $case) {
-                $description = $case->getDescription();
+                $description = $this->translateText($case->getDescription());
 
                 if (filled($description)) {
                     $descriptions[$case instanceof BackedEnum ? $case->value : $case->name] = $description;

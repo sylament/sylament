@@ -77,6 +77,7 @@ Keeping the dropped entries in the list rather than filtering them in PHP is wha
 
 Every icon renders `aria-hidden="true"`, so the `<span class="sy-ta-sr-only">` that follows it is the cell's whole accessible content, and the accessible name of any `<a>` the per-item link arm wraps around it.
 The name is chosen by the first arm that answers: the item's tooltip, then `Yes` / `No` on a boolean column, then the state's [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php), then a backed enum's value, then a `Markup`'s stripped text, then the scalar itself.
+A `HasLabel` label that is a message is translated through the column's translator in that arm ([contracts](../support/contracts.md#text-a-contract-answers-may-be-a-message-which-its-reader-translates)).
 The result is stripped of tags and trimmed, so a `Markup` tooltip names the icon with its text rather than its markup, the same flattening the `title` attribute gets.
 
 ### The policy carries a map and the default-gray contract at once

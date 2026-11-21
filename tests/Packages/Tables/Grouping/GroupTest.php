@@ -11,6 +11,7 @@ use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
+use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\GroupableLarderJarTable;
@@ -92,6 +93,10 @@ describe('keys and titles', function (): void {
 
         expect($headers->each(static fn (Crawler $header): string => $header->filter(Selectors::GROUP_HEADING)->text()))->toBe(['Titled: Apple jar', 'Titled: Apricot jar', 'Titled: Fig jar'])
             ->and(array_count_values($this::getContainer()->get(HookLog::class)->hooks)['title'])->toBe(3);
+    });
+
+    it('titles a group by the translation of the message an enum labels itself with', function (): void {
+        expect(Group::make('status')->getTitle(['status' => TranslatedStatus::Draft]))->toBe('Draft (translated)');
     });
 
     it('keys a record by the value its column holds, and by none where the value cannot name a group', function (string $column, object|array $record, bool $date, ?string $key): void {

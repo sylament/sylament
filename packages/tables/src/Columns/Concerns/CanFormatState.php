@@ -447,7 +447,7 @@ trait CanFormatState
         $isMarkup = $state instanceof Markup;
 
         if ($state instanceof HasLabel) {
-            $state = $state->getLabel();
+            $state = $this->translateText($state->getLabel());
 
             $isMarkup = $state instanceof Markup;
         }

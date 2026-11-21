@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="plant.fern" resname="plant.fern">
+                <source>plant.fern</source>
+                <target>Fern (translated)</target>
+            </trans-unit>
+            <trans-unit id="self_status.archived" resname="self_status.archived">
+                <source>self_status.archived</source>
+                <target>Archived (translated)</target>
+            </trans-unit>
+            <trans-unit id="self_status.deleted" resname="self_status.deleted">
+                <source>self_status.deleted</source>
+                <target>Deleted (translated)</target>
+            </trans-unit>
+            <trans-unit id="status.draft" resname="status.draft">
+                <source>status.draft</source>
+                <target>Draft (translated)</target>
+            </trans-unit>
+            <trans-unit id="status.draft.description" resname="status.draft.description">
+                <source>status.draft.description</source>
+                <target>Not yet public (translated)</target>
+            </trans-unit>
+            <trans-unit id="status.published" resname="status.published">
+                <source>status.published</source>
+                <target>Published (translated)</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

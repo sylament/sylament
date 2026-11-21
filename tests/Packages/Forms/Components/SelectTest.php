@@ -34,6 +34,8 @@ use Sylament\Tests\Fixtures\Forms\SelectForm;
 use Sylament\Tests\Fixtures\Forms\SelectOptionActionForm;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Forms\SelectRelationshipForm;
+use Sylament\Tests\Fixtures\Forms\SelfTranslatedStatus;
+use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\Record\Memo;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
@@ -211,6 +213,28 @@ describe('enum', function (): void {
         expect($form->getComponent('enum')->getState())->toBe(StringBackedLetter::B)
             ->and($form->getComponent('letters')->getState())->toBe([StringBackedLetter::C, StringBackedLetter::A]);
     });
+
+    it('labels enum options from translated HasLabel messages and from a translatable enum', function (): void {
+        $native = fn (string $enum): array => $this->renderSchemaComponent(Select::make('status')->options($enum))
+            ->filter(Selectors::NATIVE_SELECT . ' option')
+            ->each(static fn (Crawler $option): array => [$option->attr('value'), $option->text()]);
+        $control = $this->renderSchemaComponent(Select::make('status')->options(SelfTranslatedStatus::class)->native(false));
+        $search = Select::make('status')->searchable()->getSearchResultsUsing(static fn (): array => [
+            'draft' => TranslatedStatus::Draft->getLabel(),
+            'archived' => SelfTranslatedStatus::Archived,
+        ]);
+
+        expect($native(TranslatedStatus::class))->toBe([['', 'Select an option'], ['draft', 'Draft (translated)'], ['published', 'Published (translated)']])
+            ->and($native(SelfTranslatedStatus::class))->toBe([['', 'Select an option'], ['archived', 'Archived (translated)'], ['deleted', 'Deleted (translated)']])
+            ->and($this->selectControllerValue($control, 'options'))->toBe([
+                ['label' => 'Archived (translated)', 'value' => 'archived', 'isDisabled' => false],
+                ['label' => 'Deleted (translated)', 'value' => 'deleted', 'isDisabled' => false],
+            ])
+            ->and($search->getSearchResultsForJs('dr'))->toBe([
+                ['label' => 'Draft (translated)', 'value' => 'draft', 'isDisabled' => false],
+                ['label' => 'Archived (translated)', 'value' => 'archived', 'isDisabled' => false],
+            ]);
+    });
 });
 
 describe('boolean()', function (): void {
@@ -306,6 +330,11 @@ describe('getOptionLabel()', function (): void {
         'a state the closure does not label' => ['labelled', 'yew', false, null],
         'a state inside a group' => ['grouped', 'bracken', true, 'Bracken'],
     ]);
+
+    it('answers the translation of a message the label closure gives, and of a translatable enum it gives', function (): void {
+        expect(Select::make('status')->getOptionLabelUsing(static fn (): mixed => TranslatedStatus::Published->getLabel())->getOptionLabel())->toBe('Published (translated)')
+            ->and(Select::make('status')->getOptionLabelUsing(static fn (): SelfTranslatedStatus => SelfTranslatedStatus::Deleted)->getOptionLabel())->toBe('Deleted (translated)');
+    });
 });
 
 describe('getOptionLabels()', function (): void {

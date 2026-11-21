@@ -45,6 +45,7 @@ use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
 use TypeError;
 
@@ -634,8 +635,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             'searchQuery' => $search,
         ]), 'getSearchResultsUsing');
 
-        /** @var array<string|int, string|Markup|array<string|int, string|Markup>> $results */
-        return $results;
+        /** @var array<string|int, string|Markup|TranslatableInterface|array<string|int, string|Markup|TranslatableInterface>> $results */
+        return $this->translateOptions($results);
     }
 
     /**
@@ -1367,11 +1368,16 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     }
 
     /**
-     * What a label closure answered, as the text an option label is: `Markup`
-     * as-is, a scalar or an enum's backing value as a string, anything else null.
+     * What a label closure answered, as the text an option label is: a message
+     * translated, `Markup` as-is, a scalar or an enum's backing value as a
+     * string, anything else null.
      */
     private function toOptionLabel(mixed $label): string|Markup|null
     {
+        if ($label instanceof TranslatableInterface) {
+            return $this->translateText($label);
+        }
+
         if ($label instanceof Markup) {
             return $label;
         }

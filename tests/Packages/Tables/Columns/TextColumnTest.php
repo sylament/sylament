@@ -9,6 +9,7 @@ use Sylament\Support\Enums\FontWeight;
 use Sylament\Support\Enums\TextSize;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\NumberedProductTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
@@ -45,6 +46,11 @@ describe('its values', function (): void {
 
         expect($this->renderViewComponent($formatted)->filter(Selectors::TEXT_ITEM)->text())->toBe('Oak, Ash')
             ->and($this->renderViewComponent($joined)->filter(Selectors::TEXT_ITEM)->text())->toBe('oak · ash');
+    });
+
+    it('shows a translated enum label as the cell state', function (): void {
+        expect($this->renderViewComponent(TextColumn::make('status')->record(['status' => TranslatedStatus::Draft])))
+            ->toContainElement(Selectors::TEXT_ITEM, 'Draft (translated)');
     });
 
     it('flattens a Markup value into plain text when it joins a collapsed cell, and keeps it raw on a badge', function (): void {

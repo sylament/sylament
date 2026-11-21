@@ -6,6 +6,7 @@ use Sylament\Tables\Columns\Summarizers\Range;
 use Sylament\Tables\Columns\Summarizers\Summarizer;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
+use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Markup;
@@ -62,6 +63,7 @@ describe('the text around the figure', function (): void {
         expect($figure(DeliveryMode::Standard)->text())->toBe('Standard delivery')
             ->and($figure(DeliveryMode::Express)->text())->toBe('Express delivery')
             ->and($figure(DeliveryMode::Express)->filter('b')->text())->toBe('Express')
+            ->and($figure(TranslatedStatus::Draft)->text())->toBe('Draft (translated)')
             ->and($figure(JarSeal::Wax)->text())->toBe('wax');
     });
 });

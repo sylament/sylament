@@ -316,7 +316,7 @@ class IconColumn extends Column
         $alternative = match (true) {
             filled($tooltip) => $tooltip,
             $this->isBoolean() => $state ? 'Yes' : 'No',
-            $state instanceof HasLabel => $state->getLabel(),
+            $state instanceof HasLabel => $this->translateText($state->getLabel()),
             $state instanceof BackedEnum => $state->value,
             $state instanceof Markup => strip_tags((string) $state),
             is_scalar($state) || $state instanceof Stringable => $state,

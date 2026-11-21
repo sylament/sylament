@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Forms\Components\Radio;
+use Sylament\Forms\Components\Select;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
 use Sylament\Tests\Fixtures\Forms\RadioForm;
@@ -10,6 +11,7 @@ use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Validator\Constraints\Choice;
 
 describe('options()', function (): void {
@@ -19,6 +21,14 @@ describe('options()', function (): void {
             ->each(static fn (Crawler $option): array => [$option->filter(Selectors::RADIO)->attr('value'), $option->filter(Selectors::RADIO_OPTION_LABEL)->text()]);
 
         expect($options)->toBe([['pro', 'Pro'], ['1', 'One'], ['basic', 'Basic']]);
+    });
+
+    it('translates a message label inside an option group', function (): void {
+        $select = $this->renderSchemaComponent(Select::make('plant')->options(['Ferns' => ['fern' => new TranslatableMessage('plant.fern', domain: 'fixtures-forms')], 'moss' => 'Moss']))
+            ->filter(Selectors::NATIVE_SELECT);
+
+        expect($select)->toContainElement('optgroup[label="Ferns"] option[value="fern"]', 'Fern (translated)')
+            ->and($select)->toContainElement('option[value="moss"]', 'Moss');
     });
 
     it('offers nothing for a string that names no enum, so it refuses every value', function (): void {

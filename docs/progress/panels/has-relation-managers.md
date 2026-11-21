@@ -25,7 +25,7 @@ Both hosts compose one tier, [`InteractsWithRelationshipTable`](interacts-with-r
 | [`$activeRelationManager`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `#[Url(as: 'relation')] public ?string $activeRelationManager` | done | — | [semantics](#the-relation-binding-is-the-toolkits-only-static-url-mapping) |
 | [`getCachedRelationManagers()` / `getRelationManagers()` / `getAllRelationManagers()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | the same three | done | — | [semantics](#the-registrations-are-read-once-per-request-and-filtered-by-the-record) |
 | [`normalizeRelationManagerClass()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `normalizeRelationManagerClass()` | done | — | — |
-| [`getRelationManagersContentComponent()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `getRelationManagersContentComponent()` | done | — | [semantics](#four-arms-one-component-and-the-registration-keys-are-the-identities) · [diverges](#two-groups-holding-one-manager-under-one-key-share-its-embed-identity) · [diverges](#the-server-mode-tab-bar-has-no-overflow-dropdown) · [detail](#the-group-arms-are-not-browser-tested-for-child-preservation) |
+| [`getRelationManagersContentComponent()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `getRelationManagersContentComponent()` | done | — | [semantics](#four-arms-one-component-and-the-registration-keys-are-the-identities) · [diverges](#two-groups-holding-one-manager-under-one-key-share-its-embed-identity) · [diverges](#the-server-mode-tab-bar-has-no-overflow-dropdown) · [semantics](#the-group-arms-are-not-browser-tested-for-child-preservation) |
 | The active-manager defaulting | [`renderingHasRelationManagers()`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php) | done | — | [diverges](#the-defaulting-is-folded-into-the-builder-and-casts-the-key-to-a-string) |
 | [`EditRecord::content()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`schemas()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | — | [detail](#content-ships-in-a-narrow-shape) · [semantics](#the-content-schema-is-built-on-every-live-request) |
 | `hasCombinedRelationManagerTabsWithContent()` / `getContentTabComponent()` / `getContentTabLabel()` / `getContentTabIcon()` / `getContentTabPosition()` / `Enums\ContentTabPosition` | the same five plus the enum | skipped | — | [diverges](#the-combined-content-tab-does-not-port) |
@@ -46,11 +46,6 @@ The one thing the narrow shape fixes in place is placement: the managers render 
 
 `content()` is on `EditRecord` alone.
 `CreateRecord` has no record and so no managers to show, and `ListRecords`' faithful `content()` wants `EmbeddedTable` ([relation-manager.md](relation-manager.md#the-manager-renders-a-template-not-a-content-schema)); both keep their deferrals.
-
-### The group arms are not browser-tested for child preservation
-
-The `RelationGroup` arms are covered through the rendered page, which renders every child in full; whether a group's embeds keep their state across a parent re-render is only observable in a browser.
-The demo registers the single-manager and tabs arms, so those are what a browser pass covers, and the group arms are not.
 
 ## Semantics
 
@@ -101,6 +96,11 @@ It is a routed page's prop either way, which is why it is bound here and a manag
 
 [`Resource::getIndexUrl()`'s parent arms](nested-resources.md#the-parent-arms-carry-no-relation-parameter) omit the `relation` parameter Filament appends, and [a nested breadcrumb renders unlinked](nested-resources.md#a-crumb-whose-url-the-trail-already-spends-renders-unlinked) because two trail URLs coincide without it.
 That omission is a decision rather than a dependency: appending `?relation=<name>` to a breadcrumb URL is a real cost (it is noise in a URL a user copies, and it pins a tab the reader did not ask for) against a real benefit (the crumb links), and it is the one piece of `?relation=` left open.
+
+### The group arms are not browser-tested for child preservation
+
+The `RelationGroup` arms are covered through the rendered page, which renders every child in full; whether a group's embeds keep their state across a parent re-render is only observable in a browser.
+The demo registers the single-manager and tabs arms, so those are what a browser pass covers, and the group arms are not.
 
 ## Divergences
 

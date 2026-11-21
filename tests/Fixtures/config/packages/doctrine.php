@@ -35,6 +35,7 @@ return static function (ContainerConfigurator $container): void {
                     'second_level_cache' => [
                         'enabled' => true,
                     ],
+                    'use_schema_editor_api' => true,
                 ],
             ],
         ],

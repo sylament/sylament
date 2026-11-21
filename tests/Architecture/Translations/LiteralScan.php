@@ -96,6 +96,11 @@ final class LiteralScan
     private const string TEXT_KEY = '/^(?:aria-label|aria-description|alt)$|(?:label|heading|title|description|placeholder|tooltip|message)$/i';
 
     /**
+     * A getter returning text beyond a text setter's twin: a `get…` name ending in one of these words.
+     */
+    private const string TEXT_GETTER = '/^get\w*(?:title|label|heading|description|placeholder|tooltip|message)$/i';
+
+    /**
      * A TypeScript binding naming text, by the word its name ends in.
      */
     private const string TEXT_BINDING = '(?:text|label|message|error|placeholder|prompt|title|heading|tooltip|description)';
@@ -262,7 +267,7 @@ final class LiteralScan
         }
 
         foreach ($finder->findInstanceOf($nodes, ClassMethod::class) as $method) {
-            if (!in_array($method->name->toLowerString(), $getters, true)) {
+            if (!in_array($method->name->toLowerString(), $getters, true) && preg_match(self::TEXT_GETTER, $method->name->toString()) !== 1) {
                 continue;
             }
 

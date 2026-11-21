@@ -3,10 +3,12 @@ src/Resources/Pages/CreateRecord.php: Cancel
 src/Resources/Pages/CreateRecord.php: Create
 src/Resources/Pages/CreateRecord.php: Create
 src/Resources/Pages/CreateRecord.php: Create %s
+src/Resources/Pages/CreateRecord.php: Created
 src/Resources/Pages/EditRecord.php: Cancel
 src/Resources/Pages/EditRecord.php: Edit
 src/Resources/Pages/EditRecord.php: Edit %s
 src/Resources/Pages/EditRecord.php: Save
+src/Resources/Pages/EditRecord.php: Saved
 src/Resources/Pages/ListRecords.php: List
 src/Resources/Pages/ManageRelatedRecords.php: Manage %s %s
 templates/components/GlobalSearch/index.html.twig: Global search

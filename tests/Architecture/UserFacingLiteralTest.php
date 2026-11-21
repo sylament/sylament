@@ -48,8 +48,9 @@ it('reports a literal inside a setter closure, a getter fallback and a Twig join
     }
 });
 
-it('reports a text property default, a text-keyed array entry, a formatted fallback and a TS text binding', function (): void {
+it('reports a text property default, a text-keyed array entry, a formatted fallback, a text-named getter and a TS text binding', function (): void {
     $directory = PlantedPackages::plant([
+        'support/src/Pages/CreatePage.php' => "<?php\nclass CreatePage\n{\n    protected function getCreatedNotificationTitle(): ?string\n    {\n        return 'Created';\n    }\n}\n",
         'support/src/Pages/Dashboard.php' => "<?php\nclass Dashboard\n{\n    protected static ?string \$title = 'Dashboard';\n}\n",
         'support/src/Components/Editor.php' => "<?php\nclass Editor\n{\n    public function getEmptyStateHeading(): string\n    {\n        return \$this->evaluate(\$this->emptyStateHeading) ?? sprintf('No %s', \$this->getPluralRecordLabel());\n    }\n\n    public function getActions(): array\n    {\n        return [['label' => 'Zoom in', 'method' => 'editorZoom']];\n    }\n}\n",
         'support/src/Summarizers/Sum.php' => "<?php\nclass Sum\n{\n    public function getDefaultLabel(): string\n    {\n        return 'Sum';\n    }\n}\n",
@@ -62,6 +63,7 @@ it('reports a text property default, a text-keyed array entry, a formatted fallb
             'assets/src/controllers/wizard_controller.ts: Loading...',
             'src/Components/Editor.php: No %s',
             'src/Components/Editor.php: Zoom in',
+            'src/Pages/CreatePage.php: Created',
             'src/Pages/Dashboard.php: Dashboard',
             'src/Summarizers/Sum.php: Sum',
         ]);

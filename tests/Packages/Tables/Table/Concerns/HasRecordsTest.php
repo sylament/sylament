@@ -17,6 +17,7 @@ use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\ReorderableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\ShapedRecordsTable;
+use Sylament\Tests\Fixtures\Tables\TranslatedLarderJarTable;
 
 it('says there are no records on an empty table with no record class', function (): void {
     expect($this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'none'])->render()->crawler())->toContainElement(Selectors::EMPTY_STATE . ' h2', 'No records');
@@ -86,4 +87,10 @@ describe('getRecordClass()', function (): void {
             ->and($table($this->entityManager()->createQueryBuilder()->select('1'))->getRecordClass())->toBeNull()
             ->and($relation->getRecordClass())->toBe(Seedling::class);
     });
+});
+
+it('names its records by record labels given as messages in their translation', function (): void {
+    expect($this->createLiveComponent(TranslatedLarderJarTable::class, ['plainEmptyState' => true])->render()->crawler())
+        ->toContainElement(Selectors::EMPTY_STATE . ' h3', 'No Crocks (translated)')
+        ->toContainElement(Selectors::EMPTY_STATE . ' p', 'Create a Crock (translated) to get started.');
 });

@@ -203,6 +203,12 @@ A consumer wanting a *different* join reaches for [`state()`](has-cell-state.md#
 The two read as interchangeable escape hatches and are not: the item list calls `formatState()` **per value**, so `formatStateUsing(fn (array $state) => implode(' · ', $state))` is handed `'symfony'` and then `'forms'`, never the list, and its `array` hint fails on the first one.
 `state(fn ($record) => implode(' · ', $record['tags']))` displaces the column's state *ahead of* the split instead, so `getStateItems()` sees one scalar and emits one item carrying the join the consumer wrote.
 
+### A cell's text may be a message, and `formatState()` translates it before anything reads it as a string
+
+`description()`, `prefix()` and `suffix()` take a message, and their getters translate it.
+`formatState()` translates a message the pipeline holds, whether `formatStateUsing()` answered it or the state is an enum that implements `TranslatableInterface` and no `HasLabel` (an enum with both keeps its `HasLabel` label), before the `is_scalar` test, the `Markup` decision, the limit and the affixes.
+A message is never `Markup`, so a translated label that holds HTML is escaped as text, and a message's own id never reaches the cell, though a `TranslatableMessage` is `Stringable`.
+
 ## Divergences
 
 ### The date family formats through `DateTimeImmutable`, so only English reads right

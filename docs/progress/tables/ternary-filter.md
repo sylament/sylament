@@ -61,6 +61,10 @@ The blank arm is `null`, which `blank()` alone separates from `0`.
 The `setUp()` override builds `"{indicator}: {trueLabel|falseLabel}"` directly from the two label getters rather than looking the state up in the option map the way `SelectFilter` does, and returns `[]` for a blank value.
 An already-built `Indicator` still passes through verbatim, same rule as the parent.
 
+### The arm labels and the placeholder may be messages
+
+`trueLabel()` and `falseLabel()` take a message, and their getters translate it, so the select, the placeholder and the chip receive strings.
+
 ## Divergences
 
 ### The arms qualify the attribute where Filament's leave it bare

@@ -47,8 +47,8 @@ It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/F
 | [`columns()` / `getColumns()`](../../../packages/tables/src/Filters/Concerns/HasColumns.php) | [`Concerns\HasColumns`](../../../vendor/filament/tables/src/Filters/Concerns/HasColumns.php) | done | — | — |
 | [`default()` / `getDefaultState()`](../../../packages/tables/src/Filters/Concerns/HasDefaultState.php) | [`Concerns\HasDefaultState`](../../../vendor/filament/tables/src/Filters/Concerns/HasDefaultState.php) | done | — | — |
 | [`indicator()` / `indicateUsing()` / `getIndicators()` / `getIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | [`Concerns\HasIndicators`](../../../vendor/filament/tables/src/Filters/Concerns/HasIndicators.php) | done | — | [semantics](#a-string-array-key-becomes-the-chips-remove-field) |
-| [`label()` / `getLabel()`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [diverges](#translatelabel-is-not-ported) |
-| `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | skipped | — | [diverges](#translatelabel-is-not-ported) · [translations.md](../translations.md#idiom) |
+| [`label()` / `getLabel()`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
+| [`translateLabel()` / `shouldTranslateLabel`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`name()` / `getName()`](../../../packages/tables/src/Filters/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Filters/Concerns/HasName.php) | done | — | — |
 | [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | — |
 | `form()` / `getFormSchema()` (deprecated; `schema()` / `getSchemaComponents()` replace them) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | skipped | — | [diverges](#the-form-alias-is-not-ported) |
@@ -85,6 +85,12 @@ The three guards run in a different **order** than Filament's, which checks `isH
 Ours probes for the callback first, so a filter that declares none never evaluates its visibility closure.
 The outcome is identical either way — all three arms return the untouched builder — so the order is a cheapness choice, not a behavioural one.
 
+### A label is a string, a Markup or a message, translated in the getter
+
+`label()` takes `string|Markup|TranslatableInterface|Closure|null`, `placeholder()` and `indicator()` take a message too, and each getter translates through the filter's translator, so the label that doubles as the form field's label and the default chip text is always a string or a `Markup`.
+A plain string stays a literal unless `translateLabel()` is on: then a string label, the name-derived one included, is handed to the translator as a key in the default `messages` domain, as Filament does.
+A filter built with `new` and handed a message or a `translateLabel()` key throws a `LogicException` naming its class, because it has no translator.
+
 ## Divergences
 
 ### The name moves from the constructor to a setter
@@ -109,11 +115,6 @@ DQL has no closure-where.
 Both passes run sequentially on the one builder via `andWhere()` composition instead — correct for the AND-shaped mainstream, and a filter needing internal OR writes the idiomatic `$query->andWhere($query->expr()->orX(…))`.
 The consumer footgun this leaves: a bare `->orWhere()` inside a filter callback widens the **whole** query, search included.
 The base/apply split survives as ordering only.
-
-### `translateLabel()` is not ported
-
-The label derivation is `symfony/string`'s `u($name)->before('.')->kebab()->replace('-', ' ')->title()`, matching Filament's `str()->before('.')->kebab()->replace(['-','_'], ' ')->ucfirst()` output (`is_featured` → `Is featured`; `kebab()` already eats the underscore).
-The `__()` pass and `translateLabel()` wait on toolkit-wide i18n, like the empty-state heading.
 
 ### The `form()` alias is not ported
 

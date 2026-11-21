@@ -87,6 +87,10 @@ The result is stripped of tags and trimmed, so a `Markup` tooltip names the icon
 Contrast that with the text column, where [`gray` is a visible colour on the item and the absence of one on the icon](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon): there the both-contracts policy resolves an *empty* map, because the stylesheet picks the shade off the palette swap.
 Here the shade is resolved, because the icons are the cell's only content and owe their surface a measured ratio.
 
+### The screen-reader text translates a message state
+
+The text alternative of an item whose state is an enum that implements `TranslatableInterface` (an enum with a `HasLabel` keeps its label) or is a message translates it before the trim, so the alternative is text, not an id.
+
 ## Divergences
 
 ### The boolean auto-detect reads Doctrine metadata off the table's record class

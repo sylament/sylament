@@ -8,6 +8,7 @@ use Closure;
 use Stringable;
 use Sylament\Support\Pagination\Paginator;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
@@ -17,11 +18,11 @@ trait HasRecords
 {
     protected ?Closure $dataSource = null;
 
-    protected string|Closure|null $recordLabel = null;
+    protected string|TranslatableInterface|Closure|null $recordLabel = null;
 
-    protected string|Closure|null $pluralRecordLabel = null;
+    protected string|TranslatableInterface|Closure|null $pluralRecordLabel = null;
 
-    protected string|Closure|null $recordTitle = null;
+    protected string|TranslatableInterface|Closure|null $recordTitle = null;
 
     protected string|Closure|null $recordTitleAttribute = null;
 
@@ -44,21 +45,21 @@ trait HasRecords
         return $this->dataSource;
     }
 
-    public function recordLabel(string|Closure|null $label): static
+    public function recordLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->recordLabel = $label;
 
         return $this;
     }
 
-    public function pluralRecordLabel(string|Closure|null $label): static
+    public function pluralRecordLabel(string|TranslatableInterface|Closure|null $label): static
     {
         $this->pluralRecordLabel = $label;
 
         return $this;
     }
 
-    public function recordTitle(string|Closure|null $title): static
+    public function recordTitle(string|TranslatableInterface|Closure|null $title): static
     {
         $this->recordTitle = $title;
 
@@ -74,10 +75,10 @@ trait HasRecords
 
     public function getRecordLabel(): string
     {
-        $label = $this->evaluate($this->recordLabel);
+        $label = $this->translateText($this->evaluate($this->recordLabel));
 
         if (filled($label)) {
-            return $label;
+            return (string) $label;
         }
 
         $class = $this->getRecordClass();
@@ -87,9 +88,9 @@ trait HasRecords
 
     public function getPluralRecordLabel(): string
     {
-        $label = $this->evaluate($this->pluralRecordLabel);
+        $label = $this->translateText($this->evaluate($this->pluralRecordLabel));
 
-        return filled($label) ? $label : plural($this->getRecordLabel());
+        return filled($label) ? (string) $label : plural($this->getRecordLabel());
     }
 
     /**
@@ -99,10 +100,10 @@ trait HasRecords
      */
     public function getRecordTitle(object $record): string
     {
-        $title = $this->evaluate($this->recordTitle, ['record' => $record], [$record::class => $record]);
+        $title = $this->translateText($this->evaluate($this->recordTitle, ['record' => $record], [$record::class => $record]));
 
         if (filled($title)) {
-            return $title;
+            return (string) $title;
         }
 
         $attribute = $this->getRecordTitleAttribute();

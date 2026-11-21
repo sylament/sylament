@@ -80,6 +80,10 @@ The port mirrors that: `sy-circular` is a class, squareness is geometry.
 `extraImgAttributes(['decoding' => 'async'], merge: true)` after `extraImgAttributes(['loading' => 'lazy'])` yields `['decoding' => 'async', 'loading' => 'lazy']`: the later registration lands *first* and an earlier key wins a collision, because each loop step merges the accumulated bag *into* the new array as Laravel-style defaults.
 Filament's own loop ([`getExtraImgAttributes()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php)) produces the identical order, as does support's [`HasExtraAttributes`](../support/has-extra-attributes.md#an-earlier-entry-wins-a-colliding-attribute-and-a-later-entrys-class-tokens-come-first).
 
+### The alt text may be a message
+
+`alt()` takes a message, and `getAlt()` translates it, so the `alt` attribute receives a string.
+
 ## Divergences
 
 ### The disk comes from the registry, and a `new`-built column throws for one

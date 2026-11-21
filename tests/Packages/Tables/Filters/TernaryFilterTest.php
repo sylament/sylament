@@ -13,6 +13,7 @@ use Sylament\Tests\Fixtures\Tables\FlaggedSampleFilterTable;
 use Sylament\Tests\Fixtures\Tables\QueriedTernaryJarTable;
 use Sylament\Tests\Fixtures\Tables\QueryingJarFilterTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\TranslatedLarderJarTable;
 use Symfony\Component\DomCrawler\Crawler;
 
 it('offers a dash, then Yes as 1 and No as 0', function (): void {
@@ -114,4 +115,10 @@ it('labels its options and its chip with the labels it is given, over any option
     $tester->filterTable('larderSupplied', null);
 
     expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->toBe(['Supplier: Yes']);
+});
+
+it('words its options and its placeholder with labels given as messages in their translation', function (): void {
+    $crawler = $this->createLiveComponent(TranslatedLarderJarTable::class)->render()->crawler();
+
+    expect($crawler->filter(Selectors::filterField('wrapped', 'value') . ' option')->each(static fn (Crawler $option): string => $option->text()))->toBe(['Any (translated)', 'Sealed (translated)', 'Open (translated)']);
 });

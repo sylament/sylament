@@ -11,6 +11,7 @@ use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Forms\PlainSuit;
+use Sylament\Tests\Fixtures\Forms\SelfTranslatedStatus;
 use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -20,6 +21,9 @@ use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\String\UnicodeString;
+use Symfony\Contracts\Translation\TranslatableInterface;
+
+use function Symfony\Component\Translation\t;
 
 it('refuses a blank id by the class and an id carrying a colon by the id', function (): void {
     $blank = 'Group of class [Sylament\Tables\Grouping\Group] must have a unique id, passed to the [make()] method.';
@@ -263,4 +267,21 @@ it("answers every larder's heading on a page from the page's own query", functio
 
     expect($headers->each(static fn (Crawler $header): string => $header->filter(Selectors::GROUP_HEADING)->text()))->toBe(['Larder: Attic', 'Larder: Cellar', 'Larder: Pantry'])
         ->and(preg_grep('/FROM Larder\b/', $this->statementsRun()))->toBe([]);
+});
+
+describe('messages', function (): void {
+    it('heads and describes a group by the messages a title and a description closure answer, and labels it by a message, in their translation', function (): void {
+        $group = Group::make('status')
+            ->label(t('group.label', [], 'fixtures-tables'))
+            ->getTitleFromRecordUsing(static fn (): TranslatableInterface => t('group.title', [], 'fixtures-tables'))
+            ->getDescriptionFromRecordUsing(static fn (): TranslatableInterface => t('group.description', [], 'fixtures-tables'));
+
+        expect($group->getLabel())->toBe('Shelf (translated)')
+            ->and($group->getTitle(['status' => 'x']))->toBe('Shelf title (translated)')
+            ->and($group->getDescription(['status' => 'x'], 'Shelf title (translated)'))->toBe('Shelf note (translated)');
+    });
+
+    it('titles a group by the translation of an enum that is a message itself', function (): void {
+        expect(Group::make('status')->getTitle(['status' => SelfTranslatedStatus::Archived]))->toBe('Archived (translated)');
+    });
 });

@@ -199,6 +199,11 @@ Grouping works off the query lane too: every key, title and description is read 
 What does **not** happen is the ordering: `applyGroupingToTableQuery()` has no query to order, and the [`records()` injections](has-table.md#the-records-closure-gets-filaments-eight-injections-three-of-them-typed-differently) carry no grouping value, here or upstream.
 So a `records()` closure that groups must return its rows already in group order, or the same group opens a heading every time the value comes round again.
 
+### A group's label, title and description may be messages, and the boundaries compare the translated titles
+
+`label()` takes a message, and a title or description closure may answer one, as may a group column holding an enum that implements `TranslatableInterface` (an enum with a `HasLabel` keeps its label); `getLabel()`, `getTitle()` and `getDescription()` translate it through the group's translator, so a message's id never becomes a heading.
+The group boundaries compare `(string)` titles of neighbouring records, as Filament's table view does, so two keys whose titles translate to one text open one group, and `data-sy-group` carries that title, which the controller's collapsed set keys on, as `toggleCollapseGroup(title)` does there.
+
 ## Divergences
 
 ### A blank id and an id carrying a colon are both refused by name

@@ -223,6 +223,11 @@ The attribute arm swallows an `AccessException` and treats a blank or non-scalar
 The return type is therefore `string`, never null: the label always answers.
 That is what makes actions' unconditional table hop ([action.md](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)) terminal — a table-bound action never reaches its host's title hook, because the table's answer is always filled.
 
+### The header and the record labels may be messages, translated in the getter
+
+`heading()`, `description()`, `recordLabel()`, `pluralRecordLabel()` and `recordTitle()` take a message, and each getter translates it through the table's translator before anything tests, casts or pluralises it, so `getRecordLabel()` and `getPluralRecordLabel()` still answer plain strings.
+`plural()` stays English, so a translated singular `recordLabel()` needs its own `pluralRecordLabel()`: without one, the plural is derived from the translated singular by English rules.
+
 ## Divergences
 
 ### The card layout settings wait on the layout columns

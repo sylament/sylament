@@ -98,6 +98,11 @@ Faithful to Filament.
 They part company for a state naming a value the options do not list: no label, so no indicator, but the count still reads `1`.
 Filament behaves identically, and the count is what the trigger badge shows.
 
+### The options and the placeholder may be messages
+
+`options()` takes a message for each option label and for each label inside a group, `placeholder()` takes a message, and `getOptions()` translates each one, so the chip that reads a label back by its posted value gets text.
+A group's label is its array key, which cannot be a message.
+
 ## Divergences
 
 ### `options()` takes an array or a closure, and nothing else

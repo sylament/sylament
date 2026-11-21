@@ -16,6 +16,7 @@ use Sylament\Tables\Columns\Concerns\HasColor;
 use Sylament\Tables\Columns\Concerns\HasIcon;
 use Sylament\Tables\Twig\TablesIconAlias;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Traversable;
 use Twig\Markup;
 
@@ -317,6 +318,7 @@ class IconColumn extends Column
             filled($tooltip) => $tooltip,
             $this->isBoolean() => $state ? 'Yes' : 'No',
             $state instanceof HasLabel => $this->translateText($state->getLabel()),
+            $state instanceof TranslatableInterface => $this->translateText($state),
             $state instanceof BackedEnum => $state->value,
             $state instanceof Markup => strip_tags((string) $state),
             is_scalar($state) || $state instanceof Stringable => $state,

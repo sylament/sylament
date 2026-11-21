@@ -21,6 +21,14 @@ owns:
 | `removeLivewireClickHandler()` / `getRemoveLivewireClickHandler()` | [`Indicator`](../../../vendor/filament/tables/src/Filters/Indicator.php) | skipped | — | [diverges](#removal-is-structured-not-a-click-handler-string) |
 | [`FilterIndicator` — the removal target carrier](../../../packages/tables/src/Filters/FilterIndicator.php) | — (Sylament-only) | done | — | [diverges](#removal-is-structured-not-a-click-handler-string) |
 
+## Semantics
+
+### An indicator's label may be a message, which the indicator translates itself
+
+`make()` and `label()` take `string|Markup|TranslatableInterface|Closure`, and `getLabel()` translates a message through the chip's own translator: an `Indicator` is a component built by `newInstance()` and registered as a service, so it holds a translator wherever it is made through `make()`.
+A chip built with `new` and handed a message throws a `LogicException` naming its class.
+`HasIndicators::getIndicators()` wraps a message an `indicateUsing()` closure answers in a chip, and `getIndicator()` translates a message given to `indicator()`.
+
 ## Divergences
 
 ### `make()` runs `configure()`

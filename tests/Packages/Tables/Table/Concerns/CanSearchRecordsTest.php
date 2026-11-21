@@ -7,6 +7,7 @@ use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Tables\SearchableLarderTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\TablePageController;
+use Sylament\Tests\Fixtures\Tables\TranslatedLarderJarTable;
 use Symfony\Component\DomCrawler\Crawler;
 
 describe('searchable()', function (): void {
@@ -149,4 +150,10 @@ describe('session persistence', function (): void {
         'remembering' => ['Tables:SessionSearchedLarderTable', true],
         'forgetting' => ['Tables:SearchableLarderTable', false],
     ]);
+});
+
+describe('the search placeholder', function (): void {
+    it('shows a placeholder given as a message in its translation', function (): void {
+        expect($this->createLiveComponent(TranslatedLarderJarTable::class)->render()->crawler()->filter(Selectors::SEARCH)->attr('placeholder'))->toBe('Find a jar (translated)');
+    });
 });

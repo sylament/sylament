@@ -11,6 +11,7 @@ use Sylament\Tests\Fixtures\Tables\EmptyStateLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\TranslatedLarderJarTable;
 use Symfony\Component\DomCrawler\Crawler;
 
 it('shows an empty table an empty state in place of the table, and a table with records none', function (): void {
@@ -82,4 +83,10 @@ describe('actions', function (): void {
         expect(fn (): Table => new AlignedColumnsTable()->getTable()->emptyStateActions(['create']))
             ->toThrow(InvalidArgumentException::class, 'Table empty state actions must be an instance of [Sylament\Actions\Action] or [Sylament\Actions\ActionGroup], got [string].');
     });
+});
+
+it('words its empty state with a heading and a description given as messages in their translation', function (): void {
+    expect($this->createLiveComponent(TranslatedLarderJarTable::class)->render()->crawler())
+        ->toContainElement(Selectors::EMPTY_STATE . ' h3', 'No jars at all (translated)')
+        ->toContainElement(Selectors::EMPTY_STATE . ' p', 'Seal one first (translated)');
 });

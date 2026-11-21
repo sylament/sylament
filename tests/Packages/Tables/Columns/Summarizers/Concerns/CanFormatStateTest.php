@@ -6,10 +6,14 @@ use Sylament\Tables\Columns\Summarizers\Range;
 use Sylament\Tables\Columns\Summarizers\Summarizer;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
+use Sylament\Tests\Fixtures\Forms\SelfTranslatedStatus;
 use Sylament\Tests\Fixtures\Forms\TranslatedStatus;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
+
+use function Symfony\Component\Translation\t;
 
 describe('money and numbers', function (): void {
     it('prints money in the currency and locale it is given, divided and rounded as told, and a figure that is no number as it is', function (Closure $summarizer, string $printed): void {
@@ -89,4 +93,14 @@ it('hands a range its pair whole, through its closure and past its affixes', fun
 it('refuses a figure it cannot print, naming its class', function (): void {
     expect(fn (): Crawler => $this->renderSummarizer(Summarizer::make()->using(static fn (): stdClass => new stdClass())))
         ->toThrow(LogicException::class, 'State of summarizer [' . Summarizer::class . '] must be stringable; stdClass given.');
+});
+
+describe('messages', function (): void {
+    it('prints a message the state is, an enum that is a message itself, and a placeholder given as a message for a blank figure, in their translation', function (): void {
+        $figure = fn (Summarizer $summarizer): Crawler => $this->renderSummarizer($summarizer)->filter(Selectors::summarizerFigure('text'));
+
+        expect($figure(Summarizer::make()->using(static fn (): TranslatableInterface => t('column.state', [], 'fixtures-tables')))->text())->toBe('Pickled (translated)')
+            ->and($figure(Summarizer::make()->using(static fn (): SelfTranslatedStatus => SelfTranslatedStatus::Deleted))->text())->toBe('Deleted (translated)')
+            ->and($figure(Summarizer::make()->using(static fn (): null => null)->placeholder(t('column.state', [], 'fixtures-tables')))->text())->toBe('Pickled (translated)');
+    });
 });

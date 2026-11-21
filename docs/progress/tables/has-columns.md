@@ -133,6 +133,11 @@ That leaves a gap the seed cannot close, and the write seam closes it instead: w
 The catch is that class alone, deliberately: a throwing `updateStateUsing()` is user code and still propagates, as does a misconfigured column's own `LogicException`.
 The same route carries a second refusal, [a changed identifier](#a-changed-identifier-is-the-cells-own-error).
 
+### A validation message may be a message, translated when the constraint is built
+
+`validationMessages()` takes `string|TranslatableInterface|Closure` per constraint option, and the column translates it through its own translator while it applies the messages to the constraint it clones, so the constraint carries a string, as Symfony's validator expects.
+The validator then translates that text once more in the `validators` domain, which changes nothing unless the text holds a `{{ }}` placeholder.
+
 ## Divergences
 
 ### The refusal is request-scoped and server-rendered where Filament's lives on the client

@@ -65,6 +65,10 @@ A string member goes through `SearchConstraint::forColumn()`, so it becomes a `L
 The injections are Filament's three, `$query`, `$search` and its `$searchQuery` alias, and a blank member is skipped before any of it, so a list built conditionally (`['title', $extra ?? '']`) does not resolve an empty path.
 Filament's `blank($column)` guard is spelled `array_filter(…, filled(…))` over the list instead, because the helper's `@phpstan-assert-if-false !null` makes a direct `blank()` call on a non-nullable `string|Closure` member an impossible check at level max; as an `array_filter` callback the same helper keeps the semantics, a whitespace-only member being blank too.
 
+### The search placeholder may be a message
+
+`searchPlaceholder()` takes a message, and `getSearchPlaceholder()` translates it, so the toolbar field receives a string.
+
 ## Divergences
 
 ### `getSearchDebounceMilliseconds()` is a Sylament-only translation of Filament's duration string

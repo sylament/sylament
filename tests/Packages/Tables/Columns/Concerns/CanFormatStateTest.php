@@ -9,11 +9,15 @@ use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Actions\Record\IdlessTicket;
 use Sylament\Tests\Fixtures\Forms\DeliveryMode;
+use Sylament\Tests\Fixtures\Forms\SelfTranslatedStatus;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Tables\GlazeFinish;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
+
+use function Symfony\Component\Translation\t;
 
 describe('the pipeline', function (): void {
     it('rewrites each cell through a formatStateUsing() closure, pins every cell to a literal, and shows the raw state without one', function (): void {
@@ -263,5 +267,15 @@ describe('money and numbers', function (): void {
     it('refuses a currency the formatter cannot resolve, naming the column', function (): void {
         expect(fn (): mixed => TextColumn::make('price')->money('X', locale: 'en_US')->formatState(12))
             ->toThrow(LogicException::class, 'Column [price] could not format its state as a number.');
+    });
+});
+
+describe('messages', function (): void {
+    it('prints a message formatStateUsing() answers, an enum that is a message itself and the affixes given as messages in their translation', function (): void {
+        $render = fn (TextColumn $column): Crawler => $this->renderViewComponent($column)->filter(Selectors::TEXT_ITEM);
+
+        expect($render(TextColumn::make('state')->record(['state' => 'x'])->formatStateUsing(static fn (): TranslatableInterface => t('column.state', [], 'fixtures-tables')))->text())->toBe('Pickled (translated)')
+            ->and($render(TextColumn::make('state')->record(['state' => SelfTranslatedStatus::Archived]))->text())->toBe('Archived (translated)')
+            ->and($render(TextColumn::make('state')->record(['state' => 'x'])->prefix(t('column.prefix', [], 'fixtures-tables'))->suffix(t('column.suffix', [], 'fixtures-tables')))->text())->toBe('Jar: (translated)x(translated)');
     });
 });

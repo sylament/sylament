@@ -8,6 +8,7 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\IndicatingJarFilterTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\TranslatedLarderJarTable;
 use Symfony\Component\DomCrawler\Crawler;
 
 it('colours its chip as told, or as a configuration registered for every indicator says', function (): void {
@@ -50,4 +51,10 @@ it("names the field it removes on its chip's remove control", function (): void 
     $tester->removeTableFilter('fielded', 'isActive');
 
     expect($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->toBe(['Worded chip', 'Built chip', 'First chip', 'Second chip']);
+});
+
+it('shows a chip labelled by a message in its translation', function (): void {
+    $tester = $this->createLiveComponent(TranslatedLarderJarTable::class)->filterTable('sealed');
+
+    expect($tester->render()->crawler())->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Sealed chip (translated)');
 });

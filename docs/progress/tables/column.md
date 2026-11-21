@@ -67,7 +67,7 @@ A name crossing an association needs nothing declared in `query()`: the [relatio
 | [`getDefaultName()`](../../../packages/tables/src/Columns/Column.php) | [`Column::getDefaultName()`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | — |
 | [`name()` / `getName()`](../../../packages/tables/src/Columns/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Columns/Concerns/HasName.php) | done | — | — |
 | [`label()` / `getLabel()`, the name humanised when no label is set](../../../packages/tables/src/Columns/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | done | — | [semantics](#the-default-label-reads-the-second-to-last-dotted-segment) |
-| `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | skipped | — | [translations.md](../translations.md#idiom) · [has-empty-state.md](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) |
+| [`translateLabel()` / `shouldTranslateLabel`](../../../packages/tables/src/Columns/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#getrecord-has-no-layout-fallback) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php), [`Column::getTable()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [detail](#gettable-refuses-without-filaments-three-source-chain) |
@@ -154,6 +154,13 @@ A single-segment name is untouched by both calls, so `releasedAt` labels *Releas
 
 The capitalisation is `ucfirst`, not title case: Symfony's `title()` defaults to `$allWords = false`, matching Laravel's `ucfirst()`, so `releasedAt` is *"Released at"* and never *"Released At"*.
 `kebab()` already folds underscores into dashes (it is `snake()->replace('_', '-')`), which is why one `replace('-', ' ')` covers what Filament's `replace(['-', '_'], ' ')` spells out in two.
+
+### A label is a string, a Markup or a message, translated in the getter
+
+`label()` and the three tooltip setters take `string|Markup|TranslatableInterface|Closure|null`, and each getter evaluates the value and then translates it through the column's translator, so a template or a PHP reader always receives a string or a `Markup`.
+A plain string stays a literal, as in Filament, unless `translateLabel()` is on: then a string label, the [name-derived one](#the-default-label-reads-the-second-to-last-dotted-segment) included, is handed to the translator as a key in the default `messages` domain, Filament's `__($label)`.
+A message already names its own domain and is translated either way.
+A column built with `new` and handed a message or a `translateLabel()` key throws a `LogicException` naming its class, because it has no translator.
 
 ## Divergences
 

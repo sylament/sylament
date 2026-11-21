@@ -37,7 +37,7 @@ owns:
 | [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) | [`components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
 | `FakerProvider` and its registration | [`packageRegistered()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) + [`FakerProvider.php`](../../../vendor/filament/forms/src/FakerProvider.php) | blocked | the MarkdownEditor and RichEditor fakers | [detail](#the-faker-provider-returns-the-markdown-and-rich-content-fakers) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | — |
-| [Translations (`hasTranslations`)](../../../packages/forms/translations) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [semantics](#the-catalogue-holds-the-keys-forms-code-reads) |
+| [Translations (`hasTranslations`)](../../../packages/forms/translations) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [diverges](#the-catalogue-holds-the-keys-forms-code-reads) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | the TableSelect field | [detail](#the-table-select-registration-waits-on-the-tableselect-field) |
 | `Testable::mixin(new TestsForms)` / `TestsFormComponentActions` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
@@ -54,18 +54,6 @@ Its two methods return `MarkdownFaker` and `RichContentFaker`, which live in the
 It is wanted for parity once the TableSelect field exists: the field, its `ModalTableSelect`, and a UX LiveComponent host in place of the Livewire component.
 
 ## Semantics
-
-### The catalogue holds the keys forms' code reads
-
-The bundle [wires nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and `sylament-forms+intl-icu.en.yaml` holds every text the ported components render.
-Its port-added keys and its English differences are recorded where the code using them is: [file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages), [tags-input.md](tags-input.md) and [can-be-searchable.md](can-be-searchable.md).
-Filament's keys for the unported surface ship nowhere until a host exists: `Builder`, `RichEditor`, `MarkdownEditor`, `ColorPicker` and `ModalTableSelect` (`modal_table_select.*`), the JS-rendered field's `js_field.failed_to_load`, and `KeyValue`'s keyboard move actions and reorder announcements (`key_value.actions.move_up`, `move_down`, `key_value.reordering.*`).
-Some keys of ported fields ship nowhere because no ported branch renders them: `select.error_message`, `file_upload.placeholder` and the date-time picker's `month_select`, `year_input`, `hour_input`, `minute_input` and `second_input` labels, which belong to Filament's JS pickers and panels, and the `*.required_description` texts, which wait on [the accessibility members](field.md#the-accessibility-members-are-not-ported).
-`tags_input.actions.delete.label` is replaced by a port-added key ([tags-input.md](tags-input.md)).
-The one text a component renders as a literal is `Select::boolean()`'s placeholder `-`, a symbol Filament passes as a literal too.
-`validators.en.yaml` holds the English id of each constraint message in `Validation/`, the `notRegex()` and `notIn()` messages, the tampering refusal ([file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages)) and the `prohibits()` message ([can-be-validated.md](can-be-validated.md)).
-*This value should not be blank.* and *This value is not a valid date.* are Symfony's own and need no entry.
-Filament's `validation.distinct.*` keys word the same refusal differently, and the toolkit's English wins.
 
 ### Each field's script ships with its field, and the bundle registers the built directory once
 
@@ -242,3 +230,15 @@ The bundled `file-upload` controller imports schemas' `live_host.js` directly, b
 `packageBooted()` calls `Testable::mixin()` twice (`TestsForms`, `TestsFormComponentActions`), attaching Livewire `Testable` mixins reached through `__call()`.
 The registration is not ported, because there is no Livewire `Testable` to attach to; the helpers are, as real methods: [`TestsForms`](tests-forms.md) is a trait on actions' [`Testable`](../actions/testable.md), the tester a test drives a live component through.
 `TestsFormComponentActions` is a per-location adapter family over actions' helpers, which `TestAction::schemaComponent()` replaces, so its row in the [package README](README.md#unported) stays todo.
+
+### The catalogue holds the keys forms' code reads
+
+The bundle [wires nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and `sylament-forms+intl-icu.en.yaml` holds every text the ported components render.
+Its port-added keys and its English differences are recorded where the code using them is: [file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages), [tags-input.md](tags-input.md) and [can-be-searchable.md](can-be-searchable.md).
+Filament's keys for the unported surface ship nowhere until a host exists: `Builder`, `RichEditor`, `MarkdownEditor`, `ColorPicker` and `ModalTableSelect` (`modal_table_select.*`), the JS-rendered field's `js_field.failed_to_load`, and `KeyValue`'s keyboard move actions and reorder announcements (`key_value.actions.move_up`, `move_down`, `key_value.reordering.*`).
+Some keys of ported fields ship nowhere because no ported branch renders them: `select.error_message`, `file_upload.placeholder` and the date-time picker's `month_select`, `year_input`, `hour_input`, `minute_input` and `second_input` labels, which belong to Filament's JS pickers and panels, and the `*.required_description` texts, which wait on [the accessibility members](field.md#the-accessibility-members-are-not-ported).
+`tags_input.actions.delete.label` is replaced by a port-added key ([tags-input.md](tags-input.md)).
+The one text a component renders as a literal is `Select::boolean()`'s placeholder `-`, a symbol Filament passes as a literal too.
+`validators.en.yaml` holds the English id of each constraint message in `Validation/`, the `notRegex()` and `notIn()` messages, the tampering refusal ([file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages)) and the `prohibits()` message ([can-be-validated.md](can-be-validated.md)).
+*This value should not be blank.* and *This value is not a valid date.* are Symfony's own and need no entry.
+Filament's `validation.distinct.*` keys word the same refusal differently, and the toolkit's English wins.

@@ -32,7 +32,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 | [The package manifest's `symfony/*` requires](../../../packages/notifications/composer.json) | [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) | in progress | — | [detail](#no-test-pins-the-manifests-symfony-requires) · [diverges](#the-manifest-declares-every-symfony-package-src-imports) |
 | `Livewire::component('notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-stack-is-registered-as-a-twig-component-not-a-live-one) |
 | `Livewire::component('database-notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | blocked | the database-notifications panel | [detail](#the-database-notifications-registration-waits-on-its-panel) |
-| [Translations (`->hasTranslations()`) — the `sylament-notifications` catalogue](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/lang/en/notification.php`](../../../vendor/filament/notifications/resources/lang/en/notification.php) | done | — | [diverges](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-close-label-alone) |
+| [Translations (`->hasTranslations()`) — the `sylament-notifications` catalogue](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/lang/en/notification.php`](../../../vendor/filament/notifications/resources/lang/en/notification.php) | done | — | [semantics](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-close-label-alone) |
 | `Testable::mixin(new TestsNotifications)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
 | `$this->app->scoped(NotificationMailbox::class)` | [`packageRegistered()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`NotificationMailbox`](../../../vendor/filament/notifications/src/NotificationMailbox.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
@@ -64,6 +64,15 @@ Unlike the toast stack, that component is free to be a UX **live** component: it
 Filament's `PublishNotifications` middleware publishes a redirecting component's notifications to the session-scoped mailbox like any other and flags the response with `X-Filament-Notifications-Redirect`, so the page the user lands on pulls them from its `mount()`.
 The port needs no equivalent check: a redirecting live action returns a `Response`, so UX's `onKernelView()` never renders the component, no `PreRenderEvent` fires, the subscriber never runs, and the flash survives to the next request untouched.
 Same semantics, arrived at by not having a code path rather than by adding a guard, which is why a reader looking for the redirect check finds nothing.
+
+### The catalogue is found by the bundle's translations directory and holds the close label alone
+
+`->hasTranslations()` registers Filament's `filament-notifications` namespace from [`resources/lang/`](../../../vendor/filament/notifications/resources/lang).
+The port registers nothing: [no wiring](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring) is needed, and [`translations/sylament-notifications+intl-icu.en.yaml`](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) is the `sylament-notifications` domain.
+It holds `notification.actions.close.label`, the one text the toast ships; the title, the body and the actions' labels belong to the application.
+
+Filament's `database.php` keys (`database.modal.*`) have no site, because the database-notifications modal is [unported](#the-database-notifications-registration-waits-on-its-panel).
+They join the catalogue under Filament's key paths when that panel lands.
 
 ## Divergences
 
@@ -139,15 +148,6 @@ One stylesheet for the toolkit, one build to keep byte-stable, and notifications
 `Livewire::component('notifications', Notifications::class)` names the stack for `@livewire('notifications')`.
 The port's equivalent registration is the `Twig\Components\` glob, which autoconfigures the class as a `#[AsTwigComponent]`: a plain class-backed Twig component, invoked as `<twig:SylamentNotifications:Notifications />`.
 The reasoning for **not** making it a live component is the stack's own [architecture note](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported); what belongs here is only that the bundle needs one glob rather than a named component registration, and that the same glob registers any later class in `Twig\Components\`, the database-notifications panel's live component included.
-
-### The catalogue is found by the bundle's translations directory and holds the close label alone
-
-`->hasTranslations()` registers Filament's `filament-notifications` namespace from [`resources/lang/`](../../../vendor/filament/notifications/resources/lang).
-The port registers nothing: [no wiring](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring) is needed, and [`translations/sylament-notifications+intl-icu.en.yaml`](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) is the `sylament-notifications` domain.
-It holds `notification.actions.close.label`, the one text the toast ships; the title, the body and the actions' labels belong to the application.
-
-Filament's `database.php` keys (`database.modal.*`) have no site, because the database-notifications modal is [unported](#the-database-notifications-registration-waits-on-its-panel).
-They join the catalogue under Filament's key paths when that panel lands.
 
 ### The manifest declares every `symfony/*` package `src/` imports
 

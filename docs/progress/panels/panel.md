@@ -48,11 +48,11 @@ Four of the panel's traits are documented with the code that reads them: [`HasSu
 | `HasComponents`: `discoverPages()`, `discoverResources()`, `discoverClusters()`, `discoverWidgets()`, `discoverLivewireComponents()` and the component cache | the discovery arms | todo | — | [detail](#filesystem-discovery-would-return-only-as-a-convenience-over-service-registration) |
 | `HasComponents`: `widgets()` / `getWidgets()` | the widget registration arm | blocked | a `Widget` class in `sylament/widgets` | — |
 | `HasComponents`: page and resource configurations, clusters, `getModelResource()`, the relation-manager read-only default and the create / edit page redirects | the rest of `HasComponents.php` | todo | — | [custom-pages.md](custom-pages.md#the-configuration-object-is-not-ported) |
-| [`HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php): `navigationGroups()` / `navigationItems()` / their getters / `getNavigation()` | [`Panel/Concerns/HasNavigation.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasNavigation.php) | done | — | [semantics](#getnavigation-merges-every-source-before-it-sorts-and-buckets) · [diverges](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) · [diverges](#the-brand-name-and-a-registered-navigation-group-may-be-messages) · [diverges](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) |
+| [`HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php): `navigationGroups()` / `navigationItems()` / their getters / `getNavigation()` | [`Panel/Concerns/HasNavigation.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasNavigation.php) | done | — | [semantics](#getnavigation-merges-every-source-before-it-sorts-and-buckets) · [diverges](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) · [semantics](#the-brand-name-and-a-registered-navigation-group-may-be-messages) · [diverges](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) |
 | `HasNavigation`: `navigation()`, `NavigationBuilder`, `hasNavigation()` / `hasNavigationBuilder()` | the navigation builder | todo | — | [detail](#the-navigation-builder-escape-hatch-is-deferred-not-rejected) |
 | [`HasSidebar`](../../../packages/panels/src/Panel/Concerns/HasSidebar.php): `collapsibleNavigationGroups()` / `hasCollapsibleNavigationGroups()` | [`Panel/Concerns/HasSidebar.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasSidebar.php) | done | — | [navigation-group.md](navigation-group.md) |
 | `HasSidebar`: `sidebarCollapsibleOnDesktop()` / `sidebarFullyCollapsibleOnDesktop()` / `sidebarWidth()` / `collapsedSidebarWidth()`, their getters and `sidebarLivewireComponent()` | the rest of `HasSidebar.php` | todo | — | — |
-| [`HasBrandName`](../../../packages/panels/src/Panel/Concerns/HasBrandName.php) | [`Panel/Concerns/HasBrandName.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandName.php) | done | — | [diverges](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name) · [diverges](#the-brand-name-and-a-registered-navigation-group-may-be-messages) |
+| [`HasBrandName`](../../../packages/panels/src/Panel/Concerns/HasBrandName.php) | [`Panel/Concerns/HasBrandName.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandName.php) | done | — | [diverges](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name) · [semantics](#the-brand-name-and-a-registered-navigation-group-may-be-messages) |
 | [`HasBrandLogo`](../../../packages/panels/src/Panel/Concerns/HasBrandLogo.php) | [`Panel/Concerns/HasBrandLogo.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandLogo.php) | done | — | [layout-templates.md](layout-templates.md) |
 | `darkMode()` / `themeSwitcher()` / `hasDarkMode()` / `hasDarkModeForced()` / `hasThemeSwitcher()`, `defaultThemeMode()` / `getDefaultThemeMode()` | [`Panel/Concerns/HasDarkMode.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasDarkMode.php), [`Panel/Concerns/HasTheme.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasTheme.php) | todo | — | — |
 | `breadcrumbs()` / `hasBreadcrumbs()` / `hasNavigationHierarchyInBreadcrumbs()` | [`Panel/Concerns/HasBreadcrumbs.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBreadcrumbs.php) | todo | — | [page.md](page.md#the-navigation-hierarchy-breadcrumbs-wait-on-the-panels-breadcrumb-settings) |
@@ -126,6 +126,13 @@ A `new`-built panel that registers no resource still assembles normally, because
 
 `pages()` and `resources()` accumulate across calls and type their entries `class-string<Page>` and `class-string<Resource>`, but nothing checks an entry when it is registered.
 [`PanelRouteLoader`](routing.md#panelrouteloader-mounts-the-whole-panel-surface-in-one-pass-over-the-panel-registry) is where a non-`Page` or non-`Resource` entry is refused, at route-build time.
+
+### The brand name and a registered navigation group may be messages
+
+`brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside the arms they already had (Filament's are `string | Htmlable | Closure | null` and `string | Closure | null`), and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
+`navigationGroups()` takes a message for a bare registered group, and `getNavigation()` translates it before it matches the registered group against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
+`getNavigation()` buckets items by their translated group, so the translated text is a group's identity, as Filament's `__()`-translated group is, and two groups that translate to one text merge; a registered group's array key is the identity a user keeps stable across locales.
+A panel built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
 
 ## Divergences
 
@@ -211,13 +218,6 @@ Revisit the moment a consumer hits it.
 Filament's `getBrandName()` ends `?? config('app.name')`, so an unconfigured panel still prints *Laravel* in its `<title>` and brand slot.
 Symfony has no framework-owned application name to fall back to — there is no `framework.name`, and `kernel.project_dir`'s basename is a directory, not a product — so ours returns `null` and the [document template](routing.md) drops the title suffix entirely rather than printing a placeholder.
 A consumer who wants one calls `brandName()`, which is the call a Filament user makes anyway the first time they see the default.
-
-### The brand name and a registered navigation group may be messages
-
-`brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside the arms they already had (Filament's are `string | Htmlable | Closure | null` and `string | Closure | null`), and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
-`navigationGroups()` takes a message for a bare registered group, and `getNavigation()` translates it before it matches the registered group against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
-`getNavigation()` buckets items by their translated group, so the translated text is a group's identity, as Filament's `__()`-translated group is, and two groups that translate to one text merge; a registered group's array key is the identity a user keeps stable across locales.
-A panel built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
 
 ### The catalogue is found by the bundle's translations directory and holds the texts panels renders
 

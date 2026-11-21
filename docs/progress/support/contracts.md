@@ -18,9 +18,9 @@ Each contract declares Filament's one method, with `Twig\Markup` where Filament'
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`HasColor::getColor()`](../../../packages/support/src/Contracts/HasColor.php) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | done | — | [semantics](#three-support-symbols-are-named-hascolor-and-this-one-is-the-state-contract) |
-| [`HasDescription::getDescription()`](../../../packages/support/src/Contracts/HasDescription.php) | [`Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) | done | — | [semantics](#text-a-contract-answers-may-be-a-message-which-its-reader-translates) |
+| [`HasDescription::getDescription()`](../../../packages/support/src/Contracts/HasDescription.php) | [`Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) | done | — | [diverges](#text-a-contract-answers-may-be-a-message-which-its-reader-translates) |
 | [`HasIcon::getIcon()`](../../../packages/support/src/Contracts/HasIcon.php) | [`Contracts/HasIcon.php`](../../../vendor/filament/support/src/Contracts/HasIcon.php) | done | — | — |
-| [`HasLabel::getLabel()`](../../../packages/support/src/Contracts/HasLabel.php) | [`Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) | done | — | [semantics](#text-a-contract-answers-may-be-a-message-which-its-reader-translates) |
+| [`HasLabel::getLabel()`](../../../packages/support/src/Contracts/HasLabel.php) | [`Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) | done | — | [diverges](#text-a-contract-answers-may-be-a-message-which-its-reader-translates) |
 | [`ScalableIcon::getIconForSize()`](../../../packages/support/src/Contracts/ScalableIcon.php) | [`Contracts/ScalableIcon.php`](../../../vendor/filament/support/src/Contracts/ScalableIcon.php) | done | — | — |
 
 ## Semantics
@@ -32,6 +32,8 @@ Forms' [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.p
 [`Components\Concerns\HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) is the trait that gives a component `color()`, `defaultColor()`, `getColor()` and `hasColor()`.
 [`Colors\Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php) is the contract every colour policy implements, declaring `getColorMap()`.
 Filament has the same clash: its infolists `Concerns\HasColor` trait imports the enum contract `as ColorInterface`, and tables' `Columns\Concerns\HasColor` here imports it `as ColorContract` for the same reason.
+
+## Divergences
 
 ### Text a contract answers may be a message, which its reader translates
 

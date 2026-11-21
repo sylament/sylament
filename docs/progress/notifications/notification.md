@@ -37,8 +37,8 @@ Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view,
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`make()` + the uuid id (`HasId`)](../../../packages/notifications/src/Concerns/HasId.php) | [`make()` / `__construct()`](../../../vendor/filament/notifications/src/Notification.php), [`Concerns/HasId.php`](../../../vendor/filament/notifications/src/Concerns/HasId.php) | done | — | [diverges](#make-mints-the-id-itself-because-the-resolver-takes-no-constructor-arguments) |
-| [`title()` (`HasTitle`)](../../../packages/notifications/src/Concerns/HasTitle.php) | [`Concerns/HasTitle.php`](../../../vendor/filament/notifications/src/Concerns/HasTitle.php) | done | — | [diverges](#a-title-or-body-message-is-translated-at-send-and-flashed-as-text) |
-| [`body()` (`HasBody`)](../../../packages/notifications/src/Concerns/HasBody.php) | [`Concerns/HasBody.php`](../../../vendor/filament/notifications/src/Concerns/HasBody.php) | done | — | [diverges](#a-title-or-body-message-is-translated-at-send-and-flashed-as-text) |
+| [`title()` (`HasTitle`)](../../../packages/notifications/src/Concerns/HasTitle.php) | [`Concerns/HasTitle.php`](../../../vendor/filament/notifications/src/Concerns/HasTitle.php) | done | — | [semantics](#a-title-or-body-message-is-translated-at-send-and-flashed-as-text) |
+| [`body()` (`HasBody`)](../../../packages/notifications/src/Concerns/HasBody.php) | [`Concerns/HasBody.php`](../../../vendor/filament/notifications/src/Concerns/HasBody.php) | done | — | [semantics](#a-title-or-body-message-is-translated-at-send-and-flashed-as-text) |
 | [`status()` + `success()`/`info()`/`warning()`/`danger()` (`HasStatus`)](../../../packages/notifications/src/Concerns/HasStatus.php) | [`Concerns/HasStatus.php`](../../../vendor/filament/notifications/src/Concerns/HasStatus.php) | done | — | — |
 | [`duration()` / `seconds()` / `persistent()` (`HasDuration`)](../../../packages/notifications/src/Concerns/HasDuration.php) | [`Concerns/HasDuration.php`](../../../vendor/filament/notifications/src/Concerns/HasDuration.php) | done | — | [diverges](#a-closure-duration-evaluating-to-null-throws-where-filament-falls-back-to-persistent) |
 | [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) · [diverges](#iconsize-does-not-survive-the-delivery-hop) |
@@ -48,7 +48,7 @@ Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view,
 | [`Colors\Components\NotificationComponent\IconComponent`](../../../packages/notifications/src/Colors/Components/NotificationComponent/IconComponent.php) — the toast icon's colour policy | [`View/Components/NotificationComponent/IconComponent.php`](../../../vendor/filament/notifications/src/View/Components/NotificationComponent/IconComponent.php) | done | — | [color-policies.md](../support/color-policies.md#an-empty-map-is-a-real-answer-not-a-missing-one) |
 | [`toArray()` / `fromArray()`](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) · [diverges](#a-scalableicon-crosses-the-session-unflattened-and-resolves-at-render-size) · [diverges](#the-actions-key-is-a-list-on-both-sides-of-the-hop) |
 | [`send()` → the session flash bag](../../../packages/notifications/src/Notification.php) | [`send()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#send-always-writes-the-flash-bag-and-the-live-arm-decides-late) · [diverges](notifications-bundle.md#a-send-during-the-acting-components-own-render-waits-for-the-next-request) |
-| [The toast markup — chrome, icon, title, body, actions, close button](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-close-buttons-label-is-translated-where-the-toast-is-displayed) |
+| [The toast markup — chrome, icon, title, body, actions, close button](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [semantics](#the-close-buttons-label-is-translated-where-the-toast-is-displayed) |
 | [`role="alert"` on danger, polite otherwise](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-assertive-split-is-per-toast-and-the-container-stays-polite) |
 | [Title / body sanitization (`sanitize_html`)](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`str(...)->sanitizeHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-default-sanitizer-is-stricter-than-the-one-filament-tunes) |
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
@@ -170,13 +170,6 @@ Toast actions dispatch events and open URLs, and they do **not** mount modals, w
 [`Action::toArray()`](../../../vendor/filament/actions/src/Action.php) serializes no modal configuration and no closures, and Filament's `Notifications` Livewire component implements no actions-host contract, so a Filament toast action cannot mount a modal either.
 The obvious reading of "actions on a notification" is that a toast can ask for confirmation, and neither codebase can.
 
-## Divergences
-
-### `iconSize()` does not survive the delivery hop
-
-`toArray()` writes no size key and `fromArray()` never calls the setter, and both delivery paths (the session flash bag and the live round trip) rebuild the toast through that pair, so a **sent** notification renders its icon at the template's default size whatever `iconSize()` was set to; only a directly rendered instance (`render($twig)` on the live object) honours it.
-Filament's [`toArray()`](../../../vendor/filament/notifications/src/Notification.php) writes an `iconSize` key and its `fromArray()` restores it, so a delivered Filament toast keeps its size; the port drops it, and porting it is the key on both sides.
-
 ### A title or body message is translated at send and flashed as text
 
 `title()` and `body()` take a `TranslatableInterface` beside Filament's `string | Closure | null`, and `getTitle()` / `getBody()` keep their `?string` return type: the getter evaluates, then translates a message through the notification's own translator (`translateText()`), so every reader, the template and `toArray()` included, still receives a string.
@@ -192,6 +185,13 @@ The toast template runs title and body through `sanitize_html` ([i18n.md](../../
 
 The label is the `notification.actions.close.label` key in `sylament-notifications`, Filament's key verbatim, read by the template through `|trans`.
 Unlike a title or a body, which carry the sender's locale, the template renders in the request that displays the toast, so the label follows the displaying request's locale, in the live response as on a page load.
+
+## Divergences
+
+### `iconSize()` does not survive the delivery hop
+
+`toArray()` writes no size key and `fromArray()` never calls the setter, and both delivery paths (the session flash bag and the live round trip) rebuild the toast through that pair, so a **sent** notification renders its icon at the template's default size whatever `iconSize()` was set to; only a directly rendered instance (`render($twig)` on the live object) honours it.
+Filament's [`toArray()`](../../../vendor/filament/notifications/src/Notification.php) writes an `iconSize` key and its `fromArray()` restores it, so a delivered Filament toast keeps its size; the port drops it, and porting it is the key on both sides.
 
 ### `make()` mints the id itself, because the resolver takes no constructor arguments
 

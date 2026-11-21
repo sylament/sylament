@@ -13,7 +13,7 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` / `label()` / `getLabel()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#a-label-may-be-a-message-translated-in-its-getter) |
+| [`make()` / `label()` / `getLabel()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [semantics](#a-label-may-be-a-message-translated-in-its-getter) |
 | `icon()` / `getIcon()`, through support's [`HasIcon`](../support/has-icon.md) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | — |
 | [`items()` / `getItems()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable) |
 | [`collapsed()` / `isCollapsed()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#collapsed-does-not-also-make-the-group-collapsible) |
@@ -36,12 +36,14 @@ The `UnitEnum` group arm that [`NavigationItem::group()`](navigation-item.md#gro
 Filament composes `HasExtraSidebarAttributes` and `HasExtraTopbarAttributes` into the group only.
 Neither is ported, because no panels template renders a group attribute bag, so composing them would publish setters with no effect; [`NavigationItem`](navigation-item.md) leaves `HasExtraAttributes` out for the same reason.
 
-## Divergences
+## Semantics
 
 ### A label may be a message, translated in its getter
 
 `make()` and `label()` take a `TranslatableInterface`, and `getLabel()` keeps returning `?string`, translated through the group's own translator.
 The translated label is what the [sidebar persists a group's collapsed state under](layout-templates.md#sidebar-group-ids-are-positional-not-derived-from-the-label) and what the [panel matches a registered group by](panel.md#the-brand-name-and-a-registered-navigation-group-may-be-messages).
+
+## Divergences
 
 ### `collapsed()` does not also make the group collapsible
 

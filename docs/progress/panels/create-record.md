@@ -24,11 +24,11 @@ owns:
 | [`mutateFormDataBeforeCreate()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [diverges](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it) |
 | [`makeRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | no counterpart on the page | done | — | [diverges](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs) · [semantics](#a-key-field-the-constructor-sets-must-stay-visible-and-readable) |
 | [`handleRecordCreation()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `handleRecordCreation(array $data): Model` | done | — | [diverges](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs) · [semantics](#the-record-joins-its-parent-before-the-mapping-and-leaves-it-when-the-create-is-refused) · [semantics](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone) · [semantics](#a-record-whose-assigned-key-is-still-blank-after-persist-is-refused-before-the-flush) · [semantics](#both-key-reads-ask-the-forms-own-reader-rebound-to-the-pages-manager) |
-| [`getCreatedNotification()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getCreatedNotificationTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
+| [`getCreatedNotification()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getCreatedNotificationTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [semantics](#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | `getCreatedNotificationMessage()` (`@deprecated` for `getCreatedNotificationTitle()`) | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | skipped | — | [renames.md](../renames.md#a-deprecated-filament-member-is-not-ported) |
 | [`getRedirectUrl()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getRedirectUrl()` | done | — | [semantics](#the-redirect-mints-the-key-the-new-row-reads-back) |
 | `getRedirectUrlParameters()` | the same | todo | — | — |
-| [`getTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
+| [`getTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [semantics](#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [custom-pages.md](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
 | `getSubmitFormAction()` | the same | todo | — | — |
@@ -132,6 +132,15 @@ The override is only *able* to read the mounted action because the seed's record
 `getMountedActionSchema()` builds the schema with `->record(fn () => $this->resolveMountedActionSchemaRecord($mountedAction))` and caches it, and the closure runs when the schema is first asked for its record.
 Were the seed eager, resolving it would call `getMountedActionSchemaRecord()`, which calls `getMountedAction()`, which caches the whole mounted stack from inside the very call that is building and caching a frame's schema.
 
+### The page's texts are read from the `sylament-panels` catalogue under Filament's key paths
+
+`getCreatedNotificationTitle()`, `getSavedNotificationTitle()` (the edit page's), `getTitle()`, `getBreadcrumb()` and the two form actions' labels read the `sylament-panels` catalogue where Filament returns `__('filament-panels::…')`.
+`getTitle()` is `Create {label}`, with the title-cased record label as the argument, so a locale can move the label.
+The **override points** are Filament's exactly (`getCreatedNotificationTitle()` / `getSavedNotificationTitle()` for the copy, `getCreatedNotification()` / `getSavedNotification()` for the whole notification), and each returns `null` when its title is `blank()`, Filament's own "no title, no toast" contract.
+The getters keep their `string` return types and translate in place, through the page's own translator, in the request that builds them; a page override returns text, or translates a message itself through `getTranslator()`.
+The notification title is therefore text before it reaches `Notification::title()`, and the flash carries it in the sender's locale.
+The two form actions' labels are handed to `Action::label()` as messages, which the action's label getter translates.
+
 ## Divergences
 
 ### The page holds its record in a plain property and writes through an injected entity manager
@@ -141,15 +150,6 @@ The only `LiveProp` of the page's own is the writable `$data` bag every field bi
 `#[Required] setRecordPersistence(EntityManagerInterface)` is the persistence hop Filament does not need, because an Eloquent model saves itself.
 It is a setter rather than a constructor argument, so a subclass declaring its own constructor never repeats it, and a save that finds it unset throws a `LogicException` naming the page and the container registration, before anything is mapped.
 `EditRecord` declares the same setter rather than sharing a trait, as Filament keeps its record handlers per page.
-
-### The page's texts are read from the `sylament-panels` catalogue under Filament's key paths
-
-`getCreatedNotificationTitle()`, `getSavedNotificationTitle()` (the edit page's), `getTitle()`, `getBreadcrumb()` and the two form actions' labels read the `sylament-panels` catalogue where Filament returns `__('filament-panels::…')`.
-`getTitle()` is `Create {label}`, with the title-cased record label as the argument, so a locale can move the label.
-The **override points** are Filament's exactly (`getCreatedNotificationTitle()` / `getSavedNotificationTitle()` for the copy, `getCreatedNotification()` / `getSavedNotification()` for the whole notification), and each returns `null` when its title is `blank()`, Filament's own "no title, no toast" contract.
-The getters keep their `string` return types and translate in place, through the page's own translator, in the request that builds them; a page override returns text, or translates a message itself through `getTranslator()`.
-The notification title is therefore text before it reaches `Notification::title()`, and the flash carries it in the sender's locale.
-The two form actions' labels are handed to `Action::label()` as messages, which the action's label getter translates.
 
 ### The record page's schema is named `form`, and `schemas()` is narrowed to it
 

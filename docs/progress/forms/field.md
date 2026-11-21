@@ -48,8 +48,8 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`hasNullableBooleanState()`](../../../packages/forms/src/Components/Field.php) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#hasnullablebooleanstate-has-exactly-one-consumer) |
 | [`HasExtraFieldWrapperAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | [`Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | done | — | [diverges](#extra-attribute-precedence-is-fixed-by-source-order) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
-| [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | [semantics](#hint-and-helper-text-are-judged-by-their-translated-text) |
-| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) · [diverges](#gethintactions-returns-a-list-not-a-gapped-array) · [semantics](#hint-and-helper-text-are-judged-by-their-translated-text) |
+| [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | [diverges](#hint-and-helper-text-are-judged-by-their-translated-text) |
+| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) · [diverges](#gethintactions-returns-a-list-not-a-gapped-array) · [diverges](#hint-and-helper-text-are-judged-by-their-translated-text) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 | [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php), no Filament concern of its own | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 | `hasValidationError()`, `getDescriptionIds()`, `getRequiredDescription()` and `getAccessibilityAttributes()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#the-accessibility-members-are-not-ported) |
@@ -91,12 +91,6 @@ It drives no state cast, which is the other natural guess.
 
 Its **only** consumer, here as in Filament, is the filter reset in tables' [`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php): `is_bool($state) => $fieldComponent->hasNullableBooleanState() ? null : false`.
 So a custom `Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no `resetState()` of its own [clears to the placeholder](../tables/host-has-filters.md#filter-mutations-reset-the-page-and-flush-the-record-cache) rather than flipping to its false arm.
-
-### Hint and helper text are judged by their translated text
-
-`hint()` and `helperText()` take a string, a `Markup` or a message, and the hint icon's tooltip a string or a message, which `getHintIconTooltip()` returns as `?string`.
-`hasHint()` tests the translated `getHint()` where Filament tests the raw property, and `helperText()` tests the translated content for blankness before it builds its `Text`, so a message that translates to nothing, or a closure that answers null, adds no row.
-The hint closure is therefore evaluated once more per render than Filament's raw test needs.
 
 ### `data-field-wrapper` is the scroll target of a validation error
 
@@ -221,3 +215,9 @@ The port resolves the same five facts (the repeater, the item key, the field pat
 The field path is taken by stripping the item schema's own prefix rather than by cutting at a dot, which survives an item key holding one and a layout component sitting between the item schema and the field.
 `distinct()`, [`fixIndistinctState()`](can-fix-indistinct-state.md) and [`disableOptionsWhenSelectedInSiblingRepeaterItems()`](can-disable-options-when-selected-in-sibling-repeater-items.md) all read this one block.
 `null` means "outside a repeater item, or the only item", and each consumer then leaves the siblings alone.
+
+### Hint and helper text are judged by their translated text
+
+`hint()` and `helperText()` take a string, a `Markup` or a message, and the hint icon's tooltip a string or a message, which `getHintIconTooltip()` returns as `?string`.
+`hasHint()` tests the translated `getHint()` where Filament tests the raw property, and `helperText()` tests the translated content for blankness before it builds its `Text`, so a message that translates to nothing, or a closure that answers null, adds no row.
+The hint closure is therefore evaluated once more per render than Filament's raw test needs.

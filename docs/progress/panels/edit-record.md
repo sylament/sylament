@@ -37,7 +37,7 @@ Its form actions and the form variant its template extends are [form-actions.md]
 | `authorizeAccess()` + `hydrate()` | the same two | blocked | authorization | — |
 | `shouldRegisterNavigation()`'s `canEdit()` term | the same | blocked | authorization | — |
 | `getNavigationLabel()` / `getNavigationIcon()` overrides | the same two | todo | — | [detail](#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
-| [`getTitle()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | [diverges](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) · [diverges](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
+| [`getTitle()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | [diverges](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) · [semantics](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | — |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | — |
 | `getSubmitFormAction()` | the same, read only by the resource `HasWizard` concern | todo | — | — |

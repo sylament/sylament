@@ -20,9 +20,9 @@ Everything [`BaseFilter`](base-filter.md) carries is tracked there.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`options()` / `getOptions()`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Concerns\HasOptions`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | done | — | [diverges](#options-takes-an-array-or-a-closure-and-nothing-else) · [semantics](#the-options-and-the-placeholder-may-be-messages) |
+| [`options()` / `getOptions()`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Concerns\HasOptions`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | done | — | [diverges](#options-takes-an-array-or-a-closure-and-nothing-else) · [diverges](#the-options-and-the-placeholder-may-be-messages) |
 | `options()` given an enum class-string | [`Concerns\HasOptions`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | todo | — | [detail](#the-filters-options-reads-no-enum-class-string-where-forms-options-does) |
-| [`placeholder()` / `getPlaceholder()`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Concerns\HasPlaceholder`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | — | [semantics](#the-options-and-the-placeholder-may-be-messages) |
+| [`placeholder()` / `getPlaceholder()`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Concerns\HasPlaceholder`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | — | [diverges](#the-options-and-the-placeholder-may-be-messages) |
 | [`multiple()` / `isMultiple()`](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::multiple()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | done | — | — |
 | [`attribute()` / `getAttribute()`](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::attribute()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | done | — | [semantics](#a-dotted-attribute-is-resolved-not-joined) |
 | `column()` / `getColumn()` (deprecated; `attribute()` replaces them) | [`SelectFilter::column()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | skipped | — | [diverges](#the-deprecated-column-alias-is-not-ported) |
@@ -32,7 +32,7 @@ Everything [`BaseFilter`](base-filter.md) carries is tracked there.
 | [`apply()`](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::apply()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | in progress | — | [detail](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) · [semantics](#every-comparison-is-parameter-bound) · [semantics](#the-bail-test-asks-whether-any-element-is-filled-not-whether-the-array-is-empty) |
 | [`getActiveCount()`](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::getActiveCount()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | done | — | [semantics](#the-active-count-is-a-filled-test-not-an-indicator-count) |
 | [reset state](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::setUp()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | done | — | [diverges](#the-reset-state-clears-the-key-the-state-actually-uses) |
-| [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::setUp()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | in progress | — | [detail](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) · [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-multi-value-label-follows-selection-order-and-a-blank-option-key-still-indicates) · [semantics](#the-options-and-the-placeholder-may-be-messages) |
+| [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | [`SelectFilter::setUp()`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | in progress | — | [detail](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) · [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-multi-value-label-follows-selection-order-and-a-blank-option-key-still-indicates) · [diverges](#the-options-and-the-placeholder-may-be-messages) |
 | `searchable()` / `native()` / `optionsLimit()` with their getters, and the `getOptionLabelUsing()` / `getOptionLabelsUsing()` / `getSearchResultsUsing()` seams | [`SelectFilter.php`](../../../vendor/filament/tables/src/Filters/SelectFilter.php), [`Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | blocked | a tables decision on filter searchability | [detail](#the-js-select-surface-is-dropped-from-the-field-chain) |
 | `getOptionLabelFromRecordUsing()` / `forceSearchCaseInsensitive()` | [`SelectFilter.php`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | blocked | the filters' relationship arm | [detail](#the-js-select-surface-is-dropped-from-the-field-chain) |
 | `relationship()` / `preload()` / `emptyRelationshipOptionLabel()`, the rest of `HasRelationship` and the `get*FromRelationship()` family | [`Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | blocked | a Doctrine design for the filters' relationship arm | [detail](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
@@ -98,13 +98,6 @@ Faithful to Filament.
 They part company for a state naming a value the options do not list: no label, so no indicator, but the count still reads `1`.
 Filament behaves identically, and the count is what the trigger badge shows.
 
-### The options and the placeholder may be messages
-
-`options()` takes a message for each option label and for each label inside a group, `placeholder()` takes a message, and `getOptions()` translates each one, so the chip that reads a label back by its posted value gets text.
-A group's label is its array key, which cannot be a message.
-`setUp()` seeds the placeholder with a closure choosing `table.filters.multi_select.placeholder` or `table.filters.select.placeholder` by `isMultiple()` when it is read, since `multiple()` is called after `setUp()`; both say *All*, so the rendered field matches Filament's copy, and the two keys stay separately overridable.
-The chip joins several selected labels as `{labels} & {last}` through the port-added `table.filters.select.labels_joined` message, where Filament joins them in code, and is worded as [the default chip](base-filter.md#the-default-chip-is-one-indicator-state-message).
-
 ## Divergences
 
 ### `options()` takes an array or a closure, and nothing else
@@ -133,3 +126,10 @@ The state is the order the user's `<select multiple>` sent, so neither reading i
 The second is the blank arm: Filament short-circuits on `blank($state['value'] ?? null)` *before* the lookup, where ours lets the lookup decide.
 They part company for exactly one shape — a filter declaring `options(['' => 'None'])` with the state `['value' => '']` — which renders a *None* chip here and no chip upstream.
 The query behaves identically either way, since [the bail test](#the-bail-test-asks-whether-any-element-is-filled-not-whether-the-array-is-empty) skips a blank value in both, so the difference is the chip alone: ours says the declared option is selected, Filament's says nothing is.
+
+### The options and the placeholder may be messages
+
+`options()` takes a message for each option label and for each label inside a group, `placeholder()` takes a message, and `getOptions()` translates each one, so the chip that reads a label back by its posted value gets text.
+A group's label is its array key, which cannot be a message.
+`setUp()` seeds the placeholder with a closure choosing `table.filters.multi_select.placeholder` or `table.filters.select.placeholder` by `isMultiple()` when it is read, since `multiple()` is called after `setUp()`; both say *All*, so the rendered field matches Filament's copy, and the two keys stay separately overridable.
+The chip joins several selected labels as `{labels} & {last}` through the port-added `table.filters.select.labels_joined` message, where Filament joins them in code, and is worded as [the default chip](base-filter.md#the-default-chip-is-one-indicator-state-message).

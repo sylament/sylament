@@ -18,7 +18,7 @@ owns:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`make(string\|TranslatableInterface\|Closure $label, array\|Closure $managers = [])`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `make()` / `__construct()` | done | — | [diverges](#the-two-constructor-arguments-arrive-through-setters) |
-| [`getLabel()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `getLabel()` | done | — | [diverges](#the-label-may-be-a-message-translated-in-its-getter) |
+| [`getLabel()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `getLabel()` | done | — | [semantics](#the-label-may-be-a-message-translated-in-its-getter) |
 | [`getManagers()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `getManagers()` | done | — | [diverges](#the-closure-manager-list-is-evaluated-filaments-is-returned-raw) |
 | [`ownerRecord()` / `getOwnerRecord()` / `pageClass()` / `getPageClass()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | same four | done | — | — |
 | [`badge()` / `badgeColor()` / `badgeTooltip()` / `icon()` / `iconPosition()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) and their getters, through support's concerns | `HasBadgeTooltip`, `HasIcon`, `HasIconPosition` and the group's own `badge()` / `badgeColor()` | done | — | — |
@@ -27,12 +27,14 @@ owns:
 | [`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) — `$relationManager` + `getProperties()` | [`RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php) | done | — | — |
 | `deferBadge()` / `isBadgeDeferred()` | `RelationGroup.php` | skipped | — | [diverges](relation-manager.md#deferred-tab-badges-do-not-port) |
 
-## Divergences
+## Semantics
 
 ### The label may be a message, translated in its getter
 
 `make()` and `label()` take a `TranslatableInterface`, and `getLabel()` keeps returning `string`, translated through the group's own translator before `getTabComponent()` hands it to the tab.
 A group built with `new` has no translator, so a message throws a `LogicException` naming the class.
+
+## Divergences
 
 ### The two constructor arguments arrive through setters
 

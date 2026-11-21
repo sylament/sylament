@@ -26,8 +26,8 @@ The template renders every option and every target server side, and [`checkbox_l
 | `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()`, a `Choice(multiple: true)` over the enabled options, replaced by a user `in()` list | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
 | `required()` — the standard `RequiredValue` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-rejects-the-empty-list-with-the-required-constraint-alone) |
 | `bulkToggleable()` / `isBulkToggleable()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) |
-| `getSelectAllAction()` / `selectAllAction()` / `getSelectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-catalogue-messages) |
-| `getDeselectAllAction()` / `deselectAllAction()` / `getDeselectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-catalogue-messages) |
+| `getSelectAllAction()` / `selectAllAction()` / `getSelectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [semantics](#the-bulk-toggle-labels-are-catalogue-messages) |
+| `getDeselectAllAction()` / `deselectAllAction()` / `getDeselectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [semantics](#the-bulk-toggle-labels-are-catalogue-messages) |
 | `relationship()` / `getRelationshipName()` / `getRelationshipTitleAttribute()` — via [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-to-many-relationship-arm-serves-this-field-unchanged) · [diverges](#the-relationship-state-is-not-pruned-from-the-dehydrated-bag) · [diverges](#the-relationship-option-map-is-unordered) |
 | `getRelationship()` — the association target, resolved by the protected [`getRelationshipTarget()`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#filaments-public-relationship-accessors-are-the-traits-private-closures-here) |
 | `fillStateFromRelationship()` / `saveStateToRelationship()` — the trait's load and save closures | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#filaments-public-relationship-accessors-are-the-traits-private-closures-here) · [semantics](has-relationship.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
@@ -119,6 +119,12 @@ That is enough: the constraint is one call to [`filled()`](../support/helpers.md
 `Count(min: 1)` would say the same thing with a worse message and a second way to spell one rule, so it is not what `required()` builds — the split [`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) and [`Toggle`](toggle.md#required-means-presence-not-truth) make does not reach this field, because a list has no truthiness question: "blank" and "nothing selected" are already the same value.
 `minItems()` remains the way to require *more than one*, and it composes with `required()` rather than replacing it.
 
+### The bulk-toggle labels are catalogue messages
+
+The two labels read `components.checkbox_list.actions.select_all.label` and `components.checkbox_list.actions.deselect_all.label` in `sylament-forms`, Filament's key paths, with Filament's English.
+These are the only keys in this field's own `checkbox_list` family — everything the search box says comes from [`select.*`](can-be-searchable.md#the-four-message-defaults-are-catalogue-messages).
+The field's relationship-derived default label follows [the field's default label](field.md#getdefaultlabel-translates-its-humanized-label-under-translatelabel), and an explicit `label()` is [`HasLabel`'s](../schemas/has-label.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter).
+
 ## Divergences
 
 ### The `checked` attribute is rendered server-side
@@ -194,12 +200,6 @@ Both links are inert there — there is nothing visible to write — so this is 
 
 There is no JS test rig — no jsdom, no browser driver, nothing that instantiates a Stimulus controller — so the render tests assert the controller's *contract* (identifier, targets, the debounce value, the click actions) and nothing asserts its *behaviour*.
 The filter, the bulk toggle, the observer and the delegated listener are verified by reasoning against the installed vendor sources and by driving the demo in a browser, never by execution here.
-
-### The bulk-toggle labels are catalogue messages
-
-The two labels read `components.checkbox_list.actions.select_all.label` and `components.checkbox_list.actions.deselect_all.label` in `sylament-forms`, Filament's key paths, with Filament's English.
-These are the only keys in this field's own `checkbox_list` family — everything the search box says comes from [`select.*`](can-be-searchable.md#the-four-message-defaults-are-catalogue-messages).
-The field's relationship-derived default label follows [the field's default label](field.md#getdefaultlabel-translates-its-humanized-label-under-translatelabel), and an explicit `label()` is [`HasLabel`'s](../schemas/has-label.md#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter).
 
 ### `isMultiple()` is port plumbing with no Filament counterpart
 

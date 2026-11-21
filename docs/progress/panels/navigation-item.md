@@ -13,13 +13,13 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()`](../../../packages/panels/src/Navigation/NavigationItem.php) / `label()` / `getLabel()` | [`NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php)'s constructor, `make()` and label pair | done | — | [semantics](#make-without-a-label-leaves-getlabel-fatal) · [diverges](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
+| [`make()`](../../../packages/panels/src/Navigation/NavigationItem.php) / `label()` / `getLabel()` | [`NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php)'s constructor, `make()` and label pair | done | — | [semantics](#make-without-a-label-leaves-getlabel-fatal) · [semantics](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
 | [`icon()` / `getIcon()`](../../../packages/support/src/Components/Concerns/HasIcon.php) through `HasIcon` | the icon pair | done | — | — |
 | [`activeIcon()` / `getActiveIcon()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the active-icon pair | done | — | — |
 | [`url()` / `getUrl()`](../../../packages/panels/src/Navigation/NavigationItem.php) / `openUrlInNewTab()` / `shouldOpenUrlInNewTab()` | the url and new-tab pairs | done | — | [diverges](#a-user-derived-navigation-url-must-be-validated-before-it-reaches-href) |
-| [`badge()` / `getBadge()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the badge pair | done | — | [diverges](#badge-preserves-a-badge-colour-set-before-it) · [diverges](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
+| [`badge()` / `getBadge()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the badge pair | done | — | [diverges](#badge-preserves-a-badge-colour-set-before-it) · [semantics](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
 | [`badgeColor()` / `getBadgeColor()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the badge-colour pair | done | — | [diverges](#getbadgecolor-takes-no-badge-argument) |
-| [`group()` / `getGroup()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the group pair | done | — | [diverges](#group-and-getgroup-carry-no-unitenum-arm) · [diverges](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
+| [`group()` / `getGroup()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the group pair | done | — | [diverges](#group-and-getgroup-carry-no-unitenum-arm) · [semantics](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
 | [`sort()` / `getSort()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the sort pair | done | — | — |
 | [`visible()` / `hidden()` / `isVisible()` / `isHidden()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the visibility pairs, hidden winning | done | — | — |
 | [`isActiveWhen()` / `isActive()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the memoising active-state pair | done | — | [panel.md](panel.md#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) |
@@ -60,8 +60,6 @@ The coupling is benign in practice, since a panel exists to mount routes and can
 It is recorded because the failure names `NavigationItem`, which is not where a reader would look for a router dependency.
 A `new`-built item is unaffected, because the setter only fires through the container.
 
-## Divergences
-
 ### A label, a badge or a group may be a message, translated in its getter
 
 `label()`, `badge()`, `group()` and `make()` take a `TranslatableInterface` beside the arms they already had, and `getLabel()`, `getBadge()` and `getGroup()` keep returning strings, translated through the item's own translator, so a template and the panel's navigation assembly never meet a message.
@@ -70,6 +68,8 @@ The translation runs before the panel [uses the group as a key](panel.md#the-bra
 An item built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
 A message badge is translated like a label; a numeric badge is the caller's string and is never touched.
 Page and resource navigation reach the item through [static getters that return messages](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it).
+
+## Divergences
 
 ### `badge()` preserves a badge colour set before it
 

@@ -46,7 +46,7 @@ It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/F
 | [`columnSpan()` / `columnSpanFull()` / `columnStart()` and their getters](../../../packages/tables/src/Filters/Concerns/CanSpanColumns.php) | [`Concerns\CanSpanColumns`](../../../vendor/filament/tables/src/Filters/Concerns/CanSpanColumns.php) | done | — | [semantics](#the-span-getters-return-raw-closures) |
 | [`columns()` / `getColumns()`](../../../packages/tables/src/Filters/Concerns/HasColumns.php) | [`Concerns\HasColumns`](../../../vendor/filament/tables/src/Filters/Concerns/HasColumns.php) | done | — | — |
 | [`default()` / `getDefaultState()`](../../../packages/tables/src/Filters/Concerns/HasDefaultState.php) | [`Concerns\HasDefaultState`](../../../vendor/filament/tables/src/Filters/Concerns/HasDefaultState.php) | done | — | — |
-| [`indicator()` / `indicateUsing()` / `getIndicators()` / `getIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | [`Concerns\HasIndicators`](../../../vendor/filament/tables/src/Filters/Concerns/HasIndicators.php) | done | — | [semantics](#a-string-array-key-becomes-the-chips-remove-field) · [semantics](#the-default-chip-is-one-indicator-state-message) |
+| [`indicator()` / `indicateUsing()` / `getIndicators()` / `getIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | [`Concerns\HasIndicators`](../../../vendor/filament/tables/src/Filters/Concerns/HasIndicators.php) | done | — | [semantics](#a-string-array-key-becomes-the-chips-remove-field) · [diverges](#the-default-chip-is-one-indicator-state-message) |
 | [`label()` / `getLabel()`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`translateLabel()` / `shouldTranslateLabel`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`name()` / `getName()`](../../../packages/tables/src/Filters/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Filters/Concerns/HasName.php) | done | — | — |
@@ -54,7 +54,7 @@ It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/F
 | `form()` / `getFormSchema()` (deprecated; `schema()` / `getSchemaComponents()` replace them) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | skipped | — | [diverges](#the-form-alias-is-not-ported) |
 | [`getSchema()` — the filter's live child schema](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [semantics](#getschema-is-unguarded-where-the-state-readers-beside-it-are-not) |
 | [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `modifyQueryUsing()` / `modifyBaseQueryUsing()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
-| [`makeStateIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | — (Filament joins the chip text inline in each filter) | done | — | [semantics](#the-default-chip-is-one-indicator-state-message) |
+| [`makeStateIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | — (Filament joins the chip text inline in each filter) | done | — | [diverges](#the-default-chip-is-one-indicator-state-message) |
 
 ## Semantics
 
@@ -92,12 +92,6 @@ The outcome is identical either way — all three arms return the untouched buil
 A plain string stays a literal unless `translateLabel()` is on: then a string label, the name-derived one included, is handed to the translator as a key in the default `messages` domain, as Filament does.
 The name-derived default label is `u($name)->before('.')->kebab()->replace('-', ' ')->title()`, the same output as Filament's `str()->before('.')->kebab()->replace(['-', '_'], ' ')->ucfirst()` (`is_featured` → `Is featured`), because `kebab()` already turns the underscore into a hyphen.
 
-### The default chip is one `<indicator>: <state>` message
-
-`makeStateIndicator()` is the protected seam a filter's `getIndicators()` builds its default chip through: it wraps the indicator and the state in the port-added `table.filters.state_indicator` message, `{indicator}: {state}`, so a locale words the pair, where Filament joins the two in code.
-An indicator that is already an `Indicator` passes through untouched, and a `Markup` one is [reduced to its text](table.md#a-markup-that-goes-into-a-message-reads-as-its-text) before it enters the message.
-`getIndicators()` wraps a message an `indicateUsing()` closure answers in a chip, and `getIndicator()` translates a message given to `indicator()`.
-
 ## Divergences
 
 ### The name moves from the constructor to a setter
@@ -127,3 +121,9 @@ The base/apply split survives as ordering only.
 
 Filament ships `form()` / `getFormSchema()` as deprecated aliases of `schema()` / `getSchemaComponents()`.
 A deprecated Filament member [is not ported](../renames.md#a-deprecated-filament-member-is-not-ported), and the [renames table](../renames.md#renames) carries the row.
+
+### The default chip is one `<indicator>: <state>` message
+
+`makeStateIndicator()` is the protected seam a filter's `getIndicators()` builds its default chip through: it wraps the indicator and the state in the port-added `table.filters.state_indicator` message, `{indicator}: {state}`, so a locale words the pair, where Filament joins the two in code.
+An indicator that is already an `Indicator` passes through untouched, and a `Markup` one is [reduced to its text](table.md#a-markup-that-goes-into-a-message-reads-as-its-text) before it enters the message.
+`getIndicators()` wraps a message an `indicateUsing()` closure answers in a chip, and `getIndicator()` translates a message given to `indicator()`.

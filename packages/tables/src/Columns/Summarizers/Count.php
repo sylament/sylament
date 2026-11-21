@@ -9,6 +9,8 @@ use LogicException;
 use Sylament\Tables\Columns\Summarizers\Concerns\HasSelectAlias;
 use Sylament\Tables\Query\SummaryQuery;
 use Symfony\Component\Translation\TranslatableMessage;
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Twig\Markup;
 
 class Count extends Summarizer implements Contracts\HasSelectAlias
 {
@@ -56,7 +58,7 @@ class Count extends Summarizer implements Contracts\HasSelectAlias
         return $this->hasIcons;
     }
 
-    public function getDefaultLabel(): ?TranslatableMessage
+    public function getDefaultLabel(): string|Markup|TranslatableInterface|null
     {
         return $this->hasIcons ? null : new TranslatableMessage('table.summary.summarizers.count.label', domain: 'sylament-tables');
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Components\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 trait CanBeCopied
 {
@@ -12,7 +13,7 @@ trait CanBeCopied
 
     protected string|Closure|null $copyableState = null;
 
-    protected string|Closure|null $copyMessage = null;
+    protected string|TranslatableInterface|Closure|null $copyMessage = null;
 
     protected int|Closure|null $copyMessageDuration = null;
 
@@ -30,7 +31,7 @@ trait CanBeCopied
         return $this;
     }
 
-    public function copyMessage(string|Closure|null $message): static
+    public function copyMessage(string|TranslatableInterface|Closure|null $message): static
     {
         $this->copyMessage = $message;
 
@@ -60,9 +61,11 @@ trait CanBeCopied
 
     public function getCopyMessage(mixed $state): string
     {
-        return $this->evaluate($this->copyMessage, [
+        $message = $this->evaluate($this->copyMessage, [
             'state' => $state,
-        ]) ?? 'Copied';
+        ]);
+
+        return (string) ($this->translateText($message) ?? 'Copied');
     }
 
     public function getCopyMessageDuration(mixed $state): int

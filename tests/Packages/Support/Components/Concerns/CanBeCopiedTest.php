@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
+use Symfony\Component\Translation\TranslatableMessage;
 
 it('offers its text as a control that copies it, operated from the keyboard, and none unless copyable', function (): void {
     $copyable = $this->renderViewComponent(TextColumn::make('sku')->record(['sku' => 'L-1'])->copyable());
@@ -38,4 +39,9 @@ it('shows its confirmation for the milliseconds it is given, two seconds otherwi
         ->toContainElement(SupportSelectors::clipboardValue('duration', '5000'), 'L-1')
         ->and($this->renderViewComponent(TextColumn::make('sku')->record(['sku' => 'L-1'])->copyable()))
         ->toContainElement(SupportSelectors::clipboardValue('duration', '2000'), 'L-1');
+});
+
+it('translates a confirmation given as a message', function (): void {
+    expect($this->renderViewComponent(TextColumn::make('sku')->record(['sku' => 'L-1'])->copyable()->copyMessage(new TranslatableMessage('greeting', ['name' => 'Ada'], 'fixtures-support'))))
+        ->toContainElement(SupportSelectors::clipboardValue('message', 'Hello Ada'), 'L-1');
 });

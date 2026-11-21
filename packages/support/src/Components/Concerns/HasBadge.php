@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace Sylament\Support\Components\Concerns;
 
 use Closure;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 trait HasBadge
 {
-    protected string|Closure|null $badge = null;
+    protected string|int|float|TranslatableInterface|Closure|null $badge = null;
 
     /**
      * @var string|array<int, string>|Closure|null
      */
     protected string|array|Closure|null $badgeColor = null;
 
-    public function badge(string|int|float|Closure|null $badge): static
+    public function badge(string|int|float|TranslatableInterface|Closure|null $badge): static
     {
-        $this->badge = ($badge instanceof Closure || $badge === null) ? $badge : (string) $badge;
+        $this->badge = $badge;
 
         return $this;
     }
@@ -35,6 +36,10 @@ trait HasBadge
     public function getBadge(): ?string
     {
         $badge = $this->evaluate($this->badge);
+
+        if ($badge instanceof TranslatableInterface) {
+            $badge = $this->translateText($badge);
+        }
 
         return $badge === null ? null : (string) $badge;
     }

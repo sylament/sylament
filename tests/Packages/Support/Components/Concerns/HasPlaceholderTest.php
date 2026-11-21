@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
+use Symfony\Component\Translation\TranslatableMessage;
 
 it('shows its placeholder in place of a blank state, and none for a filled state or without one', function (): void {
     $filled = $this->renderViewComponent(TextColumn::make('note')->record(['note' => 'Fragile'])->placeholder('No note'));
@@ -15,4 +16,9 @@ it('shows its placeholder in place of a blank state, and none for a filled state
         ->and($filled->filter(TablesSelectors::PLACEHOLDER)->count())->toBe(0)
         ->and($unset)->toContainElement(TablesSelectors::TEXT_COLUMN)
         ->and($unset->filter(TablesSelectors::PLACEHOLDER)->count())->toBe(0);
+});
+
+it('translates a placeholder given as a message', function (): void {
+    expect($this->renderViewComponent(TextColumn::make('note')->record(['note' => null])->placeholder(new TranslatableMessage('plain', [], 'fixtures-support'))))
+        ->toContainElement(TablesSelectors::PLACEHOLDER, 'Plain');
 });

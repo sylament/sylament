@@ -13,7 +13,7 @@ owns:
 [`TextInput`](text-input.md), [`Select`](select.md), [`TagsInput`](tags-input.md) and [`DateTimePicker`](date-time-picker.md) compose it, the last passing it down to [`DatePicker`](date-picker.md) and [`TimePicker`](time-picker.md); Filament also composes it on `ColorPicker`, which has no port.
 
 Three prebuilt affix actions ship against it, all [`TextInput`](text-input.md)'s — `ShowPasswordAction`, `HidePasswordAction` and `CopyAction` — and it is `cacheSuffixActions()`'s `prepareAction()` that gives `CopyAction`'s `copyMessage()` / `copyMessageDuration()` closures their `state` injection.
-That state is the **field's own**, even inside a repeater item, since `prepareAction()` calls `schemaComponent()` and nothing else ([detail](text-input.md#the-copy-message-closure-sees-the-render-time-state)).
+That state is the **field's own**, even inside a repeater item, since `prepareAction()` calls `schemaComponent()` and nothing else ([semantics](text-input.md#the-copy-message-closure-sees-the-render-time-state)).
 
 The contract extends schemas' [`HasAffixActions`](../schemas/has-actions.md#the-affix-contract-is-typed-as-a-name-keyed-map), which is what lets `Schema`'s action cache find an affix action by name without knowing anything about forms.
 

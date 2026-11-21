@@ -116,7 +116,7 @@ The affix hooks (`.sy-fo-input-has-inline-prefix`, its suffix twin and `.sy-fo-s
 `text-input.css` holds two rules.
 `& input.fi-revealable { @apply [&::-ms-reveal]:hidden }` suppresses Edge's native password-reveal glyph for a field that ships its own reveal button; it is ported with [`revealable()`](text-input.md#a-revealable-input-is-rendered-as-a-password-server-side) as `& input.sy-revealable` in forms' [`text-input.css`](../../../packages/forms/assets/src/styles/components/text-input.css), beside the two `sy-revealed` visibility arms and the copy-confirmation region, neither of which vendor has a counterpart for.
 
-The other, `.fi-fo-text-input { @apply overflow-hidden }`, is held back on purpose: the copy confirmation is an absolutely positioned `role="status"` span that sits *above* the wrapper box (`bottom-full`) and is always rendered, hidden only by `opacity` while `:empty` ([detail](text-input.md#copy-confirms-through-a-status-region-not-a-tooltip)), so `overflow: hidden` on `.sy-fo-text-input` would clip it.
+The other, `.fi-fo-text-input { @apply overflow-hidden }`, is held back on purpose: the copy confirmation is an absolutely positioned `role="status"` span that sits *above* the wrapper box (`bottom-full`) and is always rendered, hidden only by `opacity` while `:empty` ([diverges](text-input.md#copy-confirms-through-a-status-region-not-a-tooltip)), so `overflow: hidden` on `.sy-fo-text-input` would clip it.
 Filament does not hit this because tippy portals its tooltip to the body.
 Porting the rule means moving the status region out of the wrapper first.
 

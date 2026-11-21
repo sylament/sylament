@@ -73,9 +73,9 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 | [`Filters/QueryBuilder/Constraints/`](../../../vendor/filament/tables/src/Filters/QueryBuilder/Constraints) | todo | — | — |
 | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | skipped | — | [delete-action.md](../actions/delete-action.md#there-is-no-soft-delete-arm-to-hide-behind) |
 | [`Columns/TagsColumn.php`](../../../vendor/filament/tables/src/Columns/TagsColumn.php) | skipped | — | [deprecated for `TextColumn`](../README.md#statuses) |
-| [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | blocked | the layout columns (`Columns\Layout`) | [detail](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
+| [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | blocked | the layout columns (`Columns\Layout`) | [diverges](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
 | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — | — |
-| [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) | [detail](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
+| [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) | [diverges](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
 | [`Columns/Concerns/BelongsToGroup.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToGroup.php) | todo | — | — |
 | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — | — |
 | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | skipped | — | [deprecated for support's `CanBeCopied`](../README.md#statuses) |

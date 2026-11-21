@@ -92,7 +92,7 @@ So a file stays under 80 KB, and a file that outgrows that splits along the code
 - **References:** a trail path or quoted section title named in code or in `docs/internals/` resolves.
 - **Entry links:** every `###` under `## Details`, `## Semantics` or `## Divergences` is the target of a link from a table row of some trail file, so no entry is reachable only by scrolling or through prose; a `###` under a reference section is not an entry and needs none.
   A `###` in `renames.md` or `translations.md` is a register record: it explains its own section's table, sits under no entry section, and needs no row link.
-- **Link labels:** a `[detail]`, `[semantics]` or `[diverges]` link, in a row or in prose, targets an entry under `## Details`, `## Semantics` or `## Divergences` respectively, so its label says what kind of entry it opens; a labelled link to a heading that is not an entry fails too.
+- **Link labels:** a `[detail]`, `[semantics]` or `[diverges]` link to a heading, in a row or in prose, targets an entry under `## Details`, `## Semantics` or `## Divergences` respectively, so its label says what kind of entry it opens; a labelled link to a heading that is not an entry fails too.
 - **Size:** no trail file exceeds 90 KB.
 
 `DocumentationFilesTest` checks every relative link and anchor in `docs/`, and that `docs/` carries no milestone label.

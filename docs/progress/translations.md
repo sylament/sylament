@@ -149,7 +149,7 @@ See [schemas/can-be-marked-as-required.md](schemas/can-be-marked-as-required.md)
 
 ### `FusedGroup` moves up into forms
 
-One **component** moves the other way for the same reason, and it is the same Filament file that forced the trait down:
+One **component** moves the other way for the same reason, an upward import from schemas into forms:
 
 | Filament | Sylament | Which class |
 | --- | --- | --- |

@@ -40,7 +40,7 @@ The behavioural difference is the missing scope layer, the [blocked row](#the-sc
 ### The manager lives in `Configuration/`, not `Components/`
 
 Filament files it under `Components/` beside `Component` and `ViewComponent`, which is where the class it configures lives, not where the manager belongs: it is not a component.
-Sylament files an engine by its capability ([translations](../translations.md#namespace-segments)), so [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) pairs with [`Evaluation/Invoker`](../../../packages/support/src/Evaluation/Invoker.php) and [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php) pairs with `Configuration/ComponentManager`.
+Sylament files an engine by its capability ([php.md](../../internals/php.md#engines)), so [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) pairs with [`Evaluation/Invoker`](../../../packages/support/src/Evaluation/Invoker.php) and [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php) pairs with `Configuration/ComponentManager`.
 Filament itself puts a manager at `src/` root when no directory fits (`CliManager`, `TimezoneManager`), so `Components/` is not a considered placement there either.
 Under `Components/` it would also fall in the bundle's `Components/*.php` service glob ([`SylamentSupportBundle`](../../../packages/support/src/SylamentSupportBundle.php)), which registers component classes, beside the manager's own factory definition.
 [`StaticInstancePass`](../../../packages/support/src/DependencyInjection/Compiler/StaticInstancePass.php) would tag both definitions, and `StaticInstanceRegistry` would call `setInstance()` twice with different objects.

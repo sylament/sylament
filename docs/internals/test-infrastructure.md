@@ -1,6 +1,6 @@
 # Test infrastructure
 
-The reasoning behind the test rules in `.claude/rules/test-infrastructure.md` and `.claude/rules/test-database.md`; the rules for writing a test, `.claude/rules/tests.md`, `.claude/rules/test-renders.md` and `.claude/rules/test-scope.md`, are explained in [testing.md](testing.md). `test-database.md` holds the lines that govern only the Doctrine side of the fixture world, its entities, its Doctrine fixtures and the rig, so they load with those files rather than with every fixture. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suite on a server are in the `server-gates` skill.
+The reasoning behind the test rules in `.claude/rules/test-infrastructure.md` and `.claude/rules/test-database.md`; the rules for writing a test, `.claude/rules/tests.md`, `.claude/rules/test-kinds.md`, `.claude/rules/test-renders.md` and `.claude/rules/test-scope.md`, are explained in [testing.md](testing.md). `test-database.md` holds the lines that govern only the Doctrine side of the fixture world, its entities, its Doctrine fixtures and the rig, so they load with those files rather than with every fixture. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suite on a server are in the `server-gates` skill.
 
 One suite runs, the root suite under `tests/`, one kernel and one base class for every package; the sections below describe it and the Doctrine rig it builds on.
 

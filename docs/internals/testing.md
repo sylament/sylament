@@ -1,6 +1,6 @@
 # Testing
 
-The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in the root suite under `tests/`, `.claude/rules/test-renders.md`, how such a test asserts a render, `.claude/rules/test-scope.md`, how much a package test covers and what it leaves out, and `.claude/rules/testing-api.md`, how the testing API in `packages/*/src/Testing` is ported. The rules say what to do; this file says why. How the suite's kernel, base class and writable paths work is in [test-infrastructure.md](test-infrastructure.md).
+The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in the root suite under `tests/`, `.claude/rules/test-kinds.md`, how a test that boots the kernel drives a live host, a render or a page, reads what a request did and covers the database, `.claude/rules/test-renders.md`, how such a test asserts a render, `.claude/rules/test-scope.md`, how much a package test covers and what it leaves out, and `.claude/rules/testing-api.md`, how the testing API in `packages/*/src/Testing` is ported. The rules say what to do; this file says why. How the suite's kernel, base class and writable paths work is in [test-infrastructure.md](test-infrastructure.md).
 
 ## Why does a test mirror `src/`?
 

@@ -94,7 +94,10 @@ Filament's `send()` pushes onto a request-scoped `NotificationMailbox`, which ho
 Sylament routes the write and the read through one class, [`SessionNotifications`](../../../packages/notifications/src/Delivery/SessionNotifications.php), whose `FLASH_KEY` (`sylament.notifications`) is the only place the string appears and whose consumers are `send()`, the subscriber and the stack component.
 
 The store is Symfony's **flash bag**, not a cache store, and that is the substantive part: a flash entry is read-once by definition, so `pull()` is a `get()` and the "drain on read" behaviour both readers rely on is the bag's, not ours.
-The bag lives in the session, so the port keeps no scope of its own to initialise or rotate, and whether a toast survives a login or a logout is the application's session handling.
+The bag lives in the session, so the port keeps no scope of its own to initialise or rotate.
+Symfony Security's default `session_fixation_strategy: migrate` (`SessionAuthenticationStrategy`) regenerates the session id and keeps its data, so a pending toast survives a login.
+Its default `logout.invalidate_session: true` (`SessionLogoutListener`) clears every bag, so a toast sent before a logout is lost where Filament's `rotateScope(shouldPreservePublishedNotifications: true)` carries it over.
+An application keeps it by setting `invalidate_session: false`.
 Two hardenings come with owning the accessor.
 `pull()` filters the bag: an entry that is not an array, or is an array with a non-string key, is dropped rather than handed to `fromArray()`, because session contents are attacker-adjacent input by the time they are read.
 And a session that is not `FlashBagAwareSessionInterface` raises a `LogicException` naming the type, while no session at all raises Symfony's own `SessionNotFoundException`, the fail-fast an out-of-request `send()` (console, worker) hits.

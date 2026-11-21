@@ -125,10 +125,18 @@ Ours derives only from the class basename: the basename minus a trailing `Resour
 The convention the branch keys on is Filament's generator layout, which a Sylament application does not follow, and [nested resources](nested-resources.md#the-recursion-lives-in-the-loader-and-the-child-must-be-registered-on-the-panel) carry their nesting in the route path and name rather than in the slug.
 `getRouteBaseName()` still turns a `/` in the slug into `.`, so a `$slug` containing a slash works and the branch can return without disturbing anything downstream.
 
+### A resource's navigation getters return messages, and its labels stay strings
+
+`getNavigationLabel()`, `getNavigationGroup()` and `getNavigationBadge()` return `string|TranslatableInterface`, read by [`NavigationItem`](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter), which translates them.
+`getRecordLabel()`, `getPluralRecordLabel()`, `getBreadcrumb()` and `getRecordTitle()` keep returning `string`, because `plural()`, title-casing and every `{label}` message argument read them as text.
+`Resource` composes `HasTranslator` so an override of one of those getters translates through `getTranslator()`, and the static properties stay `?string`, since a property initialiser cannot hold a message.
+A page's [static getters follow the same split](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it).
+
 ### Pluralization takes the inflector's last candidate
 
 The slug and the plural record label pluralize through support's [`plural()`](../support/helpers.md#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded), which takes the last of `EnglishInflector`'s candidates and has no locale gate, so `StatusResource` slugs to `statuses` and a `Person` record's plural label is `people`.
 The two inflectors are different engines and their candidate sets diverge for exotic nouns; `$slug` and `$pluralRecordLabel` are the overrides when one does.
+A record label a user translates is not pluralised for them: `getPluralRecordLabel()` is the override that supplies the plural, because `plural()` inflects English only.
 Symfony's inflector also pluralizes an already-plural word (`Articles` → `Articless`), so a resource class whose basename is already plural and does not end with `Resource` needs an explicit `$slug`.
 
 ### The route base name is composed in one place

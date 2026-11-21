@@ -19,6 +19,7 @@ use Sylament\Support\Icons\IconManager;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 use Twig\Markup;
@@ -99,7 +100,7 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithTable
 
     public function getTitle(): string|Markup
     {
-        return static::$title ?? sprintf('Manage %s %s', $this->getRecordTitle(), $this->getRelationshipTitle());
+        return static::$title ?? new TranslatableMessage('resources/pages/manage-related-records.title', ['label' => $this->getRecordTitle(), 'relationship' => $this->getRelationshipTitle()], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public function getBreadcrumb(): string

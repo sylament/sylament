@@ -23,7 +23,7 @@ owns:
 | [`makeTable()`](../../../packages/panels/src/Resources/Pages/ListRecords.php), the row-click seeding | `makeTable()`'s `recordAction()` / `recordUrl()` closures | done | — | [diverges](#the-row-click-falls-through-to-the-resources-own-view-or-edit-page) |
 | [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | the page's `#[Url]` properties | done | — | [diverges](#the-query-string-binding-is-one-hook-and-reordering-stays-unbound) |
 | [`getTitle()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getTitle()` | done | — | [semantics](#gettitle-runs-before-the-page-mounts) |
-| [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getBreadcrumb()` | done | — | [diverges](#the-breadcrumb-is-a-literal-not-a-translation-key) |
+| [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getBreadcrumb()` | done | — | [diverges](#the-breadcrumb-is-read-from-the-catalogue) |
 | [`form()` / `infolist()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | the same two | done | — | [semantics](#a-page-with-only-an-index-still-gets-every-record-action-as-a-modal) |
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getDefaultActionSchemaResolver()` | done | — | [diverges](#a-modals-schema-keeps-the-resource-forms-own-column-count) |
 | [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | `ListRecords::getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#renames) |
@@ -132,9 +132,9 @@ Filament binds seven names on this page: six `#[Url]` properties (`reordering`, 
 Ours overrides [`getTableUrlMapping()`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) to map six of them — `page` (prefixed by the host's query-string identifier), `sort`, `search`, `filters`, [`grouping`](../tables/grouping.md) and `tab` — in one method.
 `reordering` is [deliberately unbound](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page).
 
-### The breadcrumb is a literal, not a translation key
+### The breadcrumb is read from the catalogue
 
-Filament's `getBreadcrumb()` falls back to `__('filament-panels::resources/pages/list-records.breadcrumb')`; ours falls back to the literal `'List'`, because the port has no translation layer ([the deferred i18n pass](../../internals/i18n.md#translation-is-one-deferred-pass-not-a-per-component-port)).
+Filament's `getBreadcrumb()` falls back to `__('filament-panels::resources/pages/list-records.breadcrumb')`; ours falls back to the same key path in the `sylament-panels` catalogue, translated through the page's own translator.
 Filament types the return `?string`; ours is `string`, because the fallback is never null.
 
 ### A header action's record title comes from the resource

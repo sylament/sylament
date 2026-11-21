@@ -150,8 +150,15 @@ Revisit if the topbar ever gains a vertical clip of its own.
 
 `brandName`, `brandLogo`, `darkModeBrandLogo` and `brandLogoHeight` ride as props down the `Document` → `Layout` → `Topbar`/`Sidebar` → `Logo` chain, where Filament's `logo.blade.php` reads the `filament()` facade in place.
 `Logo` is rendered twice — in the topbar start and in the sidebar's own mobile header — and keeps `logo.blade.php`'s three arms: a `Markup` logo renders raw inside a `<div class="sy-pa-logo">` (Blade's `$logo instanceof Htmlable`, through support's `markup` Twig test), a string one as an `<img>`, and with neither the brand name falls back as a `<span>`, rendering nothing at all when the panel has no brand name either.
-The `<img>` alt is the brand name plus ` logo`, a literal where Filament reads the `layout.logo.alt` translation, while i18n is parked.
+The `<img>` alt is the `layout.logo.alt` message, `{name} logo`, trimmed so a panel with no brand name reads `logo`, where Filament's key leaves the space in.
 When `darkModeBrandLogo()` is set both renditions render, `sy-pa-logo-light` and `sy-pa-logo-dark` — Filament's `fi-logo-light`/`fi-logo-dark` pair, CSS-toggled.
+
+### The shell's fixed texts are catalogue keys, two of them port-added
+
+Every fixed text the layout, the topbar, the sidebar, the theme switcher, the user menu and the global search render is a `'<key>'|trans(domain: 'sylament-panels')` call, with Filament's key path where Filament has one ([panel.md](panel.md#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) lists the keys whose English differs).
+The skip link reads one key in both shells.
+The topbar's one toggle button reads the port-added `layout.actions.sidebar.toggle.label`, because Filament's pair is an expand and a collapse label for its two buttons.
+A sidebar group's collapsed state persists under the label text the template renders, so a translated label is a different key per locale.
 
 ### `USER_MENU_TRIGGER` is an addition, not a rename
 

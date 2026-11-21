@@ -22,6 +22,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -181,7 +182,7 @@ abstract class EditRecord extends Page
     protected function getSaveFormAction(): Action
     {
         return Action::make('save')
-            ->label('Save')
+            ->label($this->translateText(new TranslatableMessage('resources/pages/edit-record.form.actions.save.label', [], 'sylament-panels')))
             ->submit($this->getSubmitFormLiveComponentMethodName());
     }
 
@@ -192,7 +193,7 @@ abstract class EditRecord extends Page
     protected function getCancelFormAction(): Action
     {
         return Action::make('cancel')
-            ->label('Cancel')
+            ->label($this->translateText(new TranslatableMessage('resources/pages/edit-record.form.actions.cancel.label', [], 'sylament-panels')))
             ->color('gray')
             ->url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]));
     }
@@ -274,12 +275,12 @@ abstract class EditRecord extends Page
 
     public function getTitle(): string|Markup
     {
-        return static::$title ?? sprintf('Edit %s', $this->getRecordTitle());
+        return static::$title ?? new TranslatableMessage('resources/pages/edit-record.title', ['label' => $this->getRecordTitle()], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public function getBreadcrumb(): string
     {
-        return static::$breadcrumb ?? 'Edit';
+        return static::$breadcrumb ?? new TranslatableMessage('resources/pages/edit-record.breadcrumb', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     protected function handleRecordUpdate(object $record): object
@@ -335,7 +336,7 @@ abstract class EditRecord extends Page
 
     protected function getSavedNotificationTitle(): ?string
     {
-        return 'Saved';
+        return new TranslatableMessage('resources/pages/edit-record.notifications.saved.title', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     protected function getRedirectUrl(): ?string

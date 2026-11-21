@@ -28,13 +28,13 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`GlobalSearchResult`](../../../packages/panels/src/GlobalSearch/GlobalSearchResult.php) | [`GlobalSearchResult.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php) | done | — | [diverges](#hasdetaillabels-is-a-per-result-check) |
+| [`GlobalSearchResult`](../../../packages/panels/src/GlobalSearch/GlobalSearchResult.php) | [`GlobalSearchResult.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php) | done | — | [diverges](#hasdetaillabels-is-a-per-result-check) · [diverges](#a-result-title-or-detail-value-may-be-a-message-and-the-component-translates-it) |
 | [`GlobalSearchResults`](../../../packages/panels/src/GlobalSearch/GlobalSearchResults.php) | [`GlobalSearchResults.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php) | done | — | [diverges](#the-value-objects-answer-with-arrays-not-collections) · [diverges](#globalsearchresultsmake-has-no-container-seam) |
 | [`canGloballySearch()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::canGloballySearch()` | done | — | [diverges](#the-searchability-check-and-the-result-url-ladder-drop-filaments-authorization-gates) |
 | [`getGloballySearchableAttributes()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGloballySearchableAttributes()` | done | — | — |
 | [`getGlobalSearchResults()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResults()` | done | — | [semantics](#the-result-limit-is-spent-before-the-url-filter-runs) |
-| [`getGlobalSearchResultTitle()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResultTitle()` | done | — | — |
-| [`getGlobalSearchResultDetails()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResultDetails()` | done | — | — |
+| [`getGlobalSearchResultTitle()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResultTitle()` | done | — | [diverges](#a-result-title-or-detail-value-may-be-a-message-and-the-component-translates-it) |
+| [`getGlobalSearchResultDetails()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResultDetails()` | done | — | [diverges](#a-result-title-or-detail-value-may-be-a-message-and-the-component-translates-it) |
 | [`getGlobalSearchResultActions()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResultActions()` | done | — | — |
 | [`getGlobalSearchResultUrl()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchResultUrl()` | done | — | [diverges](#the-searchability-check-and-the-result-url-ladder-drop-filaments-authorization-gates) |
 | [`applyGlobalSearchAttributeConstraints()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::applyGlobalSearchAttributeConstraints()` | done | — | [diverges](#the-per-attribute-constraint-hook-is-collapsed-into-one-method) |
@@ -58,7 +58,7 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 | [`globalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchKeyBindings()` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | [`getGlobalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchKeyBindings()` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | [`globalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchFieldSuffix()` | done | — | — |
-| [`getGlobalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchFieldSuffix()` | done | — | — |
+| [`getGlobalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchFieldSuffix()` | done | — | [diverges](panel.md#the-brand-name-and-a-registered-navigation-group-may-be-messages) |
 | [`isGlobalSearchEnabled()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `FilamentManager::isGlobalSearchEnabled()` | done | — | [diverges](#isglobalsearchenabled-sits-on-the-panel-not-on-a-manager) |
 | `globalSearchPosition` | `HasGlobalSearch::globalSearch()`'s `$position` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchFieldKeyBindingSuffix()` | `Panel\Concerns\HasGlobalSearch::globalSearchFieldKeyBindingSuffix()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
@@ -152,6 +152,14 @@ Panels has no authorization layer, so `canGloballySearch()` is `$isGloballySearc
 **A panel with global search on therefore surfaces every record of every searchable resource to every viewer.**
 Filament's two remaining fallbacks — the index URL carrying `tableAction`/`tableActionRecord` query parameters so the list page opens a view or edit modal — have no port target either: our tables read no such parameters.
 Authorization revisits all three when it lands.
+
+### A result title or detail value may be a message, and the component translates it
+
+`GlobalSearchResult` is built with `new` by a resource or a provider, so no translator sits on it and its public `title` and `details` hold whatever it was given.
+Both widen to take a `TranslatableInterface`, and so do `getGlobalSearchResultTitle()` and the values of `getGlobalSearchResultDetails()`; the [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php), which holds a translator, translates each result before the template reads it, so a custom `GlobalSearchProvider` may return messages and the template meets text.
+A category name and a detail label are array keys, which cannot be messages: the default provider passes the resource's plural label, already text, and a provider translates a label itself.
+The detail label's trailing colon is the port-added `global-search.result.detail_label` message, `{label}:`, so a locale that spaces its colons says so in the catalogue.
+`Global search`, `Search` and `No search results found.` are Filament's keys under `global-search.*`.
 
 ### The value objects answer with arrays, not collections
 

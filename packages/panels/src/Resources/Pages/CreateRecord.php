@@ -16,6 +16,7 @@ use Sylament\Schemas\State\Relationship;
 use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -163,7 +164,7 @@ abstract class CreateRecord extends Page
     protected function getCreateFormAction(): Action
     {
         return Action::make('create')
-            ->label('Create')
+            ->label($this->translateText(new TranslatableMessage('resources/pages/create-record.form.actions.create.label', [], 'sylament-panels')))
             ->submit($this->getSubmitFormLiveComponentMethodName());
     }
 
@@ -174,7 +175,7 @@ abstract class CreateRecord extends Page
     protected function getCancelFormAction(): Action
     {
         return Action::make('cancel')
-            ->label('Cancel')
+            ->label($this->translateText(new TranslatableMessage('resources/pages/create-record.form.actions.cancel.label', [], 'sylament-panels')))
             ->color('gray')
             ->url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]));
     }
@@ -225,12 +226,12 @@ abstract class CreateRecord extends Page
 
     public function getTitle(): string|Markup
     {
-        return static::$title ?? sprintf('Create %s', $this->getResourceInstance()->getTitleCaseRecordLabel());
+        return static::$title ?? new TranslatableMessage('resources/pages/create-record.title', ['label' => $this->getResourceInstance()->getTitleCaseRecordLabel()], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public function getBreadcrumb(): string
     {
-        return static::$breadcrumb ?? 'Create';
+        return static::$breadcrumb ?? new TranslatableMessage('resources/pages/create-record.breadcrumb', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     /**
@@ -406,7 +407,7 @@ abstract class CreateRecord extends Page
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Created';
+        return new TranslatableMessage('resources/pages/create-record.notifications.created.title', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     protected function getRedirectUrl(): string

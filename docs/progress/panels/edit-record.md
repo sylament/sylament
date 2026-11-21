@@ -30,14 +30,14 @@ Its form actions and the form variant its template extends are [form-actions.md]
 | `RecordUpdated` / `RecordSaved` events | the two `Event::dispatch()` calls | todo | — | — |
 | [`mutateFormDataBeforeSave()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | [create-record.md](create-record.md#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it) |
 | [`handleRecordUpdate()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | `handleRecordUpdate(Model $record, array $data)` | done | — | [diverges](#handlerecordupdate-takes-the-mapped-record-not-the-record-and-an-array) |
-| [`getSavedNotification()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`getSavedNotificationTitle()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same two | done | — | [create-record.md](create-record.md#the-create-and-save-notification-titles-are-literals-not-translation-keys) |
+| [`getSavedNotification()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`getSavedNotificationTitle()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same two | done | — | [create-record.md](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | `getSavedNotificationMessage()` | the `@deprecated` alias of `getSavedNotificationTitle()` | skipped | — | [renames.md](../renames.md#renames) |
 | [`getRedirectUrl()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | `getRedirectUrl()` | done | — | [diverges](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception) |
 | `getRedirectUrl()`'s panel arm — `resourceEditPageRedirect()` — and `getRedirectUrlParameters()` | the same | todo | — | — |
 | `authorizeAccess()` + `hydrate()` | the same two | blocked | authorization | — |
 | `shouldRegisterNavigation()`'s `canEdit()` term | the same | blocked | authorization | — |
 | `getNavigationLabel()` / `getNavigationIcon()` overrides | the same two | todo | — | [detail](#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
-| [`getTitle()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | [diverges](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) |
+| [`getTitle()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | [diverges](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) · [diverges](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | — |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | the same | done | — | — |
 | `getSubmitFormAction()` | the same, read only by the resource `HasWizard` concern | todo | — | — |
@@ -127,6 +127,12 @@ The create page's `getRedirectUrl(): string` is **not** nullable, matching Filam
 
 The visible half of this is that a successful save returns `null` from the `#[LiveAction]`, so the response is the re-rendered component rather than a redirect — which is what lets notifications' `LiveDeliverySubscriber` dispatch the toast as a browser event on the same round trip.
 The create page's redirect takes the other delivery path, the flash bag drained by the document's outlet.
+
+### The save action reads `Save`, where Filament's catalogue says `Save changes`
+
+The key is Filament's, `resources/pages/edit-record.form.actions.save.label`, and the `sylament-panels` catalogue keeps the port's English `Save` under it.
+A Filament locale file maps onto the key, so an imported translation of `Save changes` replaces the English as it stands.
+The edit page's other texts read Filament's English: `Cancel`, `Edit`, `Edit {label}` and `Saved`.
 
 ### The document title of an edit page carries the record label, not the record title
 

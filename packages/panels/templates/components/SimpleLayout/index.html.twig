@@ -7,7 +7,7 @@
 
 <div {{ attrs({class: 'sy sy-pa-body sy-pa-simple-layout'}, attributes.all) }}>
     {% if hasTopbar %}
-        <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
+        <a href="#sy-pa-main" class="sy-pa-skip-link">{{ 'layout.skip_to_content.label'|trans(domain: 'sylament-panels') }}</a>
 
         <div class="sy-pa-simple-layout-header">
             <twig:SylamentPanels:UserMenu />

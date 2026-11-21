@@ -24,11 +24,11 @@ owns:
 | [`mutateFormDataBeforeCreate()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [diverges](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it) |
 | [`makeRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | no counterpart on the page | done | — | [diverges](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs) · [semantics](#a-key-field-the-constructor-sets-must-stay-visible-and-readable) |
 | [`handleRecordCreation()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `handleRecordCreation(array $data): Model` | done | — | [diverges](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs) · [semantics](#the-record-joins-its-parent-before-the-mapping-and-leaves-it-when-the-create-is-refused) · [semantics](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone) · [semantics](#a-record-whose-assigned-key-is-still-blank-after-persist-is-refused-before-the-flush) · [semantics](#both-key-reads-ask-the-forms-own-reader-rebound-to-the-pages-manager) |
-| [`getCreatedNotification()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getCreatedNotificationTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-create-and-save-notification-titles-are-literals-not-translation-keys) |
+| [`getCreatedNotification()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getCreatedNotificationTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | `getCreatedNotificationMessage()` (`@deprecated` for `getCreatedNotificationTitle()`) | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | skipped | — | [renames.md](../renames.md#a-deprecated-filament-member-is-not-ported) |
 | [`getRedirectUrl()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getRedirectUrl()` | done | — | [semantics](#the-redirect-mints-the-key-the-new-row-reads-back) |
 | `getRedirectUrlParameters()` | the same | todo | — | — |
-| [`getTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-create-and-save-notification-titles-are-literals-not-translation-keys) |
+| [`getTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) |
 | [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [custom-pages.md](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
 | `getSubmitFormAction()` | the same | todo | — | — |
@@ -142,13 +142,15 @@ The only `LiveProp` of the page's own is the writable `$data` bag every field bi
 It is a setter rather than a constructor argument, so a subclass declaring its own constructor never repeats it, and a save that finds it unset throws a `LogicException` naming the page and the container registration, before anything is mapped.
 `EditRecord` declares the same setter rather than sharing a trait, as Filament keeps its record handlers per page.
 
-### The create and save notification titles are literals, not translation keys
+### The page's texts are read from the `sylament-panels` catalogue under Filament's key paths
 
-`getCreatedNotificationTitle()` returns `'Created'` and `getSavedNotificationTitle()` returns `'Saved'`, where Filament returns `__('filament-panels::resources/pages/create-record.notifications.created.title')` and its edit-page twin.
-`getTitle()`'s `'Create %s'` and `getBreadcrumb()`'s `'Create'` follow the same rule.
-The reason is [the dashboard title's](dashboard.md#the-dashboard-title-is-a-literal-not-a-translation-key): the port has no translation layer, and a `trans()` call against a catalogue nobody ships would render the key.
+`getCreatedNotificationTitle()` and `getSavedNotificationTitle()` read `resources/pages/create-record.notifications.created.title` and its edit-page twin, where Filament returns `__('filament-panels::…')`, and `getTitle()`, `getBreadcrumb()` and the two form actions' labels read the other `resources/pages/create-record.*` keys.
+`getTitle()` is `Create {label}`, with the title-cased record label as the argument, so a locale can move the label.
 The **override points** are Filament's exactly (`getCreatedNotificationTitle()` / `getSavedNotificationTitle()` for the copy, `getCreatedNotification()` / `getSavedNotification()` for the whole notification), and each returns `null` when its title is `blank()`, Filament's own "no title, no toast" contract.
-A translation layer reverses it: the literals become `trans()` calls and nothing else changes.
+The getters keep their `string` return types and translate in place, through the page's own translator, in the request that builds them; a page override returns text, or translates a message itself with `translateText()`.
+The notification title is therefore text before it reaches `Notification::title()`, and the flash carries it in the sender's locale.
+The two form actions' labels are translated on the page and passed to `Action::label()` as text, because the action's label setter takes a string here.
+The `Create` label and the `Create` breadcrumb are two keys with one English text, as Filament has them.
 
 ### The record page's schema is named `form`, and `schemas()` is narrowed to it
 

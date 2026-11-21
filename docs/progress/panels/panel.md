@@ -48,11 +48,11 @@ Four of the panel's traits are documented with the code that reads them: [`HasSu
 | `HasComponents`: `discoverPages()`, `discoverResources()`, `discoverClusters()`, `discoverWidgets()`, `discoverLivewireComponents()` and the component cache | the discovery arms | todo | — | [detail](#filesystem-discovery-would-return-only-as-a-convenience-over-service-registration) |
 | `HasComponents`: `widgets()` / `getWidgets()` | the widget registration arm | blocked | a `Widget` class in `sylament/widgets` | — |
 | `HasComponents`: page and resource configurations, clusters, `getModelResource()`, the relation-manager read-only default and the create / edit page redirects | the rest of `HasComponents.php` | todo | — | [custom-pages.md](custom-pages.md#the-configuration-object-is-not-ported) |
-| [`HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php): `navigationGroups()` / `navigationItems()` / their getters / `getNavigation()` | [`Panel/Concerns/HasNavigation.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasNavigation.php) | done | — | [semantics](#getnavigation-merges-every-source-before-it-sorts-and-buckets) · [diverges](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) · [diverges](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) |
+| [`HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php): `navigationGroups()` / `navigationItems()` / their getters / `getNavigation()` | [`Panel/Concerns/HasNavigation.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasNavigation.php) | done | — | [semantics](#getnavigation-merges-every-source-before-it-sorts-and-buckets) · [diverges](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) · [diverges](#the-brand-name-and-a-registered-navigation-group-may-be-messages) · [diverges](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) |
 | `HasNavigation`: `navigation()`, `NavigationBuilder`, `hasNavigation()` / `hasNavigationBuilder()` | the navigation builder | todo | — | [detail](#the-navigation-builder-escape-hatch-is-deferred-not-rejected) |
 | [`HasSidebar`](../../../packages/panels/src/Panel/Concerns/HasSidebar.php): `collapsibleNavigationGroups()` / `hasCollapsibleNavigationGroups()` | [`Panel/Concerns/HasSidebar.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasSidebar.php) | done | — | [navigation-group.md](navigation-group.md) |
 | `HasSidebar`: `sidebarCollapsibleOnDesktop()` / `sidebarFullyCollapsibleOnDesktop()` / `sidebarWidth()` / `collapsedSidebarWidth()`, their getters and `sidebarLivewireComponent()` | the rest of `HasSidebar.php` | todo | — | — |
-| [`HasBrandName`](../../../packages/panels/src/Panel/Concerns/HasBrandName.php) | [`Panel/Concerns/HasBrandName.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandName.php) | done | — | [diverges](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name) |
+| [`HasBrandName`](../../../packages/panels/src/Panel/Concerns/HasBrandName.php) | [`Panel/Concerns/HasBrandName.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandName.php) | done | — | [diverges](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name) · [diverges](#the-brand-name-and-a-registered-navigation-group-may-be-messages) |
 | [`HasBrandLogo`](../../../packages/panels/src/Panel/Concerns/HasBrandLogo.php) | [`Panel/Concerns/HasBrandLogo.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandLogo.php) | done | — | [layout-templates.md](layout-templates.md) |
 | `darkMode()` / `themeSwitcher()` / `hasDarkMode()` / `hasDarkModeForced()` / `hasThemeSwitcher()`, `defaultThemeMode()` / `getDefaultThemeMode()` | [`Panel/Concerns/HasDarkMode.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasDarkMode.php), [`Panel/Concerns/HasTheme.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasTheme.php) | todo | — | — |
 | `breadcrumbs()` / `hasBreadcrumbs()` / `hasNavigationHierarchyInBreadcrumbs()` | [`Panel/Concerns/HasBreadcrumbs.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBreadcrumbs.php) | todo | — | [page.md](page.md#the-navigation-hierarchy-breadcrumbs-wait-on-the-panels-breadcrumb-settings) |
@@ -89,7 +89,7 @@ Four of the panel's traits are documented with the code that reads them: [`HasSu
 | --- | --- | --- | --- | --- |
 | [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php): autoconfiguration tags, compiler passes, services and the `@sylament/panels` AssetMapper path | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | done | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
 | `Make*` commands (`hasCommands()`) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | todo | — | — |
-| Translations (`hasTranslations()`) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#translation-is-one-deferred-pass-not-a-per-component-port) |
+| [Translations (`hasTranslations()`) — the `sylament-panels` catalogue](../../../packages/panels/translations/sylament-panels+intl-icu.en.xlf) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php), [`resources/lang/en/`](../../../vendor/filament/filament/resources/lang/en) | done | — | [diverges](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
@@ -211,6 +211,20 @@ Revisit the moment a consumer hits it.
 Filament's `getBrandName()` ends `?? config('app.name')`, so an unconfigured panel still prints *Laravel* in its `<title>` and brand slot.
 Symfony has no framework-owned application name to fall back to — there is no `framework.name`, and `kernel.project_dir`'s basename is a directory, not a product — so ours returns `null` and the [document template](routing.md) drops the title suffix entirely rather than printing a placeholder.
 A consumer who wants one calls `brandName()`, which is the call a Filament user makes anyway the first time they see the default.
+
+### The brand name and a registered navigation group may be messages
+
+`brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside Filament's `string | Htmlable | Closure`, and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
+`navigationGroups()` takes a message for a bare registered group, and `getNavigation()` translates it before it matches the registered group against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
+A panel built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
+
+### The catalogue is found by the bundle's translations directory and holds the texts panels renders
+
+`hasTranslations()` registers Filament's `filament-panels` namespace; the port registers nothing, because FrameworkBundle scans every bundle's `translations/` directory, so [`translations/sylament-panels+intl-icu.en.xlf`](../../../packages/panels/translations/sylament-panels+intl-icu.en.xlf) is the `sylament-panels` domain from the file name alone.
+Every key is Filament's key path (`layout.skip_to_content.label`, `resources/pages/create-record.title`), and a catalogue holds only keys panels' code uses, so the unported surface's keys (authentication, tenancy, widgets, database notifications, the unsaved-changes body, `create_another`, the dashboard filter and the view page) join it with their code.
+Two texts have no Filament key and take port-added keys in Filament's shape: `layout.actions.sidebar.toggle.label` for the one toggle button, where Filament keys an expand and a collapse label, and `global-search.result.detail_label` for the detail label with its colon.
+Three texts keep the port's English under Filament's key: `layout.navigation.label` (`Navigation`, Filament `Sidebar navigation`), `layout.actions.open_user_menu.label` (`Open user menu`, Filament `User menu`) and `resources/pages/edit-record.form.actions.save.label` (`Save`, Filament `Save changes`).
+The document's `lang` attribute, a `dir` attribute and the ` — ` title separator are not text keys and stay as they are.
 
 ### `getPages()` re-indexes where Filament keeps `array_unique()`'s gapped keys
 

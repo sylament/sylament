@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Pages\Dashboard;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 
 it('serves the dashboard at the panel root', function (): void {
@@ -31,4 +33,11 @@ it("draws the home icon in navigation unless the application aliases the dashboa
     $this::bootKernel(['environment' => 'registered_icons']);
 
     expect($this->visit('/panel-routing'))->toContainElement(Selectors::ACTIVE_NAVIGATION_ITEM . ' svg', 'Star');
+});
+
+it('titles the dashboard from the catalogue, in the locale the translator answers', function (): void {
+    $this::getContainer()->get('translator')->setLocale('sk');
+
+    expect($this::getContainer()->get(Dashboard::class)->getTitle())->toBe('Nástenka')
+        ->and(NavigationItem::make(Dashboard::getNavigationLabel())->getLabel())->toBe('Nástenka');
 });

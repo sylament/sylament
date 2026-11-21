@@ -8,7 +8,7 @@
     {{ attrs({
         class: 'sy sy-pa-theme-switcher',
         role: 'group',
-        'aria-label': 'Theme',
+        'aria-label': 'layout.actions.theme_switcher.label'|trans(domain: 'sylament-panels'),
     }, stimulus_controller(themeController), attributes.all) }}
 >
     <button
@@ -16,7 +16,7 @@
             type: 'button',
             class: 'sy-pa-theme-switcher-btn',
             'data-theme': 'light',
-            'aria-label': 'Enable light theme',
+            'aria-label': 'layout.actions.theme_switcher.light.label'|trans(domain: 'sylament-panels'),
             'aria-pressed': 'false',
         }, buttonStimulus) }}
     >
@@ -28,7 +28,7 @@
             type: 'button',
             class: 'sy-pa-theme-switcher-btn',
             'data-theme': 'dark',
-            'aria-label': 'Enable dark theme',
+            'aria-label': 'layout.actions.theme_switcher.dark.label'|trans(domain: 'sylament-panels'),
             'aria-pressed': 'false',
         }, buttonStimulus) }}
     >
@@ -40,7 +40,7 @@
             type: 'button',
             class: 'sy-pa-theme-switcher-btn',
             'data-theme': 'system',
-            'aria-label': 'Enable system theme',
+            'aria-label': 'layout.actions.theme_switcher.system.label'|trans(domain: 'sylament-panels'),
             'aria-pressed': 'false',
         }, buttonStimulus) }}
     >

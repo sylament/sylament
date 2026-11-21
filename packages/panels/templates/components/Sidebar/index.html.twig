@@ -27,7 +27,7 @@
         </header>
     </div>
 
-    <nav class="sy-pa-sidebar-nav" aria-label="Navigation">
+    <nav class="sy-pa-sidebar-nav" aria-label="{{ 'layout.navigation.label'|trans(domain: 'sylament-panels') }}">
         <ul class="sy-pa-sidebar-nav-groups">
             {% for group in navigation %}
                 <twig:SylamentPanels:SidebarGroup :group="group" :groupIndex="loop.index0" />

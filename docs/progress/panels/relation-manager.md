@@ -22,8 +22,8 @@ A manager is never routed to: the page that owns the record embeds it through sc
 | The host union — `InteractsWithActions` + `InteractsWithSchemas` + `InteractsWithTable`, `DefaultActionTrait` | `Component implements HasActions, HasSchemas, HasTable` | done | — | [diverges](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it) |
 | [`$ownerRecord` / `getOwnerRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `#[Locked] public Model $ownerRecord` | done | — | [diverges](#the-owner-rides-the-wire-as-a-route-key-behind-a-dehydration-bridge) |
 | [`$pageClass` / `getPageClass()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `#[Locked] public ?string $pageClass` | done | — | [diverges](#the-owner-rides-the-wire-as-a-route-key-behind-a-dehydration-bridge) |
-| [`getTitle()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + `$title` | `getTitle()` | done | — | [semantics](#the-title-fallback-humanizes-the-relationship-name-without-pluralizing-it) · [diverges](interacts-with-relationship-table.md#the-title-is-an-instance-method-and-the-static-title-chain-never-reaches-the-related-resource) |
-| [`getIcon()` / `getIconPosition()` / `getBadge()` / `getBadgeColor()` / `getBadgeTooltip()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + their statics | the same five and their statics | done | — | — |
+| [`getTitle()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + `$title` | `getTitle()` | done | — | [diverges](#a-title-a-badge-and-a-badge-tooltip-are-static-getters-that-may-return-messages) · [semantics](#the-title-fallback-humanizes-the-relationship-name-without-pluralizing-it) · [diverges](interacts-with-relationship-table.md#the-title-is-an-instance-method-and-the-static-title-chain-never-reaches-the-related-resource) |
+| [`getIcon()` / `getIconPosition()` / `getBadge()` / `getBadgeColor()` / `getBadgeTooltip()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + their statics | the same five and their statics | done | — | [diverges](#a-title-a-badge-and-a-badge-tooltip-are-static-getters-that-may-return-messages) |
 | [`getTabComponent()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `getTabComponent()` | done | — | [diverges](#deferred-tab-badges-do-not-port) |
 | [`make()` → `RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `make()` | done | — | [relation-group.md](relation-group.md) |
 | [`getDefaultProperties()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `getDefaultProperties()` | done | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
@@ -98,6 +98,13 @@ Filament defines no relation-manager listener, no emitted event and no parent-sa
 A consumer who wants one wires it themselves with `emitUp()` + a `#[LiveListener]` on the manager, never a bare `emit()`, which is a page-wide broadcast costing one HTTP request per receiving listener.
 
 ## Divergences
+
+### A title, a badge and a badge tooltip are static getters that may return messages
+
+`getTitle()`, `getBadge()` and `getBadgeTooltip()` are static, so no translator sits on the object that supplies them, and each return type widens to take a `TranslatableInterface`.
+The tab built by `getTabComponent()` translates them through its own getters, and `makeTable()` translates the title for the table heading through the manager's translator, so the tab, the heading and every other reader receive text.
+A static property cannot hold a message, so `$title`, `$badge` and `$badgeTooltip` stay `?string`, and a manager supplies a message by overriding the getter.
+[`RelationGroup`](relation-group.md#the-label-may-be-a-message-translated-in-its-getter) takes a message label through its setter.
 
 ### The manager stands beside the resource page base rather than under it
 

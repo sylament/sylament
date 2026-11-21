@@ -13,7 +13,7 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` / `label()` / `getLabel()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | — |
+| [`make()` / `label()` / `getLabel()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#a-label-may-be-a-message-translated-in-its-getter) |
 | `icon()` / `getIcon()`, through support's [`HasIcon`](../support/has-icon.md) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | — |
 | [`items()` / `getItems()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable) |
 | [`collapsed()` / `isCollapsed()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#collapsed-does-not-also-make-the-group-collapsible) |
@@ -37,6 +37,12 @@ Filament composes `HasExtraSidebarAttributes` and `HasExtraTopbarAttributes` int
 Neither is ported, because no panels template renders a group attribute bag, so composing them would publish setters with no effect; [`NavigationItem`](navigation-item.md) leaves `HasExtraAttributes` out for the same reason.
 
 ## Divergences
+
+### A label may be a message, translated in its getter
+
+`make()` and `label()` take a `TranslatableInterface`, and `getLabel()` keeps returning `?string`, translated through the group's own translator.
+The sidebar persists a group's collapsed state in the browser under the label text, so a locale switch, like a renamed label, forgets which groups were collapsed; [Filament's store is keyed by the label too](layout-templates.md#sidebar-group-ids-are-positional-not-derived-from-the-label).
+The panel's [group assembly](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) matches a registered group by key or by its translated label.
 
 ### `collapsed()` does not also make the group collapsible
 

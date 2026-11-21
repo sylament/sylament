@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+    <file source-language="en" target-language="en" datatype="plaintext" original="file.ext">
+        <body>
+            <trans-unit id="global-search.field.label" resname="global-search.field.label">
+                <source>global-search.field.label</source>
+                <target>Global search</target>
+            </trans-unit>
+            <trans-unit id="global-search.field.placeholder" resname="global-search.field.placeholder">
+                <source>global-search.field.placeholder</source>
+                <target>Search</target>
+            </trans-unit>
+            <trans-unit id="global-search.no_results_message" resname="global-search.no_results_message">
+                <source>global-search.no_results_message</source>
+                <target>No search results found.</target>
+            </trans-unit>
+            <trans-unit id="global-search.result.detail_label" resname="global-search.result.detail_label">
+                <source>global-search.result.detail_label</source>
+                <target>{label}:</target>
+            </trans-unit>
+            <trans-unit id="layout.actions.open_user_menu.label" resname="layout.actions.open_user_menu.label">
+                <source>layout.actions.open_user_menu.label</source>
+                <target>Open user menu</target>
+            </trans-unit>
+            <trans-unit id="layout.actions.sidebar.toggle.label" resname="layout.actions.sidebar.toggle.label">
+                <source>layout.actions.sidebar.toggle.label</source>
+                <target>Toggle sidebar</target>
+            </trans-unit>
+            <trans-unit id="layout.actions.theme_switcher.dark.label" resname="layout.actions.theme_switcher.dark.label">
+                <source>layout.actions.theme_switcher.dark.label</source>
+                <target>Enable dark theme</target>
+            </trans-unit>
+            <trans-unit id="layout.actions.theme_switcher.label" resname="layout.actions.theme_switcher.label">
+                <source>layout.actions.theme_switcher.label</source>
+                <target>Theme</target>
+            </trans-unit>
+            <trans-unit id="layout.actions.theme_switcher.light.label" resname="layout.actions.theme_switcher.light.label">
+                <source>layout.actions.theme_switcher.light.label</source>
+                <target>Enable light theme</target>
+            </trans-unit>
+            <trans-unit id="layout.actions.theme_switcher.system.label" resname="layout.actions.theme_switcher.system.label">
+                <source>layout.actions.theme_switcher.system.label</source>
+                <target>Enable system theme</target>
+            </trans-unit>
+            <trans-unit id="layout.logo.alt" resname="layout.logo.alt">
+                <source>layout.logo.alt</source>
+                <target>{name} logo</target>
+            </trans-unit>
+            <trans-unit id="layout.navigation.label" resname="layout.navigation.label">
+                <source>layout.navigation.label</source>
+                <target>Navigation</target>
+            </trans-unit>
+            <trans-unit id="layout.skip_to_content.label" resname="layout.skip_to_content.label">
+                <source>layout.skip_to_content.label</source>
+                <target>Skip to content</target>
+            </trans-unit>
+            <trans-unit id="layout.topbar.label" resname="layout.topbar.label">
+                <source>layout.topbar.label</source>
+                <target>Topbar</target>
+            </trans-unit>
+            <trans-unit id="pages/dashboard.title" resname="pages/dashboard.title">
+                <source>pages/dashboard.title</source>
+                <target>Dashboard</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/create-record.breadcrumb" resname="resources/pages/create-record.breadcrumb">
+                <source>resources/pages/create-record.breadcrumb</source>
+                <target>Create</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/create-record.form.actions.cancel.label" resname="resources/pages/create-record.form.actions.cancel.label">
+                <source>resources/pages/create-record.form.actions.cancel.label</source>
+                <target>Cancel</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/create-record.form.actions.create.label" resname="resources/pages/create-record.form.actions.create.label">
+                <source>resources/pages/create-record.form.actions.create.label</source>
+                <target>Create</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/create-record.notifications.created.title" resname="resources/pages/create-record.notifications.created.title">
+                <source>resources/pages/create-record.notifications.created.title</source>
+                <target>Created</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/create-record.title" resname="resources/pages/create-record.title">
+                <source>resources/pages/create-record.title</source>
+                <target>Create {label}</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/edit-record.breadcrumb" resname="resources/pages/edit-record.breadcrumb">
+                <source>resources/pages/edit-record.breadcrumb</source>
+                <target>Edit</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/edit-record.form.actions.cancel.label" resname="resources/pages/edit-record.form.actions.cancel.label">
+                <source>resources/pages/edit-record.form.actions.cancel.label</source>
+                <target>Cancel</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/edit-record.form.actions.save.label" resname="resources/pages/edit-record.form.actions.save.label">
+                <source>resources/pages/edit-record.form.actions.save.label</source>
+                <target>Save</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/edit-record.notifications.saved.title" resname="resources/pages/edit-record.notifications.saved.title">
+                <source>resources/pages/edit-record.notifications.saved.title</source>
+                <target>Saved</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/edit-record.title" resname="resources/pages/edit-record.title">
+                <source>resources/pages/edit-record.title</source>
+                <target>Edit {label}</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/list-records.breadcrumb" resname="resources/pages/list-records.breadcrumb">
+                <source>resources/pages/list-records.breadcrumb</source>
+                <target>List</target>
+            </trans-unit>
+            <trans-unit id="resources/pages/manage-related-records.title" resname="resources/pages/manage-related-records.title">
+                <source>resources/pages/manage-related-records.title</source>
+                <target>Manage {label} {relationship}</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

@@ -16,6 +16,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 use Twig\Markup;
 
@@ -178,7 +179,7 @@ abstract class ListRecords extends Page implements InteractsWithTable
 
     public function getBreadcrumb(): string
     {
-        return static::$breadcrumb ?? 'List';
+        return static::$breadcrumb ?? new TranslatableMessage('resources/pages/list-records.breadcrumb', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public function form(Schema $schema): Schema

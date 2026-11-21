@@ -12,7 +12,7 @@
         stimulus_controller(searchController, {keyBindings: panel.getGlobalSearchKeyBindings}),
     ) }}>
         <div class="sy-pa-global-search-field">
-            <label for="sy-pa-global-search-input" class="sy-pa-global-search-label">Global search</label>
+            <label for="sy-pa-global-search-input" class="sy-pa-global-search-label">{{ 'global-search.field.label'|trans(domain: 'sylament-panels') }}</label>
 
             <twig:SylamentSupport:InputWrapper
                 prefixIcon="heroicons:magnifying-glass-20-solid"
@@ -26,7 +26,7 @@
                     type: 'search',
                     id: 'sy-pa-global-search-input',
                     'data-model': 'debounce(' ~ panel.getGlobalSearchDebounceMilliseconds ~ ')|search',
-                    placeholder: 'Search',
+                    placeholder: 'global-search.field.placeholder'|trans(domain: 'sylament-panels'),
                     autocomplete: 'off',
                     maxlength: 1000,
                 }, stimulus_target(searchController, 'input')|stimulus_action(searchController, 'focusFirstResult', 'keydown.down')) }}>
@@ -39,7 +39,7 @@
                 stimulus_target(searchController, 'resultsPanel')|stimulus_action(searchController, 'navigate', 'keydown'),
             ) }}>
                 {% if results.getCategories is empty %}
-                    <p class="sy-pa-global-search-no-results-message">No search results found.</p>
+                    <p class="sy-pa-global-search-no-results-message">{{ 'global-search.no_results_message'|trans(domain: 'sylament-panels') }}</p>
                 {% else %}
                     <ul class="sy-pa-global-search-results">
                         {% for group, groupResults in results.getCategories %}
@@ -66,7 +66,7 @@
                                                         {% for label, value in result.details %}
                                                             <div class="sy-pa-global-search-result-detail">
                                                                 {% if result.hasDetailLabels %}
-                                                                    <dt class="sy-pa-global-search-result-detail-label">{{ label }}:</dt>
+                                                                    <dt class="sy-pa-global-search-result-detail-label">{{ 'global-search.result.detail_label'|trans({label: label}, domain: 'sylament-panels') }}</dt>
                                                                 {% endif %}
 
                                                                 <dd class="sy-pa-global-search-result-detail-value">{{ value }}</dd>

@@ -15,7 +15,7 @@
     |stimulus_action(sidebarController, 'closeOnEscape', 'keydown@window') %}
 
 <div {{ attrs({class: 'sy sy-pa-body'}, sidebarStimulus, attributes.all) }}>
-    <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
+    <a href="#sy-pa-main" class="sy-pa-skip-link">{{ 'layout.skip_to_content.label'|trans(domain: 'sylament-panels') }}</a>
 
     <twig:SylamentPanels:Topbar
         :brandName="brandName"

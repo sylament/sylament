@@ -18,17 +18,17 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`$title` / `getTitle()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | — |
-| [`$heading` / `$subheading` / `getHeading()` / `getSubheading()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | — |
-| [`$navigationIcon` / `$activeNavigationIcon` / `$navigationLabel` / `$navigationSort`](../../../packages/panels/src/Pages/Page.php) and their static getters, `getNavigationBadge()` / `getNavigationBadgeColor()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | — |
-| [`$navigationGroup` / `getNavigationGroup()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#navigationgroup-is-string-only-on-page-too) |
+| [`$title` / `getTitle()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
+| [`$heading` / `$subheading` / `getHeading()` / `getSubheading()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
+| [`$navigationIcon` / `$activeNavigationIcon` / `$navigationLabel` / `$navigationSort`](../../../packages/panels/src/Pages/Page.php) and their static getters, `getNavigationBadge()` / `getNavigationBadgeColor()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
+| [`$navigationGroup` / `getNavigationGroup()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#navigationgroup-is-string-only-on-page-too) · [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
 | [`$shouldRegisterNavigation` / `shouldRegisterNavigation()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#a-page-that-opts-out-of-navigation-is-absent-from-the-sidebar-and-the-band-alike) |
 | [`getNavigationItems(Panel $panel)`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade) |
 | [`$slug` / `getSlug()` / `getRoutePath()`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) | done | — | [diverges](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade) |
 | [`getRouteName(Panel $panel)`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade) |
 | [`getComponentName()` / `$template` / `getTemplate()`](../../../packages/panels/src/Pages/Page.php), with `DefaultActionTrait` | no counterpart — Livewire names a component itself | done | — | — |
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) (`registerLivewireComponents()` / `queueLivewireComponentForRegistration()`) | done | — | [diverges](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
-| [`getBreadcrumbs()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [breadcrumbs.md](../support/breadcrumbs.md) |
+| [`getBreadcrumbs()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [breadcrumbs.md](../support/breadcrumbs.md) · [diverges](#a-breadcrumb-value-may-be-a-message-and-the-page-translates-it-before-the-trail) |
 | [`callHook()`](../../../packages/panels/src/Pages/Page.php) — the page's own hook method | [`support/Concerns/CanCallHooks.php`](../../../vendor/filament/support/src/Concerns/CanCallHooks.php) | done | — | [semantics](#a-page-lifecycle-hook-is-a-method-name-not-a-registration) |
 | The per-trait hook arm (`<hook><TraitBasename>()`) | [`support/Concerns/CanCallHooks.php`](../../../vendor/filament/support/src/Concerns/CanCallHooks.php) | todo | — | [detail](#the-per-trait-hook-arm-is-not-ported) |
 | `$breadcrumb` / `getBreadcrumb()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | todo | — | — |
@@ -106,7 +106,7 @@ It reads like tidiness and is not.
 ### `$navigationGroup` is string-only on `Page` too
 
 Filament types the static `string | UnitEnum | null` so a page can name its group with an enum case, matching `NavigationItem::group()`.
-Ours is `?string`, for the same reason and on the same schedule as [the item's missing arm](navigation-item.md#group-and-getgroup-carry-no-unitenum-arm) — the two have to agree about what a group key is, so they move together.
+Ours is `string|TranslatableInterface|null`, a message being the one arm ours adds, for the same reason and on the same schedule as [the item's missing arm](navigation-item.md#group-and-getgroup-carry-no-unitenum-arm) — the two have to agree about what a group key is, so they move together.
 
 The arm is deferred deliberately.
 The panel's navigation assembly buckets items by `getGroup()` and matches a registered group by key or label, all of it string-keyed; widening the page static alone would produce a group key nothing matches, and widening the whole path means answering how an enum case *names* a group and where its label and icon come from — which is [`NavigationGroup::fromEnum()`](navigation-group.md#fromenum-waits-on-the-collapsible-enum-contract) and the `Collapsible` enum contract it waits on.
@@ -146,6 +146,20 @@ A check written against the route defaults (`_sylament_panel`, `_sylament_page`)
 
 The cost is an authoring-surface addition Filament does not have: one `#[AsLiveComponent]` line per concrete page class, which a consumer coming from Filament has no reason to expect.
 It buys the only live-parent recognition UX offers, and the throw means it is never *silently* missing.
+
+### A static getter returns a message, and the item that reads it translates it
+
+`getNavigationLabel()`, `getNavigationGroup()` and `getNavigationBadge()` are static, so no translator can sit on the object that calls them, and each return type widens to `string|TranslatableInterface`, where Filament's are `string` and `?string`.
+[`NavigationItem`](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) translates at its own getters, so the sidebar, the band and every other reader still receive strings, and the translation runs before the panel keys items by group.
+A static property cannot hold a message, because PHP forbids `new` and calls in a property initialiser: `$title`, `$heading`, `$subheading`, `$navigationLabel`, `$navigationGroup` and `$breadcrumb` stay `?string`, and a page supplies a message by overriding the getter.
+The instance getters (`getTitle()`, `getHeading()`, `getSubheading()` and the resource pages' `getBreadcrumb()`) keep their `string|Markup` types, because a page holds a translator through `HasTranslator`: the shipped defaults translate in place, and a page override returns text, or translates a message itself with `translateText()`.
+[`Dashboard`](dashboard.md#the-dashboard-title-is-read-from-the-catalogue-and-a-title-override-still-wins) is the shipped example of both halves.
+
+### A breadcrumb value may be a message, and the page translates it before the trail
+
+`getBreadcrumbs()`, `getResourceBreadcrumbs()` and `appendBreadcrumb()` take `string|Markup|TranslatableInterface` values, where Filament's take `string`, and the key stays the crumb's URL (a string) or a plain-text position (an int).
+Support's [`Breadcrumbs`](../support/breadcrumbs.md) component takes strings, so the page partial maps every value through `translateText()` before it hands the array over, and the string keys survive the map.
+A `Markup` and a plain string pass through unchanged.
 
 ### `getNavigationItems()` takes the panel rather than reaching a facade
 

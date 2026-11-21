@@ -44,11 +44,19 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 | [`scrollable(false)` overflow dropdown](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [the dropdown branch of `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-overflow-dropdown-rides-on-supports-dropdown-and-renders-its-active-trigger-server-side) |
 | [`sy-cloak` while persisting](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`x-cloak` on the nav](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#cloaking-is-limited-to-persisttab-so-no-js-still-shows-a-tab) |
 | [`tabs.css`](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
+| `aria-label` on the overflow "more" button and the active overflow trigger | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | todo | — | [detail](#the-overflow-controls-carry-no-accessible-name) |
 | `startRenderHooks()` / `endRenderHooks()` / `getStartRenderHooks()` / `getEndRenderHooks()` / `getRenderHookScopes()` | [`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | blocked | a render-hook registry | [detail](#the-render-hook-trio-waits-on-the-render-hook-design) |
 | `HasExtraAlpineAttributes` | [`Concerns/HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) · [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `getTabVisibilityJs()` (`hiddenJs`/`visibleJs` per tab) | [the closure in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) |
 
 ## Details
+
+### The overflow controls carry no accessible name
+
+Filament gives the ellipsis "more" button `aria-label="More tabs"` and the active overflow-trigger tab `aria-label="More tabs: {tab label}"`, both from `filament-schemas::components.tabs.actions.more.label`.
+Ours renders neither: the button holds only its icon, and the trigger tab holds only the tab's label, so a screen reader announces an unnamed button.
+The key is `components.tabs.actions.more.label` in `sylament-schemas`, and the trigger's text is a second, parameterised message (`More tabs: {tab}`) rather than a join in Twig, as [`catalogues.md`](../../../.claude/rules/catalogues.md) requires of a composed text; neither is in the catalogue yet.
+Next step: add both messages and render them as the two `aria-label` values.
 
 ### The render-hook trio waits on the render-hook design
 

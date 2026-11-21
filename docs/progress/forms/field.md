@@ -35,7 +35,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`HasName`](../../../packages/schemas/src/Components/Concerns/HasName.php) (schemas) | [`Concerns/HasName.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasName.php) | done | — | [has-name.md](../schemas/has-name.md) |
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) (schemas) | [`Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | [has-label.md](../schemas/has-label.md) |
 | State-path seeding through [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) (schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | [component.md](../schemas/component.md) |
-| [`getLabel()` / `getDefaultLabel()`](../../../packages/forms/src/Components/Field.php) humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
+| [`getLabel()` / `getDefaultLabel()`](../../../packages/forms/src/Components/Field.php) humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-translates-its-humanized-label-under-translatelabel) |
 | [Field-wrapper slots](../../../packages/forms/src/Components/Field.php): the ten constants and setters, `makeChildSchema()` / `configureChildSchema()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | — |
 | [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig), with the `labelPrefix` / `labelSuffix` slots | [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class) · [diverges](#the-native-required-attribute-follows-ismarkedasrequired-not-filaments-isrequired) |
 | `inlineLabelVerticalAlignment` | [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | schemas' `HasInlineLabel` | [detail](#inlinelabelverticalalignment-waits-on-schemas-hasinlinelabel) |
@@ -48,8 +48,8 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`hasNullableBooleanState()`](../../../packages/forms/src/Components/Field.php) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#hasnullablebooleanstate-has-exactly-one-consumer) |
 | [`HasExtraFieldWrapperAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | [`Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | done | — | [diverges](#extra-attribute-precedence-is-fixed-by-source-order) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
-| [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
-| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) · [diverges](#gethintactions-returns-a-list-not-a-gapped-array) |
+| [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | [semantics](#hint-and-helper-text-are-judged-by-their-translated-text) |
+| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) · [diverges](#gethintactions-returns-a-list-not-a-gapped-array) · [semantics](#hint-and-helper-text-are-judged-by-their-translated-text) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 | [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php), no Filament concern of its own | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 | [`data-field-wrapper` on the wrapper root](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) | [`field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/field-wrapper.blade.php) · [`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) | done | — | [semantics](#data-field-wrapper-is-the-scroll-target-of-a-validation-error) |
@@ -84,6 +84,12 @@ It drives no state cast, which is the other natural guess.
 
 Its **only** consumer, here as in Filament, is the filter reset in tables' [`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php): `is_bool($state) => $fieldComponent->hasNullableBooleanState() ? null : false`.
 So a custom `Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no `resetState()` of its own [clears to the placeholder](../tables/host-has-filters.md#filter-mutations-reset-the-page-and-flush-the-record-cache) rather than flipping to its false arm.
+
+### Hint and helper text are judged by their translated text
+
+`hint()`, `helperText()` and the hint icon's tooltip take a string, a `Markup` or a message.
+`hasHint()` tests the translated `getHint()` where Filament tests the raw property, and `helperText()` tests the translated content for blankness before it builds its `Text`, so a message that translates to nothing, or a closure that answers null, adds no row.
+The hint closure is therefore evaluated once more per render than Filament's raw test needs.
 
 ### `data-field-wrapper` is the scroll target of a validation error
 
@@ -169,10 +175,11 @@ The exception class stays faithful per class rather than uniform across the thre
 A name is therefore never null coming out of `make()`.
 It can still be nulled afterwards: the inherited [`HasName::name()`](../../../packages/schemas/src/Components/Concerns/HasName.php) and [`HasState::statePath()`](../../../packages/schemas/src/Components/Concerns/HasState.php) setters are both nullable, and the label and validation-dehydration paths that read them keep their null branches.
 
-### `getDefaultLabel` drops label translation
+### `getDefaultLabel` translates its humanized label under `translateLabel()`
 
 Filament's `getDefaultLabel` runs the humanized string through `__()` when `shouldTranslateLabel` is set and always returns a non-null `string`.
-The port's [`getDefaultLabel`](../../../packages/forms/src/Components/Field.php) returns `?string` (null when the name is null, which [`make()` never produces](#the-name-moves-from-the-constructor-to-a-setter) but the nullable `name()` setter admits) and has no translation step, because the label-translation surface (`translateLabel()`) is not ported.
+The port's [`getDefaultLabel`](../../../packages/forms/src/Components/Field.php) does the same through the field's translator, in the default domain, so the generated English becomes a lookup key a catalogue can answer; without the flag it stays the generated text.
+It returns `?string` (null when the name is null, which [`make()` never produces](#the-name-moves-from-the-constructor-to-a-setter) but the nullable `name()` setter admits).
 Humanization itself is faithful: `u($name)->afterLast('.')->kebab()->replace('-', ' ')->title()` matches Filament's `str(...)->afterLast('.')->kebab()->replace(['-','_'],' ')->ucfirst()` on the tested cases.
 
 ### Extra-attribute precedence is fixed by source order

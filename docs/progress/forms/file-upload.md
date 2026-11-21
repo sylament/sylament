@@ -380,15 +380,20 @@ On `FileUpload`: `idleLabel()` → `placeholder()`, `imageCropAspectRatio()` →
 Their getters follow the same mapping, down to `getImageEditorAspectRatiosForJs()` → `getImageEditorAspectRatioOptionsForJs()`.
 A migrating call breaks loudly as a missing method, and the fix is the spelling the notice names, per [the toolkit-wide rule](../renames.md#a-deprecated-filament-member-is-not-ported).
 
-### Literals, not translation keys
+### The user-facing text is catalogue messages
 
-Per the [toolkit-wide i18n deferral](../translations.md#idiom), user-facing text is a literal here and is listed so a later i18n pass can find every one: `Download` and `Open in new tab` (the two item action labels the controller builds anchors for), `The %s field must not have more than %d items.` (the max-files message, `sprintf`-formatted with the field's label), and `The submitted file path is not authorised.` (the tampering violation).
-`The file could not be uploaded.` is the controller-side default for a refusal that arrives with no message and lives with the JS.
+Every text the field renders is a key of `sylament-forms` under `components.file_upload.*`, Filament's key paths and English: the two item action labels (`actions.download.label`, `actions.open.label`), the editor dialog's `Image editor` label, its five field labels and units, the aspect-ratio group's title, each ratio button's `Set aspect ratio to {ratio}` title, the footer's `Cancel`, `Reset` and `Save`, the thirteen toolbar labels, which serve as both `aria-label` and `title`, and the two SVG messages.
+The SVG confirmation carries a real newline where Filament's single-quoted PHP leaves a literal backslash-n that renders as two characters.
+The free-ratio option's label is an array key of `getImageEditorAspectRatioOptionsForJs()`, translated when the map is built, so each use of it, the button text, the title and the label param the controller matches the selected ratio on, is the same translated string.
 
-The editor adds the rest.
-On the dialog itself: `Image editor` (its `aria-label`), the footer's `Cancel`, `Reset` and `Save`, the five field labels `X` / `Y` / `Width` / `Height` / `Rotation` with the units `px` and `deg`, the aspect-ratio group's title `Aspect ratios`, the free-ratio option's label `Free`, and each ratio button's `Set aspect ratio to <ratio>` title.
-The thirteen toolbar labels come from `getImageEditorActions()` and serve as both `aria-label` and `title`: `Drag mode "move"`, `Drag mode "crop"`, `Zoom in`, `Zoom out`, `Zoom image to 100%`, `Move image to left`, `Move image to right`, `Move image up`, `Move image down`, `Rotate image to left`, `Rotate image to right`, `Flip image horizontally`, `Flip image vertically`.
-Two more ride to the browser as Stimulus values, because the controller shows them in a `confirm()` and an error: `Editing SVG files is not recommended as it can result in quality loss when scaling.` followed by a newline and `Are you sure you want to continue?` — Filament's single-quoted PHP leaves a literal backslash-n there that renders as two characters, so ours carries the newline that was meant — and `Editing SVG files is disabled as it can result in quality loss when scaling.`
+Four texts have no Filament key and take port-added ones.
+`components.file_upload.max_files_message` is an ICU plural over `count` that names the field's label, tag-stripped, as `label`, where Filament formats Laravel's core `validation.max.array`.
+`components.file_upload.errors.{upload,remove,load,reorder}` are the controller's refusal texts, and `errors.type_undetected` carries a `__NAME__` token the controller replaces with the file's name.
+The template hands all of them to the controller as Stimulus values, and the controller keeps no English default.
+`The submitted file path is not authorised.` is an id in `validators.en.xlf`, which Filament's `validation.tampered_file_path` words differently.
+
+`MAX_FILES_WARNING` is FilePond's own warning body, compared and never shown, and the `Expects  or` patch rewrites FilePond's own English error text.
+FilePond's built-in interface text stays English, since no FilePond locale is configured.
 
 ### The edited file's extension follows its type
 

@@ -1,4 +1,5 @@
 {% set controller = 'sylament--forms--file-upload' %}
+{% set nameToken = '__NAME__' %}
 {% set linkColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\LinkComponent', 'primary') %}
 
 {% set hasImageEditor = component.hasImageEditor %}
@@ -71,10 +72,15 @@
         automaticallyOpenImageEditorForAspectRatio: component.getAutomaticallyOpenImageEditorForAspectRatio,
         editableSvgs: component.canEditSvgs ? null : false,
         confirmSvgEditing: component.isSvgEditingConfirmed,
-        downloadActionLabel: 'Download',
-        openActionLabel: 'Open in new tab',
-        confirmSvgEditingMessage: 'Editing SVG files is not recommended as it can result in quality loss when scaling.\nAre you sure you want to continue?',
-        disabledSvgEditingMessage: 'Editing SVG files is disabled as it can result in quality loss when scaling.',
+        downloadActionLabel: 'components.file_upload.actions.download.label'|trans(domain: 'sylament-forms'),
+        openActionLabel: 'components.file_upload.actions.open.label'|trans(domain: 'sylament-forms'),
+        confirmSvgEditingMessage: 'components.file_upload.editor.svg.messages.confirmation'|trans(domain: 'sylament-forms'),
+        disabledSvgEditingMessage: 'components.file_upload.editor.svg.messages.disabled'|trans(domain: 'sylament-forms'),
+        uploadErrorMessage: 'components.file_upload.errors.upload'|trans(domain: 'sylament-forms'),
+        removeErrorMessage: 'components.file_upload.errors.remove'|trans(domain: 'sylament-forms'),
+        loadErrorMessage: 'components.file_upload.errors.load'|trans(domain: 'sylament-forms'),
+        reorderErrorMessage: 'components.file_upload.errors.reorder'|trans(domain: 'sylament-forms'),
+        typeUndetectedMessage: 'components.file_upload.errors.type_undetected'|trans({name: nameToken}, domain: 'sylament-forms'),
     })) }}>
         <div {{ attrs({class: ['sy-fo-file-upload-input-ctn', linkColorAttrs.class], style: linkColorAttrs.style, 'data-live-ignore': true}, stimulus_target(controller, 'pond')) }}>
             <input {{ attrs({
@@ -93,7 +99,7 @@
                     'sy-fo-file-upload-editor-circle-cropper': hasCircleCropper,
                     'sy-fo-file-upload-editor-crop-only': not isImageEditorExplicitlyEnabled,
                 }],
-                'aria-label': 'Image editor',
+                'aria-label': 'components.file_upload.editor.label'|trans(domain: 'sylament-forms'),
                 'data-live-ignore': true,
             }, stimulus_target(controller, 'editor'), stimulus_action(controller, 'editorCancel', 'cancel')) }}>
                 <div class="sy-fo-file-upload-editor-window">
@@ -106,11 +112,11 @@
                             <div class="sy-fo-file-upload-editor-control-panel-main">
                                 <div class="sy-fo-file-upload-editor-control-panel-group">
                                     {% for field, input in {
-                                        x: {label: 'X', unit: 'px'},
-                                        y: {label: 'Y', unit: 'px'},
-                                        width: {label: 'Width', unit: 'px'},
-                                        height: {label: 'Height', unit: 'px'},
-                                        rotation: {label: 'Rotation', unit: 'deg'},
+                                        x: {label: 'components.file_upload.editor.fields.x_position.label'|trans(domain: 'sylament-forms'), unit: 'components.file_upload.editor.fields.x_position.unit'|trans(domain: 'sylament-forms')},
+                                        y: {label: 'components.file_upload.editor.fields.y_position.label'|trans(domain: 'sylament-forms'), unit: 'components.file_upload.editor.fields.y_position.unit'|trans(domain: 'sylament-forms')},
+                                        width: {label: 'components.file_upload.editor.fields.width.label'|trans(domain: 'sylament-forms'), unit: 'components.file_upload.editor.fields.width.unit'|trans(domain: 'sylament-forms')},
+                                        height: {label: 'components.file_upload.editor.fields.height.label'|trans(domain: 'sylament-forms'), unit: 'components.file_upload.editor.fields.height.unit'|trans(domain: 'sylament-forms')},
+                                        rotation: {label: 'components.file_upload.editor.fields.rotation.label'|trans(domain: 'sylament-forms'), unit: 'components.file_upload.editor.fields.rotation.unit'|trans(domain: 'sylament-forms')},
                                     } %}
                                         <twig:SylamentSupport:InputWrapper :prefix="input.label" :suffix="input.unit">
                                             <input {{ attrs({
@@ -134,12 +140,12 @@
 
                                 {% if aspectRatioOptions is not empty %}
                                     <div class="sy-fo-file-upload-editor-control-panel-group">
-                                        <div class="sy-fo-file-upload-editor-control-panel-group-title">Aspect ratios</div>
+                                        <div class="sy-fo-file-upload-editor-control-panel-group-title">{{ 'components.file_upload.editor.aspect_ratios.label'|trans(domain: 'sylament-forms') }}</div>
 
                                         {% for chunk in aspectRatioOptions|batch(5) %}
                                             <div class="sy-btn-group">
                                                 {% for label, ratio in chunk %}
-                                                    <twig:SylamentSupport:Button color="gray" :title="'Set aspect ratio to ' ~ label" {{ ...stimulus_target(controller, 'editorRatio') }} {{ ...stimulus_action(controller, 'editorSetAspectRatio', 'click', {ratio: ratio, label: label}) }}>{{ label }}</twig:SylamentSupport:Button>
+                                                    <twig:SylamentSupport:Button color="gray" :title="'components.file_upload.editor.actions.set_aspect_ratio.label'|trans({ratio: label}, domain: 'sylament-forms')" {{ ...stimulus_target(controller, 'editorRatio') }} {{ ...stimulus_action(controller, 'editorSetAspectRatio', 'click', {ratio: ratio, label: label}) }}>{{ label }}</twig:SylamentSupport:Button>
                                                 {% endfor %}
                                             </div>
                                         {% endfor %}
@@ -150,12 +156,12 @@
 
                         <div class="sy-fo-file-upload-editor-control-panel-footer">
                             {% if isImageEditorExplicitlyEnabled %}
-                                <twig:SylamentSupport:Button color="gray" {{ ...stimulus_action(controller, 'editorCancel', 'click') }}>Cancel</twig:SylamentSupport:Button>
-                                <twig:SylamentSupport:Button color="danger" class="sy-fo-file-upload-editor-control-panel-reset-action" {{ ...stimulus_action(controller, 'editorReset', 'click') }}>Reset</twig:SylamentSupport:Button>
-                                <twig:SylamentSupport:Button color="success" {{ ...stimulus_action(controller, 'editorSave', 'click') }}>Save</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="gray" {{ ...stimulus_action(controller, 'editorCancel', 'click') }}>{{ 'components.file_upload.editor.actions.cancel.label'|trans(domain: 'sylament-forms') }}</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="danger" class="sy-fo-file-upload-editor-control-panel-reset-action" {{ ...stimulus_action(controller, 'editorReset', 'click') }}>{{ 'components.file_upload.editor.actions.reset.label'|trans(domain: 'sylament-forms') }}</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="success" {{ ...stimulus_action(controller, 'editorSave', 'click') }}>{{ 'components.file_upload.editor.actions.save.label'|trans(domain: 'sylament-forms') }}</twig:SylamentSupport:Button>
                             {% else %}
-                                <twig:SylamentSupport:Button color="success" {{ ...stimulus_action(controller, 'editorSave', 'click') }}>Save</twig:SylamentSupport:Button>
-                                <twig:SylamentSupport:Button color="gray" {{ ...stimulus_action(controller, 'editorCancel', 'click') }}>Cancel</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="success" {{ ...stimulus_action(controller, 'editorSave', 'click') }}>{{ 'components.file_upload.editor.actions.save.label'|trans(domain: 'sylament-forms') }}</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="gray" {{ ...stimulus_action(controller, 'editorCancel', 'click') }}>{{ 'components.file_upload.editor.actions.cancel.label'|trans(domain: 'sylament-forms') }}</twig:SylamentSupport:Button>
                             {% endif %}
                         </div>
                     </div>

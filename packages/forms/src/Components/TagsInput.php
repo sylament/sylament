@@ -15,6 +15,7 @@ use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\StripCharactersStateCast;
 use Sylament\Support\Components\Concerns\HasColor;
 use Sylament\Support\Components\Concerns\HasReorderAnimationDuration;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
 
 use function Sylament\Support\blank;
@@ -72,7 +73,7 @@ class TagsInput extends Field implements Contracts\HasAffixes, Contracts\HasNest
             ));
         });
 
-        $this->placeholder('New tag');
+        $this->placeholder(new TranslatableMessage('components.tags_input.placeholder', domain: 'sylament-forms'));
 
         $this->reorderAnimationDuration(100);
     }

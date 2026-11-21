@@ -9,6 +9,7 @@ use Closure;
 use Sylament\Actions\Action;
 use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Support\Icons\IconManager;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
@@ -48,7 +49,7 @@ class CopyAction extends Action
 
     public function getCopyMessage(mixed $state): string
     {
-        return (string) ($this->translateText($this->evaluate($this->copyMessage, ['state' => $state])) ?? 'Copied');
+        return (string) $this->translateText($this->evaluate($this->copyMessage, ['state' => $state]) ?? new TranslatableMessage('components.text_input.actions.copy.message', domain: 'sylament-forms'));
     }
 
     public function getCopyMessageDuration(mixed $state): int
@@ -61,7 +62,7 @@ class CopyAction extends Action
         parent::setUp();
 
         $this
-            ->label('Copy')
+            ->label(static fn (CopyAction $action): string => new TranslatableMessage('components.text_input.actions.copy.label', domain: 'sylament-forms')->trans($action->getTranslator()))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_COPY, 'heroicons:clipboard-document-list-20-solid'))
             ->defaultColor('gray')
             ->liveComponentClickHandlerEnabled(false)

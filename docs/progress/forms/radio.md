@@ -17,7 +17,7 @@ It ships no JavaScript: the controls are real radios bound with `data-model`, an
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction &amp; rendering — the radiogroup, the implicit option labels, the description line | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-radio-carries-the-same-data-model) · [semantics](#the-group-name-is-the-field-id-not-the-field-name) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](styles.md#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) |
-| `boolean()` — the `1`/`0` option pair and the int-backed cast | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-untranslated-literals) |
+| `boolean()` — the `1`/`0` option pair and the int-backed cast | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-catalogue-messages) |
 | `inline()` / `isInline()` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#inline-is-radios-own-property-not-the-canbeinline-trait) |
 | `getDefaultState()` — a `bool` default coerced to `1`/`0` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | — |
 | `getDefaultStateCasts()` — `OptionStateCast(isNullable: true)` unless custom casts or an enum | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) |
@@ -101,11 +101,10 @@ The unchecked siblings fire nothing.
 The alternative shapes — one binding on the group, or a `change`-only listener — are rejected: the group element is a `<div>`, which the controller reads through `element.value` / `data-value` and would find empty, and a bespoke listener would give up the repaint the plugin above performs for free.
 A case drives a selection through the live host and asserts both the prop and which input the re-render checked.
 
-### The boolean labels are untranslated literals
+### The boolean labels are catalogue messages
 
-`boolean()` sets the literal `'Yes'` and `'No'` where Filament reads `__('filament-forms::components.radio.boolean.true')` and `…false`.
-The translation surface is unported, matching [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal) and [`getDefaultLabel`](field.md#getdefaultlabel-drops-label-translation).
-The two keys are recorded here so the strings can be found when a translation layer lands; Filament's own English values are the same two words.
+`boolean()` falls back to `components.radio.boolean.true` and `components.radio.boolean.false` in `sylament-forms`, Filament's key paths, where a label the author passes, a string or a message, replaces either.
+The English is Filament's: `Yes` and `No`.
 
 ### The option inputs carry `aria-invalid` instead of a `fi-valid` / `fi-invalid` class pair
 

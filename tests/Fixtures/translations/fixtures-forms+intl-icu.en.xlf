@@ -158,6 +158,14 @@
                 <source>label.first_name</source>
                 <target>Given name (translated)</target>
             </trans-unit>
+            <trans-unit id="validation.too_short" resname="validation.too_short">
+                <source>validation.too_short</source>
+                <target>Use at least '{{ limit }}' characters (translated).</target>
+            </trans-unit>
+            <trans-unit id="field.phone" resname="field.phone">
+                <source>field.phone</source>
+                <target>Phone number (translated)</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

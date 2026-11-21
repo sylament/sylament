@@ -40,7 +40,7 @@ The Surface table lists every public member of the ported classes and traits exc
 | `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
 | `defaultItems()` / `default()` and the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-defaults-fill-gives-each-item-its-fields-own-defaults-under-the-declared-one) |
 | `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
-| `getAddAction()` / `addAction()` / `getAddActionName()` / `addActionLabel()` / `getAddActionLabel()` / `addActionAlignment()` / `getAddActionAlignment()` / `addable()` / `isAddable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| `getAddAction()` / `addAction()` / `getAddActionName()` / `addActionLabel()` / `getAddActionLabel()` / `addActionAlignment()` / `getAddActionAlignment()` / `addable()` / `isAddable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [semantics](#the-default-add-label-is-a-message-over-the-lower-cased-field-label) |
 | `getDeleteAction()` / `deleteAction()` / `getDeleteActionName()` / `deletable()` / `isDeletable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | `getCloneAction()` / `cloneAction()` / `getCloneActionName()` / `cloneable()` / `isCloneable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | `getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `getMoveUpActionName()` / `getMoveDownActionName()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
@@ -94,6 +94,12 @@ Dehydration runs inner-first (a component's `mutateDehydratedState` applies afte
 A key the repeater's declared `default([...])` holds is already in the walk's shared record, so the item field at that path keeps the declared value rather than its own default.
 After the item hooks have run, `hydrateItems()` merges the declared default back over each item, so a declared value also outranks an item field's `afterStateHydrated` hook, while every key it does not declare keeps what the item fields wrote; `defaultItems()` declares no item values and skips the merge.
 Because the descent reads the item schemas the default produced, a defaults fill over a repeater that already holds items leaves exactly the default items: the pre-fill items' schemas are never visited, so they write nothing back.
+
+### The default add label is a message over the lower-cased field label
+
+`getAddActionLabel()` falls back to `components.repeater.actions.add.label`, `Add to {label}`, with the field's label, its first letter lower-cased, as `label`, where Filament passes `Str::lcfirst($this->getLabel())`.
+The lower-casing is English-oriented and stays out of the message, so a locale whose labels keep their case needs `addActionLabel()` set.
+A `Markup` label reaches the parameter as its string, which the action's label escapes.
 
 ### A structural action fires the repeater's afterStateUpdated hooks itself
 

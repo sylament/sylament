@@ -45,7 +45,7 @@ export default class extends Controller<HTMLElement> {
     }
 
     this.#announce(
-      params.message === undefined ? "Copied" : String(params.message),
+      params.message === undefined ? "" : String(params.message),
       typeof params.duration === "number" ? params.duration : 2000,
     );
   }

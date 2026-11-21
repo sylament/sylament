@@ -2,12 +2,12 @@
     Kept in its own file: `_self` inside a <twig:> block resolves to the embedded component
     template, which carries none of the outer template's macros.
 #}
-{% macro chip(value, color, prefix, suffix, reorderable, delete_attributes) %}
+{% macro chip(value, color, prefix, suffix, reorderable, delete_attributes, tag_token) %}
     <twig:SylamentSupport:Badge
         size="md"
         :color="color"
         :deletable="true"
-        :deleteLabel="value is empty ? 'Delete' : 'Delete: ' ~ value"
+        :deleteLabel="'components.tags_input.actions.delete_tag.label'|trans({tag: value is empty ? tag_token : value}, domain: 'sylament-forms')"
         :deleteAttributes="delete_attributes"
         :data-value="value"
         {{ ...(reorderable ? {class: 'sy-reorderable', 'data-sortable-item': value, 'data-sortable-handle': true} : {}) }}

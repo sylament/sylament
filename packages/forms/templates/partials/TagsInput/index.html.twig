@@ -1,4 +1,5 @@
 {% set controller = 'sylament--forms--tags-input' %}
+{% set tagToken = '__TAG__' %}
 
 {% set state = component.getState %}
 {% set tags = state is iterable ? state : [] %}
@@ -37,8 +38,8 @@
             modelBinding: component.getDataModel,
             splitKeys: component.getSplitKeys,
             suggestions: suggestions,
-            tagAddedMessage: 'Added: :tag',
-            tagRemovedMessage: 'Removed: :tag',
+            tagAddedMessage: 'components.tags_input.tag_added'|trans({tag: tagToken}, domain: 'sylament-forms'),
+            tagRemovedMessage: 'components.tags_input.tag_removed'|trans({tag: tagToken}, domain: 'sylament-forms'),
         }) }}
     >
         {% import '@SylamentForms/partials/TagsInput/Chip.html.twig' as tagsInput %}
@@ -77,10 +78,10 @@
             </datalist>
 
             {% for tag in tags %}
-                {{ tagsInput.chip(tag, color, tagPrefix, tagSuffix, isReorderable, deleteAttributes) }}
+                {{ tagsInput.chip(tag, color, tagPrefix, tagSuffix, isReorderable, deleteAttributes, tagToken) }}
             {% endfor %}
         </div>
 
-        <template {{ stimulus_target(controller, 'chipTemplate') }}>{{ tagsInput.chip('', color, tagPrefix, tagSuffix, isReorderable, deleteAttributes) }}</template>
+        <template {{ stimulus_target(controller, 'chipTemplate') }}>{{ tagsInput.chip('', color, tagPrefix, tagSuffix, isReorderable, deleteAttributes, tagToken) }}</template>
     </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

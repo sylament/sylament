@@ -18497,11 +18497,8 @@ FilePond.registerPlugin(
   import_filepond_plugin_image_resize.default,
   import_filepond_plugin_image_transform.default
 );
-var UPLOAD_ERROR = "The file could not be uploaded.";
-var REMOVE_ERROR = "The file could not be removed.";
-var LOAD_ERROR = "The file could not be loaded.";
-var REORDER_ERROR = "The files could not be reordered.";
 var MAX_FILES_WARNING = "Max files";
+var NAME_TOKEN = "__NAME__";
 var TEMPORARY_TOKEN_PREFIX = "sylament-file:";
 var AVATAR_PANEL_LAYOUT = "compact circle";
 var PREVIEWABLE_TYPE = /^(audio|image|video)\//;
@@ -18578,7 +18575,12 @@ var file_upload_controller_default = class extends Controller {
     downloadActionLabel: String,
     openActionLabel: String,
     confirmSvgEditingMessage: String,
-    disabledSvgEditingMessage: String
+    disabledSvgEditingMessage: String,
+    uploadErrorMessage: String,
+    removeErrorMessage: String,
+    loadErrorMessage: String,
+    reorderErrorMessage: String,
+    typeUndetectedMessage: String
   };
   #generation = 0;
   #host = null;
@@ -18609,7 +18611,7 @@ var file_upload_controller_default = class extends Controller {
         this.#host = host;
         this.#init();
       },
-      () => this.#showError(UPLOAD_ERROR)
+      () => this.#showError(this.uploadErrorMessageValue)
     );
   }
   disconnect() {
@@ -18862,7 +18864,9 @@ var file_upload_controller_default = class extends Controller {
   #detectType(file, detectedType) {
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     const mimeType = this.mimeTypeMapValue[extension] || detectedType;
-    return mimeType === "" ? Promise.reject(new Error(`The type of ${file.name} could not be detected.`)) : Promise.resolve(mimeType);
+    return mimeType === "" ? Promise.reject(
+      new Error(this.typeUndetectedMessageValue.replace(NAME_TOKEN, () => file.name))
+    ) : Promise.resolve(mimeType);
   }
   /** An image off the configured ratio never enters the pond — it opens the editor instead. */
   async #beforeAddFile(item) {
@@ -19100,12 +19104,12 @@ var file_upload_controller_default = class extends Controller {
       try {
         const response = await fetch(String(source), { cache: "no-store" });
         if (!response.ok) {
-          error(LOAD_ERROR);
+          error(this.loadErrorMessageValue);
           return;
         }
         load(await response.blob());
       } catch {
-        error(LOAD_ERROR);
+        error(this.loadErrorMessageValue);
       }
     })();
   }
@@ -19121,7 +19125,7 @@ var file_upload_controller_default = class extends Controller {
     const host = this.#host;
     const fileKey = crypto.randomUUID();
     if (host === null) {
-      error(UPLOAD_ERROR);
+      error(this.uploadErrorMessageValue);
       return { abort: () => {
       } };
     }
@@ -19134,11 +19138,11 @@ var file_upload_controller_default = class extends Controller {
         if (this.#cancelled.delete(fileKey)) {
           callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", {
             fileKey
-          }).catch(() => this.#showError(REMOVE_ERROR));
+          }).catch(() => this.#showError(this.removeErrorMessageValue));
           abort();
           return;
         }
-        const parsed = parseUploadResult(result);
+        const parsed = parseUploadResult(result, this.uploadErrorMessageValue);
         if (parsed.ok) {
           load(fileKey);
         } else {
@@ -19151,7 +19155,7 @@ var file_upload_controller_default = class extends Controller {
           abort();
           return;
         }
-        error(UPLOAD_ERROR);
+        error(this.uploadErrorMessageValue);
       }
     );
     return {
@@ -19163,12 +19167,12 @@ var file_upload_controller_default = class extends Controller {
   #revert(fileKey, load, error) {
     const host = this.#host;
     if (host === null) {
-      error(REMOVE_ERROR);
+      error(this.removeErrorMessageValue);
       return;
     }
     void callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", { fileKey }).then(
       () => load(),
-      () => error(REMOVE_ERROR)
+      () => error(this.removeErrorMessageValue)
     );
   }
   #remove(source, load, error) {
@@ -19179,12 +19183,12 @@ var file_upload_controller_default = class extends Controller {
       return;
     }
     if (host === null) {
-      error(REMOVE_ERROR);
+      error(this.removeErrorMessageValue);
       return;
     }
     void callSchemaComponentMethod(host, this.keyValue, "deleteUploadedFile", { fileKey }).then(
       () => load(),
-      () => error(REMOVE_ERROR)
+      () => error(this.removeErrorMessageValue)
     );
   }
   #registerEvents(pond) {
@@ -19227,7 +19231,7 @@ var file_upload_controller_default = class extends Controller {
       fileKeys: this.appendFilesValue ? fileKeys : fileKeys.reverse()
     }).catch(() => {
       this.#lastState = null;
-      this.#showError(REORDER_ERROR);
+      this.#showError(this.reorderErrorMessageValue);
     });
   }
   #onInitFile(file) {
@@ -19285,16 +19289,16 @@ var file_upload_controller_default = class extends Controller {
     this.errorTarget.hidden = true;
   }
 };
-function parseUploadResult(result) {
+function parseUploadResult(result, fallback) {
   if (!isRecord(result)) {
-    return { ok: false, message: UPLOAD_ERROR };
+    return { ok: false, message: fallback };
   }
   if (result.ok === true) {
     return { ok: true };
   }
   return {
     ok: false,
-    message: typeof result.message === "string" ? result.message : UPLOAD_ERROR
+    message: typeof result.message === "string" ? result.message : fallback
   };
 }
 function errorMessage(error) {

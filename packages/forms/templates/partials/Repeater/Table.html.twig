@@ -19,7 +19,7 @@
                 <thead>
                     <tr>
                         {% if hasReorderColumn %}
-                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-sr-only">Reorder</span></th>
+                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-sr-only">{{ 'components.repeater.columns.reorder.label'|trans(domain: 'sylament-forms') }}</span></th>
                         {% endif %}
 
                         {% for column in tableColumns %}
@@ -39,7 +39,7 @@
                         {% endfor %}
 
                         {% if hasActionsColumn %}
-                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-sr-only">Actions</span></th>
+                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-sr-only">{{ 'components.repeater.columns.actions.label'|trans(domain: 'sylament-forms') }}</span></th>
                         {% endif %}
                     </tr>
                 </thead>

@@ -119,7 +119,7 @@ The walk is there for the modal and group actions that do carry one.
 A case pins it: a copy message closure inside a repeater item reads its own field's state.
 
 On the client the message survives one more step: Stimulus JSON-parses every action param, so a message of `'2024'` or `'null'` reaches `copy()` as a number or as `null`.
-The controller coerces whatever arrives back to a string, and only an absent param falls back to 'Copied'.
+The controller coerces whatever arrives back to a string, and an absent param announces nothing, since PHP always supplies the message: a string, a message translated in the getter, or the catalogue's `components.text_input.actions.copy.message`.
 
 ### The affix actions resolve their own icons
 

@@ -12,6 +12,7 @@ export type SelectOptions = {
   badgeClass: string;
   canOptionLabelsWrap?: boolean;
   canSelectPlaceholder?: boolean;
+  clearLabel: string;
   element: HTMLElement;
   getOptionLabelUsing?: (() => Promise<unknown>) | null;
   getOptionLabelsUsing?: (() => Promise<unknown>) | null;
@@ -30,23 +31,28 @@ export type SelectOptions = {
   isMultiple?: boolean;
   isReorderable?: boolean;
   isSearchable?: boolean;
-  loadingMessage?: string;
+  loadingMessage: string;
   maxItems?: number | null;
-  maxItemsMessage?: string;
-  noOptionsMessage?: string;
-  noSearchResultsMessage?: string;
+  maxItemsMessage: string;
+  noOptionsMessage: string;
+  noSearchResultsMessage: string;
   onStateChange?: (state: SelectState) => void;
   options: SelectOptionList;
   optionsLimit?: number | null;
   placeholder?: string;
   position?: string | null;
+  removeOptionLabel: string;
   searchableOptionFields?: string[];
   searchDebounce?: number;
-  searchingMessage?: string;
-  searchPrompt?: string;
+  searchingMessage: string;
+  searchLabel: string;
+  searchPrompt: string;
   state: SelectState;
   statePath?: string | null;
 };
+
+/** The token the server renders in place of the option's label, which only the browser knows. */
+const LABEL_TOKEN = "__LABEL__";
 
 const X_MARK_16 =
   '<svg class="sy sy-icon sy-size-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>';
@@ -123,6 +129,7 @@ export class Select {
   badgeClass: string;
   canOptionLabelsWrap: boolean;
   canSelectPlaceholder: boolean;
+  clearLabel: string;
   element: HTMLElement;
   getOptionLabelUsing: (() => Promise<unknown>) | null;
   getOptionLabelsUsing: (() => Promise<unknown>) | null;
@@ -152,9 +159,11 @@ export class Select {
   originalOptions: SelectOptionList;
   placeholder: string;
   position: string | null;
+  removeOptionLabel: string;
   searchableOptionFields: string[];
   searchDebounce: number;
   searchingMessage: string;
+  searchLabel: string;
   searchPrompt: string;
   state: SelectState;
   statePath: string | null;
@@ -193,6 +202,7 @@ export class Select {
     badgeClass,
     canOptionLabelsWrap = true,
     canSelectPlaceholder = true,
+    clearLabel,
     element,
     getOptionLabelUsing = null,
     getOptionLabelsUsing = null,
@@ -211,20 +221,22 @@ export class Select {
     isMultiple = false,
     isReorderable = false,
     isSearchable = false,
-    loadingMessage = "Loading...",
+    loadingMessage,
     maxItems = null,
-    maxItemsMessage = "Maximum number of items selected",
-    noOptionsMessage = "No options available",
-    noSearchResultsMessage = "No results found",
+    maxItemsMessage,
+    noOptionsMessage,
+    noSearchResultsMessage,
     onStateChange = () => {},
     options,
     optionsLimit = null,
     placeholder = "",
     position = null,
+    removeOptionLabel,
     searchableOptionFields = ["label"],
     searchDebounce = 1000,
-    searchingMessage = "Searching...",
-    searchPrompt = "Search...",
+    searchingMessage,
+    searchLabel,
+    searchPrompt,
     state,
     statePath = null,
   }: SelectOptions) {
@@ -232,6 +244,7 @@ export class Select {
     this.badgeClass = badgeClass;
     this.canOptionLabelsWrap = canOptionLabelsWrap;
     this.canSelectPlaceholder = canSelectPlaceholder;
+    this.clearLabel = clearLabel;
     this.element = element;
     this.getOptionLabelUsing = getOptionLabelUsing;
     this.getOptionLabelsUsing = getOptionLabelsUsing;
@@ -261,11 +274,13 @@ export class Select {
     this.originalOptions = clone(options);
     this.placeholder = placeholder;
     this.position = position;
+    this.removeOptionLabel = removeOptionLabel;
     this.searchableOptionFields = Array.isArray(searchableOptionFields)
       ? searchableOptionFields
       : ["label"];
     this.searchDebounce = searchDebounce;
     this.searchingMessage = searchingMessage;
+    this.searchLabel = searchLabel;
     this.searchPrompt = searchPrompt;
     this.state = state;
     this.statePath = statePath;
@@ -342,7 +357,7 @@ export class Select {
       searchInput.className = "sy-fo-input";
       searchInput.type = "text";
       searchInput.placeholder = this.searchPrompt;
-      searchInput.setAttribute("aria-label", "Search");
+      searchInput.setAttribute("aria-label", this.searchLabel);
 
       searchContainer.appendChild(searchInput);
       this.dropdown.appendChild(searchContainer);
@@ -809,7 +824,9 @@ export class Select {
     removeButton.innerHTML = X_MARK_16;
     removeButton.setAttribute(
       "aria-label",
-      `Remove ${this.isHtmlAllowed ? label.replace(/<[^>]*>/g, "") : label}`,
+      this.removeOptionLabel.replace(LABEL_TOKEN, () =>
+        this.isHtmlAllowed ? label.replace(/<[^>]*>/g, "") : label,
+      ),
     );
 
     if (this.isDisabled) {
@@ -938,7 +955,7 @@ export class Select {
     removeButton.type = "button";
     removeButton.className = "sy-fo-select-value-remove-btn";
     removeButton.innerHTML = X_MARK_20;
-    removeButton.setAttribute("aria-label", "Clear selection");
+    removeButton.setAttribute("aria-label", this.clearLabel);
 
     if (this.isDisabled) {
       removeButton.setAttribute("disabled", "disabled");

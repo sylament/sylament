@@ -8,6 +8,7 @@ use BackedEnum;
 use Sylament\Actions\Action;
 use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Support\Icons\IconManager;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
 
@@ -31,7 +32,7 @@ class HidePasswordAction extends Action
         parent::setUp();
 
         $this
-            ->label('Hide password')
+            ->label(static fn (HidePasswordAction $action): string => new TranslatableMessage('components.text_input.actions.hide_password.label', domain: 'sylament-forms')->trans($action->getTranslator()))
             ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD, 'heroicons:eye-slash-20-solid'))
             ->defaultColor('gray')
             ->liveComponentClickHandlerEnabled(false)

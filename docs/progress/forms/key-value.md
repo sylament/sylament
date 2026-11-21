@@ -34,7 +34,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`getDeleteAction()`](../../../packages/forms/src/Components/KeyValue.php) with `deleteAction()`, `getDeleteActionName()`, `deleteActionLabel()`, `getDeleteActionLabel()`, `deletable()`, `isDeletable()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-delete-and-reorder-labels-are-honoured-where-filament-ignores-its-own-setters) · [semantics](#a-trigger-argument-is-re-validated-against-the-rows-the-server-rendered) · [diverges](#a-disabled-field-has-no-structural-actions-at-all) |
 | [`getReorderAction()`](../../../packages/forms/src/Components/KeyValue.php) with `reorderAction()`, `getReorderActionName()`, `reorderActionLabel()`, `getReorderActionLabel()`, `reorderable()`, `isReorderable()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-delete-and-reorder-labels-are-honoured-where-filament-ignores-its-own-setters) · [semantics](#the-reorder-order-is-hardened-and-the-indexes-it-names-are-sound) · [diverges](#a-disabled-field-has-no-structural-actions-at-all) |
 | [`editableKeys()`](../../../packages/forms/src/Components/KeyValue.php) / `canEditKeys()` / `editableValues()` / `canEditValues()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [semantics](#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) |
-| [`keyLabel()`](../../../packages/forms/src/Components/KeyValue.php), `valueLabel()`, `keyPlaceholder()`, `valuePlaceholder()` and their getters | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-seven-literals-are-untranslated) |
+| [`keyLabel()`](../../../packages/forms/src/Components/KeyValue.php), `valueLabel()`, `keyPlaceholder()`, `valuePlaceholder()` and their getters | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-seven-texts-are-catalogue-messages) |
 | [`HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php), the drag control's duration | [`support/…/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | [detail](../support/sortable.md) |
 | [`hydrateRows()`](../../../packages/forms/src/Components/KeyValue.php), the blank-row pad, a Sylament addition | — | done | — | [semantics](#the-raw-bag-is-never-empty-and-never-sparse) |
 | [`mutateStateForValidation()`](../../../packages/forms/src/Components/KeyValue.php) / `mutatesStateForValidation()`, a Sylament addition | — | done | — | [semantics](#validation-reads-the-raw-bag-so-the-field-hands-it-the-map) |
@@ -147,10 +147,10 @@ That is a vendor defect rather than a design, and the port labels both actions t
 Filament's cast decodes a string state with a bare `json_decode()` and then calls `array_key_first()` on the result, so malformed JSON is a `TypeError` inside the cast rather than a decode failure.
 The port decodes with `JSON_THROW_ON_ERROR`, and refuses a state that is neither an array nor a JSON string of one with a `LogicException` naming the type it met, because a corrupted column should say so at the boundary.
 
-### The seven literals are untranslated
+### The seven texts are catalogue messages
 
-'Add row', 'Delete row', 'Reorder row', 'Key', 'Value', 'Reorder' and 'Actions' ship as English literals where Filament reads them from `filament-forms::components.key_value.*`.
-This is the standing [i18n deferral](../translations.md#idiom): the port has no translation layer.
+The add, delete and reorder action labels and the key and value column labels read `components.key_value.actions.{add,delete,reorder}.label` and `components.key_value.fields.{key,value}.label`, and the two screen-reader column headings read `components.key_value.columns.{reorder,actions}.label`, all in `sylament-forms` under Filament's key paths and with Filament's English.
+Each setter takes a string or a message and its getter translates it, as do the two placeholder setters, which have no default.
 
 ### Deprecated Filament members are not ported
 

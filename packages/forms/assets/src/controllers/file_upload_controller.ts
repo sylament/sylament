@@ -27,11 +27,9 @@ FilePond.registerPlugin(
   FilePondPluginImageTransform,
 );
 
-const UPLOAD_ERROR = "The file could not be uploaded.";
-const REMOVE_ERROR = "The file could not be removed.";
-const LOAD_ERROR = "The file could not be loaded.";
-const REORDER_ERROR = "The files could not be reordered.";
 const MAX_FILES_WARNING = "Max files";
+/** The token the server renders in place of the file name, which only the browser knows. */
+const NAME_TOKEN = "__NAME__";
 const TEMPORARY_TOKEN_PREFIX = "sylament-file:";
 const AVATAR_PANEL_LAYOUT = "compact circle";
 const PREVIEWABLE_TYPE = /^(audio|image|video)\//;
@@ -141,6 +139,11 @@ export default class extends Controller<HTMLElement> {
     openActionLabel: String,
     confirmSvgEditingMessage: String,
     disabledSvgEditingMessage: String,
+    uploadErrorMessage: String,
+    removeErrorMessage: String,
+    loadErrorMessage: String,
+    reorderErrorMessage: String,
+    typeUndetectedMessage: String,
   };
 
   declare readonly hasInputTarget: boolean;
@@ -222,6 +225,11 @@ export default class extends Controller<HTMLElement> {
   declare readonly openActionLabelValue: string;
   declare readonly confirmSvgEditingMessageValue: string;
   declare readonly disabledSvgEditingMessageValue: string;
+  declare readonly uploadErrorMessageValue: string;
+  declare readonly removeErrorMessageValue: string;
+  declare readonly loadErrorMessageValue: string;
+  declare readonly reorderErrorMessageValue: string;
+  declare readonly typeUndetectedMessageValue: string;
 
   #generation = 0;
   #host: Component | null = null;
@@ -256,7 +264,7 @@ export default class extends Controller<HTMLElement> {
         this.#host = host;
         this.#init();
       },
-      () => this.#showError(UPLOAD_ERROR),
+      () => this.#showError(this.uploadErrorMessageValue),
     );
   }
 
@@ -598,7 +606,9 @@ export default class extends Controller<HTMLElement> {
     const mimeType = this.mimeTypeMapValue[extension] || detectedType;
 
     return mimeType === ""
-      ? Promise.reject(new Error(`The type of ${file.name} could not be detected.`))
+      ? Promise.reject(
+          new Error(this.typeUndetectedMessageValue.replace(NAME_TOKEN, () => file.name)),
+        )
       : Promise.resolve(mimeType);
   }
 
@@ -931,7 +941,7 @@ export default class extends Controller<HTMLElement> {
         const response = await fetch(String(source), { cache: "no-store" });
 
         if (!response.ok) {
-          error(LOAD_ERROR);
+          error(this.loadErrorMessageValue);
 
           return;
         }
@@ -939,7 +949,7 @@ export default class extends Controller<HTMLElement> {
         load(await response.blob());
       } catch {
         // Any failure here is one FilePond can only be told about through `error`.
-        error(LOAD_ERROR);
+        error(this.loadErrorMessageValue);
       }
     })();
   }
@@ -964,7 +974,7 @@ export default class extends Controller<HTMLElement> {
     const fileKey = crypto.randomUUID();
 
     if (host === null) {
-      error(UPLOAD_ERROR);
+      error(this.uploadErrorMessageValue);
 
       return { abort: () => {} };
     }
@@ -984,13 +994,13 @@ export default class extends Controller<HTMLElement> {
         if (this.#cancelled.delete(fileKey)) {
           callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", {
             fileKey,
-          }).catch(() => this.#showError(REMOVE_ERROR));
+          }).catch(() => this.#showError(this.removeErrorMessageValue));
           abort();
 
           return;
         }
 
-        const parsed = parseUploadResult(result);
+        const parsed = parseUploadResult(result, this.uploadErrorMessageValue);
 
         if (parsed.ok) {
           load(fileKey);
@@ -1007,7 +1017,7 @@ export default class extends Controller<HTMLElement> {
           return;
         }
 
-        error(UPLOAD_ERROR);
+        error(this.uploadErrorMessageValue);
       },
     );
 
@@ -1022,14 +1032,14 @@ export default class extends Controller<HTMLElement> {
     const host = this.#host;
 
     if (host === null) {
-      error(REMOVE_ERROR);
+      error(this.removeErrorMessageValue);
 
       return;
     }
 
     void callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", { fileKey }).then(
       () => load(),
-      () => error(REMOVE_ERROR),
+      () => error(this.removeErrorMessageValue),
     );
   }
 
@@ -1044,14 +1054,14 @@ export default class extends Controller<HTMLElement> {
     }
 
     if (host === null) {
-      error(REMOVE_ERROR);
+      error(this.removeErrorMessageValue);
 
       return;
     }
 
     void callSchemaComponentMethod(host, this.keyValue, "deleteUploadedFile", { fileKey }).then(
       () => load(),
-      () => error(REMOVE_ERROR),
+      () => error(this.removeErrorMessageValue),
     );
   }
 
@@ -1111,7 +1121,7 @@ export default class extends Controller<HTMLElement> {
       fileKeys: this.appendFilesValue ? fileKeys : fileKeys.reverse(),
     }).catch(() => {
       this.#lastState = null;
-      this.#showError(REORDER_ERROR);
+      this.#showError(this.reorderErrorMessageValue);
     });
   }
 
@@ -1191,9 +1201,9 @@ export default class extends Controller<HTMLElement> {
   }
 }
 
-function parseUploadResult(result: unknown): UploadResult {
+function parseUploadResult(result: unknown, fallback: string): UploadResult {
   if (!isRecord(result)) {
-    return { ok: false, message: UPLOAD_ERROR };
+    return { ok: false, message: fallback };
   }
 
   if (result.ok === true) {
@@ -1202,7 +1212,7 @@ function parseUploadResult(result: unknown): UploadResult {
 
   return {
     ok: false,
-    message: typeof result.message === "string" ? result.message : UPLOAD_ERROR,
+    message: typeof result.message === "string" ? result.message : fallback,
   };
 }
 

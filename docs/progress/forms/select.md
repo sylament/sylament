@@ -25,7 +25,7 @@ It casts its state through schemas' [`OptionStateCast`](../schemas/option-state-
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-template-renders-the-selected-state-itself) · [diverges](#the-default-placeholder-is-an-untranslated-literal) |
+| Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-template-renders-the-selected-state-itself) · [diverges](#the-default-placeholder-is-a-catalogue-message) |
 | The JS control — [`CanBeNative`](can-be-native.md) and the `native(false)` / searchable / multiple / HTML branch | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`support/…/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [semantics](#getextratemplatedata-makes-the-one-getoptions-read-both-branches-share) · [diverges](#nativefalse-switches-to-the-js-control) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) — `getEnumDefaultStateCast()` overridden for `multiple()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](has-enum.md) |
@@ -46,8 +46,8 @@ It casts its state through schemas' [`OptionStateCast`](../schemas/option-state-
 | `getSearchResultsUsing()` / `getSearchResults()` — `query` / `search` / `searchQuery` injections | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) · [semantics](#a-search-result-or-a-closure-label-may-be-a-message) |
 | [`CanBePreloaded`](../../../packages/forms/src/Components/Concerns/CanBePreloaded.php) — `preload()` / `isPreloaded()` | [`Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | done | — | [semantics](#preload-enumerates-the-limited-map-up-front) |
 | `optionsLimit()` / `getOptionsLimit()` — 50 | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](has-relationship.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) |
-| [`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php) — `loadingMessage()` / `getLoadingMessage()` | [`Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | done | — | [diverges](#loadingmessage-has-no-render-site) · [diverges](#the-loading-and-max-items-strings-are-untranslated-literals) |
-| [`CanLimitItemsLength`](can-limit-items-length.md) — with `maxItemsMessage()` / `getMaxItemsMessage()` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) · [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#the-loading-and-max-items-strings-are-untranslated-literals) · [diverges](has-relationship.md#a-composite-relationship-select-past-maxitems-answers-the-count-alone) |
+| [`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php) — `loadingMessage()` / `getLoadingMessage()` | [`Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | done | — | [diverges](#loadingmessage-has-no-render-site) · [diverges](#the-loading-and-max-items-strings-are-catalogue-messages) |
+| [`CanLimitItemsLength`](can-limit-items-length.md) — with `maxItemsMessage()` / `getMaxItemsMessage()` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) · [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#the-loading-and-max-items-strings-are-catalogue-messages) · [diverges](has-relationship.md#a-composite-relationship-select-past-maxitems-answers-the-count-alone) |
 | [`CanAllowHtml`](can-allow-html.md) — `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](can-allow-html.md) · [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) |
 | `transformOptionsForJsUsing()` / `transformOptionsForJs()`, `getSearchResultsForJs()` / `getOptionsForJs()` / `getOptionLabelsForJs()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) · [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
 | `dynamicOptions()` / `hasDynamicOptions()` / `hasDynamicSearchResults()` / `hasInitialNoOptionsMessage()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
@@ -57,7 +57,7 @@ It casts its state through schemas' [`OptionStateCast`](../schemas/option-state-
 | `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) · [diverges](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused) |
 | `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) · [diverges](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused) |
 | `refreshSelectedOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#refreshselectedoptionlabel-dispatches-a-browser-event-the-control-answers-by-re-syncing) · [translations](../translations.md#names-with-no-filament-source) |
-| `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
+| `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-catalogue-messages) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 | Affixes ([`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php), `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) · [semantics](#the-inline-prefix-class-counts-visible-actions-where-the-text-inputs-counts-all-of-them) |
@@ -364,7 +364,7 @@ The three predicates — `hasDynamicOptions()`, `hasDynamicSearchResults()`, `ha
 
 ### `loadingMessage()` has no render site
 
-The API is ported whole (`HasLoadingMessage`, `'Loading...'`), but under the server-rendered-options rule the only load the control ever performs is a search, which shows `getSearchingMessage()`; the dynamic-options open fetch that `loadingMessage()` accompanies in Filament does not exist here.
+The API is ported whole (`HasLoadingMessage`, with its catalogue default), but under the server-rendered-options rule the only load the control ever performs is a search, which shows `getSearchingMessage()`; the dynamic-options open fetch that `loadingMessage()` accompanies in Filament does not exist here.
 The setter and getter stand, the string reaches the controller as a value, and nothing renders it — recorded rather than smoothed over, so the gap is visible from the API.
 
 ### `refreshSelectedOptionLabel()` dispatches a browser event the control answers by re-syncing
@@ -375,10 +375,13 @@ The controller matches on `event.target === component.element` and `detail.state
 A channel change and a name change together, so it has a ["no Filament source" row](../translations.md#names-with-no-filament-source).
 The [option-map bust](#the-option-actions-are-suffix-actions-with-doctrine-defaults) runs beside it and is what makes a re-render show a new row.
 
-### The loading and max-items strings are untranslated literals
+### The loading and max-items strings are catalogue messages
 
-`Loading...` (`filament-forms::components.select.loading_message`) and `Only :count can be selected.` (`…select.max_items_message`, rendered by a plain `:count` substitution — Filament's `trans_choice()` has plural forms, the literal has none) are hardcoded English read verbatim from [`en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php), literals and not translation keys, the same call as [the option-action strings](#the-option-action-strings-are-untranslated-literals) and [`CanBeSearchable`'s four](can-be-searchable.md#the-four-message-literals-are-untranslated).
-The three strings Filament's JS hardcodes (`Search`, `Remove <label>`, `Clear selection`) stay JS literals in the controller.
+`getLoadingMessage()` reads `components.select.loading_message` and `getMaxItemsMessage()` reads `components.select.max_items_message`, `Only {count} can be selected.`, with `count` the item limit.
+Filament's `trans_choice()` for the second has no plural variants, so the ICU message has none either.
+A message the author gives `maxItemsMessage()` is translated as handed, with no parameter added: it carries its own count.
+The three strings Filament's JS hardcodes reach the controller as Stimulus values: `components.select.search_label`, `components.select.actions.clear.label` and `components.select.actions.remove_option.label`, whose `Remove {label}` carries the `__LABEL__` token the controller replaces with the option's label, tag-stripped under `allowHtml()`.
+The control keeps no English default for any of its messages.
 
 ### The non-relationship schema record is read off the field, not off a `getActionSchemaModel()`
 
@@ -415,20 +418,22 @@ Filament types it `?array`, because Eloquent fills a form from `$record->attribu
 The Doctrine default hands back the **record** instead — `Schema::fill(object)` runs `readStateFromRecord()`, which is the only reading that goes through the same mapped-state path `getData()` writes back through, association hooks included.
 The return type is therefore `object|array<string, mixed>|null`; an array still works and is still what a hand-written `fillEditOptionActionFormUsing()` will usually return.
 
-### The option-action strings are untranslated literals
+### The option-action strings are catalogue messages
 
-The seven strings — create label, modal heading and submit label all `Create`, create-another `Create & create another`, edit label and modal heading `Edit`, edit submit `Save` — are hardcoded English, read verbatim from [`en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php).
-Same call as [the placeholder below](#the-default-placeholder-is-an-untranslated-literal) and [`getDefaultLabel`](field.md#getdefaultlabel-drops-label-translation): the translation surface is unported toolkit-wide, so a literal is the honest form rather than a half-built lookup.
+The seven strings sit under `components.select.actions.create_option.*` and `components.select.actions.edit_option.*` in `sylament-forms`, Filament's key paths and English: the label, the modal heading and the submit label of each, and `Create & create another`.
+A heading from `createOptionModalHeading()` or `editOptionModalHeading()`, a string, a `Markup` or a message, takes the place of the catalogue heading.
+`Select` translates each text with its own translator and hands the action the resulting string, since the action's label and modal setters take text.
 The two icons are overridable, though — they resolve through [`FormsIconAlias`](forms-icon-alias.md)'s `COMPONENTS_SELECT_ACTIONS_CREATE_OPTION` and `COMPONENTS_SELECT_ACTIONS_EDIT_OPTION`, falling back to `heroicons:plus-20-solid` and `heroicons:pencil-square-20-solid`.
 
 Resolving them needs an `IconManager`, and Filament reaches its `FilamentIcon` facade.
 A component cannot: the manager is a private service the container's `has()` does not answer for, so the closure form (`fn (IconManager $icons) => …`, which [`NavigationItem`](../panels/README.md) can use because it injects the manager itself) resolves nothing here.
 `Select` therefore takes the manager through a `#[Required]` setter and falls back to a bare `new IconManager()` when it was built with `new` rather than through the container — the same shape [`CanAccessProperties`](../schemas/property-accessor.md#the-accessor-is-injected-not-reached-for) uses, and the same trade: a hand-built field resolves no registered overrides and renders the default icon.
+A hand-built field has no translator either, so the create and edit actions, like every default text, throw a `LogicException` naming the class until `setTranslator()` runs.
 
-### The default placeholder is an untranslated literal
+### The default placeholder is a catalogue message
 
-`setUp()` sets the placeholder to the literal `'Select an option'`, and `boolean()` to `'-'`.
-Filament reads `__('filament-forms::components.select.placeholder')`; the translation surface is unported, matching [`getDefaultLabel`](field.md#getdefaultlabel-drops-label-translation).
+`setUp()` stores `components.select.placeholder` as a message, so a `placeholder()` call after it replaces the default and a message translates in the request's locale.
+`boolean()` passes the literal `'-'` as its placeholder: a symbol, with no letter to translate and no Filament key, since Filament passes the same literal.
 
 ### `disablePlaceholderSelection()` is not ported
 

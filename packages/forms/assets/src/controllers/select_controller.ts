@@ -51,6 +51,9 @@ export default class extends Controller<HTMLSelectElement> {
     noSearchResultsMessage: String,
     noOptionsMessage: String,
     loadingMessage: String,
+    searchLabel: String,
+    clearLabel: String,
+    removeOptionLabel: String,
     badgeClass: String,
   };
 
@@ -80,6 +83,9 @@ export default class extends Controller<HTMLSelectElement> {
   declare readonly noSearchResultsMessageValue: string;
   declare readonly noOptionsMessageValue: string;
   declare readonly loadingMessageValue: string;
+  declare readonly searchLabelValue: string;
+  declare readonly clearLabelValue: string;
+  declare readonly removeOptionLabelValue: string;
   declare readonly badgeClassValue: string;
 
   #generation = 0;
@@ -156,6 +162,7 @@ export default class extends Controller<HTMLSelectElement> {
       badgeClass: this.badgeClassValue,
       canOptionLabelsWrap: this.labelsWrapValue,
       canSelectPlaceholder: this.canSelectPlaceholderValue,
+      clearLabel: this.clearLabelValue,
       getOptionLabelUsing: null,
       getOptionLabelsUsing: null,
       getOptionsUsing: null,
@@ -190,9 +197,11 @@ export default class extends Controller<HTMLSelectElement> {
       optionsLimit: this.optionsLimitValue,
       placeholder: this.placeholderValue,
       position: this.hasPositionValue ? this.positionValue : null,
+      removeOptionLabel: this.removeOptionLabelValue,
       searchableOptionFields: [...this.searchFieldsValue],
       searchDebounce: this.searchDebounceValue,
       searchingMessage: this.searchingMessageValue,
+      searchLabel: this.searchLabelValue,
       searchPrompt: this.searchPromptValue,
       state,
       statePath: this.statePathValue,

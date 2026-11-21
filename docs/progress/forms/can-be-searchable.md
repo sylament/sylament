@@ -19,7 +19,7 @@ Filament composes the trait on `Select` and `MorphToSelect`, where `Select` over
 | --- | --- | --- | --- | --- |
 | [`searchable()` / `isSearchable()`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) — the trait's `bool\|Closure\|null` arm | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [semantics](#select-widens-searchable-to-a-column-array-and-defaults-it-to-multiple) |
 | `Select::searchable(bool\|array\|Closure\|null)` / `Select::isSearchable()` — the column-array arm and the `?? isMultiple()` default | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#select-widens-searchable-to-a-column-array-and-defaults-it-to-multiple) |
-| `noOptionsMessage()` / `noSearchResultsMessage()` / `searchPrompt()` / `searchingMessage()` and their getters | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [diverges](#the-four-message-literals-are-untranslated) |
+| `noOptionsMessage()` / `noSearchResultsMessage()` / `searchPrompt()` / `searchingMessage()` and their getters | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [diverges](#the-four-message-defaults-are-catalogue-messages) |
 | `searchDebounce()` / `getSearchDebounce()` — 1000 ms by default | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [semantics](#the-checkbox-list-search-is-client-side-only-and-mostly-select-only) |
 | `searchLabels()` / `searchValues()` / `getSearchableOptionFields()` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [diverges](#checkboxlist-composes-the-whole-trait-where-filament-inlines-four-members) · [diverges](#the-label-and-value-switches-take-null) |
 
@@ -56,12 +56,13 @@ The port composes the trait whole, so those members exist on a `CheckboxList` an
 `getSearchableOptionFields()` feeds `Select`'s local matcher, and the checkbox list's template and controller consult neither it nor `getNoOptionsMessage()` / `getSearchingMessage()`; they are deliberately left out of that contract rather than wired to something plausible.
 One trait over two declarations is what keeps the shared members' signatures and defaults from drifting apart; the cost is five inert members on one field.
 
-### The four message literals are untranslated
+### The four message defaults are catalogue messages
 
-Matching [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal) and [`Radio`'s boolean labels](radio.md#the-boolean-labels-are-untranslated-literals), the four defaults are literals, not translation keys.
-Their Filament keys are recorded here so the strings can be found when a translation layer lands, and the family is worth noting because it is **`select`, not `checkbox_list`**: `filament-forms::components.select.search_prompt` (`Start typing to search...`), `filament-forms::components.select.no_search_results_message` (`No options match your search.`), `filament-forms::components.select.no_options_message` (`No options available.`) and `filament-forms::components.select.searching_message` (`Searching...`).
-Filament's `CheckboxList` reads the same `select` keys for its two inline messages, so a `CheckboxList` speaks `Select`'s strings on both sides.
-Only the checkbox list's two bulk-toggle labels have keys of that field's own ([checkbox-list.md](checkbox-list.md#the-bulk-toggle-labels-are-untranslated-literals)).
+The four defaults are keys of the **`select`** family, not `checkbox_list`: `components.select.search_prompt`, `components.select.no_search_results_message`, `components.select.no_options_message` and `components.select.searching_message` in `sylament-forms`.
+Filament's `CheckboxList` reads the same `select` keys for its two inline messages, so a `CheckboxList` speaks `Select`'s strings on both sides, and both fields share the one catalogue entry.
+Our `search_prompt` is `Start typing to search...`, with the ellipsis, where Filament's English has none.
+Each setter takes a string or a message and its getter translates it, falling back to the catalogue message when none was set.
+Only the checkbox list's two bulk-toggle labels have keys of that field's own ([checkbox-list.md](checkbox-list.md#the-bulk-toggle-labels-are-catalogue-messages)).
 
 ### The label and value switches take `null`
 

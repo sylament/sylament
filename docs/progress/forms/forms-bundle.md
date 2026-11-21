@@ -37,7 +37,7 @@ owns:
 | [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) | [`components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
 | `FakerProvider` and its registration | [`packageRegistered()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) + [`FakerProvider.php`](../../../vendor/filament/forms/src/FakerProvider.php) | blocked | the MarkdownEditor and RichEditor fakers | [detail](#the-faker-provider-returns-the-markdown-and-rich-content-fakers) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | — |
-| Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md) |
+| [Translations (`hasTranslations`)](../../../packages/forms/translations) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [semantics](#the-catalogue-holds-the-keys-forms-code-reads) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | the TableSelect field | [detail](#the-table-select-registration-waits-on-the-tableselect-field) |
 | `Testable::mixin(new TestsForms)` / `TestsFormComponentActions` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
@@ -54,6 +54,18 @@ Its two methods return `MarkdownFaker` and `RichContentFaker`, which live in the
 It is wanted for parity once the TableSelect field exists: the field, its `ModalTableSelect`, and a UX LiveComponent host in place of the Livewire component.
 
 ## Semantics
+
+### The catalogue holds the keys forms' code reads
+
+FrameworkBundle registers the bundle's `translations/` directory by itself, so the bundle wires nothing.
+`sylament-forms+intl-icu.en.xlf` holds every text the ported components render, under Filament's key paths and with Filament's English, with these exceptions.
+Port-added keys, for texts Filament builds another way: `components.file_upload.max_files_message`, `components.file_upload.errors.*` and `components.tags_input.actions.delete_tag.label` (`Delete: {tag}`, one message where Filament joins `Delete` and the tag in its template).
+English that differs from Filament's: `components.select.search_prompt` keeps its ellipsis, `components.file_upload.editor.svg.messages.confirmation` holds a real newline, and `components.select.max_items_message` and `components.repeater.actions.add.label` use ICU arguments where Filament uses `:count` and `:label`.
+Filament's keys for the unported surface (`Builder`, `RichEditor`, `MarkdownEditor`, `ColorPicker`, the reorder announcements and `required_description`) ship nowhere until a host exists.
+The one text a component renders as a literal is `Select::boolean()`'s placeholder `-`, a symbol Filament passes as a literal too.
+`validators.en.xlf` holds the English id of each constraint message in `Validation/`, the `notRegex()` and `notIn()` messages and the tampering refusal, and one entry for `prohibits()`, *This value cannot be combined with {{ others }}.*, whose labels travel as the constraint's `others` parameter so the id stays fixed.
+*This value should not be blank.* and *This value is not a valid date.* are Symfony's own and need no entry.
+Filament's `validation.distinct.*` and `validation.tampered_file_path` keys word the same refusals differently, and the toolkit's English wins.
 
 ### Each field's script ships with its field, and the bundle registers the built directory once
 
@@ -206,9 +218,9 @@ Ours is [`file_upload_controller.ts`](../../../packages/forms/assets/src/control
 - **The `<input>` is captured once.**
   `FilePond.create()` detaches the element it replaces, so `this.inputTarget` throws afterwards while `FilePond.destroy()` needs that same element (and restores it, which is what lets a later `connect()` find the target again).
   Everything downstream reads the captured reference.
-- **Four JS-owned literals join the four PHP-side ones** [file-upload.md](file-upload.md#literals-not-translation-keys) opens with.
+- **The controller's texts are Stimulus values.**
+  The four refusal texts and the type-undetected text reach the controller from `components.file_upload.errors.*`, the type-undetected one with a `__NAME__` token, so the controller keeps no English; [file-upload.md](file-upload.md#the-user-facing-text-is-catalogue-messages) lists the rest.
   `The file could not be uploaded.` is Filament's; `The file could not be removed.`, `The file could not be loaded.` and `The files could not be reordered.` are ours, because Filament's `revert`/`remove` never call FilePond's `error` at all, its `load` hands FilePond whatever body a failed response carries, and its `reorderfiles` handler `await`s the server inside an event listener nothing catches, a silent failure every time.
-  Literals, not translation keys, per the [toolkit-wide i18n deferral](../translations.md#idiom).
 
 Two shipped-type gaps are worked around in the file and will bite anyone upgrading FilePond: `initfile` is a real event (`filepond.esm.js:8842`) missing from the `FilePondEvent` union, and `maxFileSize`/`minFileSize` are `Type.INT` options declared `string`, so the controller passes the byte ceiling as a decimal string, which FilePond parses back to exactly that integer.
 The `error` event's first argument is `{main, sub}` for a validation failure and `{type, code, body}` for a transport one, so the message is composed defensively rather than rendered as Filament's `undefined: undefined`.

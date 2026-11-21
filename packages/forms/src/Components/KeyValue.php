@@ -14,6 +14,7 @@ use Sylament\Schemas\State\Casts\KeyValueStateCast;
 use Sylament\Support\Components\Concerns\HasReorderAnimationDuration;
 use Sylament\Support\Enums\Size;
 use Sylament\Support\Icons\IconManager;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
@@ -319,27 +320,27 @@ class KeyValue extends Field
 
     public function getAddActionLabel(): string
     {
-        return (string) ($this->translateText($this->evaluate($this->addActionLabel)) ?? 'Add row');
+        return (string) $this->translateText($this->evaluate($this->addActionLabel) ?? new TranslatableMessage('components.key_value.actions.add.label', domain: 'sylament-forms'));
     }
 
     public function getDeleteActionLabel(): string
     {
-        return (string) ($this->translateText($this->evaluate($this->deleteActionLabel)) ?? 'Delete row');
+        return (string) $this->translateText($this->evaluate($this->deleteActionLabel) ?? new TranslatableMessage('components.key_value.actions.delete.label', domain: 'sylament-forms'));
     }
 
     public function getReorderActionLabel(): string
     {
-        return (string) ($this->translateText($this->evaluate($this->reorderActionLabel)) ?? 'Reorder row');
+        return (string) $this->translateText($this->evaluate($this->reorderActionLabel) ?? new TranslatableMessage('components.key_value.actions.reorder.label', domain: 'sylament-forms'));
     }
 
     public function getKeyLabel(): string
     {
-        return (string) ($this->translateText($this->evaluate($this->keyLabel)) ?? 'Key');
+        return (string) $this->translateText($this->evaluate($this->keyLabel) ?? new TranslatableMessage('components.key_value.fields.key.label', domain: 'sylament-forms'));
     }
 
     public function getValueLabel(): string
     {
-        return (string) ($this->translateText($this->evaluate($this->valueLabel)) ?? 'Value');
+        return (string) $this->translateText($this->evaluate($this->valueLabel) ?? new TranslatableMessage('components.key_value.fields.value.label', domain: 'sylament-forms'));
     }
 
     public function getKeyPlaceholder(): ?string

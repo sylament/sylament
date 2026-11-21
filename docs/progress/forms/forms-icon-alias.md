@@ -68,7 +68,7 @@ The boolean pair is what `ToggleButtons`' two templates pass to the `Icon` tag's
 The checkbox list's search box passes its constant to the input wrapper's `prefixIconAlias` prop ([the wrapper it opens itself](checkbox-list.md#the-search-box-opens-its-own-input-wrapper-as-vendors-does)).
 
 The select, repeater, key-value and text-input constants name the icons of `Action`s, and an action's icon has no alias prop to pass one through.
-So each owner resolves them itself, through an `IconManager` taken by a `#[Required]` setter, at the moment it builds the action: [`Select`](select.md#the-option-action-strings-are-untranslated-literals) in `resolveOptionActionIcon()`, and `Repeater`, `KeyValue` and the three [`TextInput` affix actions](text-input.md) in a private `resolveActionIcon()` of their own.
+So each owner resolves them itself, through an `IconManager` taken by a `#[Required]` setter, at the moment it builds the action: [`Select`](select.md#the-option-action-strings-are-catalogue-messages) in `resolveOptionActionIcon()`, and `Repeater`, `KeyValue` and the three [`TextInput` affix actions](text-input.md) in a private `resolveActionIcon()` of their own.
 Panels resolves one in PHP too, in [`Dashboard::getNavigationIcon()`](../panels/dashboard.md), through a closure that takes the `IconManager` by injection.
 
 The file-upload editor's constants travel as the `alias` entries of [`FileUpload::getImageEditorActions()`](file-upload.md), which the partial hands to `<twig:SylamentSupport:Button>`'s `iconAlias` prop, so they resolve at render like the template three.

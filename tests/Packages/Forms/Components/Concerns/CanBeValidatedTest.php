@@ -41,6 +41,8 @@ use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Uuid;
 use Twig\Markup;
 
+use function Symfony\Component\Translation\t;
+
 beforeEach(function (): void {
     $this->host = $this->validatingRecordMappingHost();
 });
@@ -256,6 +258,15 @@ describe('validationMessages()', function (): void {
                 'data.email' => ['Not an email.'],
                 'data.city' => ['This value should not be blank.'],
             ]);
+        });
+    });
+
+    it('translates a message given as a message, the constraint filling its parameters into the translated text', function (): void {
+        $schema = $this->host->mapping(TextInput::make('code')->minLength(5)->validationMessages([Length::class => ['minMessage' => t('validation.too_short', [], 'fixtures-forms')]]));
+        $this->host->data = ['code' => 'ab'];
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.code' => ['Use at least 5 characters (translated).']]);
         });
     });
 
@@ -678,6 +689,15 @@ describe('conditional requirement', function (): void {
         $this->host->data = ['code' => '', 'coupon' => 'x', 'voucher' => 'x', 'plan' => 'free'];
 
         expect($this->host->validateSchema($schema))->toBeNull();
+    });
+
+    it('names a sibling by its translated label in a prohibits() violation', function (): void {
+        $schema = $this->host->mapping(TextInput::make('email')->prohibits('phone'), TextInput::make('phone')->label(t('field.phone', [], 'fixtures-forms')));
+        $this->host->data = ['email' => 'ada@example.com', 'phone' => '1'];
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.email' => ['This value cannot be combined with Phone number (translated).']]);
+        });
     });
 
     it('puts a prohibits() violation on its own field, naming each filled sibling it rules out', function (): void {

@@ -81,9 +81,11 @@ The server still renders the initial chips into it, so with JavaScript off the t
 
 ### The chips are cloned from a server-rendered `<template>`, and the tag parameter is not called `tag`
 
-Both the initial chips and the blueprint the controller clones come from one Twig `{% macro chip(value, color, prefix, suffix, reorderable, delete_attributes) %}`, so the delete icon stays on `SupportIconAlias::BADGE_DELETE_BUTTON` and the chip colour stays on the badge policy rather than being retyped as markup in JavaScript.
+Both the initial chips and the blueprint the controller clones come from one Twig `{% macro chip(value, color, prefix, suffix, reorderable, delete_attributes, tag_token) %}`, so the delete icon stays on `SupportIconAlias::BADGE_DELETE_BUTTON` and the chip colour stays on the badge policy rather than being retyped as markup in JavaScript.
 The macro lives in its own file ([`TagsInput/Chip.html.twig`](../../../packages/forms/templates/partials/TagsInput/Chip.html.twig)) because `_self` inside a `<twig:>` block resolves to the *embedded* component template, which carries none of the outer template's macros.
 Its first parameter is `value`, not `tag`: the chip is a `<twig:SylamentSupport:Badge>` in block form, whose content block inherits the component's context, and the Badge declares a `tag` prop of its own (defaulting to `'span'`) — so a macro parameter named `tag` renders the string `span` inside the label and nothing warns.
+The delete button's label is `components.tags_input.actions.delete_tag.label`, `Delete: {tag}`, with the tag as an argument: a real chip passes its own value, and the blueprint passes the `__TAG__` token the controller replaces when it clones the chip.
+The two live-region messages, `components.tags_input.tag_added` and `tag_removed`, reach the controller with the same token as Stimulus values.
 
 ### The datalist lives inside the ignored container and the controller owns its options
 

@@ -32,7 +32,7 @@ class text_input_controller_default extends Controller {
       return;
     }
     this.#announce(
-      params.message === void 0 ? "Copied" : String(params.message),
+      params.message === void 0 ? "" : String(params.message),
       typeof params.duration === "number" ? params.duration : 2e3
     );
   }

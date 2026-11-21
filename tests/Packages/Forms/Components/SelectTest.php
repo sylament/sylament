@@ -46,6 +46,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Error\RuntimeError;
 use Twig\Markup;
 
@@ -677,6 +678,7 @@ describe('option actions', function (): void {
             ->toContainElement(SupportSelectors::SUFFIX_ACTIONS . ' svg', 'plus-20-solid');
 
         $handBuilt = new Select();
+        $handBuilt->setTranslator($this::getContainer()->get(TranslatorInterface::class));
         $handBuilt->name('plant')->statePath('plant')->configure();
 
         expect($this->renderSchemaComponent($handBuilt->options(['fern' => 'Fern'])->createOptionForm([TextInput::make('name')])->createOptionUsing(static fn (): string => 'fern')))

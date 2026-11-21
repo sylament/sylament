@@ -258,7 +258,7 @@ Stock `Blank` does not fit: it violates on `[]`, so a [`CheckboxList`](checkbox-
 Laravel's `prohibited` is `! validateRequired()`, which the house [`filled()`](../support/helpers.md) mirrors — `false` and `0` count as present in both.
 So the four arms emit [`Prohibited`](../../../packages/forms/src/Validation/Prohibited.php), whose validator violates when `filled($value)`.
 
-`prohibits($paths)` puts the violation on **this** field, Laravel-exact ("if I am present, they must be empty"): at build time, any named sibling that is `filled()` contributes its label to a pre-rendered message, and the constraint stays a plain presence test.
+`prohibits($paths)` puts the violation on **this** field, Laravel-exact ("if I am present, they must be empty"): at build time, any named sibling that is `filled()` contributes its label to the constraint's `others` parameter, which the message reads as `{{ others }}`, and the constraint stays a plain presence test whose message id is one catalogue entry.
 
 ### A listed boolean stays raw against a boolean sibling
 
@@ -405,7 +405,7 @@ Two shape changes ride along, and together they make the port's messages reach *
 
 **Keys are constraint class-strings, not Laravel rule names.**
 Filament keys by rule name (`required`, `max`, `email`); a port of that vocabulary would be a set of strings with nothing behind them in Symfony, discoverable only by grepping our source.
-`validationMessages()` instead takes `array<class-string<Constraint>, string|Closure|array<string, string|Closure>>`: a string value sets the constraint's `message` option, and an option map sets named ones (any public property named `message` or ending in `Message`) for the constraints carrying several (`Length` has `maxMessage` / `minMessage` / `exactMessage` / `charsetMessage` and no plain `message`; `Choice` has four).
+`validationMessages()` instead takes `array<class-string<Constraint>, string|TranslatableInterface|Closure|array<string, string|TranslatableInterface|Closure>>`: a string value sets the constraint's `message` option, and an option map sets named ones (any public property named `message` or ending in `Message`) for the constraints carrying several (`Length` has `maxMessage` / `minMessage` / `exactMessage` / `charsetMessage` and no plain `message`; `Choice` has four).
 The key is IDE-completable and the option names are the constraint's own properties, so nothing has to be memorised.
 Recorded in the [rename table](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary).
 
@@ -413,6 +413,7 @@ Recorded in the [rename table](../renames.md#laravel-rule-vocabulary-becomes-sym
 `getValidationConstraints()` builds the list through [`buildValidationConstraints()`](#the-subclass-seam-is-a-protected-builder-not-the-public-getter) and then hands it to `applyValidationMessages()`, which matches each constraint on its **exact** class (never `instanceof` — a key for a parent should not blanket its subclasses), clones it if a message applies, and writes the named options.
 This is why an escape-hatch `->constraint(new Regex('/…/'))` is messageable, where threading messages through constructors would reach only the sugared arms that looked a key up.
 Cloning happens only on write, so a user-supplied constraint instance — which `->constraint()` stores and reuses across every call — is never mutated, while an untouched one keeps its identity.
+A message given as a `TranslatableInterface` is translated here, when the constraints are built, in the request's locale; the translated text then re-enters the validator as the message id, which the `validators` domain does not hold, and the constraint's own `{{ parameters }}` are filled into it, so an ICU catalogue message writes them quoted (`'{{ limit }}'`).
 
 Two behaviours worth stating because they are asymmetric on purpose.
 A key matching no constraint the field built is **silently ignored**: `required(false)` and a false `constraint()` condition both legitimately un-emit, so this cannot throw.
@@ -444,7 +445,7 @@ Permanent.
 Filament's `validationAttribute()` / `getValidationAttribute()` supply the field name Laravel interpolates into `:attribute` in a rule message, defaulting to the field's label.
 Symfony's violation messages carry no field-name placeholder — `RequiredValue`'s default is "This value should not be blank." with no slot to fill — and the message that reaches the user is rendered *next to* its field by the `FieldWrapper`, so the name is redundant.
 **Skipped**; a user who wants the name in the text writes it into `validationMessages()`.
-Reverses only if a constraint-message translation layer with an attribute placeholder is added.
+Reverses only if the toolkit's validator messages gain an attribute placeholder, which the ids of `validators.en.xlf` have none of.
 
 ### HTML validation messages are not ported
 

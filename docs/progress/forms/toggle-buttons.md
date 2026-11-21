@@ -26,7 +26,7 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](#the-variants-keep-vendors-autofocus-and-inline-asymmetries) |
 | `wire:loading.attr="disabled"` on the grouped inputs | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [detail](#the-grouped-inputs-do-not-disable-themselves-while-a-request-is-in-flight) |
 | `multiple()` / `isMultiple()` — `role`, `type` and the dropped `name` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-multiple-arm-needs-a-model-that-rests-at-an-array) |
-| `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-untranslated-literals) |
+| `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-catalogue-messages) |
 | `inline()` / `isInline()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#inline-is-this-fields-own-property-not-the-canbeinline-trait) |
 | `size()` / `getSize()` — the button size and the icon size it implies | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [detail](#size-and-fullwidth-are-not-ported) |
 | `fullWidth()` / `isFullWidth()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [detail](#size-and-fullwidth-are-not-ported) |
@@ -267,11 +267,10 @@ Only `boolean()` fills the map, so `getIconAlias()` is `null` for every option o
 The one behavioural delta is the ordering: calling `icons([…])` *after* `boolean()` replaces the icons but not the alias map, so a registered override for `components.toggle-buttons.boolean.true` would still win over the caller's own icon on the `1` option, where Filament's eager resolution lets the later `icons()` win.
 It needs both an application-level alias registration and a `boolean()`-then-`icons()` sequence to observe, and reversing it would mean clearing the map from the `HasIcons` setter; it is recorded rather than fixed.
 
-### The boolean labels are untranslated literals
+### The boolean labels are catalogue messages
 
-`boolean()` sets the literal `'Yes'` and `'No'` where Filament reads `__('filament-forms::components.toggle_buttons.boolean.true')` and `…false`.
-The translation surface is unported throughout, matching [`Radio`](radio.md#the-boolean-labels-are-untranslated-literals), [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal) and [`getDefaultLabel`](field.md#getdefaultlabel-drops-label-translation).
-The two keys are recorded here so the strings can be found when a translation layer lands; Filament's own English values are the same two words.
+`boolean()` falls back to `components.toggle_buttons.boolean.true` and `components.toggle_buttons.boolean.false` in `sylament-forms`, Filament's key paths, where a label the author passes, a string or a message, replaces either.
+The English is Filament's: `Yes` and `No`, and each field keeps its own pair of keys, since Filament keys `radio`, `select` and `toggle_buttons` separately and the component that renders the text owns the key.
 The key segment is `toggle_buttons` with an underscore, where the field's icon aliases use `toggle-buttons` with a dash — that inconsistency is Filament's.
 
 ### The `Arrayable` arm is dropped from the colour and icon maps

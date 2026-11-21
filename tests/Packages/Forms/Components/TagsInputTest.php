@@ -32,7 +32,7 @@ describe('rendering', function (): void {
             ->and($chips)->toContainButtons('button', ['Delete: php', 'Delete: twig'])
             ->and($chips->filter('template'))->toHaveCount(0)
             ->and($crawler->filter('template ' . SupportSelectors::BADGE . ' .sy-fo-tags-input-tag-label')->text())->toBe('')
-            ->and($crawler->filter('template'))->toContainButtons('button', ['Delete']);
+            ->and($crawler->filter('template'))->toContainButtons('button', ['Delete: __TAG__']);
     });
 
     it("wires its controller's values, targets and actions", function (): void {
@@ -42,7 +42,7 @@ describe('rendering', function (): void {
         $target = static fn (string $name): Crawler => $wrapper->filter("[data-sylament--forms--tags-input-target=\"{$name}\"]");
 
         expect([$value('state-path'), $value('model-binding'), $value('split-keys'), $value('suggestions'), $value('tag-added-message'), $value('tag-removed-message')])
-            ->toBe(['data.tags', 'norender|data.tags', '[]', '["php","css"]', 'Added: :tag', 'Removed: :tag'])
+            ->toBe(['data.tags', 'norender|data.tags', '[]', '["php","css"]', 'Added: __TAG__', 'Removed: __TAG__'])
             ->and($target('input')->attr('id'))->toBe('schema.tags')
             ->and($target('input')->attr('data-action'))->toBe('keydown->sylament--forms--tags-input#keydown blur->sylament--forms--tags-input#createTag paste->sylament--forms--tags-input#paste')
             ->and($target('chips')->attr('id'))->toBe('schema.tags-tags')

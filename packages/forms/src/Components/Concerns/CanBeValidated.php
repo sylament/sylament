@@ -761,8 +761,9 @@ trait CanBeValidated
 
     /**
      * Laravel puts the violation on *this* field: if I am present, they must be
-     * empty. The offending siblings' labels are baked into the message at build
-     * time, so the constraint stays a plain presence test.
+     * empty. The offending siblings' labels are resolved at build time and handed
+     * to the constraint as its `{{ others }}` parameter, so the message stays one
+     * catalogue entry and the constraint a plain presence test.
      *
      * @param array<string>|string|Closure $statePaths
      */
@@ -783,10 +784,7 @@ trait CanBeValidated
                     return null;
                 }
 
-                return new Prohibited(message: sprintf(
-                    'This value cannot be combined with %s.',
-                    implode(', ', array_map($component->getSiblingLabel(...), $filled)),
-                ));
+                return new Prohibited(others: implode(', ', array_map($component->getSiblingLabel(...), $filled)));
             },
             static fn (Field $component): bool => (bool) $component->evaluate($statePaths),
         );

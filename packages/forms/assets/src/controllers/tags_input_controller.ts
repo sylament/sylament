@@ -8,7 +8,7 @@ const SORTABLE_ITEM_ATTRIBUTE = "data-sortable-item";
 const CHIP_SELECTOR = `[${VALUE_ATTRIBUTE}]`;
 const LABEL_SELECTOR = ".sy-fo-tags-input-tag-label";
 const DELETE_BUTTON_SELECTOR = ".sy-badge-delete-btn";
-const TAG_PLACEHOLDER = ":tag";
+const TAG_PLACEHOLDER = "__TAG__";
 const ANNOUNCEMENT_DURATION = 3000;
 
 type Binding = { render: boolean; debounce: number };
@@ -358,7 +358,10 @@ export default class extends Controller<HTMLElement> {
     const deleteLabel = deleteButton?.getAttribute("aria-label") ?? null;
 
     if (deleteButton !== null && deleteLabel !== null) {
-      deleteButton.setAttribute("aria-label", `${deleteLabel}: ${tag}`);
+      deleteButton.setAttribute(
+        "aria-label",
+        deleteLabel.replace(TAG_PLACEHOLDER, () => tag),
+      );
     }
 
     return chip;
@@ -402,7 +405,7 @@ export default class extends Controller<HTMLElement> {
   }
 
   /**
-   * `:tag` is substituted through a replacement function so a `$&` inside a tag stays literal
+   * `__TAG__` is substituted through a replacement function so a `$&` inside a tag stays literal
    * rather than being read as a substitution pattern, and the announcement is cleared once it
    * has been read so a stale message is not left under the screen reader's virtual cursor.
    */

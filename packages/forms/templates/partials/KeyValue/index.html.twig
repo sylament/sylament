@@ -37,14 +37,14 @@
                 <thead>
                     <tr>
                         {% if hasReorderColumn %}
-                            <th scope="col" class="sy-fo-key-value-action-col"><span class="sy-sr-only">Reorder</span></th>
+                            <th scope="col" class="sy-fo-key-value-action-col"><span class="sy-sr-only">{{ 'components.key_value.columns.reorder.label'|trans(domain: 'sylament-forms') }}</span></th>
                         {% endif %}
 
                         <th scope="col">{{ keyLabel }}</th>
                         <th scope="col">{{ valueLabel }}</th>
 
                         {% if hasActionsColumn %}
-                            <th scope="col" class="sy-fo-key-value-action-col"><span class="sy-sr-only">Actions</span></th>
+                            <th scope="col" class="sy-fo-key-value-action-col"><span class="sy-sr-only">{{ 'components.key_value.columns.actions.label'|trans(domain: 'sylament-forms') }}</span></th>
                         {% endif %}
                     </tr>
                 </thead>

@@ -9,6 +9,7 @@ owns:
 
 `Sylament\Forms\Components\Concerns\HasDescriptions` — the per-option description map: the secondary line of text an option carries beneath its label, configured as a literal array keyed by option value, as a closure, or derived from the field's [enum](has-enum.md) through support's [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) contract.
 The map is memoised per field instance, and `descriptions()` is what clears it.
+A description given as a message is translated when the map is built, so the memo holds the text of the locale that built it, which is the request's.
 
 Two fields compose it, `Radio` and `CheckboxList` — `ToggleButtons` does not, in Filament or here, since a button's extra text is its tooltip.
 Both render the map under each option's label — [`Radio`](radio.md) and [`CheckboxList`](checkbox-list.md) each describe their own rendering — so this file describes the concern alone.

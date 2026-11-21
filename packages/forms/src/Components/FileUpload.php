@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Support\Components\Concerns\HasAlignment;
+use Symfony\Component\Translation\TranslatableMessage;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -581,7 +582,7 @@ class FileUpload extends BaseFileUpload
 
         foreach (array_unique($ratios, SORT_REGULAR) as $ratio) {
             if ($ratio === null) {
-                $options['Free'] = 'NaN';
+                $options[new TranslatableMessage('components.file_upload.editor.aspect_ratios.no_fixed.label', domain: 'sylament-forms')->trans($this->getTranslator())] = 'NaN';
 
                 continue;
             }
@@ -609,23 +610,23 @@ class FileUpload extends BaseFileUpload
     {
         return [
             'zoom' => [
-                ['label' => 'Drag mode "move"', 'icon' => new Markup(self::EDITOR_ICON_ARROWS_MOVE, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_MOVE, 'method' => 'editorSetDragMode', 'params' => ['mode' => 'move']],
-                ['label' => 'Drag mode "crop"', 'icon' => new Markup(self::EDITOR_ICON_CROP, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_CROP, 'method' => 'editorSetDragMode', 'params' => ['mode' => 'crop']],
-                ['label' => 'Zoom in', 'icon' => 'heroicons:magnifying-glass-plus-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_IN, 'method' => 'editorZoom', 'params' => ['ratio' => 0.1]],
-                ['label' => 'Zoom out', 'icon' => 'heroicons:magnifying-glass-minus-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_OUT, 'method' => 'editorZoom', 'params' => ['ratio' => -0.1]],
-                ['label' => 'Zoom image to 100%', 'icon' => 'heroicons:arrows-pointing-out-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_100, 'method' => 'editorZoomTo', 'params' => ['ratio' => 1]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.drag_move.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => new Markup(self::EDITOR_ICON_ARROWS_MOVE, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_MOVE, 'method' => 'editorSetDragMode', 'params' => ['mode' => 'move']],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.drag_crop.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => new Markup(self::EDITOR_ICON_CROP, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_CROP, 'method' => 'editorSetDragMode', 'params' => ['mode' => 'crop']],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.zoom_in.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:magnifying-glass-plus-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_IN, 'method' => 'editorZoom', 'params' => ['ratio' => 0.1]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.zoom_out.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:magnifying-glass-minus-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_OUT, 'method' => 'editorZoom', 'params' => ['ratio' => -0.1]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.zoom_100.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrows-pointing-out-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_100, 'method' => 'editorZoomTo', 'params' => ['ratio' => 1]],
             ],
             'move' => [
-                ['label' => 'Move image to left', 'icon' => 'heroicons:arrow-left-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_LEFT, 'method' => 'editorMove', 'params' => ['x' => -10, 'y' => 0]],
-                ['label' => 'Move image to right', 'icon' => 'heroicons:arrow-right-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_RIGHT, 'method' => 'editorMove', 'params' => ['x' => 10, 'y' => 0]],
-                ['label' => 'Move image up', 'icon' => 'heroicons:arrow-up-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_UP, 'method' => 'editorMove', 'params' => ['x' => 0, 'y' => -10]],
-                ['label' => 'Move image down', 'icon' => 'heroicons:arrow-down-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_DOWN, 'method' => 'editorMove', 'params' => ['x' => 0, 'y' => 10]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.move_left.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrow-left-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_LEFT, 'method' => 'editorMove', 'params' => ['x' => -10, 'y' => 0]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.move_right.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrow-right-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_RIGHT, 'method' => 'editorMove', 'params' => ['x' => 10, 'y' => 0]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.move_up.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrow-up-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_UP, 'method' => 'editorMove', 'params' => ['x' => 0, 'y' => -10]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.move_down.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrow-down-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_DOWN, 'method' => 'editorMove', 'params' => ['x' => 0, 'y' => 10]],
             ],
             'transform' => [
-                ['label' => 'Rotate image to left', 'icon' => 'heroicons:arrow-uturn-left-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_LEFT, 'method' => 'editorRotate', 'params' => ['degrees' => -90]],
-                ['label' => 'Rotate image to right', 'icon' => 'heroicons:arrow-uturn-right-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_RIGHT, 'method' => 'editorRotate', 'params' => ['degrees' => 90]],
-                ['label' => 'Flip image horizontally', 'icon' => new Markup(self::EDITOR_ICON_FLIP_HORIZONTAL, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_HORIZONTAL, 'method' => 'editorFlip', 'params' => ['axis' => 'x']],
-                ['label' => 'Flip image vertically', 'icon' => new Markup(self::EDITOR_ICON_FLIP_VERTICAL, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_VERTICAL, 'method' => 'editorFlip', 'params' => ['axis' => 'y']],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.rotate_left.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrow-uturn-left-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_LEFT, 'method' => 'editorRotate', 'params' => ['degrees' => -90]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.rotate_right.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => 'heroicons:arrow-uturn-right-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_RIGHT, 'method' => 'editorRotate', 'params' => ['degrees' => 90]],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.flip_horizontal.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => new Markup(self::EDITOR_ICON_FLIP_HORIZONTAL, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_HORIZONTAL, 'method' => 'editorFlip', 'params' => ['axis' => 'x']],
+                ['label' => new TranslatableMessage('components.file_upload.editor.actions.flip_vertical.label', domain: 'sylament-forms')->trans($this->getTranslator()), 'icon' => new Markup(self::EDITOR_ICON_FLIP_VERTICAL, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_VERTICAL, 'method' => 'editorFlip', 'params' => ['axis' => 'y']],
             ],
         ];
     }
@@ -653,7 +654,7 @@ class FileUpload extends BaseFileUpload
             ),
             'minSize' => filled($minSize = $this->getMinSize()) ? $minSize . 'KB' : null,
             'maxFilesMessage' => filled($maxFiles = $this->getMaxFiles())
-                ? sprintf('The %s field must not have more than %d items.', $this->getLabel(), $maxFiles)
+                ? new TranslatableMessage('components.file_upload.max_files_message', ['label' => strip_tags((string) $this->getLabel()), 'count' => $maxFiles], 'sylament-forms')->trans($this->getTranslator())
                 : null,
         ];
     }

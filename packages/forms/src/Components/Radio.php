@@ -16,6 +16,7 @@ use Sylament\Forms\Components\Concerns\HasOptions;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Contracts\Translation\TranslatableInterface;
@@ -40,8 +41,8 @@ class Radio extends Field implements Contracts\CanDisableOptions
     public function boolean(string|TranslatableInterface|null $trueLabel = null, string|TranslatableInterface|null $falseLabel = null): static
     {
         $this->options([
-            1 => $trueLabel ?? 'Yes',
-            0 => $falseLabel ?? 'No',
+            1 => $trueLabel ?? new TranslatableMessage('components.radio.boolean.true', domain: 'sylament-forms'),
+            0 => $falseLabel ?? new TranslatableMessage('components.radio.boolean.false', domain: 'sylament-forms'),
         ]);
 
         $this->stateCast(new BooleanStateCast(isStoredAsInt: true));

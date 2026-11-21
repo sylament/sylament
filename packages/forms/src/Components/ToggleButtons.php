@@ -23,6 +23,7 @@ use Sylament\Schemas\State\Casts\EnumArrayStateCast;
 use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Type;
@@ -64,8 +65,8 @@ class ToggleButtons extends Field implements Contracts\CanDisableOptions, HasNes
     public function boolean(string|TranslatableInterface|null $trueLabel = null, string|TranslatableInterface|null $falseLabel = null): static
     {
         $this->options([
-            1 => $trueLabel ?? 'Yes',
-            0 => $falseLabel ?? 'No',
+            1 => $trueLabel ?? new TranslatableMessage('components.toggle_buttons.boolean.true', domain: 'sylament-forms'),
+            0 => $falseLabel ?? new TranslatableMessage('components.toggle_buttons.boolean.false', domain: 'sylament-forms'),
         ]);
 
         $this->colors([

@@ -1,4 +1,5 @@
 {% set controller = 'sylament--forms--select' %}
+{% set labelToken = '__LABEL__' %}
 
 {% set state = component.getOptionComparisonState %}
 {% set selectedKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
@@ -35,6 +36,9 @@
     noSearchResultsMessage: component.getNoSearchResultsMessage,
     noOptionsMessage: component.getNoOptionsMessage,
     loadingMessage: component.getLoadingMessage,
+    searchLabel: 'components.select.search_label'|trans(domain: 'sylament-forms'),
+    clearLabel: 'components.select.actions.clear.label'|trans(domain: 'sylament-forms'),
+    removeOptionLabel: 'components.select.actions.remove_option.label'|trans({label: labelToken}, domain: 'sylament-forms'),
     badgeClass: badgeClass,
 }) %}
 

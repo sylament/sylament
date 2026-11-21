@@ -40,6 +40,7 @@ use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
 use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
 use Sylament\Support\Icons\IconManager;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Count;
@@ -157,7 +158,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             return $transformed;
         });
 
-        $this->placeholder('Select an option');
+        $this->placeholder(new TranslatableMessage('components.select.placeholder', domain: 'sylament-forms'));
 
         $this->suffixActions([
             static fn (Select $component): ?Action => $component->getCreateOptionAction(),
@@ -174,8 +175,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     public function boolean(string|TranslatableInterface|null $trueLabel = null, string|TranslatableInterface|null $falseLabel = null, string|TranslatableInterface|null $placeholder = null): static
     {
         $this->options([
-            1 => $trueLabel ?? 'Yes',
-            0 => $falseLabel ?? 'No',
+            1 => $trueLabel ?? new TranslatableMessage('components.select.boolean.true', domain: 'sylament-forms'),
+            0 => $falseLabel ?? new TranslatableMessage('components.select.boolean.false', domain: 'sylament-forms'),
         ]);
 
         $this->placeholder($placeholder ?? '-');
@@ -300,8 +301,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     public function getMaxItemsMessage(): string
     {
-        return (string) ($this->translateText($this->evaluate($this->maxItemsMessage))
-            ?? str_replace(':count', (string) $this->getMaxItems(), 'Only :count can be selected.'));
+        return (string) $this->translateText($this->evaluate($this->maxItemsMessage) ?? new TranslatableMessage('components.select.max_items_message', ['count' => $this->getMaxItems()], 'sylament-forms'));
     }
 
     public function position(string|Closure|null $position): static
@@ -773,7 +773,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         $action = Action::make($this->getCreateOptionActionName())
-            ->label('Create')
+            ->label(new TranslatableMessage('components.select.actions.create_option.label', domain: 'sylament-forms')->trans($this->getTranslator()))
             ->schema(static fn (Select $component, Schema $schema): array|Schema|null => $component->getCreateOptionActionForm(
                 $schema->record($component->hasRelationship()
                     ? $component->getRelationshipTarget()->targetClass
@@ -814,11 +814,11 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             ->color('gray')
             ->icon($this->resolveOptionActionIcon(FormsIconAlias::COMPONENTS_SELECT_ACTIONS_CREATE_OPTION, 'heroicons:plus-20-solid'))
             ->iconButton()
-            ->modalHeading($this->getCreateOptionModalHeading() ?? 'Create')
-            ->modalSubmitActionLabel('Create')
+            ->modalHeading($this->getCreateOptionModalHeading() ?? new TranslatableMessage('components.select.actions.create_option.modal.heading', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->modalSubmitActionLabel(new TranslatableMessage('components.select.actions.create_option.modal.actions.create.label', domain: 'sylament-forms')->trans($this->getTranslator()))
             ->extraModalFooterActions(static fn (Action $action, Select $component): array => $component->isMultiple() ? [
                 $action->makeModalSubmitAction('createAnother', arguments: ['another' => true])
-                    ->label('Create & create another'),
+                    ->label(new TranslatableMessage('components.select.actions.create_option.modal.actions.create_another.label', domain: 'sylament-forms')->trans($component->getTranslator())),
             ] : []);
 
         return $this->applyOptionActionModifiers($action, $this->modifyCreateOptionActionUsing);
@@ -914,7 +914,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         $action = Action::make($this->getEditOptionActionName())
-            ->label('Edit')
+            ->label(new TranslatableMessage('components.select.actions.edit_option.label', domain: 'sylament-forms')->trans($this->getTranslator()))
             ->schema(static fn (Select $component, Schema $schema): array|Schema|null => $component->getEditOptionActionForm(
                 $schema->record($component->getSelectedRecord()),
             ))
@@ -939,8 +939,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             ->color('gray')
             ->icon($this->resolveOptionActionIcon(FormsIconAlias::COMPONENTS_SELECT_ACTIONS_EDIT_OPTION, 'heroicons:pencil-square-20-solid'))
             ->iconButton()
-            ->modalHeading($this->getEditOptionModalHeading() ?? 'Edit')
-            ->modalSubmitActionLabel('Save')
+            ->modalHeading($this->getEditOptionModalHeading() ?? new TranslatableMessage('components.select.actions.edit_option.modal.heading', domain: 'sylament-forms')->trans($this->getTranslator()))
+            ->modalSubmitActionLabel(new TranslatableMessage('components.select.actions.edit_option.modal.actions.save.label', domain: 'sylament-forms')->trans($this->getTranslator()))
             ->visible(fn (): bool => filled($this->getState()));
 
         return $this->applyOptionActionModifiers($action, $this->modifyEditOptionActionUsing);

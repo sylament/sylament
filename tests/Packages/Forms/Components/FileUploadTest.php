@@ -9,6 +9,7 @@ use Sylament\Tests\Fixtures\Forms\UploadForm;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Twig\Error\RuntimeError;
+use Twig\Markup;
 
 describe('render', function (): void {
     it('hands the controller its value map, with the file input inside a pond container no morph touches', function (): void {
@@ -46,6 +47,11 @@ describe('render', function (): void {
             'openActionLabel' => 'Open in new tab',
             'confirmSvgEditingMessage' => "Editing SVG files is not recommended as it can result in quality loss when scaling.\nAre you sure you want to continue?",
             'disabledSvgEditingMessage' => 'Editing SVG files is disabled as it can result in quality loss when scaling.',
+            'uploadErrorMessage' => 'The file could not be uploaded.',
+            'removeErrorMessage' => 'The file could not be removed.',
+            'loadErrorMessage' => 'The file could not be loaded.',
+            'reorderErrorMessage' => 'The files could not be reordered.',
+            'typeUndetectedMessage' => 'The type of __NAME__ could not be detected.',
         ])
             ->and($crawler)->toContainElement('[id="' . $crawler->filter(Selectors::fileUpload('data.document') . '[role="group"]')->attr('aria-labelledby') . '"]', 'Document')
             ->and($crawler)->toContainElement(Selectors::FILE_UPLOAD_POND . '[data-live-ignore] input[type="file"]:not([multiple])')
@@ -146,6 +152,11 @@ describe('render', function (): void {
     it('names its label in the message the browser shows past the file limit', function (): void {
         expect(FileUploadFixtures::values($this->renderSchemaComponent(FileUpload::make('photos')->label('Photos')->multiple()->maxFiles(3)), 'data.photos'))
             ->toMatchArray(['maxFiles' => 3, 'maxFilesMessage' => 'The Photos field must not have more than 3 items.']);
+    });
+
+    it('words the file limit for one file in the singular, and shows a markup label as plain text', function (): void {
+        expect(FileUploadFixtures::values($this->renderSchemaComponent(FileUpload::make('photo')->label(new Markup('<b>Photo</b>', 'UTF-8'))->maxFiles(1)), 'data.photo'))
+            ->toMatchArray(['maxFilesMessage' => 'The Photo field must not have more than 1 item.']);
     });
 
     it('carries the link colour policy on the pond container, whose label action reads its text slots', function (): void {

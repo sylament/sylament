@@ -140,14 +140,21 @@ describe('grouped', function (): void {
             ->not->toContainElement('.toggle-buttons-marker');
     });
 
-    it('keeps autofocus on the first option and the inline row to the ungrouped tree', function (): void {
-        $default = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->autofocus()->inline());
-        $grouped = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->autofocus()->inline()->grouped());
+    it('keeps the inline row to the ungrouped tree', function (): void {
+        $default = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->inline());
+        $grouped = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->inline()->grouped());
 
-        expect($default->filter('input[autofocus]')->each(static fn (Crawler $input): ?string => $input->attr('value')))->toBe(['low'])
-            ->and($default)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::INLINE)
-            ->and($grouped->filter('input.sy-fo-toggle-buttons-input:not([autofocus])'))->toHaveCount(2)
+        expect($default)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::INLINE)
             ->and($grouped)->toContainElement('.sy-fo-toggle-buttons' . SupportSelectors::BUTTON_GROUP . ':not(' . SupportSelectors::INLINE . ')');
+    });
+
+    it('autofocuses only the first input of a single choice, as Filament does', function (): void {
+        $options = ['low' => 'Low', 'high' => 'High'];
+        $single = $this->renderSchemaComponent(ToggleButtons::make('level')->options($options)->grouped()->autofocus());
+
+        expect($single->filter('[autofocus]')->each(static fn (Crawler $node): string => $node->nodeName() . ':' . $node->attr('value')))->toBe(['input:low'])
+            ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options($options)->grouped()->autofocus()->multiple()))->not->toContainElement('[autofocus]')
+            ->and($this->renderSchemaComponent(ToggleButtons::make('level')->options($options)->grouped()))->not->toContainElement('[autofocus]');
     });
 });
 

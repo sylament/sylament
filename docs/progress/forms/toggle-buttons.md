@@ -23,7 +23,7 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#the-option-inputs-carry-aria-invalid-which-filaments-do-not) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
-| `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](#the-grouped-variant-drops-vendors-autofocus-and-keeps-its-inline-asymmetry) |
+| `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) |
 | `multiple()` / `isMultiple()` — `role`, `type` and the dropped `name` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-multiple-arm-needs-a-model-that-rests-at-an-array) |
 | `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-catalogue-messages) |
 | `inline()` / `isInline()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#inline-is-this-fields-own-property-not-the-canbeinline-trait) |
@@ -117,7 +117,10 @@ That works because `simple()` takes a field, not a condition.
 `grouped()` takes `bool|Closure`, so a caller writing `grouped(fn () => $user->prefersCompact())` expects the answer to be read each time the field renders.
 Eager assignment would have to evaluate that closure in the setter and freeze its first answer, which is what every other `bool|Closure` setter on the class exists not to do.
 
-The two files repeat the option loop rather than sharing an `{% include %}`: the trees differ in the container class, the wrapping `div`, the button class list and the autofocus branch, which is most of the markup, and vendor splits them at exactly this seam.
+The two files repeat the option loop rather than sharing an `{% include %}`: the trees differ in the container class, the wrapping `div`, the button class list and the autofocus condition, which is most of the markup, and vendor splits them at exactly this seam.
+Filament's two trees also differ in a way neither comments: `fi-inline` and the grid are the default tree's alone, so `->grouped()->inline()` still renders one joined row.
+The port keeps that, because it is observable API and a caller who wants the other layout has a one-word change.
+The grouped tree's autofocus is Filament's too: the first input only, and only for a single choice, `(! $isMultiple) && $first && $isAutofocused`; the button carrying the other `autofocus` belongs to the [deselectable arm](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) the port has not built.
 `TEMPLATE` has no vendor constant behind it — Filament inlines `'filament-forms::components.toggle-buttons.index'` and names only `GROUPED_VIEW` — but a lone constant would read as an accident beside its partner, and both [`Repeater`](repeater.md) and [`Action`](../actions/action.md) declare one per variant.
 
 ### The grouped labels must stay direct children of the group
@@ -215,19 +218,6 @@ The map has Filament's shape, and a value may also be a [message](#a-tooltip-may
 A `Markup` tooltip is the visible cost: an attribute value is text, so its tags reach the reader as literal `<b>…</b>` characters where Filament's `allowHTML` arm would render them.
 Nothing strips or rewrites them — silently discarding the caller's content would hide the gap rather than show it — and a case characterizes the literal output so a tooltip primitive has something to change against.
 **Reversible** as a whole: when that primitive lands, this field and actions' button trigger switch together, and neither public surface moves.
-
-### The grouped variant drops vendor's autofocus, and keeps its inline asymmetry
-
-Filament's two trees differ in two ways beyond their shape, neither of them commented:
-
-| Vendor asymmetry | Port |
-| --- | --- |
-| `autofocus` on the first option — default and grouped (on the grouped input and on its button) | default only: `Grouped.html.twig` emits none |
-| `fi-inline` and the grid — default only | preserved |
-
-The inline asymmetry is preserved because it is observable API, and a caller who wants the other layout has a one-word change.
-A caller writing `->grouped()->autofocus()` gets no autofocus, where Filament focuses the first option; porting it is one `autofocus` in the grouped template.
-They are recorded here so a reader diffing the two templates finds the missing branch and reaches for this table first.
 
 ### The option inputs carry `aria-invalid`, which Filament's do not
 

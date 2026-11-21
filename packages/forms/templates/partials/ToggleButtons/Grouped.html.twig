@@ -31,6 +31,7 @@
                 'data-model': component.getDataModel,
                 'aria-invalid': hasErrors,
                 disabled: isOptionDisabled,
+                autofocus: not isMultiple and loop.first and component.isAutofocused,
             }, component.getExtraInputAttributes) }}>
 
             <label {{ attrs({

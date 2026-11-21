@@ -23,7 +23,7 @@ Ours carries one method, a fail-fast `getTemplate()` override, for a reason reco
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction (`ViewField::make('bio')->template(…)`) | [`Components/ViewField.php`](../../../vendor/filament/forms/src/Components/ViewField.php) | done | — | — |
-| `template()` / `templateData()` ⟵ `view()` / `viewData()` | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [detail](../support/view-component.md) |
+| `template()` / `templateData()` ⟵ `view()` / `viewData()` | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [view-component.md](../support/view-component.md) |
 | The template receives the field as `component` | [`$viewIdentifier = 'field'`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](../support/view-component.md#the-instance-is-always-exposed-as-component) |
 | The template opens its own field wrapper | [`forms/docs/22-custom-fields.md`](../../../vendor/filament/forms/docs/22-custom-fields.md) | done | — | [semantics](#the-wrapper-is-the-templates-to-open) |
 | Fail-fast on a missing template | [`ViewComponent::getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#the-missing-template-throw-lives-on-viewfield-rather-than-the-base) |

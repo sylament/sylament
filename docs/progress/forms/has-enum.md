@@ -26,7 +26,7 @@ One declaration therefore does two jobs: it is the option source [`HasOptions`](
 | [`Field::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Field.php) → [`EnumStateCast`](../schemas/enum-state-cast.md) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#a-pure-unitenum-is-refused-at-the-field-not-deep-in-the-cast) |
 | [`Select::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Select.php) → `EnumArrayStateCast` under `multiple()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
 | [`ToggleButtons::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/ToggleButtons.php) → the same swap under its own `multiple()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | — |
-| Enum-derived options (`options(MyEnum::class)`, `enum()` alone) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
+| Enum-derived options (`options(MyEnum::class)`, `enum()` alone) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [has-options.md](has-options.md) |
 | `Rule::enum()` as the implicit validation rule ([`CanBeValidated::getInValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php)) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-enum-validates-through-the-option-choice-not-a-rule-of-its-own) |
 
 ## Semantics

@@ -15,7 +15,7 @@ It carries members Filament has no counterpart for, `getOptionComparisonState()`
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | `options()` / `getOptions()` / `hasDynamicOptions()` | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [semantics](#an-option-label-may-be-a-message-translated-label-by-label) · [semantics](#a-group-label-is-an-array-key-so-it-cannot-be-a-message) · [diverges](#the-arrayable-arm-is-dropped) |
-| The enum class-string arm — `options(MyEnum::class)` also calling `enum()`, and `getOptions()` expanding `cases()` through support's [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-enum.md) · [semantics](#an-enum-label-stays-markup-rather-than-being-stringified) · [diverges](#an-enum-that-is-a-message-labels-its-own-option) |
+| The enum class-string arm — `options(MyEnum::class)` also calling `enum()`, and `getOptions()` expanding `cases()` through support's [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [has-enum.md](has-enum.md) · [semantics](#an-enum-label-stays-markup-rather-than-being-stringified) · [diverges](#an-enum-that-is-a-message-labels-its-own-option) |
 | `getOptionComparisonState()` / `normalizeOptionComparisonValue()` — no Filament source | — | done | — | [semantics](#the-option-vocabulary-is-normalized-once-rather-than-per-template) · [renames](../translations.md#names-with-no-filament-source) |
 
 ## Semantics

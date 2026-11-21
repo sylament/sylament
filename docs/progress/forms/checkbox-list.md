@@ -19,7 +19,7 @@ The template renders every option and every target server side, and [`checkbox_l
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering — the group, the implicit option labels, the description line | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-checkbox-carries-the-same-data-model) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too) |
+| Construction &amp; rendering — the group, the implicit option labels, the description line | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-checkbox-carries-the-same-data-model) · [diverges](#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-checkboxcss-keys-off-aria-invalid) · [diverges](styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too) |
 | The grid, and its `Column` default — applied unconditionally, no `inline()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) · [diverges](#the-options-grid-is-always-applied-and-the-option-containers-are-unkeyed) |
 | `getEnumDefaultStateCast()` — `EnumArrayStateCast` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
 | `getDefaultStateCasts()` — `[OptionsArrayStateCast]` unless custom casts or an enum | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
@@ -149,12 +149,13 @@ It reads like a multi-binding and is not: `live_controller`'s `getValueFromEleme
 Unlike `Radio`, the inputs carry **no `name`** — a checkbox group is not grouped by `name` in the browser, and a shared one would submit a scalar on a native form post.
 They do carry per-option `id`s, as `Radio`'s do, which is what idiomorph matches on when a re-render replaces the list.
 
-### The option inputs carry `aria-invalid` instead of a `fi-valid` / `fi-invalid` class pair
+### The option inputs drop the `fi-valid` / `fi-invalid` class pair, and `checkbox.css` keys off `aria-invalid`
 
-Filament puts `fi-valid` or `fi-invalid` on every checkbox input.
-The port emits neither and writes `aria-invalid` on each input instead, with [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) keying its danger arm off `[aria-invalid='true']`.
+Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every checkbox input, and its `role="group"` container carries `aria-describedby` only (`CheckboxList.php:539`, `:563-571`, `:646-647`).
+The port keeps only the attribute on each input and emits no class pair, with [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) keying its danger arm off `[aria-invalid='true']`.
+The group carries no `aria-invalid` in either tree, so nothing differs there.
 
-This is not a CheckboxList decision — it is the translation [`Radio`](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) records, applied to the field that shares `Checkbox`'s control, and it holds for the same reasons.
+This is not a CheckboxList decision — it is the translation [`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid) records, applied to the field that shares `Checkbox`'s control, and it holds for the same reasons.
 
 ### The bulk-toggle actions render but never dispatch
 

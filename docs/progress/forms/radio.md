@@ -16,7 +16,7 @@ It ships no JavaScript: the controls are real radios bound with `data-model`, an
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering — the radiogroup, the implicit option labels, the description line | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-radio-carries-the-same-data-model) · [semantics](#the-group-name-is-the-field-id-not-the-field-name) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](styles.md#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) |
+| Construction &amp; rendering — the radiogroup, the implicit option labels, the description line | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | in progress | — | [detail](#the-group-does-not-carry-filaments-group-level-aria-invalid) · [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-radio-carries-the-same-data-model) · [semantics](#the-group-name-is-the-field-id-not-the-field-name) · [diverges](#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid) · [diverges](styles.md#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) |
 | `boolean()` — the `1`/`0` option pair and the int-backed cast | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) · [semantics](#the-boolean-labels-are-catalogue-messages) |
 | `inline()` / `isInline()` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#inline-is-radios-own-property-not-the-canbeinline-trait) |
 | `getDefaultState()` — a `bool` default coerced to `1`/`0` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | — |
@@ -32,6 +32,14 @@ It ships no JavaScript: the controls are real radios bound with `data-model`, an
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
 | [`CanFixIndistinctState`](../../../packages/forms/src/Components/Concerns/CanFixIndistinctState.php) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
+
+## Details
+
+### The group does not carry Filament's group-level `aria-invalid`
+
+Filament spreads `getAccessibilityAttributes()` on the `role="radiogroup"` container, so an invalid field marks the group as well as each input (`Radio.php:70-73`).
+The port's [`Radio/index.html.twig`](../../../packages/forms/templates/partials/Radio/index.html.twig) writes `aria-invalid` on each input only, and the radiogroup carries none.
+**Next step:** render `aria-invalid` on the radiogroup container from the same `hasErrors` the inputs read, with a case asserting it.
 
 ## Semantics
 
@@ -105,14 +113,15 @@ The unchecked siblings fire nothing.
 The alternative shapes — one binding on the group, or a `change`-only listener — are rejected: the group element is a `<div>`, which the controller reads through `element.value` / `data-value` and would find empty, and a bespoke listener would give up the repaint the plugin above performs for free.
 A case drives a selection through the live host and asserts both the prop and which input the re-render checked.
 
-### The option inputs carry `aria-invalid` instead of a `fi-valid` / `fi-invalid` class pair
+### The option inputs drop the `fi-valid` / `fi-invalid` class pair, and `radio.css` keys off `aria-invalid`
 
-Filament puts `fi-valid` or `fi-invalid` on every radio input and keys the danger ring off the latter.
-The port emits neither class and writes `aria-invalid` on each input instead, with [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css) keying its danger arm off `[aria-invalid='true']`.
+Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every radio input, and spreads `aria-invalid` on the radiogroup container too (`Radio.php:52`, `:70`, `:98-99`).
+The port keeps only the attribute on each input and emits no class pair, with [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css) keying its danger arm off `[aria-invalid='true']`.
 
 This is not a Radio decision — it is the translation already made for [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css), whose vendor source keys off `.fi-invalid` in exactly the same way, and it holds for the same two reasons: the attribute is the part a screen reader reads, and one emission serves both jobs where the vendor pair serves only styling.
 The `valid` half has nothing to key at all — the base rule *is* the valid state — so it is dropped rather than emitted as a class no stylesheet mentions.
 It is a bare boolean, so a valid field renders `aria-invalid="false"` instead of dropping the attribute: that is what `Checkbox`, `Toggle`, `Select`, `Textarea` and `TextInput` emit — the bag [stringifies booleans for `aria-` names](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value) — and one spelling across every control beats a per-field ternary.
+The group-level `aria-invalid` is not rendered: the [radiogroup gap](#the-group-does-not-carry-filaments-group-level-aria-invalid) is open.
 Reversible by adding the pair back if a consumer's CSS needs a class hook the attribute selector cannot give it.
 
 ### `extraAttributes()` stays on the field wrapper

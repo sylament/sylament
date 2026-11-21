@@ -22,7 +22,7 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#the-option-inputs-carry-aria-invalid-which-filaments-do-not) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
+| Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | in progress | — | [detail](#the-group-does-not-carry-filaments-group-level-aria-invalid) · [semantics](#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#every-option-input-carries-aria-invalid-and-the-group-never-does) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
 | `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) |
 | `multiple()` / `isMultiple()` — `role`, `type` and the dropped `name` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-multiple-arm-needs-a-model-that-rests-at-an-array) |
 | `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [semantics](#the-boolean-labels-are-catalogue-messages) |
@@ -54,6 +54,12 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | `getRequiredDescription()` | [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [field.md](field.md#the-accessibility-members-are-not-ported) |
 
 ## Details
+
+### The group does not carry Filament's group-level `aria-invalid`
+
+Filament marks the container of a single, required field, the `role="radiogroup"` one, with `aria-invalid` while the field has an error (`ToggleButtons.php:134`, `:137`, and again at `:262`, `:265` in the grouped tree).
+The port's [`ToggleButtons/index.html.twig`](../../../packages/forms/templates/partials/ToggleButtons/index.html.twig) and [`Grouped.html.twig`](../../../packages/forms/templates/partials/ToggleButtons/Grouped.html.twig) write it on the inputs only.
+**Next step:** render `aria-invalid` on the container when the field is single and required, with a case asserting it and one asserting its absence for a multiple field.
 
 ### `size()` and `fullWidth()` are not ported
 
@@ -225,11 +231,15 @@ A `Markup` tooltip is the visible cost: an attribute value is text, so its tags 
 Nothing strips or rewrites them — silently discarding the caller's content would hide the gap rather than show it — and a case characterizes the literal output so a tooltip primitive has something to change against.
 **Reversible** as a whole: when that primitive lands, this field and actions' button trigger switch together, and neither public surface moves.
 
-### The option inputs carry `aria-invalid`, which Filament's do not
+### Every option input carries `aria-invalid`, and the group never does
 
-Filament's `ToggleButtons` writes no validity marker on its inputs at all: neither tree emits a `fi-valid` / `fi-invalid` class or an `aria-invalid`, and vendor's `toggle-buttons.css` has no invalid arm (the buttons carry a colour, not a ring).
-The port writes `aria-invalid` on every input, the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair)).
-Here it is for assistive technology only, and no stylesheet keys off it: a radiogroup is invalid as a whole, and a screen reader should say so on every control in it.
+Filament marks the inputs of its checkbox and radio arms with `aria-invalid` while the field has an error, and leaves the deselectable arm's buttons unmarked (`ToggleButtons.php:119`, `:253`: `$isToggleButton ? null : …`).
+It marks the container only in the single-required arm, which is also the `radiogroup` one (`:134`, `:262`); every other container is a `role="group"` with `aria-describedby` alone.
+Neither tree emits a `fi-valid` / `fi-invalid` class pair, and vendor's `toggle-buttons.css` has no invalid arm (the buttons carry a colour, not a ring).
+
+The port writes `aria-invalid` on every input it renders, the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid))), and never on the group; no stylesheet keys off it.
+A single, non-required field renders as radios or checkboxes here, because the [deselectable arm](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) is not built, so its inputs carry the attribute where Filament's buttons carry none.
+The group-level gap is [recorded](#the-group-does-not-carry-filaments-group-level-aria-invalid).
 
 ### The extra input attributes win where Filament's lose by going last
 

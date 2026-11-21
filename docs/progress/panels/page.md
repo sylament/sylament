@@ -149,15 +149,15 @@ It buys the only live-parent recognition UX offers, and the throw means it is ne
 
 ### A static getter returns a message, and the item that reads it translates it
 
-`getNavigationLabel()`, `getNavigationGroup()` and `getNavigationBadge()` are static, so no translator can sit on the object that calls them, and each return type widens to `string|TranslatableInterface`, where Filament's are `string` and `?string`.
+`getNavigationLabel()`, `getNavigationGroup()` and `getNavigationBadge()` are static, so no translator can sit on the object that calls them, and each return type widens to take a `TranslatableInterface`: the label is `string|TranslatableInterface` where Filament's is `string | Htmlable`, and the group and the badge are `string|TranslatableInterface|null` where Filament's badge is `?string`.
 [`NavigationItem`](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) translates at its own getters, so the sidebar, the band and every other reader still receive strings, and the translation runs before the panel keys items by group.
-A static property cannot hold a message, because PHP forbids `new` and calls in a property initialiser: `$title`, `$heading`, `$subheading`, `$navigationLabel`, `$navigationGroup` and `$breadcrumb` stay `?string`, and a page supplies a message by overriding the getter.
-The instance getters (`getTitle()`, `getHeading()`, `getSubheading()` and the resource pages' `getBreadcrumb()`) keep their `string|Markup` types, because a page holds a translator through `HasTranslator`: the shipped defaults translate in place, and a page override returns text, or translates a message itself with `translateText()`.
+A property initialiser cannot hold a message, because PHP forbids `new` and calls there: the static `$title`, `$navigationLabel`, `$navigationGroup` and `$breadcrumb` and the instance `$heading` and `$subheading` stay `?string`, and a page supplies a message by overriding the getter.
+The instance getters (`getTitle()`, `getHeading()`, `getSubheading()` and the resource pages' `getBreadcrumb()`) keep their `string|Markup` or `string` types, because a page holds a translator through `HasTranslator`: the shipped defaults translate in place, and a page override returns text, or translates a message itself with `translateText()`.
 [`Dashboard`](dashboard.md#the-dashboard-title-is-read-from-the-catalogue-and-a-title-override-still-wins) is the shipped example of both halves.
 
 ### A breadcrumb value may be a message, and the page translates it before the trail
 
-`getBreadcrumbs()`, `getResourceBreadcrumbs()` and `appendBreadcrumb()` take `string|Markup|TranslatableInterface` values, where Filament's take `string`, and the key stays the crumb's URL (a string) or a plain-text position (an int).
+`getBreadcrumbs()`, `getResourceBreadcrumbs()` and `appendBreadcrumb()` take `string|Markup|TranslatableInterface` values, and the key stays the crumb's URL (a string) or a plain-text position (an int).
 Support's [`Breadcrumbs`](../support/breadcrumbs.md) component takes strings, so the page partial maps every value through `translateText()` before it hands the array over, and the string keys survive the map.
 A `Markup` and a plain string pass through unchanged.
 

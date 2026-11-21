@@ -88,7 +88,7 @@ final class GlobalSearch
             return null;
         }
 
-        $translated = GlobalSearchResults::make();
+        $translated = clone $results;
 
         foreach ($results->getCategories() as $category => $categoryResults) {
             $translated->category($category, array_map($this->translateResult(...), $categoryResults));
@@ -99,14 +99,22 @@ final class GlobalSearch
 
     /**
      * A result is built with `new` by a resource or a provider of the application's own, so no translator sits on it:
-     * what it holds is translated here, where the component reads it.
+     * what it holds is translated here, where the component reads it. A result holding no message is handed on as it
+     * is, so a provider's own subclass and its non-text detail values survive.
      */
     private function translateResult(GlobalSearchResult $result): GlobalSearchResult
     {
+        $hasMessage = $result->title instanceof TranslatableInterface
+            || array_filter($result->details, static fn (mixed $detail): bool => $detail instanceof TranslatableInterface) !== [];
+
+        if (! $hasMessage) {
+            return $result;
+        }
+
         return new GlobalSearchResult(
             title: $this->translate($result->title),
             url: $result->url,
-            details: array_map(fn (string|TranslatableInterface $detail): string => $detail instanceof TranslatableInterface ? $detail->trans($this->translator) : $detail, $result->details),
+            details: array_map(fn (TranslatableInterface|string $detail): string => $detail instanceof TranslatableInterface ? $detail->trans($this->translator) : $detail, $result->details),
             actions: $result->actions,
         );
     }

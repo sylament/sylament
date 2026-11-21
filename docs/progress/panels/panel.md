@@ -214,7 +214,7 @@ A consumer who wants one calls `brandName()`, which is the call a Filament user 
 
 ### The brand name and a registered navigation group may be messages
 
-`brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside Filament's `string | Htmlable | Closure`, and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
+`brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside the arms they already had (Filament's are `string | Htmlable | Closure | null` and `string | Closure | null`), and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
 `navigationGroups()` takes a message for a bare registered group, and `getNavigation()` translates it before it matches the registered group against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
 A panel built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.
 

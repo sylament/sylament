@@ -64,7 +64,7 @@ A `new`-built item is unaffected, because the setter only fires through the cont
 
 ### A label, a badge or a group may be a message, translated in its getter
 
-`label()`, `badge()`, `group()` and `make()` take a `TranslatableInterface` beside Filament's `string | Closure`, and `getLabel()`, `getBadge()` and `getGroup()` keep returning strings, translated through the item's own translator, so a template and the panel's navigation assembly never meet a message.
+`label()`, `badge()`, `group()` and `make()` take a `TranslatableInterface` beside the arms they already had, and `getLabel()`, `getBadge()` and `getGroup()` keep returning strings, translated through the item's own translator, so a template and the panel's navigation assembly never meet a message.
 A message passes `make()`'s `filled()` gate, as any object does.
 The translation runs before the group is used as a key: the panel buckets items by `getGroup()` and matches a registered group by key or by its label, so the translated text is the group's identity, as Filament's `__()`-translated group is, and two groups that translate to one text merge.
 A registered group's array key is the identity a user keeps stable across locales.

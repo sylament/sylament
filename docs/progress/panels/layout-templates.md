@@ -150,7 +150,7 @@ Revisit if the topbar ever gains a vertical clip of its own.
 
 `brandName`, `brandLogo`, `darkModeBrandLogo` and `brandLogoHeight` ride as props down the `Document` → `Layout` → `Topbar`/`Sidebar` → `Logo` chain, where Filament's `logo.blade.php` reads the `filament()` facade in place.
 `Logo` is rendered twice — in the topbar start and in the sidebar's own mobile header — and keeps `logo.blade.php`'s three arms: a `Markup` logo renders raw inside a `<div class="sy-pa-logo">` (Blade's `$logo instanceof Htmlable`, through support's `markup` Twig test), a string one as an `<img>`, and with neither the brand name falls back as a `<span>`, rendering nothing at all when the panel has no brand name either.
-The `<img>` alt is the `layout.logo.alt` message, `{name} logo`, trimmed so a panel with no brand name reads `logo`, where Filament's key leaves the space in.
+The `<img>` alt is the `layout.logo.alt` message, `{name} logo`, trimmed so a panel with no brand name reads `logo`, where Filament passes `:name logo` the name untrimmed.
 When `darkModeBrandLogo()` is set both renditions render, `sy-pa-logo-light` and `sy-pa-logo-dark` — Filament's `fi-logo-light`/`fi-logo-dark` pair, CSS-toggled.
 
 ### The shell's fixed texts are catalogue keys, two of them port-added

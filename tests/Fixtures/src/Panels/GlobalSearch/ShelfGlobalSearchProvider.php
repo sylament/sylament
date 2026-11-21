@@ -12,7 +12,7 @@ use Symfony\Component\Translation\TranslatableMessage;
 /**
  * A custom provider, a service autoconfiguration tags: one `Shelf` category naming the term, nothing at all for
  * the term {@see self::SILENT_TERM}, and for {@see self::CATALOGUE_TERM} a result whose title and one labelled detail
- * are catalogue messages.
+ * are catalogue messages, beside a detail whose label is a number.
  */
 final class ShelfGlobalSearchProvider implements GlobalSearchProvider
 {
@@ -30,7 +30,7 @@ final class ShelfGlobalSearchProvider implements GlobalSearchProvider
             return GlobalSearchResults::make()->category('Shelf', [new GlobalSearchResult(
                 title: new TranslatableMessage('search.title', ['term' => $query], 'fixtures-panels'),
                 url: '/shelf',
-                details: ['Count' => new TranslatableMessage('search.detail', ['words' => 2], 'fixtures-panels')],
+                details: ['Count' => new TranslatableMessage('search.detail', ['words' => 2], 'fixtures-panels'), '2024' => 'Year'],
             )]);
         }
 

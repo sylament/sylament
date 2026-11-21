@@ -66,7 +66,7 @@
                                                         {% for label, value in result.details %}
                                                             <div class="sy-pa-global-search-result-detail">
                                                                 {% if result.hasDetailLabels %}
-                                                                    <dt class="sy-pa-global-search-result-detail-label">{{ 'global-search.result.detail_label'|trans({label: label}, domain: 'sylament-panels') }}</dt>
+                                                                    <dt class="sy-pa-global-search-result-detail-label">{{ 'global-search.result.detail_label'|trans({label: '' ~ label}, domain: 'sylament-panels') }}</dt>
                                                                 {% endif %}
 
                                                                 <dd class="sy-pa-global-search-result-detail-value">{{ value }}</dd>

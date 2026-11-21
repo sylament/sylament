@@ -234,11 +234,11 @@ Nothing strips or rewrites them — silently discarding the caller's content wou
 ### Every option input carries `aria-invalid`, and the group never does
 
 Filament marks the inputs of its checkbox and radio arms with `aria-invalid` while the field has an error, and leaves the deselectable arm's buttons unmarked (`ToggleButtons.php:119`, `:253`: `$isToggleButton ? null : …`).
-It marks the container only in the single-required arm, which is also the `radiogroup` one (`:134`, `:262`); every other container is a `role="group"` with `aria-describedby` alone.
+It marks the container only in the single-required arm, which is also the `radiogroup` one (`:134`, `:262`); every other container is a `role="group"` carrying no `aria-invalid`.
 Neither tree emits a `fi-valid` / `fi-invalid` class pair, and vendor's `toggle-buttons.css` has no invalid arm (the buttons carry a colour, not a ring).
 
-The port writes `aria-invalid` on every input it renders, the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid))), and never on the group; no stylesheet keys off it.
-A single, non-required field renders as radios or checkboxes here, because the [deselectable arm](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) is not built, so its inputs carry the attribute where Filament's buttons carry none.
+The port writes `aria-invalid` on every input it renders, the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid)), and never on the group; no stylesheet keys off it.
+A single, non-required field renders as radios here, because the [deselectable arm](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) is not built, so its inputs carry the attribute where Filament's buttons carry none.
 The group-level gap is [recorded](#the-group-does-not-carry-filaments-group-level-aria-invalid).
 
 ### The extra input attributes win where Filament's lose by going last

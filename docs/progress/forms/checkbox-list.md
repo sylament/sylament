@@ -151,7 +151,7 @@ They do carry per-option `id`s, as `Radio`'s do, which is what idiomorph matches
 
 ### The option inputs drop the `fi-valid` / `fi-invalid` class pair, and `checkbox.css` keys off `aria-invalid`
 
-Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every checkbox input, and its `role="group"` container carries `aria-describedby` only (`CheckboxList.php:539`, `:563-571`, `:646-647`).
+Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every checkbox input, and its `role="group"` container carries no `aria-invalid` (`CheckboxList.php:539`, `:563-571`, `:646-647`).
 The port keeps only the attribute on each input and emits no class pair, with [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) keying its danger arm off `[aria-invalid='true']`.
 The group carries no `aria-invalid` in either tree, so nothing differs there.
 

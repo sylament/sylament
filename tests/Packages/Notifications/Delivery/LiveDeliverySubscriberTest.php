@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Notifications\Delivery\SessionNotifications;
 use Sylament\Tests\Fixtures\Notifications\NotificationsPageController;
 use Sylament\Tests\Fixtures\Notifications\NotifyingHost;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
@@ -26,14 +27,15 @@ it("keeps a redirecting action's toast for the page it lands on", function (): v
     expect($client->followRedirect())->toContainElement(Selectors::STACK . ' ' . Selectors::TITLE, 'Saved');
 });
 
-it('shows a translated title after a redirect', function (): void {
+it('flashes a title message as its translated text and shows it after a redirect', function (): void {
     $client = $this::getContainer()->get('test.client');
 
     $this->createLiveComponent(NotifyingHost::class, client: $client)
         ->call('saveTranslatedAndLeave')
         ->assertRedirect(NotificationsPageController::URL);
 
-    expect($client->followRedirect())->toContainElement(Selectors::STACK . ' ' . Selectors::TITLE, 'Saved from the catalogue');
+    expect(array_column($client->getRequest()->getSession()->getFlashBag()->peek(SessionNotifications::FLASH_KEY), 'title'))->toBe(['Saved from the catalogue'])
+        ->and($client->followRedirect())->toContainElement(Selectors::STACK . ' ' . Selectors::TITLE, 'Saved from the catalogue');
 });
 
 it('hands a toast sent while the host renders to the next response', function (): void {

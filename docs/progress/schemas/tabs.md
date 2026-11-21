@@ -24,7 +24,7 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`make()` / `label()`](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::make()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | — |
-| [`setUp()` key closure — `slug(label)::[statePath::]tabs`, non-inheritable](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::setUp()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [semantics](#the-non-inheritable-key-is-what-keeps-a-childs-absolute-key-unchanged) |
+| [`setUp()` key closure — `slug(label)::[statePath::]tabs`, non-inheritable](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::setUp()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [semantics](#a-translated-label-keys-the-tabs-and-each-tab-as-in-filament) · [diverges](#the-locale-of-a-live-call-is-the-requests-so-a-url-locale-application-prefixes-its-live-route) · [semantics](#the-non-inheritable-key-is-what-keeps-a-childs-absolute-key-unchanged) |
 | [`tabs()`](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::tabs()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | — |
 | [`activeTab()` / `getActiveTab()`](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::getActiveTab()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-query-string-arm-compares-the-key-the-url-actually-carries) |
 | [`getActiveTabKey()`](../../../packages/schemas/src/Components/Tabs.php) — Sylament-only | — | done | — | [diverges](#two-sylament-only-accessors-carry-what-alpine-read-from-the-client) |
@@ -57,6 +57,11 @@ Nothing in this port has a render-hook registry, a `HasRenderHookScopes` contrac
 Next step: port them with the registry, not before.
 
 ## Semantics
+
+### A translated label keys the tabs and each tab, as in Filament
+
+`Tabs` and `Tab` slug their keys from the label after the getter has translated it, as Filament slugs the already-translated `getLabel()`; the key also reaches `data-tab-key`, the `?tab=` value and the persisted-tab storage key, so each varies with the locale and `->key()` pins it.
+The reasoning is [Section's](section.md#a-translated-heading-keys-the-component-as-in-filament).
 
 ### Server mode is the `livewireProperty` arm translated to UX Live
 
@@ -100,6 +105,11 @@ Support's `TabsItem` declares no `value` prop, so it lands as a `value="all"` at
 It is inert (a `type="button"` element submits nothing) and the tabs' own wiring reads `data-value`, so it is left alone rather than papered over with a swallowing prop on a support component.
 
 ## Divergences
+
+### The locale of a live call is the request's, so a URL-locale application prefixes its live route
+
+A server-mode `Tabs` addresses its active tab by key across live calls, so a request that translates in another locale than the one that rendered the key reads no active tab.
+The cause and the requirement are [Section's](section.md#the-locale-of-a-live-call-is-the-requests-so-a-url-locale-application-prefixes-its-live-route).
 
 ### The active tab is server-rendered and then owned by the controller
 

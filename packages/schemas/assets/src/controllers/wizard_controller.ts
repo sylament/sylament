@@ -7,8 +7,6 @@ const ACTIVE_CLASS = "sy-active";
 const COMPLETED_CLASS = "sy-completed";
 const HIDDEN_CLASS = "sy-hidden";
 const NEXT_STEP_METHOD = "nextStep";
-const COMPLETED_TEXT = "Completed";
-const NOT_COMPLETED_TEXT = "Not completed";
 
 /** Enter advances the step from these input types only; everything else keeps its own behaviour. */
 const TEXT_INPUT_TYPES = new Set([
@@ -51,6 +49,8 @@ export default class extends Controller<HTMLElement> {
     startStep: { type: Number, default: 1 },
     skippable: Boolean,
     queryStringKey: String,
+    completedText: String,
+    notCompletedText: String,
   };
 
   declare readonly headerTarget: HTMLElement;
@@ -73,6 +73,8 @@ export default class extends Controller<HTMLElement> {
   declare readonly startStepValue: number;
   declare readonly skippableValue: boolean;
   declare readonly queryStringKeyValue: string;
+  declare readonly completedTextValue: string;
+  declare readonly notCompletedTextValue: string;
 
   #step: string | null = null;
   #host: Promise<Component> | null = null;
@@ -330,7 +332,7 @@ export default class extends Controller<HTMLElement> {
     }
 
     this.stepStatusTargets.forEach((status, index) => {
-      status.textContent = stepStatusText(index, current);
+      status.textContent = this.#stepStatusText(index, current);
     });
 
     if (this.hasPreviousSlotTarget) {
@@ -409,12 +411,12 @@ export default class extends Controller<HTMLElement> {
       }
     });
   }
-}
 
-function stepStatusText(index: number, current: number): string {
-  if (index < current) {
-    return COMPLETED_TEXT;
+  #stepStatusText(index: number, current: number): string {
+    if (index < current) {
+      return this.completedTextValue;
+    }
+
+    return index === current ? "" : this.notCompletedTextValue;
   }
-
-  return index === current ? "" : NOT_COMPLETED_TEXT;
 }

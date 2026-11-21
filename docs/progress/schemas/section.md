@@ -42,7 +42,7 @@ The shared ones have their own files: the label is [`HasLabel`](has-label.md), t
 | [`makeChildSchema()` end-alignment](../../../packages/schemas/src/Components/Section.php) | [`Section::makeChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`configureChildSchema()` inline + embedded](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`configureChildSchema()` action size/template branch](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [semantics](#slot-setters-replace-the-seeded-header-and-footer-actions) |
-| [Key derivation from heading slug](../../../packages/schemas/src/Components/Section.php) | [`Section::setUp()`](../../../vendor/filament/schemas/src/Components/Section.php) | in progress | — | [detail](#the-heading-derived-key-omits-the-state-path-segment) |
+| [Key derivation from heading slug](../../../packages/schemas/src/Components/Section.php) | [`Section::setUp()`](../../../vendor/filament/schemas/src/Components/Section.php) | in progress | — | [detail](#the-heading-derived-key-omits-the-state-path-segment) · [semantics](#a-translated-heading-keys-the-component-as-in-filament) · [diverges](#the-locale-of-a-live-call-is-the-requests-so-a-url-locale-application-prefixes-its-live-route) |
 | [Header actions (`HasHeaderActions` + `setUp` seed)](../../../packages/schemas/src/Components/Concerns/HasHeaderActions.php) | [`Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | done | — | — |
 | [Footer actions + alignment (`HasFooterActions`)](../../../packages/schemas/src/Components/Concerns/HasFooterActions.php) | [`Concerns/HasFooterActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActions.php) | done | — | — |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#extra-alpine-attribute-passthrough-is-not-ported) · [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
@@ -53,8 +53,8 @@ The shared ones have their own files: the label is [`HasLabel`](has-label.md), t
 | [`CanBeCompact`](../../../packages/schemas/src/Components/Concerns/CanBeCompact.php) | [`Concerns/CanBeCompact.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeCompact.php) | done | — | — |
 | [`CanBeDivided`](../../../packages/schemas/src/Components/Concerns/CanBeDivided.php) | [`Concerns/CanBeDivided.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDivided.php) | done | — | — |
 | [`CanBeSecondary`](../../../packages/schemas/src/Components/Concerns/CanBeSecondary.php) | [`Concerns/CanBeSecondary.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeSecondary.php) | done | — | — |
-| [`HasHeading`](../../../packages/schemas/src/Components/Concerns/HasHeading.php) | [`Concerns/HasHeading.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeading.php) | done | — | — |
-| [`HasDescription`](../../../packages/schemas/src/Components/Concerns/HasDescription.php) | [`Concerns/HasDescription.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasDescription.php) | done | — | — |
+| [`HasHeading`](../../../packages/schemas/src/Components/Concerns/HasHeading.php) | [`Concerns/HasHeading.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeading.php) | done | — | [semantics](#a-heading-and-a-description-are-strings-markup-or-messages-translated-in-the-getter) |
+| [`HasDescription`](../../../packages/schemas/src/Components/Concerns/HasDescription.php) | [`Concerns/HasDescription.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasDescription.php) | done | — | [semantics](#a-heading-and-a-description-are-strings-markup-or-messages-translated-in-the-getter) |
 | [`CanBeAside`](../../../packages/schemas/src/Components/Concerns/CanBeAside.php) | [`Section::aside()` (inline)](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#aside-is-extracted-into-a-canbeaside-concern) |
 | [`HasContentBefore`](../../../packages/schemas/src/Components/Concerns/HasContentBefore.php) | [`Section::formBefore()` (inline)](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#formbefore-becomes-contentbefore-extracted-into-a-hascontentbefore-concern) |
 
@@ -69,6 +69,18 @@ The `AsciiSlugger` swap is the standard string-helper translation; the missing `
 
 ## Semantics
 
+### A heading and a description are strings, markup or messages, translated in the getter
+
+`heading()` and `description()` take `string|Markup|TranslatableInterface|Closure|null`, and each getter evaluates the value and then translates a message through the section's translator, so the template and `getHeadingsCount()` read a string or a `Markup`.
+A plain string stays a literal.
+The slot setters (`afterHeader()`, `footer()` and the others) take a message as a child like any child schema: it becomes an escaped [`Text`](text.md), never the raw [`Html`](html.md) a non-component child otherwise becomes ([schema.md](schema.md#a-message-child-is-an-escaped-text)).
+
+### A translated heading keys the component, as in Filament
+
+Filament slugs the section's key from `getHeading()`, after its `__()` has run, and the key closure here slugs the translated heading the same way.
+The key reaches the DOM id, the persisted-collapse storage key and the address of a mounted action, so it varies with the locale; `->key()` pins it for a section whose key must not.
+`Tabs`, `Tab`, `Wizard` and `Step` slug their translated label identically ([tabs.md](tabs.md#a-translated-label-keys-the-tabs-and-each-tab-as-in-filament)).
+
 ### Slot setters replace the seeded header and footer actions
 
 `setUp()` seeds the after-header slot with a closure returning `getHeaderActions()` and the footer slot with a closure building an alignment-matched `Schema` of `getFooterActions()`.
@@ -76,6 +88,14 @@ Slot setters replace, so a user `->afterHeader(...)` or `->footer(...)` call dis
 `configureChildSchema()` defaults actions in the four label/content slots to `Size::Small` and the link trigger template (`Action::LINK_TEMPLATE`, Filament's `LINK_VIEW`), and action groups there to the small size only; header and footer slot actions keep the button default, and an explicit `->button()` on a slot action still wins.
 
 ## Divergences
+
+### The locale of a live call is the request's, so a URL-locale application prefixes its live route
+
+Livewire saves the locale a component mounted in and restores it on every update, so a key slugged from translated text stays stable for the component's lifetime in Filament.
+UX Live keeps no locale: each live request translates in whatever locale the application sets for it.
+An application that reads the locale from the session or the user is unaffected.
+One that reads it from the URL prefixes its live route with `{_locale}`, as UX documents, because a live request that runs in the default locale rebuilds every translated key and loses a mounted action, the validated schema keys, `goToStep()` and the active tab.
+Nothing checks it.
 
 ### The array-heading constructor shorthand is dropped
 

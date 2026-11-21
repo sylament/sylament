@@ -1,9 +1,14 @@
 {% set controller = 'sylament--schemas--wizard' %}
 
+{% set completedText = 'components.wizard.header.step.statuses.completed'|trans(domain: 'sylament-schemas') %}
+{% set notCompletedText = 'components.wizard.header.step.statuses.upcoming'|trans(domain: 'sylament-schemas') %}
+
 {% set stimulus = stimulus_controller(controller, {
     key: wizardKey,
     schemaKey: schemaKey,
     startStep: startStep,
+    completedText: completedText,
+    notCompletedText: notCompletedText,
     skippable: isSkippable ? true : null,
     queryStringKey: stepQueryStringKey,
 })
@@ -76,7 +81,7 @@
                                 <span class="sy-sc-wizard-header-step-description">{{ step.getDescription }}</span>
                             {% endif %}
 
-                            <span {{ attrs({class: 'sy-sc-wizard-header-step-status'}, stimulus_target(controller, 'stepStatus')) }}>{{ isStepCompleted ? 'Completed' : (isStepActive ? '' : 'Not completed') }}</span>
+                            <span {{ attrs({class: 'sy-sc-wizard-header-step-status'}, stimulus_target(controller, 'stepStatus')) }}>{{ isStepCompleted ? completedText : (isStepActive ? '' : notCompletedText) }}</span>
                         </div>
                     </button>
 

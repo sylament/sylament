@@ -115,9 +115,13 @@ The schema-tier `getLiveComponentKey()` has its prerequisite, the host id [`getS
 
 ### Child coercion and action children follow Filament's unions
 
-`getComponents()` resolves a `components()` closure lazily, stamps each child's container, coerces a `string` child to `Text` and any other non-component to `Html`, and filters on visibility.
+`getComponents()` resolves a `components()` closure lazily, stamps each child's container, coerces a `string` or a message child to `Text` and any other non-component to `Html`, and filters on visibility.
 An `Action` or `ActionGroup` child is passed through the container's `modifyAction()`/`modifyActionGroup()` hook, stamped `schemaContainer($this)` and left uncoerced; `getComponents()` and `getFlatComponents()` drop them when `$withActions` is false, and `getFlatComponents()` appends them but never descends into them.
 The state walks in `HasState` and [`HasSchemas`](has-schemas.md) and `getComponentByStatePath()` all pass `withActions: false`, and both accessors declare PHPStan conditional return types, so those call sites keep `array<Component>` inference.
+
+### A message child is an escaped Text
+
+`getComponents()` coerces a `TranslatableInterface` child to a `Text`, the way it coerces a string, so the translated message is escaped like any text; a parameter carrying user data reaches the page as text, and only a `Markup` child becomes raw `Html`.
 
 ### `getAction()` searches visible components depth-first by nested key
 

@@ -5,8 +5,6 @@ const ACTIVE_CLASS = "sy-active";
 const COMPLETED_CLASS = "sy-completed";
 const HIDDEN_CLASS = "sy-hidden";
 const NEXT_STEP_METHOD = "nextStep";
-const COMPLETED_TEXT = "Completed";
-const NOT_COMPLETED_TEXT = "Not completed";
 const TEXT_INPUT_TYPES = /* @__PURE__ */ new Set([
   "text",
   "email",
@@ -38,7 +36,9 @@ class wizard_controller_default extends Controller {
     schemaKey: String,
     startStep: { type: Number, default: 1 },
     skippable: Boolean,
-    queryStringKey: String
+    queryStringKey: String,
+    completedText: String,
+    notCompletedText: String
   };
   #step = null;
   #host = null;
@@ -232,7 +232,7 @@ class wizard_controller_default extends Controller {
       button.disabled = !this.#isStepAccessible(step) || isPreviousDisabled;
     }
     this.stepStatusTargets.forEach((status, index) => {
-      status.textContent = stepStatusText(index, current);
+      status.textContent = this.#stepStatusText(index, current);
     });
     if (this.hasPreviousSlotTarget) {
       this.previousSlotTarget.classList.toggle(HIDDEN_CLASS, isFirst);
@@ -287,12 +287,12 @@ class wizard_controller_default extends Controller {
       }
     });
   }
-}
-function stepStatusText(index, current) {
-  if (index < current) {
-    return COMPLETED_TEXT;
+  #stepStatusText(index, current) {
+    if (index < current) {
+      return this.completedTextValue;
+    }
+    return index === current ? "" : this.notCompletedTextValue;
   }
-  return index === current ? "" : NOT_COMPLETED_TEXT;
 }
 export {
   wizard_controller_default as default

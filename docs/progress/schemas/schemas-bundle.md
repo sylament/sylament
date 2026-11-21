@@ -40,7 +40,7 @@ The reader rows live in their own files.
 | `SchemaIconAlias::COMPONENTS_CALLOUT_DANGER` / `_INFO` / `_SUCCESS` / `_WARNING` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | blocked | the unported `Callout` component | — |
 | `composer.json` requires `sylament/actions` | — | done | — | — |
 | `Make*` commands + stub publishing | [`configurePackage()` / `packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#the-make-commands-and-stub-publishing-are-not-ported) |
-| Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#the-translations-namespace-is-not-registered) |
+| [Translations (`hasTranslations`)](../../../packages/schemas/translations) | [`configurePackage()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | done | — | [semantics](#the-catalogue-holds-only-the-keys-schemas-code-reads) |
 | `validate` / `validateOnly` call abort (`on('call')`) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | File-upload restriction hook (`on('call')` abort) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | `Testable::mixin(new TestsSchemas)` | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -52,12 +52,16 @@ The reader rows live in their own files.
 `MakeComponentCommand` / `MakeLivewireSchemaCommand` / `MakeSchemaCommand` and the `stubs/` publishing loop have no counterpart.
 Next step: port them with the `Commands/` subtree.
 
-### The translations namespace is not registered
-
-`->hasTranslations()` registers Filament's `resources/lang` namespace, and the bundle registers no translation domain.
-Next step: port it with the translations subtree.
-
 ## Semantics
+
+### The catalogue holds only the keys schemas' code reads
+
+FrameworkBundle registers the bundle's `translations/` directory by itself, so the bundle wires nothing.
+`sylament-schemas+intl-icu.en.xlf` holds the four keys the package renders under Filament's key paths: `components.wizard.actions.next_step.label`, `components.wizard.actions.previous_step.label`, `components.wizard.header.step.statuses.completed` and `components.wizard.header.step.statuses.upcoming`.
+The English matches Filament's.
+Filament's other keys have no host here and ship nowhere until one exists: `components.callout.statuses.*`, `components.js_component.failed_to_load`, `components.tabs.actions.more.label`, and the support-namespace `loading.*`.
+The Section collapse and expand labels, and the Tabs navigation label, are support's own keys in the `sylament` domain, because support's templates render them.
+`validators.en.xlf` holds *This value cannot be changed.*, the record-key refusal Symfony's own catalogue lacks; *This value is already used.* and *This value should not be blank.* are Symfony's and need no entry.
 
 ### The asset prepend needs the built `dist` to exist
 
@@ -256,6 +260,8 @@ It declares no targets: both handlers `querySelector` over their own subtree.
 | `startStep` | Number, default `1` | the server's active step, 1-based; the server has already resolved the query string into it, so the controller never reads the URL on connect |
 | `skippable` | Boolean | `true` ⇒ every step is reachable from the header; otherwise only steps before the current one are |
 | `queryStringKey` | String | non-empty ⇒ `history.replaceState`d on change (and the reset handler stands down) |
+| `completedText` | String | the text the status span of a completed step shows, from `components.wizard.header.step.statuses.completed`; the controller has no default |
+| `notCompletedText` | String | the text the status span of an upcoming step shows, from `components.wizard.header.step.statuses.upcoming`; the controller has no default |
 
 | Target | What it is |
 | --- | --- |

@@ -22,14 +22,13 @@ use Sylament\Schemas\Identity\IdentifierFields;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Query\SortDirections;
 use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\Translation\TranslatableMessage;
 
 use function Sylament\Support\blank;
 
 class AssociationReader
 {
     private const string TAKEN_IDENTIFIER = 'This value is already used.';
-
-    private const string CHANGED_IDENTIFIER = 'This value cannot be changed.';
 
     private const string BLANK_IDENTIFIER = 'This value should not be blank.';
 
@@ -429,7 +428,7 @@ class AssociationReader
             }
 
             foreach ($this->revertIdentifierChange($current, $metadata) as $field) {
-                $refusals[$this->joinPropertyPath($path, $field)] = self::CHANGED_IDENTIFIER;
+                $refusals[$this->joinPropertyPath($path, $field)] = $this->changedIdentifierMessage();
             }
         }
 
@@ -764,6 +763,14 @@ class AssociationReader
         }
 
         return $changed;
+    }
+
+    /**
+     * The bare id: the validator translates it when it builds the violation.
+     */
+    private function changedIdentifierMessage(): string
+    {
+        return new TranslatableMessage('This value cannot be changed.', [], 'validators')->getMessage();
     }
 
     private function joinPropertyPath(string $path, string $property): string

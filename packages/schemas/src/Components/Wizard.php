@@ -15,6 +15,7 @@ use Sylament\Support\Enums\IconPosition;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\String\Slugger\AsciiSlugger;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Contracts\Translation\TranslatableInterface;
 use Twig\Markup;
@@ -151,7 +152,7 @@ class Wizard extends Component
     public function getNextAction(): Action
     {
         $action = Action::make($this->getNextActionName())
-            ->label('Next')
+            ->label($this->translateText(new TranslatableMessage('components.wizard.actions.next_step.label', [], 'sylament-schemas')))
             ->iconPosition(IconPosition::After)
             ->liveComponentClickHandlerEnabled(false)
             ->button();
@@ -176,7 +177,7 @@ class Wizard extends Component
     public function getPreviousAction(): Action
     {
         $action = Action::make($this->getPreviousActionName())
-            ->label('Back')
+            ->label($this->translateText(new TranslatableMessage('components.wizard.actions.previous_step.label', [], 'sylament-schemas')))
             ->color('gray')
             ->liveComponentClickHandlerEnabled(false)
             ->button();

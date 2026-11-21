@@ -16,12 +16,12 @@ It extends the schemas base [`Component`](component.md) and implements the [`Can
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make(string $label)`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::make()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
+| [`make(string\|TranslatableInterface $label)`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::make()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | [Key derivation](../../../packages/schemas/src/Components/Wizard/Step.php) (`slug(label)::{statePath}::wizard-step`, non-inheritable) | [`Step::setUp()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [semantics](wizard.md#the-key-keeps-filaments-state-path-segment-which-section-drops) |
 | [`beforeValidation()` / `callBeforeValidation()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::beforeValidation()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | [`afterValidation()` / `callAfterValidation()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::afterValidation()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | `afterValidated()`, deprecated for `afterValidation()` | [`Step::afterValidated()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | skipped | — | [renames.md](../renames.md#a-deprecated-filament-member-is-not-ported) |
-| [`description()` / `getDescription()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::description()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
+| [`description()` / `getDescription()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::description()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [semantics](#a-label-and-a-description-may-be-messages) |
 | [`icon()` / `getIcon()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::icon()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | [`completedIcon()` / `getCompletedIcon()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::completedIcon()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [diverges](wizard.md#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css) |
 | [`getAllColumns()`](../../../packages/schemas/src/Components/Wizard/Step.php) container fallback | [`Step::getAllColumns()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
@@ -33,6 +33,11 @@ It extends the schemas base [`Component`](component.md) and implements the [`Can
 | The `x-ref="step-{key}"` reference | [`Step::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | skipped | — | [diverges](wizard.md#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css) |
 
 ## Semantics
+
+### A label and a description may be messages
+
+`make()` and `description()` accept a `TranslatableInterface` beside a string, and each getter returns the translated string, so the header and the panel's fallback `aria-label` read plain text.
+The key slugs the translated label ([Section's entry](section.md#a-translated-heading-keys-the-component-as-in-filament)).
 
 ### The panel is a group named by its header button, never a tabpanel
 

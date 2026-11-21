@@ -267,9 +267,9 @@ The same `getData()` carries it everywhere a managed record is written: `EditRec
 Tables' editable cells run the same pass themselves and answer it as the cell's own error ([has-columns.md](../tables/has-columns.md)).
 The same key in another PHP type is no change; a converting type's other spelling of it is one ([the detector](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
 
-All three messages — the taken, the changed and the blank one — are private constants on the reader, with no error code, since nothing in the toolkit reads one.
+All three messages — the taken, the changed and the blank one — are plain ids on the reader with no error code, since nothing in the toolkit reads one; the taken and blank ids are private constants, and the changed id is named through a `validators` message so the catalogue gate reads the literal it cannot see in a constant.
 No switch reaches this pass ([why](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)).
-*"This value cannot be changed."* is the toolkit's own, and stays English unless the application's `translations/validators.*` maps it — Symfony ships no such message.
+*"This value cannot be changed."* is the toolkit's own, since Symfony ships no such message: schemas' `translations/validators.en.xlf` holds it as the id, and an application translates it by mapping that id in its own `translations/validators.*`.
 `disabledOn('edit')` stays the UI and this is the server's guarantee, and it holds where the UI guard does not: a modal's operation is the action's **name**, so an `EditAction::make('editRenamed')` leaves a `disabledOn('edit')` key field enabled, and the refusal is what answers there.
 A key written into a related record **nobody loaded** is not seen — Doctrine drops that write itself — and is [recorded on the reader](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement).
 

@@ -18,7 +18,7 @@ It ports Filament's schema [`Text`](../../../vendor/filament/schemas/src/Compone
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make(content)`](../../../packages/schemas/src/Components/Text.php) | [`Text::make()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
+| [`make(content)`](../../../packages/schemas/src/Components/Text.php) | [`Text::make()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | [semantics](#a-message-is-translated-and-escaped-like-any-text) |
 | [`content()` / `getContent()`](../../../packages/schemas/src/Components/Text.php) | [`Text::content()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`size()` / `getSize()` normalization](../../../packages/schemas/src/Components/Text.php) | [`Text::size()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`getSizeClass()` (Sylament template helper)](../../../packages/schemas/src/Components/Text.php) | — | done | — | — |
@@ -63,6 +63,13 @@ Filament wires the tooltip through Alpine's `x-tooltip`, with `allowHTML` derive
 
 Filament's `js()` wraps the content in [`JsContent`](../../../vendor/filament/schemas/src/JsContent.php) so it renders as an evaluated JS expression rather than literal text.
 Neither `Text::js()` nor `JsContent` exists in the port.
+
+## Semantics
+
+### A message is translated and escaped like any text
+
+`make()` and `content()` take a `TranslatableInterface` beside a string or a `Markup`, and `getContent()` translates it into a string the template escapes, so a message parameter carrying user data reaches the page as text.
+A message child of a schema becomes a `Text` for the same reason ([schema.md](schema.md#a-message-child-is-an-escaped-text)).
 
 ## Divergences
 

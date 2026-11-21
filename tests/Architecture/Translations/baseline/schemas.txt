@@ -1,6 +1,0 @@
-assets/src/controllers/wizard_controller.ts: Completed
-assets/src/controllers/wizard_controller.ts: Not completed
-src/Components/Wizard.php: Back
-src/Components/Wizard.php: Next
-templates/partials/Wizard/index.html.twig: Completed
-templates/partials/Wizard/index.html.twig: Not completed

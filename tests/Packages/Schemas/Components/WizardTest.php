@@ -68,6 +68,7 @@ describe('render', function (): void {
         $wizard = $this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Review')])->extraAttributes(['data-tour' => 'checkout']));
         $controller = Selectors::WIZARD . '[data-controller="sylament--schemas--wizard"][data-tour="checkout"]'
             . Selectors::wizardValue('schema-key', 'schema') . Selectors::wizardValue('start-step', '1')
+            . Selectors::wizardValue('completed-text', 'Completed') . Selectors::wizardValue('not-completed-text', 'Not completed')
             . ':not(' . Selectors::wizardValue('skippable') . '):not(' . Selectors::wizardValue('query-string-key') . ')'
             . '[data-action~="next-wizard-step@window->sylament--schemas--wizard#onNextStepEvent"]'
             . '[data-action~="go-to-wizard-step@window->sylament--schemas--wizard#onGoToStepEvent"]'

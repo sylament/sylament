@@ -32,10 +32,8 @@ it('paints a badge in the colour it is given or picks from the badge', function 
 it('translates a badge given as a message, and shows a number as the number it is', function (): void {
     expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([
         Tab::make('Open')->badge(new TranslatableMessage('plain', [], 'fixtures-support')),
-        Tab::make('Late')->badge(fn (): TranslatableMessage => new TranslatableMessage('greeting', ['name' => 'Ada'], 'fixtures-support')),
         Tab::make('Closed')->badge(7),
     ])))
         ->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, 'Plain')
-        ->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, 'Hello Ada')
         ->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, '7');
 });

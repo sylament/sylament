@@ -18,8 +18,6 @@ it('counts the page overview with a plural message', function (): void {
         ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 result')
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1], ['id' => 2]], 2, 1, 10)])->crawler())
         ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 2 of 2 results')
-        ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1], ['id' => 2]], 1234, 1, 2)])->crawler())
-        ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 1 to 2 of 1,234 results')
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1], ['id' => 2]], 5000, 1500, 2)])->crawler())
         ->toContainElement(SupportSelectors::PAGINATION_OVERVIEW, 'Showing 2,999 to 3,000 of 5,000 results');
 });

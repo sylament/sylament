@@ -33,7 +33,7 @@ final class Trail
 
     private const array UNAUDITED = ['_not audited yet_', '_rest not audited yet_'];
 
-    private const array ENTRY_SECTIONS = ['Details', 'Semantics', 'Divergences'];
+    private const array ENTRY_LABELS = ['Details' => 'detail', 'Semantics' => 'semantics', 'Divergences' => 'diverges'];
 
     private const string DETAIL_CELL = '/^(—|\[[^\]]+\]\([^)\s]+\)( · \[[^\]]+\]\([^)\s]+\))*)$/u';
 
@@ -573,56 +573,18 @@ final class Trail
      */
     public function orphanViolations(): array
     {
-        $root = realpath($this->root);
-
-        if (false === $root) {
-            throw new UnexpectedValueException("{$this->root} does not exist");
-        }
-
-        $entries = [];
         $linked = [];
 
-        foreach ($this->trailPaths() as $path) {
-            $headings = [];
-
-            foreach (self::proseLines($this->read($path)) as $number => $line) {
-                if (1 === preg_match('/^(#{1,6})\s+(.+?)\s*#*$/', $line, $heading)) {
-                    $headings[$number] = $heading;
-
-                    continue;
-                }
-
-                if (!str_starts_with($line, '|')) {
-                    continue;
-                }
-
-                preg_match_all('/\]\(([^)\s#]*)#([^)\s]+)\)/', (string) preg_replace('/`[^`]*`/', '``', $line), $links, PREG_SET_ORDER);
-
-                foreach ($links as $link) {
-                    $target = '' === $link[1] ? "{$root}/{$path}" : realpath("{$root}/" . dirname($path) . '/' . rawurldecode($link[1]));
-
-                    if (false !== $target && str_starts_with($target, "{$root}/")) {
-                        $linked[mb_substr($target, mb_strlen($root) + 1) . '#' . rawurldecode($link[2])] = true;
-                    }
-                }
-            }
-
-            $anchors = array_combine(array_keys($headings), DocumentationFiles::headingAnchors(array_column($headings, 2)));
-            $section = null;
-
-            foreach ($headings as $number => [, $level, $title]) {
-                $section = '##' === $level ? $title : $section;
-
-                if ('###' === $level && in_array($section, self::ENTRY_SECTIONS, true)) {
-                    $entries["{$path}#{$anchors[$number]}"] = "{$path}:{$number}: ### {$title}";
-                }
+        foreach ($this->headingLinks() as $link) {
+            if ($link['row']) {
+                $linked[$link['target']] = true;
             }
         }
 
         $violations = [];
 
-        foreach (array_diff_key($entries, $linked) as $entry) {
-            $violations[] = "{$entry} is linked from no table row; link it from the row of the code it constrains";
+        foreach (array_diff_key($this->entries(), $linked) as $entry) {
+            $violations[] = "{$entry['heading']} is linked from no table row; link it from the row of the code it constrains";
         }
 
         return $violations;
@@ -646,6 +608,39 @@ final class Trail
 
             if ($bytes > self::SIZE_ALARM_BYTES) {
                 $violations[] = "{$path}: {$bytes} bytes, past the 90 KB alarm — split it along the code it owns";
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Check 10: a link labelled detail, semantics or diverges, in a row or in prose, targets an entry under the section
+     * its label names: "## Details", "## Semantics" or "## Divergences" respectively.
+     *
+     * @return list<string>
+     */
+    public function labelViolations(): array
+    {
+        $entries = $this->entries();
+        $violations = [];
+
+        foreach ($this->headingLinks() as ['at' => $at, 'label' => $label, 'target' => $target]) {
+            if (null === $label) {
+                continue;
+            }
+
+            if (!isset($entries[$target])) {
+                $violations[] = "{$at}: [{$label}] links {$target}, which is not a Details, Semantics or Divergences entry";
+
+                continue;
+            }
+
+            $section = $entries[$target]['section'];
+            $expected = self::ENTRY_LABELS[$section];
+
+            if ($expected !== $label) {
+                $violations[] = "{$at}: [{$label}] links {$target}, which sits under ## {$section}; label it [{$expected}]";
             }
         }
 
@@ -990,6 +985,72 @@ final class Trail
         sort($paths);
 
         return $paths;
+    }
+
+    /**
+     * Every entry of the trail, a "###" heading under "## Details", "## Semantics" or "## Divergences", keyed by
+     * "{path}#{anchor}", with the heading as "{path}:{line}: ### {title}" and the section it sits under.
+     *
+     * @return array<string, array{heading: string, section: key-of<self::ENTRY_LABELS>}>
+     */
+    private function entries(): array
+    {
+        $entries = [];
+
+        foreach ($this->trailPaths() as $path) {
+            $headings = self::headings($this->read($path));
+            $anchors = DocumentationFiles::headingAnchors(array_column($headings, 'text'));
+            $section = null;
+
+            foreach ($headings as $index => ['level' => $level, 'text' => $title, 'line' => $number]) {
+                $section = 2 === $level ? $title : $section;
+
+                if (3 === $level && null !== $section && isset(self::ENTRY_LABELS[$section])) {
+                    $entries["{$path}#{$anchors[$index]}"] = ['heading' => "{$path}:{$number}: ### {$title}", 'section' => $section];
+                }
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Every link to a heading in the trail's prose, inline code ignored, as its "{path}:{line}", whether that line is a
+     * table row, its label when that is detail, semantics or diverges, and its target as "{path}#{anchor}"; a link
+     * that resolves to no file or outside the root is left out, since DocumentationFilesTest fails it.
+     *
+     * @return list<array{at: string, row: bool, label: string|null, target: string}>
+     */
+    private function headingLinks(): array
+    {
+        $root = realpath($this->root);
+
+        if (false === $root) {
+            throw new UnexpectedValueException("{$this->root} does not exist");
+        }
+
+        $links = [];
+
+        foreach ($this->trailPaths() as $path) {
+            foreach (self::proseLines($this->read($path)) as $number => $line) {
+                preg_match_all('/(?:\[(detail|semantics|diverges))?\]\(([^)\s#]*)#([^)\s]+)\)/', (string) preg_replace('/`[^`]*`/', '``', $line), $matches, PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL);
+
+                foreach ($matches as [, $label, $file, $anchor]) {
+                    $target = '' === $file ? "{$root}/{$path}" : realpath("{$root}/" . dirname($path) . '/' . rawurldecode((string) $file));
+
+                    if (false !== $target && str_starts_with($target, "{$root}/")) {
+                        $links[] = [
+                            'at' => "{$path}:{$number}",
+                            'row' => str_starts_with($line, '|'),
+                            'label' => $label,
+                            'target' => mb_substr($target, mb_strlen($root) + 1) . '#' . rawurldecode((string) $anchor),
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $links;
     }
 
     private function readme(string $package): string

@@ -274,6 +274,28 @@ it('refuses an entry that no table row of any trail file links, a prose link not
     }
 });
 
+it('refuses a detail, semantics or diverges label that names another section than its target sits under, in a row or in prose', function (): void {
+    $files = TrailFixture::greenTree();
+    $files[TrailFixture::docs('alpha/widget.md')] .= "\nSee [diverges](#widget-waits-on-the-engine) and [detail](#widget%2Dwaits-on-the-engine).\n"
+        . "\n## Divergences\n\n### Widget renders eagerly\n\nOne sentence.\n";
+    $files[TrailFixture::docs('alpha/has-thing.md')] = str_replace(
+        '| `legacyThing()` | `HasThing.php` | skipped | — | — |',
+        "| `legacyThing()` | `HasThing.php` | skipped | — | [detail](#thing-is-subtle) · [diverges](./../alpha/widget.md#widget-renders-eagerly) |\n| `otherThing()` | `HasThing.php` | done | — | [semantics](#surface) |",
+        $files[TrailFixture::docs('alpha/has-thing.md')],
+    ) . "\nNot `[detail](#thing-is-subtle)`.\n\n```\n[detail](#thing-is-subtle)\n```\n";
+    $root = TrailFixture::tree($files);
+
+    try {
+        expect(new Trail($root, TrailFixture::tracked($files))->labelViolations())->toBe([
+            TrailFixture::docs('alpha/has-thing.md') . ':15: [detail] links ' . TrailFixture::docs('alpha/has-thing.md') . '#thing-is-subtle, which sits under ## Semantics; label it [semantics]',
+            TrailFixture::docs('alpha/has-thing.md') . ':16: [semantics] links ' . TrailFixture::docs('alpha/has-thing.md') . '#surface, which is not a Details, Semantics or Divergences entry',
+            TrailFixture::docs('alpha/widget.md') . ':25: [diverges] links ' . TrailFixture::docs('alpha/widget.md') . '#widget-waits-on-the-engine, which sits under ## Details; label it [detail]',
+        ]);
+    } finally {
+        new Filesystem()->remove($root);
+    }
+});
+
 it('raises the size alarm one byte past 90 KB', function (int $bytes, bool $alarm): void {
     $files = TrailFixture::greenTree();
     $head = "# Big (alpha)\n\n";
@@ -308,6 +330,7 @@ it('writes the indexes between the markers and passes every check afterwards', f
             ->and($trail->indexViolations())->toBe([])
             ->and($trail->referenceViolations())->toBe([])
             ->and($trail->orphanViolations())->toBe([])
+            ->and($trail->labelViolations())->toBe([])
             ->and($trail->sizeViolations())->toBe([])
             ->and((string) file_get_contents($root . '/' . TrailFixture::docs('README.md')))->toContain(implode("\n", [
                 Trail::INDEX_START,
@@ -442,6 +465,12 @@ it('links every Details, Semantics and Divergences entry from a table row of som
     $violations = new Trail(TrailFixture::repositoryRoot())->orphanViolations();
 
     expect($violations)->toBe([], "Trail entries no table row links (.claude/rules/trail.md):\n" . implode("\n", $violations));
+});
+
+it('labels every detail, semantics and diverges link by the section its target sits under (check 10)', function (): void {
+    $violations = new Trail(TrailFixture::repositoryRoot())->labelViolations();
+
+    expect($violations)->toBe([], "Trail links labelled by another section than their target's (.claude/rules/trail.md):\n" . implode("\n", $violations));
 });
 
 it('keeps every trail file under the 90 KB alarm (check 9)', function (): void {

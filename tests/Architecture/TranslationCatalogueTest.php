@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
+use LogicException;
 use Sylament\Tests\Architecture\Translations\CatalogueScan;
 use Sylament\Tests\Architecture\Translations\Packages;
 use Sylament\Tests\Architecture\Translations\PlantedPackages;
@@ -58,6 +59,34 @@ it('reports a domain the package may not name', function (): void {
         PlantedPackages::remove($directory);
     }
 });
+
+it('reports a catalogue of a domain the package does not own', function (): void {
+    $directory = PlantedPackages::plant([
+        'support/translations/sylament-forms+intl-icu.en.xlf' => PlantedPackages::catalogue(['components.select.placeholder']),
+    ]);
+
+    try {
+        expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'support', $directory))->toBe(['misplaced sylament-forms: translations/sylament-forms+intl-icu.en.xlf']);
+    } finally {
+        PlantedPackages::remove($directory);
+    }
+});
+
+it('refuses a catalogue named in neither shape', function (string $file): void {
+    $directory = PlantedPackages::plant([
+        'forms/translations/' . $file => PlantedPackages::catalogue(['components.select.placeholder']),
+    ]);
+
+    try {
+        expect(fn (): array => CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'forms', $directory))
+            ->toThrow(LogicException::class, '/' . $file . ' is not named <domain>+intl-icu.en.xlf or validators.en.xlf');
+    } finally {
+        PlantedPackages::remove($directory);
+    }
+})->with([
+    'an own-domain catalogue without ICU' => ['sylament-forms.en.xlf'],
+    'a validators catalogue with ICU' => ['validators+intl-icu.en.xlf'],
+]);
 
 it('reads every shape a validator message ships in, and reports one validators.en.xlf lacks or no longer ships', function (): void {
     $directory = PlantedPackages::plant([

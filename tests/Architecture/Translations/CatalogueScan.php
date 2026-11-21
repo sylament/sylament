@@ -267,11 +267,11 @@ final class CatalogueScan
         $files = [];
 
         foreach (glob($packagesDirectory . '/' . $package . '/translations/*') ?: [] as $path) {
-            if (preg_match('/^(?<domain>[a-z0-9_-]+)(?:\+intl-icu)?\.en\.xlf$/', basename($path), $match) !== 1) {
+            if (preg_match('/^(?:validators\.en\.xlf|(?!validators\+)(?<domain>[a-z0-9-]+)\+intl-icu\.en\.xlf)$/', basename($path), $match) !== 1) {
                 throw new LogicException(sprintf('%s is not named <domain>+intl-icu.en.xlf or validators.en.xlf (.claude/rules/catalogues.md).', $path));
             }
 
-            $files[basename($path)] = $match['domain'];
+            $files[basename($path)] = $match['domain'] ?? self::VALIDATORS;
         }
 
         return $files;

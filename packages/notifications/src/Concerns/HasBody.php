@@ -6,7 +6,6 @@ namespace Sylament\Notifications\Concerns;
 
 use Closure;
 use Symfony\Contracts\Translation\TranslatableInterface;
-use Twig\Markup;
 
 trait HasBody
 {
@@ -21,8 +20,6 @@ trait HasBody
 
     public function getBody(): ?string
     {
-        $body = $this->translateText($this->evaluate($this->body));
-
-        return $body instanceof Markup ? (string) $body : $body;
+        return $this->translateText($this->evaluate($this->body));
     }
 }

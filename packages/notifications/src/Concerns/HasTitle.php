@@ -6,7 +6,6 @@ namespace Sylament\Notifications\Concerns;
 
 use Closure;
 use Symfony\Contracts\Translation\TranslatableInterface;
-use Twig\Markup;
 
 trait HasTitle
 {
@@ -21,8 +20,6 @@ trait HasTitle
 
     public function getTitle(): ?string
     {
-        $title = $this->translateText($this->evaluate($this->title));
-
-        return $title instanceof Markup ? (string) $title : $title;
+        return $this->translateText($this->evaluate($this->title));
     }
 }

@@ -59,7 +59,7 @@ trait HasNavigation
     public function getNavigationGroups(): array
     {
         return array_map(
-            fn (NavigationGroup|string|TranslatableInterface $group): NavigationGroup|string => $group instanceof TranslatableInterface ? $group->trans($this->getTranslator()) : $group,
+            fn (NavigationGroup|string|TranslatableInterface $group): NavigationGroup|string => $group instanceof NavigationGroup ? $group : $this->translateText($group),
             $this->navigationGroups,
         );
     }

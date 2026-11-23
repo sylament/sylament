@@ -173,7 +173,7 @@ The obvious reading of "actions on a notification" is that a toast can ask for c
 ### A title or body message is translated at send and flashed as text
 
 `title()` and `body()` take a `TranslatableInterface` beside Filament's `string | Closure | null`, and `getTitle()` / `getBody()` keep their `?string` return type: the getter evaluates, then translates a message through the notification's own translator (`translateText()`), so every reader, the template and `toArray()` included, still receives a string.
-A plain string stays a literal, and a `Markup` a closure returns becomes its string, because the payload crosses the session as text.
+A plain string stays a literal, and a closure answers a string or a message, as the setter admits: a `Markup` it returns throws a `TypeError` from the `?string` getter, where Filament's getter, outside strict types, coerces an `HtmlString` to its string, the policy the [flag getters](../support/component.md#evaluated-flag-getters-are-not-re-cast-to-bool) follow.
 
 The message is translated when `send()` calls `toArray()`, in the sending request's locale, and the flash bag carries the resulting text.
 A redirecting action's toast therefore shows its title in the sender's locale on the page it lands on, and [`fromArray()`](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) restores plain strings that are never translated a second time.

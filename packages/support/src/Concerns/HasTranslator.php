@@ -35,7 +35,7 @@ trait HasTranslator
     /**
      * A string, a Markup and null return unchanged without asking for the translator, so a new-built object still renders plain text.
      *
-     * @return ($text is null ? null : ($text is Markup ? Markup : string))
+     * @return ($text is null ? null : ($text is TranslatableInterface ? string : ($text is Markup ? Markup : string)))
      */
     public function translateText(string|Markup|TranslatableInterface|null $text): string|Markup|null
     {

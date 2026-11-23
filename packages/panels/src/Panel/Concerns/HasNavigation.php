@@ -54,11 +54,14 @@ trait HasNavigation
     }
 
     /**
-     * @return array<string|int, NavigationGroup|string|TranslatableInterface>
+     * @return array<string|int, NavigationGroup|string>
      */
     public function getNavigationGroups(): array
     {
-        return $this->navigationGroups;
+        return array_map(
+            fn (NavigationGroup|string|TranslatableInterface $group): NavigationGroup|string => $group instanceof TranslatableInterface ? $group->trans($this->getTranslator()) : $group,
+            $this->navigationGroups,
+        );
     }
 
     /**
@@ -123,7 +126,7 @@ trait HasNavigation
         }
 
         foreach ($this->getNavigationGroups() as $key => $registered) {
-            $label = $registered instanceof NavigationGroup ? $registered->getLabel() : $this->translateText($registered);
+            $label = $registered instanceof NavigationGroup ? $registered->getLabel() : $registered;
             $matched = array_find([$key, $label], fn ($candidate): bool => is_string($candidate) && isset($itemsByGroup[$candidate]));
 
             if ($matched === null) {

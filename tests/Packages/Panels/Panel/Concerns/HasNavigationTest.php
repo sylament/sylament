@@ -46,3 +46,10 @@ it('places a registered group given as a message by its translated label, ahead 
 
     expect($page->filter(Selectors::NAVIGATION . ' [data-group-label]')->each(fn ($group): ?string => $group->attr('data-group-label')))->toBe(['Library (translated)', 'Misc']);
 });
+
+it('answers a registered group given as a message by its translation, and a NavigationGroup as registered', function (): void {
+    $registry = $this::getContainer()->get(PanelRegistry::class);
+
+    expect($registry->get('translated')?->getNavigationGroups())->toBe(['Library (translated)'])
+        ->and($registry->get('panel-branded')?->getNavigationGroups()['library'])->toBeInstanceOf(NavigationGroup::class);
+});

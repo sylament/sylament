@@ -27,7 +27,7 @@ The schemas [`Section`](../schemas/section.md) component wraps it, embedding `<t
 | [Element ids + ARIA landmark](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#element-ids-and-aria-landmark-wiring-are-rendered-from-server-computed-props) |
 | [Disclosure labels](../../../packages/support/templates/components/Section/index.html.twig) | [`section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | done | — | [diverges](#the-expand-and-collapse-labels-are-props-defaulting-to-the-catalogue-and-the-controller-holds-no-text) |
 | [Live-state reset wiring](../../../packages/support/templates/components/Section/index.html.twig) | — | in progress | — | [detail](#the-live-state-reset-branch-has-no-caller) · [diverges](#the-live-component-state-reset-wiring-is-a-sylament-addition) |
-| [`section.css`](../../../packages/support/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/support/resources/css/components/section.css) | in progress | — | [detail](#two-collapsed-state-rules-differ-from-filaments-with-no-recorded-reason) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) · [diverges](#the-after-header-text-leading-rule-is-written-in-supports-stylesheet) |
+| [`section.css`](../../../packages/support/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/support/resources/css/components/section.css) | done | — | [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) · [diverges](#the-after-header-text-leading-rule-is-written-in-supports-stylesheet) |
 
 ## Details
 
@@ -45,13 +45,6 @@ The template carries `liveComponentId` and `schemaKey` props, both defaulting to
 **Missing:** nothing supplies the props: the schemas `Section` template ([`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig)) threads `collapseId`, ids and flags but no `liveComponentId` or `schemaKey`, so the branch is never taken.
 Until then a section renders no reset action.
 **Next step:** land it with the first live-component-state consumer that populates the two props, or drop the forward stub if live-component state reshapes the contract.
-
-### Two collapsed-state rules differ from Filament's with no recorded reason
-
-Besides the prefix, the [dark-mode text colour](#section-css-adds-a-dark-mode-text-color-to-the-content-container) and the [placement of the after-header text rule](#the-after-header-text-leading-rule-is-written-in-supports-stylesheet), two rules differ.
-A collapsed section's content container is `invisible absolute h-0 overflow-hidden border-none`, where Filament's is `hidden`.
-The non-aside section's `grid gap-y-4` on the content container applies whether or not the section is collapsed, where Filament gates it on `:not(.fi-collapsed)`.
-**Next step:** record why the collapsed body stays in the layout, as a divergence, or restore Filament's rules.
 
 ## Divergences
 

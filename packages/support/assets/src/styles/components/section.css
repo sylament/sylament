@@ -95,8 +95,10 @@
         &:not(.sy-aside) {
             @apply grid gap-y-4;
 
-            & > .sy-section-content-ctn {
-                @apply grid gap-y-4;
+            &:not(.sy-collapsed) {
+                & > .sy-section-content-ctn {
+                    @apply grid gap-y-4;
+                }
             }
 
             &.sy-divided {
@@ -147,7 +149,7 @@
         }
 
         & > .sy-section-content-ctn {
-            @apply invisible absolute h-0 overflow-hidden border-none;
+            @apply hidden;
         }
     }
 

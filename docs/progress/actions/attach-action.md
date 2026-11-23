@@ -122,7 +122,7 @@ Four Eloquent mechanics have no Doctrine referent and are skipped whole.
 
 **Pivot columns and `allowDuplicates()`.**
 Doctrine has no pivot model; a join table carrying attributes is an entity of its own, and its primary key is the pair, which is exactly what makes a duplicate row unrepresentable.
-Dropping duplicates makes the candidate exclusion unconditional (Filament's `->when(! $table->allowsDuplicates(), …)` loses its condition) and collapses the detach to one branch.
+Dropping duplicates makes the candidate exclusion unconditional (Filament's `applyRecordSelectOptionsQuery()` returns the query before its `whereDoesntHave()` when `$table->allowsDuplicates()`) and collapses the detach to one branch.
 
 **`RelationshipJoiner` / `Relation::noConstraints()`.**
 Filament has to strip the parent constraint off a relation object and re-add the join by hand; the port has no relation object, because the reader builds a fresh query from the mapping.
@@ -135,7 +135,7 @@ Doctrine maps no polymorphic association and no through-relation, so there is no
 
 ### The title ordering applies to both arms, not only the projected one
 
-Filament's `if (empty($relationshipQuery->getQuery()->orders)) { $relationshipQuery->orderBy($titleAttribute); }` sits **inside** the pluck branch ([`AttachAction.php:289-300`](../../../vendor/filament/actions/src/AttachAction.php), and [`AssociateAction.php:292-293`](../../../vendor/filament/actions/src/AssociateAction.php) alike), so the hydrate-and-title arm below it emits no `ORDER BY` at all and lists in whatever order the driver returns.
+Filament's `if (empty($relationshipQuery->getQuery()->orders)) { $relationshipQuery->orderBy($titleAttribute); }` sits **inside** the pluck branch ([`AttachAction.php:265-271`](../../../vendor/filament/actions/src/AttachAction.php), and [`AssociateAction.php:265-266`](../../../vendor/filament/actions/src/AssociateAction.php) alike), so the hydrate-and-title arm below it emits no `ORDER BY` at all and lists in whatever order the driver returns.
 The port applies the order **before** the branch, in both classes: both arms order by the title attribute when the query carries no order of its own, so the option list reads the same whichever arm built it and a `recordTitle()` closure does not silently cost the sort.
 A caller wanting the unordered arm back orders the builder itself in `recordSelectOptionsQuery()`; any order of its own suppresses this one.
 

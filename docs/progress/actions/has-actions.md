@@ -16,8 +16,8 @@ The stack's rendering, its per-frame modal ids and its open state are in [modals
 | --- | --- | --- | --- | --- |
 | [`resolveRecordUsing()`](../../../packages/actions/src/Concerns/HasActions.php) / `getMountedActionRecord()` / `resolveMountedActionRecord()` | — | done | — | [diverges](#record-resolution-is-a-single-host-callback-not-per-source) · [diverges](#a-root-frames-record-key-is-resolved-when-the-action-resolves-and-only-there) |
 | [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) · [semantics](#the-mounted-action-descriptor-is-typed-string-keyed-and-the-client-fills-two-thirds-of-it) |
-| [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | — | [detail](#mountaction-drops-authorization) · [detail](#modal-less-frames-stay-on-the-stack-where-filament-unmounts-them) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
-| [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | — | [detail](#callmountedaction-lacks-rate-limiting-authorization-and-the-exposesstatetoactiondata-merge) · [semantics](#callmountedaction-runs-filaments-pipeline-in-filaments-order) · [diverges](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag) · [diverges](#every-mounted-action-run-flushes-a-table-hosts-records-cache) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) · [diverges](#a-schema-less-action-is-called-with-no-arguments-not-with-a-pair-of-nulls) |
+| [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | — | [detail](#mountaction-drops-authorization) · [detail](#modal-less-frames-stay-on-the-stack-where-filament-unmounts-them) · [detail](#no-table-cache-flush-runs-before-a-selected-records-action-mounts-or-is-called) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
+| [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | — | [detail](#callmountedaction-lacks-rate-limiting-authorization-and-the-exposesstatetoactiondata-merge) · [detail](#no-table-cache-flush-runs-before-a-selected-records-action-mounts-or-is-called) · [semantics](#callmountedaction-runs-filaments-pipeline-in-filaments-order) · [diverges](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag) · [diverges](#every-mounted-action-run-flushes-a-table-hosts-records-cache) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) · [diverges](#a-schema-less-action-is-called-with-no-arguments-not-with-a-pair-of-nulls) |
 | [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | — | [detail](#unmountaction-drops-the-default-action-reset) · [detail](#modal-less-frames-stay-on-the-stack-where-filament-unmounts-them) · [diverges](modals.md#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
 | `unmountActionsWithoutModals()` | `Concerns/InteractsWithActions.php` `unmountActionsWithoutModals()` | todo | — | [detail](#modal-less-frames-stay-on-the-stack-where-filament-unmounts-them) |
 | [`replaceMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | done | — | [diverges](modals.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
@@ -30,7 +30,7 @@ The stack's rendering, its per-frame modal ids and its open state are in [modals
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` | in progress | — | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
 | [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveActions()` | done | — | [diverges](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) · [diverges](#no-resolved-action-is-booted) · [diverges](#resolveactions-takes-no-ismounting-flag) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | done | — | [diverges](#a-root-frames-record-key-is-resolved-when-the-action-resolves-and-only-there) |
-| [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveTableAction()` | done | — | [semantics](#a-client-supplied-record-key-is-type-checked-before-the-lookup) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss) |
+| [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveTableAction()` | in progress | — | [detail](#a-record-key-binds-any-table-action-not-only-a-record-action) · [semantics](#a-client-supplied-record-key-is-type-checked-before-the-lookup) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss) |
 | [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#schema-context-resolution-returns-null-instead-of-throwing) |
 | [`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php) + `$cachedActions` | `Concerns/InteractsWithActions.php` `cacheAction()` | done | — | — |
 | `mergeCachedActions()` / `cacheTraitActions()` | `Concerns/InteractsWithActions.php` `mergeCachedActions()` / `cacheTraitActions()` | skipped | — | [diverges](#only-the-per-name-action-cache-is-ported) |
@@ -64,7 +64,7 @@ The port also seeds the frame's [data bag slot](#per-mount-form-state-lives-in-a
 
 Filament's `callMountedAction()` returns early when `hasAuthorizationNotification()` and `isAuthorized()` deny, applies `getRateLimit()` through `WithRateLimiting::rateLimit()` (a rate-limited notification on `TooManyRequestsException`), and merges the state of an `ExposesStateToActionData` component's child schemas into the action's data.
 None of the three is in the port: neither `CanBeRateLimited` nor `CanBeAuthorized` is composed onto `Action`, and with no `ExposesStateToActionData` interface the data is the schema's own state.
-Two of Filament's statements differ as well, with no recorded reason: Filament's successful run ends with `$action->resetData()` after restoring the arguments (`InteractsWithActions.php:411-412`), which the port omits, and its modal-less `ValidationException` path unmounts with `cancelParentActions: false` (`:389`), where the port's `unmountAction()` call (`HasActions.php:267`) consults the action's cancel cascade.
+Two of Filament's statements differ as well, with no recorded reason: Filament's successful run ends with `$action->resetData()` after restoring the arguments (`InteractsWithActions.php:582-583`), which the port omits, and its modal-less `ValidationException` path unmounts with `cancelParentActions: false` (`:560`), where the port's `unmountAction()` call (`HasActions.php:268`) consults the action's cancel cascade.
 Filament's `mergeMountedActionArguments()`, which writes merged arguments back into the persisted descriptor, is [tracked on the contract](interacts-with-actions.md#schema-mount-plumbing-is-not-on-the-contract); this method's transient merge-and-restore is not it.
 
 ### `unmountAction()` drops the default-action reset
@@ -76,8 +76,8 @@ What is absent is the full-empty reset of `defaultAction` / `defaultActionArgume
 ### Modal-less frames stay on the stack where Filament unmounts them
 
 Filament unmounts a frame that has no modal to be seen in, at two places.
-After auto-running a modal-less action, `mountAction()` unmounts it when it is still the mounted action, which is what a `halt()` leaves behind (`InteractsWithActions.php:230-237`); the port returns `callMountedAction()`'s result and leaves the halted frame standing (`HasActions.php:171-173`).
-And a top-level `unmountAction()` calls `unmountActionsWithoutModals()` (`:864-868`), popping every exposed top frame whose `mountedActionShouldOpenModal()` is false; the port has neither the method nor the `$mountActionNestingLevel` counter that gates it.
+After auto-running a modal-less action, `mountAction()` unmounts it when it is still the mounted action, which is what a `halt()` leaves behind (`InteractsWithActions.php:394-399`); the port returns `callMountedAction()`'s result and leaves the halted frame standing (`HasActions.php:172-174`).
+And a top-level `unmountAction()` calls `unmountActionsWithoutModals()` (`:1055-1059`), popping every exposed top frame whose `mountedActionShouldOpenModal()` is false; the port has neither the method nor the `$mountActionNestingLevel` counter that gates it.
 A case pins the port's behaviour, a halted non-modal child staying mounted under an open parent, which Filament's `mountAction()` would unmount.
 
 ### `getAction()` ports the generic method-discovery arm in full
@@ -117,6 +117,19 @@ The authorization pair, `getDefaultActionAuthorizationResponse()` and `getDefaul
 Filament's `forceRender()` (`app(PartialsComponentHook::class)->forceRender($this)`) and `partiallyRenderActionParentSchema()` walk up an action's schema and component ancestry to partially render just the affected schema after a successful `callMountedAction()`.
 Sylament has no `PartialsComponentHook` equivalent, so every action call re-renders the way a LiveComponent normally does.
 It waits on schemas building a partial-render mechanism, and is low priority until render cost becomes a concern.
+
+### No table-cache flush runs before a selected-records action mounts or is called
+
+Filament's `mountAction()` and `callMountedAction()` call `flushCachedTableRecords()` on a `HasTable` host before an action that `hasCanAccessSelectedRecords()` runs ([`InteractsWithActions.php:317-323`, `:448-454`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)), and that flush clears the cached selected records too ([`HasRecords.php:352-358`](../../../vendor/filament/tables/src/Concerns/HasRecords.php)), so `mountUsing()` and `action()` each resolve the selection against the records as they stand.
+The port flushes only in `callMountedAction()`'s `finally` ([`HasActions.php:276-279`](../../../packages/actions/src/Concerns/HasActions.php)), and its [`flushCachedTableRecords()`](../tables/has-table.md) ([`HasTable.php:189-194`](../../../packages/tables/src/Concerns/HasTable.php)) leaves `$cachedSelectedTableRecords` set.
+So a modal-less action whose `mountUsing()` changes a selected record's selectability runs `action()` over the selection `mountUsing()` resolved, in the same request.
+**Next step:** flush before the mount and before the call for an action that accesses selected records, once `flushCachedTableRecords()` also clears the selected-records memo, which the tables trail owns.
+
+### A record key binds any table action, not only a record action
+
+Filament's `resolveTableAction()` throws `ActionNotResolvableException` when a frame carries a `recordKey` but the resolved action is neither one of the table's `getFlatRecordActions()` nor a column's `getAction()` ([`InteractsWithActions.php:896-902`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)), so the mount pipeline unmounts the frame.
+The port's `resolveTableAction()` ([`HasActions.php:836-853`](../../../packages/actions/src/Concerns/HasActions.php)) binds the looked-up record to whatever `getTable()->getAction()` returns, header and toolbar actions included, so a client that adds a `recordKey` to a header action's context mounts it against that row's record.
+**Next step:** before the record lookup, refuse an action that is not in `getTable()->getFlatRecordActions()` and is no column's `getAction()`, throwing `ActionNotResolvableException` with Filament's message.
 
 ## Semantics
 
@@ -162,7 +175,7 @@ The setter's width exists so a host can bind a bare key and let [`resolveRecordU
 
 ### A client-supplied record key is type-checked before the lookup
 
-`resolveTableAction()` is Filament's whole body (the nested-frame `getModalAction()` hop, the bulk-then-record map read, and the record bind `$resolvedAction->getRootGroup()?->record($record) ?? $resolvedAction->record($record)` that hands a grouped action's record to the group so every dropdown member shares one) plus one check Filament has no need for.
+`resolveTableAction()` is Filament's body (the nested-frame `getModalAction()` hop, the bulk-then-record map read, and the record bind `$resolvedAction->getRootGroup()?->record($record) ?? $resolvedAction->record($record)` that hands a grouped action's record to the group so every dropdown member shares one) without Filament's registered-record-action check ([detail](#a-record-key-binds-any-table-action-not-only-a-record-action)), plus one check Filament has no need for.
 
 `context` is a client-writable `#[LiveArg]`, so the value reaching `getTableRecord(string $key)` could be an array or an object.
 A filled non-scalar key therefore throws `ActionNotResolvableException` naming its type, which the resolve pipeline swallows into the same graceful unmount a stale key gets.
@@ -258,7 +271,7 @@ So `callMountedAction()` calls [`flushCachedTableRecords()`](../tables/has-table
 
 It runs in a **`finally`** around the whole run, so it is unconditional: success, an explicit `failure()`, a `Halt` out of a create-another, a `Cancel`, and a rethrown `ValidationException` all reach it.
 Success-only would be the tempting gate and it is wrong — an action that halted or failed after its write has still written, and the stale cache would then be exactly what the user sees.
-Filament has no counterpart at all: Livewire re-renders from a fresh component instance each request, so its table cache cannot outlive the call.
+Filament's pipeline flushes at the other end, before `mountAction()` and `callMountedAction()` run an action that accesses selected records (`InteractsWithActions.php:317-323`, `:448-454`), and its action pipeline never flushes after a run, because Livewire re-renders from a fresh component instance each request, so its table cache cannot outlive the call ([detail](#no-table-cache-flush-runs-before-a-selected-records-action-mounts-or-is-called)).
 
 ### Schema-context resolution returns null instead of throwing
 
@@ -339,7 +352,7 @@ Reading the bag goes through `getMountedActionData(?int)` — singular, so it ca
 
 ### The error-bag reset is scoped to one frame, not a global reset
 
-Filament calls Livewire's `resetErrorBag()` at two points in this trait — before a modal opens in `mountAction()`, and at the end of an `unmountAction()` that leaves frames standing (`InteractsWithActions.php:892`) — each wiping every error on the whole component.
+Filament calls Livewire's `resetErrorBag()` at two points in this trait — before a modal opens in `mountAction()`, and at the end of an `unmountAction()` that leaves frames standing (`InteractsWithActions.php:1085`) — each wiping every error on the whole component.
 The port calls [`clearSchemaValidation()`](../schemas/interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) with the one key the moment concerns: `mountAction()` clears `mountedActionSchema{$i}` for the index it just pushed, and `forgetMountedActionSchema($i)` clears the frame it is forgetting, which puts the unmount-side clear on every path that drops a frame.
 
 The behavioural difference is a nested stack, and it is the reason to prefer the narrow call: the frame's key is also what keeps it [sticky](../schemas/can-be-validated.md#sticky-re-validation-replaces-filaments-submit-only-model) — `$validatedSchemas` re-validates `mountedActionSchema{$i}` on every hydrate, so the messages a modal shows after a failed submit are recomputed, not remembered, and clearing the key is what stops that.
@@ -356,7 +369,7 @@ Memoising is **required, not an optimisation.**
 Unmemoised, a stack of _n_ frames costs O(_n_²) schema constructions per render.
 
 The schema cache cannot do the job, because the answer that needs caching most is the negative one.
-`cacheSchema(string $name, ?Schema $schema)` treats `null` as **unset** ([`HasSchemas`](../schemas/has-schemas.md#cacheschema-has-no-discovery-arm-and-requires-its-second-argument), mirroring `vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:349-366`), and `$cachedSchemas` is typed `array<string, Schema>`.
+`cacheSchema(string $name, ?Schema $schema)` treats `null` as **unset** ([`HasSchemas`](../schemas/has-schemas.md#cacheschema-has-no-discovery-arm-and-requires-its-second-argument), mirroring `vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:369-386`), and `$cachedSchemas` is typed `array<string, Schema>`.
 So it can remember "this frame **has** a schema" and can never remember "this frame has **none**" — the negative answer is exactly the `null` the cache spends as its absence sentinel, so a schema-less action would rebuild and re-probe on every single call.
 A boolean-only sidecar is the smallest thing that closes that.
 
@@ -395,7 +408,7 @@ An `Action` declared as a direct child of a **mounted-action** schema cannot inj
 A mounted-action schema is a **root** schema (`getMountedActionSchema()` builds it from `makeSchema()`, so it has no parent component), and an action declared inside it belongs to no group and is bound to no component of its own, so all three arms are `null`.
 `Action`'s `get` / `set` arms reach the component through `getSchemaComponentOrFail()` (`packages/actions/src/Action.php:664-665`), which throws a `LogicException` naming the class ([why](action.md#get-and-set-throw-on-an-action-with-no-schema-component-where-filament-fatals)).
 
-Filament fails on the same case: `vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php:28-31` is the port's resolution chain verbatim, and `vendor/filament/actions/src/Action.php:581-582` calls `->makeGetUtility()` / `->makeSetUtility()` on it unguarded, a fatal on `null`.
+Filament fails on the same case: `vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php:28-31` is the port's resolution chain verbatim, and `vendor/filament/actions/src/Action.php:582-583` calls `->makeGetUtility()` / `->makeSetUtility()` on it unguarded, a fatal on `null`.
 The same action declared in a **top-level** host schema works, because its container has a parent component (a `Section`, say) for the second arm to find, so the limitation is specific to root schemas, of which the mounted-action schema is the only one users meet.
 
 Such an action can still inject `$liveComponent`, `$arguments`, `$record` and `$data`, and reach the form state through those.
@@ -435,7 +448,7 @@ A host that is not an `InteractsWithSchemas` skips the registration rather than 
 The cache concession does not weaken it, because the two halves of "who can mint a name" are not the same as "who can say a name".
 Only [`getMountedActionSchema()`](../../../packages/actions/src/Concerns/HasActions.php) registers a cache-only schema, always under a server-minted `mountedActionSchema{$i}`; a client can *name* one but can never *create* one, and nothing method-discovered ever enters that branch.
 So the property the gate guarantees is unchanged — a nested frame can never re-root itself against a host-**declared** schema — while it admits the case a position-only gate would refuse: an `Action` declared *inside* a mounted-action schema, whose container has no declaring method and which necessarily sits at frame 1 or deeper.
-Filament reaches that same case through a bare `getSchema($name)` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:742`).
+Filament reaches that same case through a bare `getSchema($name)` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:930`).
 Together with the `break` above, this is the whole guarantee that a deeper frame cannot resolve against the host.
 
 ### No resolved action is `boot()`ed
@@ -468,10 +481,10 @@ The case is unreachable through the dispatch — `resolveActions()` only takes t
 
 ### A schema-bearing action on a host without schemas throws
 
-Filament's `getMountedActionSchema()` calls `hasCachedSchema()` and `makeSchema()` unconditionally (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:792-797`), so a host that does not also compose schemas' `InteractsWithSchemas` fails on an undefined method.
+Filament's `getMountedActionSchema()` calls `hasCachedSchema()` and `makeSchema()` unconditionally (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:982-987`), so a host that does not also compose schemas' `InteractsWithSchemas` fails on an undefined method.
 Here [`getMountedActionSchema()`](../../../packages/actions/src/Concerns/HasActions.php) on a host that is not an `InteractsWithSchemas` probes the action against a detached `Schema::make()`: a schema-bearing action throws a `LogicException` naming the missing contract and trait, and a schema-less action mounts normally.
 
 ### The deprecated `mountedActionHasForm()` and `getMountedActionForm()` aliases are not ported
 
-Filament marks both `@deprecated`, pointing to `mountedActionHasSchema()` and `getMountedActionSchema()` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:519-521`, `:816-818`).
+Filament marks both `@deprecated`, pointing to `mountedActionHasSchema()` and `getMountedActionSchema()` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:694-696`, `:1005-1007`).
 The port ships only those replacements, as it ships no deprecated surface.

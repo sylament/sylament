@@ -41,7 +41,7 @@ Both arms are pinned end to end, and the copy rules against real Doctrine metada
 
 ### The write body reads the mounted schema from the host, not from a parameter
 
-Filament's process closure takes `?Schema $schema`, but nothing hands it the mounted container: `CanCustomizeProcess::process()` passes no injections at all, and vendor `Action.php:578` resolves `schema` to `[$this->getSchemaContainer()]`, the schema the *trigger* lives in, which is null for a table row action.
+Filament's process closure takes `?Schema $schema`, but nothing hands it the mounted container: `CanCustomizeProcess::process()` passes no injections at all, and vendor `Action.php:579` resolves `schema` to `[$this->getSchemaContainer()]`, the schema the *trigger* lives in, which is null for a table row action.
 The port resolves the name the same way: [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) resolves a `Schema $schema` parameter **by name** first, and [`Action`](action.md)'s named resolver answers `schema` with `getSchemaContainer()`, which for a table row action is the table's own container and not the modal's.
 So the body reads the modal container once, up front, through [`getMountedSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing), and passes it down as an explicit named injection, a repair rather than a translation.
 A `using()` closure therefore receives `$data`, `$record` and `$schema` as Filament's does, and `$schema` is `null` for a confirmation-shaped mount, which is what the no-schema arm keys on.

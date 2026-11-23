@@ -102,8 +102,8 @@ The Livewire → UX LiveComponent, Blade → Twig and `Htmlable` → `Markup` tr
 | [`data()` / `mutateDataUsing()` / `resetData()` / `getData()` / `getRawData()`](../../../packages/actions/src/Concerns/HasData.php) | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | done | — | [diverges](#data-checks-the-mutated-array-and-keeps-the-unmutated-one) |
 | `getValidatedData()` / `fillData()` | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | todo | — | [detail](#hasdata-lacks-getvalidateddata-and-filldata) |
 | `mutateFormDataUsing()` / `formData()` / `resetFormData()` / `getFormData()` / `getRawFormData()` (deprecated for the names without `Form`) | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | skipped | — | [deprecated](../README.md#statuses) |
-| [`HasExtraModalOverlayAttributes`](../../../packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-closure-twice) · [modal](../support/modal.md#the-modal-is-re-architected-onto-native-dialog) |
-| [`HasExtraModalWindowAttributes`](../../../packages/actions/src/Concerns/HasExtraModalWindowAttributes.php) | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-closure-twice) · [modal](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit) |
+| [`HasExtraModalOverlayAttributes`](../../../packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-array-twice) · [modal](../support/modal.md#the-modal-is-re-architected-onto-native-dialog) |
+| [`HasExtraModalWindowAttributes`](../../../packages/actions/src/Concerns/HasExtraModalWindowAttributes.php) | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-array-twice) · [modal](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit) |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#the-name-derived-label-is-the-names-segment-before-the-first-dot) · [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`hiddenLabel()` / `isLabelHidden()` / `hasLabelHidden()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
@@ -130,7 +130,7 @@ The two selected-record names sit behind the [access-flag gate](#the-selected-re
 The three missing names:
 
 - `mountedActions` has nothing in its way: the host contract declares [`getMountedActions()`](../../../packages/actions/src/Contracts/InteractsWithActions.php).
-- `parentAction` resolves `$this->mountedParentAction ?? $this->getParentAction()` in Filament, where the host stamps `mountedParentAction()` on each nested action it resolves and clears it on unmount (`InteractsWithActions.php:620` and `:898`).
+- `parentAction` resolves `$this->mountedParentAction ?? $this->getParentAction()` in Filament, where the host stamps `mountedParentAction()` on each nested action it resolves and clears it on unmount (`InteractsWithActions.php:801` and `:1091`).
   The port has `getParentAction()` but neither the setter nor the host stamp.
 - `schemaOperation`/`context`/`operation` would read [`getOperation()`](../schemas/has-operation.md) off the bound schema container, falling back to the component's container; both exist, and the arm has no caller.
 
@@ -181,10 +181,10 @@ Filament's `getValidatedData()` validates the mounted action's schema, and an `E
 The port's [`HasData`](../../../packages/actions/src/Concerns/HasData.php) has neither, nor the `getMountedDataNestingIndex()` and `fillSchemaData()` helpers behind them.
 `ExposesStateToActionData` is unported too ([schemas README](../schemas/README.md#unported)).
 
-### The modal attribute setters register a repeated closure twice
+### The modal attribute setters register a repeated array twice
 
 `extraModalOverlayAttributes()` and `extraModalWindowAttributes()` replace or merge, and their getters fold every entry through support's `ComponentAttributeBag` onto the `<dialog>` and the `.sy-modal-window` element.
-Filament's setters return early when a merged `Closure` is already in the list; the port's append it again, the same gap support's trait carries ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-closure-twice-registers-it-twice)).
+Filament's setters return early when a merged array is strictly equal to one already in the list ([`HasExtraModalOverlayAttributes.php:22`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php), [`HasExtraModalWindowAttributes.php:25`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php)); the port's append it again, the same gap support's trait carries ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-array-twice-registers-it-twice)).
 
 ## Semantics
 
@@ -354,7 +354,7 @@ Reversible by deleting the two arms if upstream ever gives its own reason for th
 
 ### `Table::class` resolves by type as well as by name
 
-Filament resolves the bound table only by the parameter name `table` (`Action.php:585`).
+Filament resolves the bound table only by the parameter name `table` (`Action.php:586`).
 The port keeps that arm and adds `Table::class` to the by-type resolver, resolving [`getTable()`](belongs-to-table.md) the same way.
 The reason is the port's [`Invoker`](../../../packages/support/src/Evaluation/Invoker.php), which falls back to the DI container for an unresolved class-typed parameter where Laravel's does not: a `fn (Table $table)` closure would otherwise be handed a **fresh, unconfigured** `Table` service instead of the action's own.
 Explicit injections resolve before the container, so with the arm a table-less action answers `null`, which a case pins beside a table row's action handed its table.

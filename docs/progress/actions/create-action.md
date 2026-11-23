@@ -33,10 +33,20 @@ The tests that pin each rule are named in its entry below.
 | [Create-another](../../../packages/actions/src/CreateAction.php) (`createAnother()`, `canCreateAnother()`, `createAnotherAction()`, `getCreateAnotherAction()`, `preserveFormDataWhenCreatingAnother()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) · [diverges](#two-props-widen-filaments-closure-to-the-closures-own-result) |
 | [`shouldClearRecordAfter()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [has-actions.md](has-actions.md#clearrecordafter-runs-at-both-of-filaments-sites) |
 | [`record(null)`](../../../packages/actions/src/CreateAction.php) in `setUp()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [semantics](#setups-recordnull-clears-only-a-configureusing-bound-record) |
+| `getSchema()` override binding the modal schema to the record class | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | — | [detail](#the-modal-schema-is-bound-to-the-record-class-only-inside-the-action-body) |
 | `forceRenderAfterCreateAnother()` / `shouldForceRenderAfterCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
 | `disableCreateAnother()` (`@deprecated` for `createAnother(false)`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
 | [`relationship()` / `getRelationship()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [semantics](#the-created-record-joins-the-relationship-in-the-same-flush) · [semantics](#a-create-whose-form-picks-another-owner-still-lands-under-the-relationship-and-is-probed-on-the-pick) · [semantics](#the-record-check-reads-the-containers-reader-rebound-the-relationship-arm-keeps-the-actions-own) |
 | The `BelongsToMany` pivot-column split inside the relationship arm | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#filaments-three-way-relationship-branch-collapses-to-two) |
+
+## Details
+
+### The modal schema is bound to the record class only inside the action body
+
+Filament's `CreateAction::getSchema()` binds the schema to the model class before and after `parent::getSchema()` runs the action's own schema closure ([`CreateAction.php:228-234`](../../../vendor/filament/actions/src/CreateAction.php)), so an inherited or supplied record never backs the create form.
+The port's `CreateAction` has no `getSchema()` override, so the host seeds a host-level create modal's schema with `getRecord(withDefault: true)` ([`HasActions.php:514-533`](../../../packages/actions/src/Concerns/HasActions.php)), which on a record page answers the page's record, and only the `action()` body re-points the container at the class ([diverges](#the-modal-arm-persists-through-the-schemas-record-class)).
+No write reaches the page's record, because `getState()` writes nothing and `getData()` maps onto the class, but between mount and submit the create form's closures receive the page's record as `$record`.
+**Next step:** override `getSchema()` to bind the schema to the record class with `record()` before and after `parent::getSchema()`, as Filament does with `model()`.
 
 ## Semantics
 

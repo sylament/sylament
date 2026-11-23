@@ -183,7 +183,7 @@ Reading the resolved group there would show a direction select whose change is i
 `Table::isGroupsOnly()` is read four times on the PHP side (the sort returns untouched, the eager-load loop is skipped, the aggregate batch early-returns and `isPaginated()` answers false), and only the aggregate batch asks whether a grouping resolved, because the record rows it fills render while nothing is grouped.
 The template's `isGroupsOnly` does: `component.isGroupsOnly and group is not null`, so the mode is inert in the markup until something is grouped.
 A table that calls `groupsOnly()` and has no grouping in force therefore renders its record rows **and** loses its pagination footer.
-Both halves are vendor-faithful (`Table\Concerns\CanPaginateRecords` against `index.blade.php`), the asymmetry is vendor's own, and it is only reachable by declaring `groupsOnly()` with nothing to group by.
+Both halves are vendor-faithful (`Table\Concerns\CanPaginateRecords` against `Table\Concerns\HasRecords.php:661`, `$isGroupsOnly = $this->isGroupsOnly() && $group`), the asymmetry is vendor's own, and it is only reachable by declaring `groupsOnly()` with nothing to group by.
 
 The per-group summary rows are gated on the table having a summary, as vendor's are, so `groupsOnly()` with no summarizer anywhere renders an **empty `<tbody>`** rather than a list of headings.
 That is parity: a groups-only table exists to show figures per group.
@@ -268,7 +268,7 @@ A table built outside the container falls back to a bare `IconManager`, which re
 
 ### `groupQuery()` is superseded by the per-group scoped query
 
-`groupQuery()` and `groupQueryUsing()` have exactly one caller upstream: `index.blade.php`, where the grouped summary is computed as a single `GROUP BY` batch and the hook re-roots that batch's query.
+`groupQuery()` and `groupQueryUsing()` have exactly one caller upstream: `Table\Concerns\CanSummarizeRecords.php:85`, where the grouped summary is computed as a single `GROUP BY` batch and the hook re-roots that batch's query.
 The port [runs one scoped query per group instead](summarizer.md#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by), because DQL has no `DATE()` and no `FROM`-subquery and the string equality a `GROUP BY` key needs cannot be made to agree with `getStringKey()` for five of the group kinds, so the hook has nothing left to hook into.
 `scopeQueryUsing()` is the seam that survives, and it answers on the same path the fallback does.
 

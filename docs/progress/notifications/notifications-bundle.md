@@ -35,10 +35,10 @@ What the port adds on top of the provider's responsibilities is container wiring
 | [Translations (`->hasTranslations()`) — the `sylament-notifications` catalogue](../../../packages/notifications/translations/sylament-notifications+intl-icu.en.yaml) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/lang/en/notification.php`](../../../vendor/filament/notifications/resources/lang/en/notification.php) | done | — | [semantics](#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-close-label-alone) |
 | `Testable::mixin(new TestsNotifications)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
-| `$this->app->scoped(NotificationMailbox::class)` | [`packageRegistered()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`NotificationMailbox`](../../../vendor/filament/notifications/src/NotificationMailbox.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
+| `$this->app->scoped(NotificationMailbox::class)` | [`packageRegistered()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`NotificationMailbox`](../../../vendor/filament/notifications/src/NotificationMailbox.php) | blocked | auth | [detail](#carrying-a-pending-toast-across-a-logout-waits-on-auth) · [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
 | The `PublishNotifications` middleware, prepended to the HTTP kernel | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`PublishNotifications`](../../../vendor/filament/notifications/src/Http/Middleware/PublishNotifications.php) | skipped | — | [diverges](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-publishing-middleware) |
-| The `InitializeNotificationMailbox` middleware and the `RouteMatched` listener that adds it to every route | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`InitializeNotificationMailbox`](../../../vendor/filament/notifications/src/Http/Middleware/InitializeNotificationMailbox.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
-| The `Login` / `Logout` listeners' `rotateScope()` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
+| The `InitializeNotificationMailbox` middleware and the `RouteMatched` listener that adds it to every route | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`InitializeNotificationMailbox`](../../../vendor/filament/notifications/src/Http/Middleware/InitializeNotificationMailbox.php) | blocked | auth | [detail](#carrying-a-pending-toast-across-a-logout-waits-on-auth) · [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
+| The `Login` / `Logout` listeners' `rotateScope()` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | blocked | auth | [detail](#carrying-a-pending-toast-across-a-logout-waits-on-auth) · [diverges](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key) |
 
 ## Details
 
@@ -56,6 +56,13 @@ Nothing of it is ported, so there is nothing to register.
 
 **Next step:** build the database-notifications panel.
 Unlike the toast stack, that component is free to be a UX **live** component: it holds stored server-side state by nature, which is what the toast stack deliberately [does not](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported).
+
+### Carrying a pending toast across a logout waits on auth
+
+Symfony's `invalidate_session: true` (`SessionLogoutListener`, priority 0 on `LogoutEvent`) drops a toast sent before a logout, where Filament's `rotateScope(shouldPreservePublishedNotifications: true)` carries it over.
+The port waits because a carrier imports `LogoutEvent` from `symfony/security-http` and is tested against a firewall in the test kernel, both of which the auth work brings.
+
+**Next step:** with auth, add a `LogoutEvent` subscriber that takes the pending toasts before the invalidation (priority above 0) and puts them back after it (priority below 0), or record why not.
 
 ## Semantics
 
@@ -98,6 +105,7 @@ The bag lives in the session, so the port keeps no scope of its own to initialis
 Symfony Security's default `session_fixation_strategy: migrate` (`SessionAuthenticationStrategy`) regenerates the session id and keeps its data, so a pending toast survives a login.
 Its default `logout.invalidate_session: true` (`SessionLogoutListener`) clears every bag, so a toast sent before a logout is lost where Filament's `rotateScope(shouldPreservePublishedNotifications: true)` carries it over.
 An application keeps it by setting `invalidate_session: false`.
+That keeps every other session value as well.
 Two hardenings come with owning the accessor.
 `pull()` filters the bag: an entry that is not an array, or is an array with a non-string key, is dropped rather than handed to `fromArray()`, because session contents are attacker-adjacent input by the time they are read.
 And a session that is not `FlashBagAwareSessionInterface` raises a `LogicException` naming the type, while no session at all raises Symfony's own `SessionNotFoundException`, the fail-fast an out-of-request `send()` (console, worker) hits.

@@ -120,7 +120,7 @@ The name follows schemas' `getRecordInstance()` (class-string in, instance out) 
 `getBreadcrumb()` is Filament's default, `static::$breadcrumb ?? $this->getTitle()`, typed `string|Markup` where Filament types it `?string`.
 `getTitle()` returns `string|Markup`, so Filament's own default can hand an `Htmlable` title into a `?string` return, which survives there only because its code is not under `strict_types`, and which would stringify the markup and let the template escape it, breaking the `Htmlable` → `Markup` escaping contract.
 The list, create and edit pages narrow it to `string` and answer `List`, `Create` and `Edit` — v5's `list-records.breadcrumb`, `create-record.breadcrumb` and `edit-record.breadcrumb` lang values, read from [the `sylament-panels` catalogue](create-record.md#the-pages-texts-are-read-from-the-sylament-panels-catalogue-under-filaments-key-paths) like the notification titles.
-The trail those crumbs sit in takes [messages as values](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it), which the page partial translates.
+The trail those crumbs sit in takes [messages as values](page.md#a-breadcrumb-may-be-a-message-which-the-page-partial-translates), which the page partial translates.
 
 ### The deprecated page-level `getModelLabel()` is not ported
 

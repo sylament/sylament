@@ -28,7 +28,7 @@ owns:
 | [`getRouteName(Panel $panel)`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade) |
 | [`getComponentName()` / `$template` / `getTemplate()`](../../../packages/panels/src/Pages/Page.php), with `DefaultActionTrait` | no counterpart — Livewire names a component itself | done | — | — |
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) (`registerLivewireComponents()` / `queueLivewireComponentForRegistration()`) | done | — | [diverges](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
-| [`getBreadcrumbs()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [breadcrumbs.md](../support/breadcrumbs.md) · [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
+| [`getBreadcrumbs()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [breadcrumbs.md](../support/breadcrumbs.md) · [diverges](#a-breadcrumb-may-be-a-message-which-the-page-partial-translates) |
 | [`callHook()`](../../../packages/panels/src/Pages/Page.php) — the page's own hook method | [`support/Concerns/CanCallHooks.php`](../../../vendor/filament/support/src/Concerns/CanCallHooks.php) | done | — | [semantics](#a-page-lifecycle-hook-is-a-method-name-not-a-registration) |
 | The per-trait hook arm (`<hook><TraitBasename>()`) | [`support/Concerns/CanCallHooks.php`](../../../vendor/filament/support/src/Concerns/CanCallHooks.php) | todo | — | [detail](#the-per-trait-hook-arm-is-not-ported) |
 | `$breadcrumb` / `getBreadcrumb()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | todo | — | — |
@@ -153,9 +153,13 @@ It buys the only live-parent recognition UX offers, and the throw means it is ne
 [`NavigationItem`](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) translates at its own getters, so the sidebar, the band and every other reader still receive strings, and the translation runs before the panel keys items by group.
 The static `$title`, `$navigationLabel` and `$navigationGroup` and the instance `$heading` and `$subheading` stay `?string` ([i18n.md](../../internals/i18n.md#where-no-translator-sits-on-the-source-the-reader-translates)), and a page supplies a message by overriding the getter; the resource pages' static `$breadcrumb` stays `?string` the same way.
 The instance getters (`getTitle()`, `getHeading()`, `getSubheading()` and the resource pages' `getBreadcrumb()`) keep their `string|Markup` or `string` types, because a page holds a translator through `HasTranslator`: the shipped defaults translate in place, and a page override returns text, or translates a message itself with `translateText()`.
-The breadcrumb array is the exception: `getBreadcrumbs()`, `getResourceBreadcrumbs()` and `appendBreadcrumb()` take `string|Markup|TranslatableInterface` values, and the key stays the crumb's URL or a plain-text position.
-Its type is a docblock, so the page partial is the one place a message can become text: it maps every value through `translateText()` before it hands the array to support's [`Breadcrumbs`](../support/breadcrumbs.md), which receives text, and a string or a `Markup` passes through unchanged.
 [`Dashboard`](dashboard.md#the-dashboard-title-is-read-from-the-catalogue-and-a-title-override-still-wins) is the shipped example of both halves.
+
+### A breadcrumb may be a message, which the page partial translates
+
+A page's breadcrumb array takes messages where its other instance getters take text: `getBreadcrumbs()`, `getResourceBreadcrumbs()` and `appendBreadcrumb()` take `string|Markup|TranslatableInterface` values, and the key stays the crumb's URL or a plain-text position.
+Its type is a docblock, so the page partial is the one place a message can become text: it maps every value through `translateText()` before it hands the array to support's [`Breadcrumbs`](../support/breadcrumbs.md), which receives text, and a string or a `Markup` passes through unchanged.
+The other instance getters keep their native types, as [the static-getter entry](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) says.
 
 ### `getNavigationItems()` takes the panel rather than reaching a facade
 

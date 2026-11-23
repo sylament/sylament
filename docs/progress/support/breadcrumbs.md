@@ -14,7 +14,7 @@ It renders one `<nav>` holding an `<ol>` of crumbs, each crumb either a link or 
 It takes a single `breadcrumbs` prop, a map whose key is the URL and whose value is the label, and the key's kind, not its content, decides whether the crumb links.
 Filament's breadcrumbs Blade has no PHP class behind it, so the port is the view and its stylesheet.
 Panels' [`Header`](../panels/custom-pages.md) renders it, filled from `Page::getBreadcrumbs()`.
-It receives text: a page's crumb may be a message, which the page partial translates before the component sees it ([page.md](../panels/page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it)).
+It receives text: a page's crumb may be a message, which the page partial translates before the component sees it ([page.md](../panels/page.md#a-breadcrumb-may-be-a-message-which-the-page-partial-translates)).
 
 ## Surface
 

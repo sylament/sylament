@@ -227,8 +227,8 @@ Nothing strips or rewrites them — silently discarding the caller's content wou
 
 ### A single, non-required field's inputs carry `aria-invalid` where Filament's deselectable buttons carry none
 
-Filament marks the inputs of its checkbox and radio arms with `aria-invalid` while the field has an error, and leaves the deselectable arm's buttons unmarked (`ToggleButtons.php:119`, `:253`: `$isToggleButton ? null : …`).
-It marks the container only in the single-required arm, which is also the `radiogroup` one (`:134`, `:262`); every other container is a `role="group"` carrying no `aria-invalid`.
+Filament marks the inputs of its checkbox and radio arms with `aria-invalid` while the field has an error, and leaves the deselectable arm's buttons unmarked (`ToggleButtons.php:119`, `:256`: `$isToggleButton ? null : …`).
+It marks the container only in the single-required arm, which is also the `radiogroup` one (`:134`, `:265`); every other container is a `role="group"` carrying no `aria-invalid`.
 Neither tree emits a `fi-valid` / `fi-invalid` class pair, and vendor's `toggle-buttons.css` has no invalid arm (the buttons carry a colour, not a ring).
 
 The port marks the container of a single, required field `aria-invalid="true"` while the field has an error, in both trees, as Filament does, and writes `aria-invalid` on every input it renders, the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid)); no stylesheet keys off it.
@@ -237,7 +237,7 @@ A single, non-required field renders as radios here, because the [deselectable a
 ### The extra input attributes win where Filament's lose by going last
 
 Vendor's `ToggleButtons` is the one field composing this trait that never merges the two attribute sets.
-It prints its own attributes as literal markup and appends `$extraInputAttributeBag->toHtml()` after them ([`:195`](../../../vendor/filament/forms/src/Components/ToggleButtons.php), and again in the grouped tree at `:323`), and HTML duplicate-attribute parsing is **first**-wins — so in Filament the field's own `id`, `type` and `value` beat anything `extraInputAttributes()` sets, and an author trying to override one is silently ignored.
+It prints its own attributes as literal markup and appends `$extraInputAttributeBag->toHtml()` after them ([`:195`](../../../vendor/filament/forms/src/Components/ToggleButtons.php), and again in the grouped tree at `:326`), and HTML duplicate-attribute parsing is **first**-wins — so in Filament the field's own `id`, `type` and `value` beat anything `extraInputAttributes()` sets, and an author trying to override one is silently ignored.
 Its `merge()`-based siblings (`TextInput`, `Textarea`, `Select`, `Radio`) give the extras the win instead.
 
 The port's templates put `component.getExtraInputAttributes` as the final `attrs()` source, which is later-source-wins, so the **extras win** here as they do on every other field.
@@ -290,7 +290,7 @@ Widening back would only be right if Filament ever means the array arm as a per-
 
 ### The nested-recursive rules trait is dead API in Filament's own class
 
-`ToggleButtons` `use`s `Concerns\HasNestedRecursiveValidationRules` but does **not** implement `Contracts\HasNestedRecursiveValidationRules`, and both readers of that trait's output sit behind an `instanceof Contracts\HasNestedRecursiveValidationRules` check: [`CanBeValidated::dehydrateValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) (`:921`) before it adds the `{$statePath}.*` rules, and [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) (`:299`) before it reads their errors.
+`ToggleButtons` `use`s `Concerns\HasNestedRecursiveValidationRules` but does **not** implement `Contracts\HasNestedRecursiveValidationRules`, and both readers of that trait's output sit behind an `instanceof Contracts\HasNestedRecursiveValidationRules` check: [`CanBeValidated::dehydrateValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) (`:941`) before it adds the `{$statePath}.*` rules, and [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) (`:351`) before it reads their errors.
 Both checks are false for this class in Filament, so even in `multiple()` mode `nestedRecursiveRules()` configures nothing that is ever read.
 It looks like a vendor bug rather than a design.
 

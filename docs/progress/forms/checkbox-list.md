@@ -75,7 +75,7 @@ Both paths read the trait's `getRecordsFromRelationship()`, so the option query 
 ### The two record-shaped closures build labels and descriptions off one query
 
 `getOptionLabelFromRecordUsing()` replaces the title attribute as the source of each option's label, and `getOptionDescriptionFromRecordUsing()` adds a description per option.
-Declaring **either** switches the option build onto the record path, and the descriptions are installed as a **side effect** of it — the component calls its own `descriptions()` while building the map, exactly as vendor does (`CheckboxList.php:222-230`), because both maps come off the one query and running it twice to keep them separate would be worse.
+Declaring **either** switches the option build onto the record path, and the descriptions are installed as a **side effect** of it — the component calls its own `descriptions()` while building the map, exactly as vendor does (`CheckboxList.php:225-233`), because both maps come off the one query and running it twice to keep them separate would be worse.
 With the description closure alone the labels still come from the title attribute, so the build reads the records for the descriptions and then runs the title-attribute query for the labels: two statements where the pair takes one, as vendor's does.
 
 The label trio — `getOptionLabelFromRecordUsing()`, `hasOptionLabelFromRecordUsingCallback()`, `getOptionLabelFromRecord()` — lives in the shared [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) trait, because [`Select`](has-relationship.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) reads the same callback for its search and label arms.
@@ -151,7 +151,7 @@ They do carry per-option `id`s, as `Radio`'s do, which is what idiomorph matches
 
 ### The option inputs drop the `fi-valid` / `fi-invalid` class pair, and `checkbox.css` keys off `aria-invalid`
 
-Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every checkbox input, and its `role="group"` container carries no `aria-invalid` (`CheckboxList.php:539`, `:563-571`, `:646-647`).
+Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every checkbox input, and its `role="group"` container carries no `aria-invalid` (`CheckboxList.php:550`, `:574-582`, `:657-658`).
 The port keeps only the attribute on each input and emits no class pair, with [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) keying its danger arm off `[aria-invalid='true']`.
 The group carries no `aria-invalid` in either tree, so nothing differs there.
 
@@ -190,7 +190,7 @@ Four wiring points have no direct translation:
 One mechanism the filter rests on is not the controller's at all: **its `hidden` attributes survive a morph**.
 Every option the filter hides is an attribute write the server never made, so a re-render's HTML carries none of them and a plain morph would unhide the lot on the next round trip.
 ux-live-component prevents exactly that.
-Its `ExternalMutationTracker` ([`live_controller.js:1197`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js)) runs a `MutationObserver` with `attributes: true` over the component root the whole time no render is in flight, filing every outside attribute write against the element that took it; `executeMorphdom` then reads that file back in idiomorph's `beforeNodeMorphed` callback — `:1046` looks the element up and `:1049` calls `applyToElement()` on the **incoming** node, which replays the recorded attribute changes — so the new markup arrives already carrying the filter's decisions.
+Its `ExternalMutationTracker` ([`live_controller.js:1225`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js)) runs a `MutationObserver` with `attributes: true` over the component root the whole time no render is in flight, filing every outside attribute write against the element that took it; `executeMorphdom` then reads that file back in idiomorph's `beforeNodeMorphed` callback — `:1077` looks the element up and `:1080` calls `applyToElement()` on the **incoming** node, which replays the recorded attribute changes — so the new markup arrives already carrying the filter's decisions.
 Nothing in the port asks for this and nothing would report it missing: without it a search would silently reset itself on every `live()` update.
 It is also the division of labour behind point 1 above — the observer is for the options a morph **adds or removes**, not for the attributes it would otherwise erase.
 

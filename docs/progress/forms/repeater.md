@@ -36,14 +36,14 @@ The Surface table lists every public member of the ported classes and traits exc
 | --- | --- | --- | --- | --- |
 | [`make()` / `components()`](../../../packages/forms/src/Components/Repeater.php) (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) · [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) |
 | `hydrateItems()` / `dehydrateItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) |
-| `generateUuidUsing()` / `generateUuid()` / `fake()` | [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | done | — | [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
-| `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
+| `generateUuidUsing()` / `generateUuid()` / `fake()` | [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | in progress | — | [detail](#an-item-key-that-is-not-a-safe-state-path-segment-is-used-as-it-arrives) · [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
+| `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | in progress | — | [detail](#an-item-key-that-is-not-a-safe-state-path-segment-is-used-as-it-arrives) · [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
 | `defaultItems()` / `default()` and the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-defaults-fill-gives-each-item-its-fields-own-defaults-under-the-declared-one) |
 | `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
 | `getAddAction()` / `addAction()` / `getAddActionName()` / `addActionLabel()` / `getAddActionLabel()` / `addActionAlignment()` / `getAddActionAlignment()` / `addable()` / `isAddable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [semantics](#the-default-add-label-is-a-message-over-the-lower-cased-field-label) |
 | `getDeleteAction()` / `deleteAction()` / `getDeleteActionName()` / `deletable()` / `isDeletable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | `getCloneAction()` / `cloneAction()` / `getCloneActionName()` / `cloneable()` / `isCloneable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
-| `getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `getMoveUpActionName()` / `getMoveDownActionName()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
+| `getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `getMoveUpActionName()` / `getMoveDownActionName()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | in progress | — | [detail](#the-move-buttons-carry-no-screen-reader-reordering-description) · [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
 | `getReorderAction()` / `reorderAction()` / `getReorderActionName()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-drag-reorder-round-trip-accepts-the-clients-order) · [diverges](#the-reorder-action-is-hardened-and-answers-only-real-moves) |
 | `reorderAnimationDuration()` / `getReorderAnimationDuration()` | [`HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | — |
 | `itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `hasItemNumbers()` / `itemHeaders()` / `hasItemHeaders()` / `truncateItemLabel()` / `isItemLabelTruncated()` / `getHeadingsCount()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
@@ -68,6 +68,24 @@ The Surface table lists every public member of the ported classes and traits exc
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`TableColumn::make()`](../../../packages/forms/src/Components/Repeater/TableColumn.php) / `getLabel()` / `hiddenHeaderLabel()` / `isHeaderLabelHidden()` / `markAsRequired()` / `isMarkedAsRequired()` | [`Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) |
+
+## Details
+
+### An item key that is not a safe state-path segment is used as it arrives
+
+Filament's `getDefaultChildSchemas()` re-keys every raw-state item whose key `StatePathSegment::isSafe()` refuses ([`StatePathSegment.php:12-31`](../../../vendor/filament/schemas/src/StatePathSegment.php): blank, holding `.`, `*`, a quote, `<`, `>`, a backtick or a control character, ending in `\`, or `{first}` / `{last}`) and writes the re-keyed state back before it builds an item schema ([`Repeater.php:891-910`](../../../vendor/filament/forms/src/Components/Repeater.php)).
+The replacement is a fresh uuid, or the next free integer when uuid generation is off ([`CanGenerateUuids.php:43-101`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php)).
+An existing relationship item whose key is unsafe makes it throw a `LogicException` instead ([`Repeater.php:904`](../../../vendor/filament/forms/src/Components/Repeater.php)).
+Its `generateUuid()` also discards a `generateUuidUsing()` closure's answer that is not a safe segment and mints a uuid ([`CanGenerateUuids.php:22-28`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php)).
+The port's `getDefaultChildSchemas()` paths each item by its raw key ([`Repeater.php:379`](../../../packages/forms/src/Components/Repeater.php)), so a key holding a dot, which a client can write into the host's writable state, re-addresses the item into a nested path, and its `generateUuid()` returns the closure's answer unchecked ([`CanGenerateUuids.php:41`](../../../packages/forms/src/Components/Concerns/CanGenerateUuids.php)).
+**Next step:** port the safe-segment test beside schemas' state-path code, re-key an unsafe plain-repeater key in `getDefaultChildSchemas()` and fall back to a uuid in `generateUuid()`, leaving the `record=` keys the relationship arm already escapes untouched ([diverges](repeater-relationship.md#a-record-key-holding-a-dot-keys-its-item-record-and-the-keys-escape)).
+
+### The move buttons carry no screen-reader reordering description
+
+Filament renders, per item, a visually hidden description reading `components.repeater.reordering.position` (the item's label, or `reordering.item`, with its position and the count) ([`Repeater.php:2320-2342`](../../../vendor/filament/forms/src/Components/Repeater.php)), and each move-up and move-down button points at it through `aria-describedby` ([`Repeater.php:2305-2313`](../../../vendor/filament/forms/src/Components/Repeater.php)).
+The list also carries a polite `role="status"` region ([`Repeater.php:1655`](../../../vendor/filament/forms/src/Components/Repeater.php)), into which the shared reordering script writes the `reordering.moved` message once a button move lands ([`reordering.js:341`](../../../vendor/filament/forms/resources/js/utilities/reordering.js)).
+The port's `partials/Repeater/` templates render no description, no `aria-describedby` and no status region, and forms' catalogue carries no `repeater.reordering.*` key.
+**Next step:** render the per-item description and the status region from the templates, wire `aria-describedby` onto the two move actions, and announce a landed move from the repeater controller, with the three keys in `sylament-forms`.
 
 ## Semantics
 
@@ -318,14 +336,14 @@ The key coercion is PHP's own: a numeric string from the client finds the intege
 
 ### Uuid generation is a mode flag, and `generateUuidUsing(true)` mints a real uuid
 
-`generateUuidUsing()` keeps Filament's `Closure|bool|null` signature, but the value behind it is stored as two properties — a `bool $generatesUuids` mode flag and a `string|Closure|null $generateUuidUsing` generator — and `true` mints an ordinary v4 uuid instead of Filament's `"1"`.
-Both halves fall out of typing.
-Filament's truthy arm evaluates whatever the property holds and returns it from a `?string` method, so `generateUuidUsing(true)` returns the literal `true` coerced to the string `"1"` — every item keyed identically, and a coercion `declare(strict_types=1)` forbids outright.
-Here `true` means what it reads as: generation is on, with no generator override, so the default arm runs.
+`generateUuidUsing()` keeps Filament's `Closure|bool|null` signature, but the value behind it is stored as two properties — a `bool $generatesUuids` mode flag and a `string|Closure|null $generateUuidUsing` generator.
+What a caller gets does not diverge: Filament's `generateUuid()` evaluates the property only when it holds a `Closure` ([`CanGenerateUuids.php:22`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php)), so `true` falls through to `Str::uuid()` there as it falls through to the default arm here, and `false` returns `null` in both.
+The divergence is the storage, which falls out of typing.
 The two-property split is the same fact seen from the type side: `evaluate()`'s generic reads a closure's return type off the property union by subtracting `Closure` from it, which the [closure-typing convention](../../../.claude/rules/php.md) makes the *only* place a closure's return type may be stated.
 Filament's single property spends those arms on modes, so the generic infers `Closure`, and every check on the result is dead code at level max.
 Splitting the mode out lets the union say what it is for — a uuid, or a closure producing one.
 A generator returning something else therefore raises PHP's own return `TypeError` naming the component's `generateUuid()`; no hand-thrown guard rides along, because a `?string` inference makes one unreachable.
+Filament also discards a closure's string that is not a safe state-path segment, which the port does not ([detail](#an-item-key-that-is-not-a-safe-state-path-segment-is-used-as-it-arrives)).
 
 ### The move helpers correct two vendor edge defects
 

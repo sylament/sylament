@@ -41,6 +41,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`key-value.css`](../../../packages/forms/assets/src/styles/components/key-value.css): the table skin, the chrome columns and the add row | [`components/key-value.css`](../../../vendor/filament/forms/resources/css/components/key-value.css) | done | — | [styles.md](styles.md) |
 | [`sylament--forms--key-value`](../../../packages/forms/assets/src/controllers/key_value_controller.ts): the reorder bridge and the focus guard | [`resources/js/components/key-value.js`](../../../vendor/filament/forms/resources/js/components/key-value.js) | done | — | [diverges](#the-controller-is-a-reorder-bridge-and-a-focus-guard-not-a-row-store) |
 | `.fi-fo-key-value-wrp` inline-label rule | [`components/key-value.css`](../../../vendor/filament/forms/resources/css/components/key-value.css) | blocked | schemas' `HasInlineLabel` | [detail](#the-inline-label-rule-waits-on-hasinlinelabel) |
+| `loadingPlaceholder()` / `getLoadingPlaceholder()` and the async wrapper | [`Concerns/HasLoadingPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingPlaceholder.php) · [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | todo | — | [select.md](select.md#the-js-control-has-no-loading-placeholder) |
 | `HasExtraAlpineAttributes` | [`support/…/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `$publishedViewOverrideCheckPath` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | skipped | — | [diverges](../support/view-component.md#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
 | `addButtonLabel()` / `deleteButtonLabel()` / `reorderButtonLabel()` / `disableAddingRows()` / `disableDeletingRows()` / `disableEditingKeys()` / `disableEditingValues()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
@@ -50,7 +51,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 ### The inline-label rule waits on HasInlineLabel
 
 Vendor's stylesheet ends with a second block, `.fi-fo-key-value-wrp .fi-fo-field-has-inline-label .fi-fo-field-label-col { @apply sm:pt-1.5 }`, which nudges the label column down so it lines up with the first row of the table when the field's label sits beside its control.
-Nothing emits `sy-fo-field-has-inline-label`, because schemas' `HasInlineLabel` is unported; the same arm is [outstanding on `field.css`, `select.css`, `tags-input.css`, `textarea.css` and `toggle-buttons.css`](styles.md#the-inline-label-arms-wait-on-schemas-hasinlinelabel).
+Nothing emits `sy-fo-field-has-inline-label`, because schemas' `HasInlineLabel` is unported; the same arm is [outstanding on `field.css`, `select.css`, `tags-input.css`, `textarea.css`, `toggle-buttons.css` and `toggle.css`](styles.md#the-inline-label-arms-wait-on-schemas-hasinlinelabel).
 The rule lands with that concern, in one change across every field that carries one.
 
 ## Semantics

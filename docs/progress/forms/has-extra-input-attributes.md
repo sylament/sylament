@@ -16,9 +16,17 @@ The tables `CheckboxColumn`, `TextInputColumn` and `SelectColumn` compose it too
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`extraInputAttributes()`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php), the replace and `merge:` arms | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
+| [`extraInputAttributes()`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php), the replace and `merge:` arms | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | in progress | — | [detail](#the-input-attribute-setter-registers-a-repeated-array-twice) |
 | [`getExtraInputAttributes()` / `getExtraInputAttributeBag()`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
 | Merged onto the control by each field's template | [`TextInput::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#the-extras-beat-the-attributes-the-field-computes) |
+
+## Details
+
+### The input attribute setter registers a repeated array twice
+
+Filament's `extraInputAttributes()` returns early under `merge: true` when the array it is given is strictly equal to one already registered ([`HasExtraInputAttributes.php:25`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php)), so an identical array merged twice renders once.
+The port's setter appends every merged registration ([`HasExtraInputAttributes.php:20`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php)), so a repeated array's class tokens appear twice on the control, the same gap support's trait carries ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-array-twice-registers-it-twice)).
+**Next step:** return early when `is_array($attributes)` and `in_array($attributes, $this->extraInputAttributes, true)`, and pin a repeated-array merge.
 
 ## Semantics
 

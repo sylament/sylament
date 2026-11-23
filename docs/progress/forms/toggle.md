@@ -35,6 +35,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [can-fix-indistinct-state.md](can-fix-indistinct-state.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [has-extra-input-attributes.md](has-extra-input-attributes.md) · [diverges](#the-toggle-carries-extra-input-attributes-filaments-does-not) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
+| `.fi-fo-toggle-wrp` inline-label padding rule | [`components/toggle.css`](../../../vendor/filament/forms/resources/css/components/toggle.css) | blocked | schemas' `HasInlineLabel` | [detail](styles.md#the-inline-label-arms-wait-on-schemas-hasinlinelabel) |
 
 ## Divergences
 

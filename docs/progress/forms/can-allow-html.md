@@ -26,7 +26,7 @@ Filament composes it on the same two plus `MorphToSelect`, which forwards it to 
 ### The switch opens exactly one hole per field
 
 `allowHtml()` makes the **option label** render raw and nothing else.
-On `CheckboxList` the description beside it keeps the template's escaping in both states, as vendor's template does (`CheckboxList.php:658-669`), and a case asserts it so that a template widening the raw site by one element fails.
+On `CheckboxList` the description beside it keeps the template's escaping in both states, as vendor's template does (`CheckboxList.php:669-680`), and a case asserts it so that a template widening the raw site by one element fails.
 The hole is stated at the sink, in a `{# Security: … #}` comment on that template's label `<span>`, matching the same comment on [the trait](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php).
 On `Select` the flag reaches the JS control as its `htmlAllowed` value, and the label site is the control's rendered option and item — the native `<select>` never sees it, because `allowHtml()` is one of the three conditions that [switch the field to the JS control](select.md#nativefalse-switches-to-the-js-control), a native `<option>` having no way to hold markup.
 

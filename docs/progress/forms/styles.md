@@ -19,6 +19,7 @@ ports:
   - vendor/filament/forms/resources/css/components/text-input.css
   - vendor/filament/forms/resources/css/components/textarea.css
   - vendor/filament/forms/resources/css/components/toggle-buttons.css
+  - vendor/filament/forms/resources/css/components/toggle.css
   - vendor/filament/support/resources/css/components/input/checkbox.css
   - vendor/filament/support/resources/css/components/input/index.css
   - vendor/filament/support/resources/css/components/input/one-time-code.css
@@ -91,7 +92,7 @@ So `beforeLabel()` stretches across the label row here and does not in Filament.
 
 ### The inline-label arms wait on schemas' HasInlineLabel
 
-Vendor's `field.css`, `select.css`, `tags-input.css`, `textarea.css` and `toggle-buttons.css` each carry an arm under `.fi-fo-field-has-inline-label`: the `sm:grid-cols-3` label/content split and its `sm:col-span-2` content column in `field.css`, and an `sm:pt-1.5` on the label column in the others.
+Vendor's `field.css`, `select.css`, `tags-input.css`, `textarea.css`, `toggle-buttons.css` and `toggle.css` each carry an arm under `.fi-fo-field-has-inline-label`: the `sm:grid-cols-3` label/content split and its `sm:col-span-2` content column in `field.css`, an `sm:pt-0.5` on the label column in `toggle.css`, and an `sm:pt-1.5` on it in the others.
 None is ported, because nothing emits `sy-fo-field-has-inline-label`: schemas' `HasInlineLabel` is unported, which [field.md](field.md)'s field-wrapper-rendering row records.
 `field.css`'s three `.fi-fo-field-label-col.fi-vertical-align-*` arms wait on the same concern, because Filament emits that class only beside an inline label (`vendor/filament/forms/src/Components/Field.php`, the `fi-vertical-align-*` class keyed on `$hasInlineLabel`).
 `key-value.css` carries the same arm, [recorded in key-value.md](key-value.md#the-inline-label-rule-waits-on-hasinlinelabel).
@@ -237,7 +238,7 @@ Both are inventions rather than translations, and `autosize()` overrides both ra
 
 ### The JS select skin is Filament's, on the ported control's container
 
-Vendor's JS-select rules (`support/…/input/select.css:23-120`) are nested under `.fi-select-input` and address the DOM Filament's own select utility builds.
+Vendor's JS-select rules (`support/…/input/select.css:23-154`) are nested under `.fi-select-input` and address the DOM Filament's own select utility builds.
 Ours address the DOM [our port of that utility](select.md#nativefalse-switches-to-the-js-control) builds, so the port is a transcription rather than a mapping — one rule for one rule, renamed onto the container class the engine inserts beside the hidden `<select>`:
 
 | Vendor rule | Ours | The element |

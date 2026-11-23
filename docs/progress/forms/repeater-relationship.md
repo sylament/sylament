@@ -183,14 +183,14 @@ Pinned through a relationship repeater for a new item on a stored row's key and 
 
 ### A record key holding a dot keys its item `record=` and the key's escape
 
-Filament keys every loaded item `record-<key>`, and a key holding a dot then re-addresses the item, because every state path splits on dots: Filament's `data_get()`, UX's hydrator and the [`PropertyAccessor`](../schemas/property-accessor.md) alike read item `record-dry.goods` as `record-dry` holding `goods`.
-Its fields read empty, a write to one lands in a phantom item `record-dry`, and a relationship field inside it is refused at fill, because the record path map never reaches it.
+Filament keys every loaded item `record-<key>`, and its `getDefaultChildSchemas()` throws a `LogicException` when such a key is not a safe state-path segment ([`Repeater.php:901-906`](../../../vendor/filament/forms/src/Components/Repeater.php)), because every state path splits on dots: Filament's `data_get()`, UX's hydrator and the [`PropertyAccessor`](../schemas/property-accessor.md) alike would read item `record-dry.goods` as `record-dry` holding `goods`.
+A relationship repeater over a string identifier holding a dot therefore cannot render in Filament at all, where here its items fill, validate and save.
 Only a single-field key can hold a dot, since [the grammar](../schemas/record-key-contract.md#the-grammar) escapes one in every component of a composite key; a string identifier holding a domain or an email is the case.
 Here such a key keys its item `record=` and the key in the grammar's escape, every byte outside `[A-Za-z0-9_-]` written as `=` and two uppercase hex digits, so `dry.goods` fills item `record=dry=2Egoods`, while a key without a dot keeps Filament's `record-<key>` unchanged.
 The two arms cannot collide: their prefixes differ at the seventh character, so `record=dry=2Egoods` stays apart from `record-dry=2Egoods`, the item of a child whose identifier is `dry=2Egoods`; the escape writes `=` itself as `=3D`, so each key has one spelling; and an added item's uuid key never starts with `record`.
 No site decodes an item key: the save and the [item schema's stamp](#an-item-schema-is-stamped-with-the-child-it-maps) compare it against the key each loaded child mints, so a spelling no child mints, such as `record=dry`, names no child, and the save refuses it as it refuses a `record-` key naming none.
 Pinned over a child keyed `dry.goods` beside one keyed `dry=2Egoods`, through the fill, a closure's `$record` and the save of a relationship repeater nested in each item.
-A plain repeater keys its items by the uuids it mints, so a dotted key there is one an application filled itself, and [the missing-level pass stops at it](../schemas/has-schemas.md#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array).
+A plain repeater mints uuid item keys, so a dotted key there is one an application filled or a client wrote into the host's writable state; [the missing-level pass stops at it](../schemas/has-schemas.md#every-missing-or-null-level-a-fields-state-path-crosses-starts-as-an-empty-array), and Filament re-keys it where the port does not ([detail](repeater.md#an-item-key-that-is-not-a-safe-state-path-segment-is-used-as-it-arrives)).
 
 ### A mutate callback can rewrite what a nested hook consumes
 
@@ -203,7 +203,7 @@ A callback declining the item (returning `null`) skips its nested hooks along wi
 
 ### The order stamp is 0-based, written onto the child, and out of the callbacks' reach
 
-Filament stamps `$itemData[$orderColumn] = $itemOrder` with `$itemOrder` starting at **1**, *before* either mutation callback sees the item — so a hook reads the position it is about to be given and may overwrite it, and the value reaches the record through the same `fill()` that writes every other key (`vendor/filament/forms/src/Components/Repeater.php:1035-1046`).
+Filament stamps `$itemData[$orderColumn] = $itemOrder` with `$itemOrder` starting at **1**, *before* either mutation callback sees the item — so a hook reads the position it is about to be given and may overwrite it, and the value reaches the record through the same `fill()` that writes every other key (`vendor/filament/forms/src/Components/Repeater.php:1083-1106`).
 Here the stamp is `0..n-1`, written straight onto the child with [`setOnRecord()`](../schemas/property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) *after* the callbacks have run, and never present in the item array at all.
 
 Two reasons, one per half.

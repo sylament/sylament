@@ -27,7 +27,7 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | --- | --- | --- | --- | --- |
 | [`acceptUploadedFile(string $fileKey, UploadedFile $file): ?array`](../../../packages/forms/src/Components/BaseFileUpload.php) | — (Livewire's `_startUpload`/`_finishUpload` pair) | done | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) |
 | [`hydrateFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`hydrateFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#hydratefiles-is-not-a-security-boundary) |
-| [`saveUploadedFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`saveUploadedFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#two-filament-defects-in-the-store-pass-are-not-ported) |
+| [`saveUploadedFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`saveUploadedFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#a-disabled-field-still-stores-its-uploads-at-dehydration) · [diverges](#two-filament-defects-in-the-store-pass-are-not-ported) |
 | [`saveUploadedFile(TemporaryUploadedFile $file): ?string`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`saveUploadedFile()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-store-step-moves-on-one-storage-and-streams-across-two) |
 | [`getUploadedFiles(): ?array`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getUploadedFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#the-payload-is-rendered-not-fetched-so-getuploadedfiles-is-not-browser-callable) |
 | [`getUploadedFile(string $file, string\|array\|null $storedFileNames): ?array`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getUploadedFile()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
@@ -89,6 +89,7 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | [`HasAlignment`](../support/has-alignment.md) | [`support/Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
 | [`HasExtraInputAttributes`](has-extra-input-attributes.md) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
 | `placeholder()` | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](field.md#hasplaceholder-is-composed-on-the-base-field) |
+| `loadingPlaceholder()` / `getLoadingPlaceholder()` and the async wrapper | [`Concerns/HasLoadingPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingPlaceholder.php) · [`FileUpload::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | todo | — | [select.md](select.md#the-js-control-has-no-loading-placeholder) |
 | `HasExtraAlpineAttributes` | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `idleLabel()` / `imageCropAspectRatio()` / `imageResizeMode()` / `imageResizeTargetHeight()` / `imageResizeTargetWidth()` / `imageResizeUpscale()` / `orientImageFromExif()` / `imageEditorAspectRatios()` and their deprecated getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
 | `$publishedViewOverrideCheckPath` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | [diverges](../support/view-component.md#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
@@ -97,6 +98,13 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | `cropper.generated.css` — Cropper.js's sheet, scoped by the build | — | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 
 ## Details
+
+### A disabled field still stores its uploads at dehydration
+
+Filament's `beforeStateDehydrated` hook returns before `saveUploadedFiles()` when the field is disabled ([`BaseFileUpload.php:128-134`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php)), so a disabled upload field writes nothing to its disk.
+The port's hook calls `saveUploadedFiles()` unconditionally ([`BaseFileUpload.php:183-185`](../../../packages/forms/src/Components/BaseFileUpload.php)), and schemas runs every non-hidden component's hook whether or not it is disabled ([`Concerns/HasState.php`](../../../packages/schemas/src/Concerns/HasState.php)), so a temporary token in the raw state of a field disabled at submit, a conditional `disabled()` or a replayed token, is stored.
+`acceptUploadedFile()` already refuses a new upload on a disabled field, so the gap is the store pass alone.
+**Next step:** return early from the hook when `isDisabled()`, as Filament does, and pin a disabled field's token left unstored.
 
 ### `uploadingMessage()` has no render site
 
@@ -418,7 +426,7 @@ The transform plugin's own rename-on-type-change (its `ExtensionMap`) is never r
 ### The editor reads the dimension-fixed SVG, not the original
 
 `#fixImageDimensions()` exists to give Cropper something to measure: an SVG sized only by its `viewBox` has an intrinsic ratio and no intrinsic size, so the function rewrites the markup with `width`/`height` in `pt` taken from the viewBox and hands the rewritten copy on.
-Filament then reads the **original** into the `FileReader` that feeds the editor (`file-upload.js:904`), so the copy reaches only `editingFile`, the file the save is named and typed after — the rewrite never touches what the user sees.
+Filament then reads the **original** into the `FileReader` that feeds the editor (`file-upload.js:964`), so the copy reaches only `editingFile`, the file the save is named and typed after — the rewrite never touches what the user sees.
 Cropper is left measuring the browser's fallback for a ratio-only replaced element: 300×150 shrunk to the ratio.
 Ours reads the fixed copy instead, so a viewBox-only SVG opens at its viewBox size and the crop box is dragged over the dimensions the saved file will have.
 The function itself ports verbatim, its `pt` unit and its three-spelling `viewBox` probe included.
@@ -450,7 +458,7 @@ Cropper.js's stylesheet is the second generated vendor sheet: `scope-vendor-css.
 ### The download and open action anchors are the port's own
 
 The two action anchors are ours (`sy-fo-file-upload-download-action` / `-open-action` with an inner `-icon` span) rather than vendor's `filepond--download-icon` / `filepond--open-icon`: our JS builds those anchors, so there is no vendor class to select at all — [the bundled-library rule](../../internals/styling.md#why-is-a-bundled-library-styled-under-a-sylament-class)'s second branch has nothing to reach here.
-Their mask-image payloads are copied verbatim from vendor (`file-upload.css:82-83, 92-93`), which is why the download glyph is a Feather arrow and the open glyph a Heroicons external-link rather than a matched pair; both are MIT and the layout/mask split onto two elements is the port's own, so the anchor carries the box and the span carries the mask.
+Their mask-image payloads are copied verbatim from vendor (`file-upload.css:96-97, 106-107`), which is why the download glyph is a Feather arrow and the open glyph a Heroicons external-link rather than a matched pair; both are MIT and the layout/mask split onto two elements is the port's own, so the anchor carries the box and the span carries the mask.
 
 ### The dark backdrop arm sits in an `@variant dark` block
 

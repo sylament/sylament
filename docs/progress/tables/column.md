@@ -18,7 +18,7 @@ ports:
   - vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php
   - vendor/filament/tables/src/Columns/Concerns/HasTooltip.php
   - vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php
-  - vendor/filament/tables/resources/views/index.blade.php
+  - vendor/filament/tables/src/Table/Concerns/HasColumns.php
   - vendor/filament/support/src/Concerns/CanGrow.php
   - vendor/filament/support/src/Concerns/CanWrapHeader.php
   - vendor/filament/support/src/Concerns/HasCellState.php
@@ -86,7 +86,7 @@ A name crossing an association needs nothing declared in `query()`: the [relatio
 | [`inline()` / `isInline()`](../../../packages/tables/src/Columns/Concerns/CanBeInline.php) | [`Concerns\CanBeInline`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeInline.php) | done | — | — |
 | [`tooltip()` / `headerTooltip()` / `emptyTooltip()` and their getters](../../../packages/tables/src/Columns/Concerns/HasTooltip.php) | [`Concerns\HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) · [semantics](#the-tables-tier-tooltip-trio-sits-beside-supports-one-tooltip-trait) |
 | [`extraCellAttributes()` / `extraHeaderAttributes()` and their getters](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | [`HasExtraCellAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php), [`HasExtraHeaderAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) · [image-column.md](image-column.md#extra-img-attribute-registrations-merge-defaults-first) |
-| [`getCellClassName()` / `getHeaderCellClassName()`, the per-column hook classes](../../../packages/tables/src/Columns/Column.php) | [`index.blade.php`'s `str($columnName)->camel()->kebab()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-hook-class-kebabs-each-dotted-segment-on-its-own) |
+| [`getCellClassName()` / `getHeaderCellClassName()`, the per-column hook classes](../../../packages/tables/src/Columns/Column.php) | [`Column.php`'s `str($this->getName())->camel()->kebab()`](../../../vendor/filament/tables/src/Columns/Column.php), [`HasColumns.php`'s `str($columnName)->camel()->kebab()`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | done | — | [semantics](#the-hook-class-kebabs-each-dotted-segment-on-its-own) |
 | Cell rendering: `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` and the five `hasDynamic*()` cache guards | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | skipped | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
 | Column groups and layouts: `renderInLayout()`, `BelongsToGroup`, `BelongsToLayout` and composing `CanSpanColumns` | [`Column::renderInLayout()`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | — | [unported](README.md#unported) |
 | `BadgeColumn`, `BooleanColumn`, `TagsColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | skipped | — | [deprecated](../renames.md#a-deprecated-filament-member-is-not-ported) |

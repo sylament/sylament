@@ -129,7 +129,7 @@ The label crosses already translated, [as an action's does](action.md#the-serial
 
 Filament's `ActionGroup::hasNonBulkAction()` iterates `getFlatActions()` calling `$action->isBulk()`.
 Everything it reads exists: `BelongsToTable` ships ([belongs-to-table.md](belongs-to-table.md)) and so does [`Action::isBulk()`](bulk-action.md).
-Its only reader is Filament's table toolbar, which decides whether any toolbar action is non-bulk (`tables/resources/views/index.blade.php:77-99`, skipping a `BulkActionGroup` and asking an `ActionGroup` through this method).
+Its only reader is Filament's table toolbar, which decides whether any toolbar action is non-bulk (`tables/src/Table/Concerns/HasToolbarActions.php:85-106`, skipping a `BulkActionGroup` and asking an `ActionGroup` through this method).
 The port's toolbar in [`Table/index.html.twig`](../../../packages/tables/templates/partials/Table/index.html.twig) computes no such partition, and a declared member arrives with its consumer, so the method lands with that partition in [`tables`](../tables/README.md).
 
 ## Semantics

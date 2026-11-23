@@ -20,7 +20,7 @@ Filament's class is `class ViewColumn extends Column {}`; the port adds the fail
 | `template()` / `templateData()` ⟵ `view()` / `viewData()` | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [view-component.md](../support/view-component.md) |
 | The template receives the column as `component` | [`$viewIdentifier = 'column'`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | [diverges](../support/view-component.md#the-instance-is-always-exposed-as-component) |
 | [Fail-fast on a missing template](../../../packages/tables/src/Columns/ViewColumn.php) | [`ViewComponent::getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](../forms/view-field.md#the-missing-template-throw-lives-on-viewfield-rather-than-the-base) |
-| The cell wrapper is the table partial's, not the template's | [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) `fi-ta-col` | done | — | [semantics](#the-cell-wrapper-is-served-around-the-template-not-by-it) |
+| The cell wrapper is the table partial's, not the template's | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) `fi-ta-col` | done | — | [semantics](#the-cell-wrapper-is-served-around-the-template-not-by-it) |
 | `$record` in template scope | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#no-record-variable-is-exposed--the-getter-is-the-api) |
 
 ## Semantics

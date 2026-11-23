@@ -70,7 +70,7 @@ The ported template sets `disabled` on any disabled button, and `item.css`'s `&:
 - **Key bindings.**
   Filament binds a global `x-mousetrap` shortcut that clicks the item; the port has no shared key-binding controller for it to use.
 - **Loading indicator.**
-  `generate_loading_indicator_html()`, the `wire:loading` / `wire:target` plumbing, the `loadingIndicator` prop and the `livewire_loading_delay` config have no counterpart in the template, and with them goes Filament's reason to set `disabled` through `wire:loading.attr`.
+  `generate_loading_indicator_html()`, the `wire:loading` / `wire:target` plumbing, the `loadingIndicator` prop and the `livewire_loading_delay` config have no counterpart in the template, and with them goes Filament's reason to set `aria-disabled` and `fi-disabled` through `wire:loading.attr` and `wire:loading.class` ([`item.blade.php:93-94`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php)).
   Their live equivalents ship, and what the primitive's half would translate to is written up for [`IconButton`](icon-button.md#the-loading-indicator-is-unwritten-though-its-live-equivalent-ships).
 - **`tag: 'form'`.**
   Filament wraps the item in a `<form method="post">` and renders the row as that form's submit button, which is how a grouped action POSTs to its URL rather than navigating to it.

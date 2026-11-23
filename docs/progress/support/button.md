@@ -32,7 +32,7 @@ It has no Sylament PHP class: it ports Filament's Blade `button/index.blade.php`
 | `keyBindings` | [`x-mousetrap.global.…`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#tooltip-key-bindings-and-loading-are-not-wired) |
 | Loading indicator / `wire:target` / form processing | [`generate_loading_indicator_html(...)` + `filamentFormButton`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#tooltip-key-bindings-and-loading-are-not-wired) |
 | `spaMode` SPA navigation | [`generate_href_html($href, …, $spaMode)`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | blocked | panels SPA navigation | — |
-| [`.sy-btn-group`: the joined row of buttons](../../../packages/support/assets/src/styles/components/button.css) | [`.fi-btn-group`](../../../vendor/filament/support/resources/css/components/button.css) | done | — | [diverges](#the-button-group-arm-ships-without-its-processing-sub-rule) |
+| [`.sy-btn-group`: the joined row of buttons](../../../packages/support/assets/src/styles/components/button.css) | [`.fi-btn-group`](../../../vendor/filament/support/resources/css/components/button.css) | done | — | [semantics](#the-button-group-arm-is-vendors-group-rule-set) |
 | [`input:checked + label.sy-btn`: the selected state of a label button](../../../packages/support/assets/src/styles/components/button.css) | [`input:checked + label&`](../../../vendor/filament/support/resources/css/components/button.css) | done | — | [diverges](#the-label-buttons-paint-their-colour-only-while-checked) |
 
 ## Details
@@ -56,18 +56,17 @@ They are static markup and need no interactivity layer.
   Filament binds an Alpine mousetrap shortcut; the port has no shared key-binding controller for the button to use.
 - **Loading and form processing.**
   The loading indicator, its `wire:target` plumbing and the `filamentFormButton` form-processing behaviour have no counterpart in the template.
+  Vendor's `.fi-btn.fi-processing:enabled { cursor-wait opacity-70 }` ([`button.css:35-37`](../../../vendor/filament/support/resources/css/components/button.css)) is not ported, because Alpine sets `fi-processing` from that behaviour (`x-bind:class="{ 'fi-processing': isProcessing }"`) and nothing in the port emits `sy-processing`; it lands in the change that first emits the class.
+
+## Semantics
+
+### The button-group arm is vendor's group rule set
+
+`.sy-btn-group` ports vendor's `.fi-btn-group` with the prefix rename: the `grid grid-flow-col`, the shared ring its uncoloured children and its labels give up for it, the first and last corner rounding read through `:nth-child(1 of .sy-btn)` (which steps over the `<input>`s an option set interleaves), the `me-px` seam and its `rtl` and dark variants.
+[`ToggleButtons::grouped()`](../forms/toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) and the [file upload](../forms/file-upload.md) template render it, and [`ActionGroup`'s button-group trigger](../actions/action-group.md#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) needs no CSS of its own when it lands.
+Its ring reset selects `label&` where vendor's selects `:is(label, [aria-pressed])`, because the port's button stylesheet carries no `aria-pressed` state.
 
 ## Divergences
-
-### The button-group arm ships without its processing sub-rule
-
-`.sy-btn-group` is a rule-for-rule port of vendor's `.fi-btn-group`: the `grid grid-flow-col`, the shared ring its uncoloured children and its labels give up for it, the first and last corner rounding read through `:nth-child(1 of .sy-btn)` (which steps over the `<input>`s an option set interleaves), the `me-px` seam and its `rtl` and dark variants.
-[`ToggleButtons::grouped()`](../forms/toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) and the [file upload](../forms/file-upload.md) template render it, and [`ActionGroup`'s button-group trigger](../actions/action-group.md#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) needs no CSS of its own when it lands.
-
-One sub-rule is not ported: `&.fi-processing:enabled { cursor-wait opacity-70 }`.
-It is the only `fi-processing` rule in vendor's stylesheet, and Alpine sets the class on the button Blade (`x-bind:class="{ 'fi-processing': isProcessing }"`), the form-processing behaviour the loading row above marks todo.
-Nothing in the port emits `sy-processing`, so the rule would ship a selector with no element.
-It lands with that row, in the same change that first emits the class.
 
 ### The label buttons paint their colour only while checked
 

@@ -39,7 +39,7 @@ The `## Details` entries below also serve the same rows on [`Badge`](badge.md) a
 
 Filament's `wire:target` / `wire:loading` wiring, `generate_loading_indicator_html()`, the `loadingIndicator` / `form` / `spaMode` props and the `livewire_loading_delay` config have no counterpart in the template.
 What they would translate to ships: UX LiveComponent's `data-loading` directive, which takes an `action(name)` modifier as the `wire:target` equivalent, and support's [`LoadingIndicator`](../../../packages/support/templates/components/LoadingIndicator/index.html.twig) component, both already used by schemas' [`Tabs` partial](../../../packages/schemas/templates/partials/Tabs/index.html.twig) and tables' [`Table` partial](../../../packages/tables/templates/partials/Table/index.html.twig).
-What is missing is the primitive's half: the props, the `data-loading` attributes on the icon and the indicator, and the `disabled` Filament sets through `wire:loading.attr`.
+What is missing is the primitive's half: the props, a root class toggled by `data-loading` that stands for Filament's `fi-loading` (`wire:loading.class.delay`, [`icon-button.blade.php:97`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php)), the indicator rendered before the icon, the stylesheet's child and sibling rules that hide the indicator outside a request and the icon during one ([`icon-button.css:4-11`](../../../vendor/filament/support/resources/css/components/icon-button.css)), and the `aria-disabled` and `sy-disabled` Filament sets through `wire:loading.attr` and `wire:loading.class`.
 Until then the `form` prop, which Filament also uses as the indicator's submit target, collapses to `formId` alone.
 
 ### The badge waits on a caller, not on the Badge primitive

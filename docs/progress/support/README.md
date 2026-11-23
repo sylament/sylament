@@ -51,7 +51,7 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [icon.md](icon.md) | done | — | `resources/views/components/icon.blade.php`, `resources/css/components/icon.css` | The anonymous Twig component `<twig:SylamentSupport:Icon>` that ports Filament's `<x-filament::icon>`. |
 | [input-wrapper.md](input-wrapper.md) | in progress | 2 todo | `resources/css/components/input/wrapper.css`, `resources/views/components/input/wrapper.blade.php` | The `<twig:SylamentSupport:InputWrapper>` component that carries a text-like control's chrome, state classes and prefix and suffix affixes. |
 | [link.md](link.md) | in progress | 1 in progress · 3 blocked · 2 todo | `resources/views/components/link.blade.php`, `View/Components/LinkComponent.php`, `resources/css/components/link.css` | The `<twig:SylamentSupport:Link>` anonymous component, Filament's inline text link or button with its icon, size, weight and colour map. |
-| [loading-indicator.md](loading-indicator.md) | in progress | 2 todo | `resources/views/components/loading-indicator.blade.php`, `View/DefaultLoadingIndicator.php`, `Contracts/LoadingIndicator.php`, `resources/css/components/loading-indicator.css` | The LoadingIndicator Twig component, the spinner SVG Filament's loading-indicator view renders, and its stylesheet. |
+| [loading-indicator.md](loading-indicator.md) | in progress | 2 in progress · 2 todo | `resources/views/components/loading-indicator.blade.php`, `View/DefaultLoadingIndicator.php`, `Contracts/LoadingIndicator.php`, `resources/css/components/loading-indicator.css` | The LoadingIndicator Twig component, the spinner SVG Filament's loading-indicator view renders, and its stylesheet. |
 | [modal.md](modal.md) | in progress | 1 blocked · 7 todo | `View/Components/ModalComponent.php`, `resources/views/components/modal/index.blade.php`, `resources/css/components/modal.css`, `resources/js/components/modal.js` | The shared `<twig:SylamentSupport:Modal>` primitive, Filament's Alpine-driven modal rebuilt on a native `<dialog>` and a Stimulus controller. |
 | [pagination.md](pagination.md) | in progress | 2 in progress · 1 blocked · 2 todo | `resources/views/components/pagination/index.blade.php`, `resources/views/components/pagination/item.blade.php`, `resources/css/components/pagination.css` | The `Paginator` carrier, one page of records plus its counts, and the `<twig:SylamentSupport:Pagination>` footer that renders it. |
 | [section.md](section.md) | in progress | 1 in progress | `resources/views/components/section/index.blade.php`, `resources/views/components/section/heading.blade.php`, `resources/views/components/section/description.blade.php`, `resources/css/components/section.css` | The presentational `<twig:SylamentSupport:Section>` Twig component, its collapse controller and stylesheet, the port of Filament's `filament::section` view. |
@@ -81,6 +81,9 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`views/components/input/index.blade.php`](../../../vendor/filament/support/resources/views/components/input/index.blade.php) | todo | — | — |
 | [`views/components/loading-section.blade.php`](../../../vendor/filament/support/resources/views/components/loading-section.blade.php) | todo | — | — |
 | [`resources/css/components/loading-section.css`](../../../vendor/filament/support/resources/css/components/loading-section.css) | todo | — | — |
+| [`views/components/loading-placeholder.blade.php`](../../../vendor/filament/support/resources/views/components/loading-placeholder.blade.php) | todo | — | — |
+| [`resources/css/components/loading-placeholder.css`](../../../vendor/filament/support/resources/css/components/loading-placeholder.css) | todo | — | — |
+| [`resources/css/components/async-component.css`](../../../vendor/filament/support/resources/css/components/async-component.css) | todo | — | — |
 | [`views/components/input/one-time-code.blade.php`](../../../vendor/filament/support/resources/views/components/input/one-time-code.blade.php) | todo | — | — |
 | [`resources/js/components/one-time-code.js`](../../../vendor/filament/support/resources/js/components/one-time-code.js) | todo | — | — |
 | [`views/components/input/radio.blade.php`](../../../vendor/filament/support/resources/views/components/input/radio.blade.php) | todo | — | — |
@@ -90,7 +93,15 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`resources/js/tooltip.js`](../../../vendor/filament/support/resources/js/tooltip.js) | todo | — | — |
 | [`resources/css/components/tooltip.css`](../../../vendor/filament/support/resources/css/components/tooltip.css) | todo | — | — |
 | [`resources/js/components/form-button.js`](../../../vendor/filament/support/resources/js/components/form-button.js) | todo | — | — |
-| [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | todo | — | — |
+| [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | skipped | — | [deprecated for `CanBeLazyLoaded`](../README.md#statuses) |
+| [`Concerns/CanBeLazyLoaded.php`](../../../vendor/filament/support/src/Concerns/CanBeLazyLoaded.php) | todo | — | — |
+| [`Concerns/CanLazyLoadState.php`](../../../vendor/filament/support/src/Concerns/CanLazyLoadState.php) | todo | — | [column.md](../tables/column.md#lazy-loaded-column-state-is-not-ported) |
+| [`Concerns/HasLoadingPlaceholder.php`](../../../vendor/filament/support/src/Concerns/HasLoadingPlaceholder.php) | todo | — | — |
+| [`State/LazyLoadedState.php`](../../../vendor/filament/support/src/State/LazyLoadedState.php) | todo | — | [column.md](../tables/column.md#lazy-loaded-column-state-is-not-ported) |
+| [`State/LazyLoadedStateGroup.php`](../../../vendor/filament/support/src/State/LazyLoadedStateGroup.php) | todo | — | [column.md](../tables/column.md#lazy-loaded-column-state-is-not-ported) |
+| [`resources/css/components/lazy-loaded-state.css`](../../../vendor/filament/support/resources/css/components/lazy-loaded-state.css) | todo | — | [column.md](../tables/column.md#lazy-loaded-column-state-is-not-ported) |
+| [`resources/js/components/lazy-loaded-state.js`](../../../vendor/filament/support/resources/js/components/lazy-loaded-state.js) | todo | — | [column.md](../tables/column.md#lazy-loaded-column-state-is-not-ported) |
+| [`resources/js/components/lazy-loaded-state/`](../../../vendor/filament/support/resources/js/components/lazy-loaded-state) | todo | — | [column.md](../tables/column.md#lazy-loaded-column-state-is-not-ported) |
 | [`Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | [`Enums/Platform.php`](../../../vendor/filament/support/src/Enums/Platform.php) | todo | — | — |
 | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — | — |
@@ -107,6 +118,7 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — | — |
 | [`views/anonymous-partial.blade.php`](../../../vendor/filament/support/resources/views/anonymous-partial.blade.php) | todo | — | — |
 | [`resources/js/partials.js`](../../../vendor/filament/support/resources/js/partials.js) | todo | — | — |
+| [`resources/js/js-renderer.js`](../../../vendor/filament/support/resources/js/js-renderer.js) | todo | — | — |
 | [`resources/js/utilities/pluralize.js`](../../../vendor/filament/support/resources/js/utilities/pluralize.js) | todo | — | — |
 | [`Events/FilamentUpgraded.php`](../../../vendor/filament/support/src/Events/FilamentUpgraded.php) | todo | — | — |
 | [`Facades/`](../../../vendor/filament/support/src/Facades) | todo | — | — |

@@ -32,7 +32,7 @@ Inside it, `.sy-fo-input` / `.sy-fo-select` are transparent ([field.md](../forms
 | [`inlinePrefix` / `inlineSuffix` → `sy-inline`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-inline' => $inlinePrefix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
 | [`content` block → `sy-input-wrp-content-ctn`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`{{ $slot }}`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
 | [`input-wrapper.css`](../../../packages/support/assets/src/styles/components/input-wrapper.css) | [`components/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | done | — | [semantics](#the-focus-ring-stands-down-while-an-affix-action-has-focus) · [diverges](#the-wrapper-carries-a-hover-ring-filament-does-not) · [diverges](#the-prefixs-non-inline-arm-drops-a-padding-it-already-has) |
-| Loading indicator (`wire:loading` branch, `fi-input-wrp-prefix-has-content`, `fi-input-wrp-content-ctn-ps`) | [the `$hasLoadingIndicator` arms](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | todo | — | [detail](#no-loading-indicator-and-three-css-hooks-go-with-it) |
+| Loading indicator (`fi-loading` arm, `fi-input-wrp-prefix-has-content`, `fi-input-wrp-content-ctn-ps`) | [the `$hasLoadingIndicator` arms](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | todo | — | [detail](#no-loading-indicator-and-three-css-hooks-go-with-it) |
 | Click-to-focus relay (`x-on:click="$dispatch('focus-input')"`) | [`$canClickPrefixAffix` / `$canClickSuffixAffix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | todo | — | [detail](#the-click-to-focus-relay-is-not-ported) |
 | `alpineDisabled` / `alpineValid` | [the `x-bind:class` pair](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | skipped | — | [diverges](#alpinedisabled-and-alpinevalid-are-not-ported) |
 
@@ -41,12 +41,12 @@ Inside it, `.sy-fo-input` / `.sy-fo-select` are transparent ([field.md](../forms
 ### No loading indicator, and three CSS hooks go with it
 
 Filament's wrapper reads `wire:target` off its own attribute bag and, when it finds one, renders a loading indicator inside the prefix affix, opening the affix even when it has no content so that the indicator has somewhere to sit.
-Three hooks exist only to serve that: `fi-input-wrp-prefix-has-content` (the prefix is `hidden` by default and this class flips it to `flex`), `fi-input-wrp-content-ctn-ps` (padding the content when the indicator occupies an otherwise absent prefix) and the CSS fallback arm `&:not(:has(.fi-input-wrp-content-ctn)) > *`.
+Three hooks exist only to serve that: `fi-input-wrp-prefix-has-content` (the prefix is `hidden` by default and this class flips it to `flex`), `fi-input-wrp-content-ctn-ps` (padding the content when the indicator occupies an otherwise absent prefix) and the `fi-loading` class the wrapper takes while its target is in flight, under which `wrapper.css` shows the prefix, hides the affix icons and resets that padding ([`wrapper.css:93-110`](../../../vendor/filament/support/resources/css/components/input/wrapper.css)).
 
 None is ported.
-Our affixes render only when they hold content, so the base prefix rule is `flex` outright and the `-has-content` toggle has nothing to toggle; the content container always renders, so the `:has()` fallback has nothing to fall back for.
+Our affixes render only when they hold content, so the base prefix rule is `flex` outright and the `-has-content` toggle has nothing to toggle.
 The row is **todo**: a loading indicator is wanted at parity, and both pieces it needs exist, the [loading indicator](loading-indicator.md) component and UX LiveComponent's `data-loading` directive for an in-flight request; what is missing is the wrapper's arm that composes them.
-Building it reinstates the two classes and the fallback arm with it.
+Building it reinstates the two classes and the `fi-loading` arm with them.
 
 ### The click-to-focus relay is not ported
 

@@ -101,7 +101,9 @@ That is the point of routing `make()` through the locator.
 
 Filament translates inside its getters with Laravel's global `__()`; the port puts the translator on the component instead, through [`HasTranslator`](../../../packages/support/src/Concerns/HasTranslator.php)'s `#[Required]` `setTranslator()`, which takes `Symfony\Contracts\Translation\TranslatorInterface` beside `setInvoker()`, so no component reaches a service through a global ([principle §1](../../internals/principles.md#the-test)).
 `translateText()` turns a `TranslatableInterface` into its translation through the message's own `trans()`, so a user enum implementing the interface is translated the way a `TranslatableMessage` is; a string, a `Markup` and `null` come back unchanged without the translator being asked for.
-The return type is conditional, so a message or a string argument reads as `string`, a `Markup` as `Markup`, and only a nullable argument as nullable, which lets an override typed `string|Markup` return it directly.
+The return type is conditional: a `TranslatableMessage` or a string argument reads as `string`, a `Markup` as `Markup`, and `null` as `null`.
+An argument typed as the `TranslatableInterface` itself reads as `string|Markup`, because Twig's `Markup` is not final and a class may be both.
+An override typed `string|Markup` can therefore return the result directly, while one typed `string` translates a `TranslatableMessage` or calls the message's own `trans()`.
 A human-text getter returns `$this->translateText($this->evaluate(…))` ([i18n.md](../../internals/i18n.md#a-setter-takes-a-message-and-its-getter-translates-it)).
 The trait sits in `src/Concerns/` beside `EvaluatesClosures` rather than in `Components/Concerns/`, because nothing in it is component-specific, so a container-built text holder that is no component composes it as well: panels' `Page`, `Resource` and `RelationManager` do.
 A component built with `new` never runs the setter, and `getTranslator()` then throws a `LogicException` naming the class and saying to build it through `make()` after the kernel has booted or to register it as a service.

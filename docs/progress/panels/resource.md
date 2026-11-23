@@ -129,7 +129,7 @@ The convention the branch keys on is Filament's generator layout, which a Sylame
 
 `getNavigationLabel()` returns `string|TranslatableInterface`, and `getNavigationGroup()` and `getNavigationBadge()` return `string|TranslatableInterface|null`, read by [`NavigationItem`](navigation-item.md#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter), which translates them.
 `getRecordLabel()`, `getPluralRecordLabel()`, `getBreadcrumb()` and `getRecordTitle()` keep returning `string`, because `plural()`, title-casing and every `{label}` message argument read them as text.
-`Resource` composes `HasTranslator` so an override of one of those getters translates through `getTranslator()`.
+`Resource` composes `HasTranslator` so an override of one of those getters translates a message with `translateText()`.
 A page's [static getters follow the same split](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it).
 
 ### Pluralization takes the inflector's last candidate

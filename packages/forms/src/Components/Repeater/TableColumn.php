@@ -46,7 +46,7 @@ class TableColumn extends Component
 
     public function getLabel(): string|Markup
     {
-        return $this->translateText($this->evaluate($this->label)) ?? '';
+        return $this->translateText($this->evaluate($this->label));
     }
 
     public function hiddenHeaderLabel(bool|Closure $condition = true): static

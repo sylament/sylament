@@ -13,6 +13,7 @@
                 class: ['sy', 'sy-fo-radio', {'sy-inline': isInline}],
                 role: 'radiogroup',
                 'aria-labelledby': component.getId ~ '-label',
+                'aria-invalid': hasErrors ? 'true' : null,
             }, gridAttributes) }}
     >
         {% for value, label in component.getOptions %}

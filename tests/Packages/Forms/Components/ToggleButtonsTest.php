@@ -60,16 +60,21 @@ describe('rendering', function (): void {
             ->and($tester->fillForm(['confirmed' => null])->render()->crawler()->filter('input[data-model$="data.confirmed"]:not([checked])'))->toHaveCount(2);
     });
 
-    it('marks every option input invalid once the field has an error, in both trees', function (): void {
+    it('marks every option input invalid once the field has an error, and the group of a single, required field, in both trees', function (): void {
         $tester = $this->createLiveComponent(BoolFieldsForm::class);
+        $before = $tester->render()->crawler();
 
-        expect($tester->render()->crawler()->filter('input[data-model$="data.channels"][aria-invalid="false"], input[data-model$="data.size"][aria-invalid="false"]'))->toHaveCount(4);
+        expect($before->filter('input[data-model$="data.channels"][aria-invalid="false"], input[data-model$="data.size"][aria-invalid="false"]'))->toHaveCount(4)
+            ->and($before->filter('[aria-labelledby$="-label"][aria-invalid]'))->toHaveCount(0);
 
         $render = $tester->call('save')->assertHasFormErrors(['channels', 'size'])->render()->crawler();
 
         expect($render->filter('input[data-model$="data.channels"][aria-invalid="true"]'))->toHaveCount(2)
             ->and($render->filter('input[data-model$="data.size"][aria-invalid="true"]'))->toHaveCount(2)
-            ->and($render->filter('input[data-model$="data.confirmed"][aria-invalid="false"]'))->toHaveCount(2);
+            ->and($render->filter('input[data-model$="data.confirmed"][aria-invalid="false"]'))->toHaveCount(2)
+            ->and($render->filter('[role="radiogroup"][aria-invalid]')->each(static fn (Crawler $group): string => $group->attr('aria-labelledby') . '=' . $group->attr('aria-invalid')))
+            ->toBe(['form.size-label=true', 'form.level-label=true'])
+            ->and($render->filter('[role="group"][aria-invalid]'))->toHaveCount(0);
     });
 
     it("marks a refused option disabled on its input and its label's class, not by a label attribute, and every option of a disabled field", function (bool $grouped): void {

@@ -10,6 +10,7 @@
                 class: ['sy', 'sy-fo-toggle-buttons', 'sy-btn-group'],
                 role: isMultiple ? 'group' : 'radiogroup',
                 'aria-labelledby': component.getId ~ '-label',
+                'aria-invalid': not isMultiple and component.isRequired and hasErrors ? 'true' : null,
             }) }}
     >
         {% for value, label in component.getOptions %}

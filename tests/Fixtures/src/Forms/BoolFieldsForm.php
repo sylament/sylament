@@ -16,10 +16,11 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * One field of each boolean kind, so a save of the untouched form fails the first four:
+ * One field of each boolean kind, so a save of the untouched form fails the first five:
  * a required `terms` checkbox, a required and accepted `notify` toggle, a required
  * `channels` multiple toggle-buttons field over `email` and `sms`, a required `size`
- * grouped toggle-buttons field over `s` and `l`, a `confirmed` `boolean()`
+ * grouped toggle-buttons field over `s` and `l`, a required single `level`
+ * toggle-buttons field over `low` and `high` (the default tree), a `confirmed` `boolean()`
  * toggle-buttons field defaulting to yes, and the option-key fields `codes` (multiple)
  * and `groupedCode` (grouped), whose keys `01` and `1` read as one number. `mount()`
  * fills the defaults; `save()` validates the form.
@@ -55,6 +56,7 @@ final class BoolFieldsForm implements InteractsWithSchemas
                 Toggle::make('notify')->required()->accepted(),
                 ToggleButtons::make('channels')->multiple()->required()->options(['email' => 'Email', 'sms' => 'SMS']),
                 ToggleButtons::make('size')->grouped()->required()->options(['s' => 'Small', 'l' => 'Large']),
+                ToggleButtons::make('level')->required()->options(['low' => 'Low', 'high' => 'High']),
                 ToggleButtons::make('confirmed')->boolean()->default(true),
                 ToggleButtons::make('codes')->multiple()->options(['01' => 'Zero one', 1 => 'One']),
                 ToggleButtons::make('groupedCode')->grouped()->options(['01' => 'Zero one', 1 => 'One']),

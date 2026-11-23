@@ -35,7 +35,7 @@ class DetachBulkAction extends BulkAction
         $this->failureNotificationTitle(
             fn (int $successCount, int $totalCount): TranslatableMessage => $successCount > 0
                 ? new TranslatableMessage('detach.multiple.notifications.detached_partial.title', ['count' => (string) $successCount, 'total' => (string) $totalCount], 'sylament-actions')
-                : new TranslatableMessage('detach.multiple.notifications.detached_none.title', ['count' => (string) $totalCount], 'sylament-actions'),
+                : new TranslatableMessage('detach.multiple.notifications.detached_none.title', ['count' => $totalCount], 'sylament-actions'),
         );
 
         $this->defaultColor('danger');

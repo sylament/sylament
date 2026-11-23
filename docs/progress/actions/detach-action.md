@@ -117,7 +117,7 @@ Same shape and same reasoning as [`DeleteBulkAction`](delete-action.md#the-bulk-
 
 ### The counting failure title is an addition Filament has neither of
 
-`DetachBulkAction` sets a `failureNotificationTitle()` closure answering the messages `Detached {count} of {total}` and `Failed to detach {count} records`.
+`DetachBulkAction` sets a `failureNotificationTitle()` closure answering the messages `Detached {count} of {total}` and `{count, plural, one {Failed to detach # record} other {Failed to detach # records}}`.
 Filament's does not, and there is nothing to port: `vendor/filament/actions/src/DetachBulkAction.php` declares no `failureNotificationTitle()`, and `resources/lang/en/detach.php` carries no `*_partial` or `*_none` key; only `delete.php`, `force-delete.php` and `restore.php` do.
 
 Without a title neither side sends a failure toast: Filament's `sendFailureNotification()` sends only when `filled($notification?->getTitle())`, and the port's returns early when `blank($notification->getTitle())`.

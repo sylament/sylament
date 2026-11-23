@@ -194,7 +194,7 @@ it('toasts a failure for a one-to-many the mapping forbids dissociating, detachi
     $this->createLiveComponent(AttachableRelationTable::class, AttachableRelationTable::props($this->entityManager(), $this->kew, 'rows', null))
         ->selectTableRecords([$row])
         ->callAction(TestAction::make('detach')->table()->bulk())
-        ->assertNotified('Failed to detach 1 records');
+        ->assertNotified('Failed to detach 1 record');
 
     expect($this->reload($row)->garden?->id)->toBe($this->kew->id);
 });

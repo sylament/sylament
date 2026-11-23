@@ -143,7 +143,7 @@ describe('over a garden', function (): void {
         ($this->table)(['arrayRecords'])
             ->selectTableRecords(['0'])
             ->callAction(TestAction::make('dissociate')->table()->bulk())
-            ->assertNotified('Failed to dissociate 1 records');
+            ->assertNotified('Failed to dissociate 1 record');
 
         expect(($this->seedlingsOf)($this->kew))->toBe(['Bramble', 'Nettle', 'Thistle']);
     });
@@ -317,7 +317,7 @@ describe('a selection longer than one statement binds', function (): void {
     it('dissociates nothing when the second statement fails, toasting that the whole selection failed', function (): void {
         FailingWrite::afterUpdates($this->entityManager(), Seedling::class, 2000);
 
-        ($this->dissociateAll)()->assertNotified('Failed to dissociate 2001 records');
+        ($this->dissociateAll)()->assertNotified('Failed to dissociate 2,001 records');
 
         expect(($this->writes)())->toBe(['"START TRANSACTION"', ($this->statement)(2000), ($this->statement)(1), '"ROLLBACK"'])
             ->and(($this->owned)())->toBe(2001);

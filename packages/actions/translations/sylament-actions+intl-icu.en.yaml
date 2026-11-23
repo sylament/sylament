@@ -60,7 +60,7 @@ delete:
             deleted:
                 title: 'Deleted'
             deleted_none:
-                title: 'Failed to delete {count} records'
+                title: '{count, plural, one {Failed to delete # record} other {Failed to delete # records}}'
             deleted_partial:
                 title: 'Deleted {count} of {total}'
     single:
@@ -84,7 +84,7 @@ detach:
             detached:
                 title: 'Detached'
             detached_none:
-                title: 'Failed to detach {count} records'
+                title: '{count, plural, one {Failed to detach # record} other {Failed to detach # records}}'
             detached_partial:
                 title: 'Detached {count} of {total}'
     single:
@@ -111,7 +111,7 @@ dissociate:
             dissociated:
                 title: 'Dissociated'
             dissociated_none:
-                title: 'Failed to dissociate {count} records'
+                title: '{count, plural, one {Failed to dissociate # record} other {Failed to dissociate # records}}'
             dissociated_partial:
                 title: 'Dissociated {count} of {total}'
     single:

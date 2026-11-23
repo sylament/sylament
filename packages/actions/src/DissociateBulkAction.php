@@ -40,7 +40,7 @@ class DissociateBulkAction extends BulkAction
         $this->failureNotificationTitle(
             fn (int $successCount, int $totalCount): TranslatableMessage => $successCount > 0
                 ? new TranslatableMessage('dissociate.multiple.notifications.dissociated_partial.title', ['count' => (string) $successCount, 'total' => (string) $totalCount], 'sylament-actions')
-                : new TranslatableMessage('dissociate.multiple.notifications.dissociated_none.title', ['count' => (string) $totalCount], 'sylament-actions'),
+                : new TranslatableMessage('dissociate.multiple.notifications.dissociated_none.title', ['count' => $totalCount], 'sylament-actions'),
         );
 
         $this->defaultColor('danger');

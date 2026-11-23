@@ -87,7 +87,7 @@ describe('the fetching arm', function (): void {
         $this->createLiveComponent(RecordsLaneDeletingTable::class)
             ->selectTableRecords(['lamp'])
             ->callAction(TestAction::make('delete')->table()->bulk())
-            ->assertNotified(Notification::make()->danger()->title('Failed to delete 1 records')->persistent());
+            ->assertNotified(Notification::make()->danger()->title('Failed to delete 1 record')->persistent());
     });
 
     it('refuses to delete from an instance the container did not build', function (): void {

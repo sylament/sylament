@@ -140,8 +140,8 @@ Porting `ActionsIconAlias` reverses the icon half.
 Both classes follow [create-action.md's shape](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys), the bulk one under `delete.multiple.…` with its own `modal.actions.delete.label`, and the headings pass the record title and the plural label ([semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb)).
 Filament's `delete.single.modal.actions.delete.label` has no reader, since [`DeleteAction` sets no submit label](#the-confirmation-chrome-is-left-to-the-defaults), and so is not in the catalogue.
 
-`DeleteBulkAction`'s failure title turns Filament's two `trans_choice` branches into two messages over the same `successCount` and `totalCount` injections: `delete.multiple.notifications.deleted_partial.title` (`Deleted {count} of {total}`) and `delete.multiple.notifications.deleted_none.title`, whose English, `Failed to delete {count} records`, differs from Filament's `Failed to delete`: ours carries the count, in an unconditional plural.
-The counts are passed as digits, not numbers, so the ICU formatter adds no locale grouping ([i18n.md](../../internals/i18n.md#plural-and-the-other-english-shapes-stay-english)).
+`DeleteBulkAction`'s failure title turns Filament's two `trans_choice` branches into two messages over the same `successCount` and `totalCount` injections: `delete.multiple.notifications.deleted_partial.title` (`Deleted {count} of {total}`) and `delete.multiple.notifications.deleted_none.title`, whose English, `{count, plural, one {Failed to delete # record} other {Failed to delete # records}}`, differs from Filament's countless `Failed to delete`: ours is an ICU plural over the count, and its plural prints the count as an ICU number, grouped by the locale.
+The partial title's counts are still passed as digits, so the ICU formatter adds no locale grouping there ([i18n.md](../../internals/i18n.md#plural-and-the-other-english-shapes-stay-english)).
 
 ### There is no soft-delete arm to hide behind
 

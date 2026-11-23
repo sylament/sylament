@@ -28,7 +28,7 @@ Each but the test tooling is left undeclared because a package the importer alre
 
 - **`twig/twig`** in six packages: `sylament/support` requires it.
 - **`symfony/type-info`** in `schemas` (`State\RecordTypeReader`): `symfony/property-info` requires it.
-- **`doctrine/dbal`** in `actions`, `schemas`, `tables`: `doctrine/orm` requires `^3.8.2 || ^4`, so import only names both majors carry; how `ParameterType` is used across the two is in `php.md`.
+- **`doctrine/dbal`** in `actions`, `tables`: `sylament/schemas`, which both require, requires `^4.6`.
 - **`doctrine/persistence`** in `actions`, `tables`: `doctrine/orm` requires it.
 - **`doctrine/collections`** in `actions`, `tables`: `doctrine/orm` requires it; declare it first if the ORM ever leaves `actions`, whose `RecordReplicator` instantiates `ArrayCollection` where `tables` only tests `instanceof`.
 - **`symfony/polyfill-php86`** (the global `SortDirection` enum) in `schemas`, `tables`: `doctrine/orm` requires it.

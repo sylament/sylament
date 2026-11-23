@@ -163,7 +163,7 @@ The Doctrine rig sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastruct
 It is dev-only. The root `tests/` belongs to no package, so none of it ships in a split package, and nothing under any `src/` imports it. Two consequences follow:
 
 - PHPStan analyses it at level max like shipped code, because it sits under `tests/`, whose infrastructure it covers.
-- The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
+- The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
 The root suite pins the pieces at their mirrored paths (`tests/Infrastructure/Doctrine/<Class>Test.php`), against the world's database, each only for the behaviour the suite relies on.
 

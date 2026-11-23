@@ -154,11 +154,11 @@ A guarded optional integration is code that is dead without a `suggest`ed packag
 
 The exception is an integration that Filament itself treats as ambient. An action's success and failure notifications are sent by every action without being asked for, and `sylament/notifications` is only suggested by `actions`. So `CanNotify` returns early when the class is missing, rather than breaking every action in an install without toasts ([can-notify.md](../progress/actions/can-notify.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)). The manifest side of the pattern is in `docs/internals/dependencies.md`.
 
-## DBAL parameter types
+## DBAL types
 
-No package declares `doctrine/dbal`. The omission rests on `doctrine/orm: ^3.7`, which requires `^3.8.2 || ^4`, and on `ParameterType` and `ArrayParameterType` keeping their names across that range.
+A DBAL type is resolved through the connection that binds it, `$connection->getConfiguration()->getTypeProvider()->get($name)`, never through DBAL's global `Type::getType()`, which DBAL 4.6 deprecates. DoctrineBundle hands each connection a provider of its own, so a type registered for one connection, built by the container with its dependencies, is the instance the connection's own statements convert through; the global registry is the fallback a hand-built `Configuration` reads.
 
-A name is all that buys. Both are final classes of int constants on DBAL 3 and native enums on DBAL 4, so they may be used as values only: a constant read, a `match` subject, a `setParameter()` argument, or a negative `instanceof` guard. A declared `: ParameterType` is a `TypeError` on every DBAL 3 application, and no suite here can see it, because only DBAL 4 is installed. `tests/Architecture/DbalParameterTypeDeclarationTest.php` is the gate that stands in for the missing Composer-level check.
+`schemas` therefore requires `doctrine/dbal: ^4.6`, the first version with `Configuration::getTypeProvider()`, rather than carry a `method_exists()` fallback onto the deprecated call as ORM's internal `TypeProviderLocator` does. `actions` and `tables` require `schemas`, so DBAL 3 never installs beside a package that imports a DBAL name, and `ParameterType` and `ArrayParameterType` are the native enums of DBAL 4 everywhere they appear, as values or as declared types.
 
 ## No inline PHPStan ignores
 

@@ -38,23 +38,4 @@ final class ShippedSource
     {
         return preg_match('/\bnew\s+\\\\?(?:\w+\\\\)*AssociationReader\s*\(/', $source) === 1;
     }
-
-    /**
-     * Whether the source puts either DBAL parameter-type class anywhere but a constant read, its own import or a
-     * negative `instanceof` guard.
-     */
-    public static function declaresDbalParameterType(string $source): bool
-    {
-        $allowed = preg_replace(
-            [
-                '/^\s*use\s+Doctrine\\\\DBAL\\\\(?:Array)?ParameterType;\s*$/m',
-                '/\b(?:Array)?ParameterType::/',
-                '/instanceof\s+(?:Array)?ParameterType\b/',
-            ],
-            '',
-            $source,
-        ) ?? $source;
-
-        return preg_match('/\b(?:Array)?ParameterType\b/', $allowed) === 1;
-    }
 }

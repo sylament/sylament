@@ -30,10 +30,10 @@ The showcase demonstrates every user-facing feature: `CLAUDE.md`'s definition of
 ## 4. Verify in a browser
 
 1. Find the URL: `symfony server:status` prints the local port, which is 8000 only when no other project holds it; `https://sylament.wip` works through the Symfony proxy in a browser that uses its PAC.
-2. With Martin's Chrome running, use Claude in Chrome. Otherwise use the Playwright MCP headless against `https://127.0.0.1:<port>`, because the `.wip` domain does not resolve without the proxy's PAC.
+2. Use the Playwright MCP headless against `https://127.0.0.1:<port>`, never Claude in Chrome, which Martin keeps out of this repo's browser checks; the `.wip` domain does not resolve without the proxy's PAC.
 3. After editing a demo PHP class mid-pass, wait a few seconds and make one warm-up request: opcache revalidates every 2 seconds (`opcache.revalidate_freq`), so the first request can still run the old code.
 4. When counting live requests, scope the count to the card under test by its `data-live-name-value`: the tables page carries a polling card (`DeferredTableCard`, `poll('10s')`) that adds requests of its own.
-5. If a CLI database command hangs with "could not initiate GSSAPI security context", prefix it with `PGGSSENCMODE=disable`; sandboxed shells can stall in libpq's GSSAPI negotiation against the docker Postgres.
+5. If a CLI database command hangs with "could not initiate GSSAPI security context", prefix it with `PGGSSENCMODE=disable`; libpq's GSSAPI negotiation against the docker Postgres can stall each connect for about a minute, in a sandboxed shell or after a VPN left a Kerberos realm behind.
 6. When done, delete `.playwright-mcp/` and any response-body files the Playwright MCP saved in this repo's root. Both repos gitignore `.playwright-mcp`, so this is cleanup, not a commit guard.
 
 ## 5. Reset

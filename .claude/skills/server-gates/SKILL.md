@@ -23,6 +23,8 @@ composer test:postgresql
 
 Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:pest`, the root suite in parallel, and not PHP-CS-Fixer, Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
 
+If a PostgreSQL run starts failing and its workers then sit idle, or a connect reports "could not initiate GSSAPI security context", libpq is stalling in GSSAPI against the docker server (a sandboxed shell, or a VPN's leftover Kerberos realm): run it as `PGGSSENCMODE=disable composer test:postgresql`.
+
 ## 3. Run one package on one server
 
 ```sh

@@ -89,7 +89,7 @@ The `.sy-closing` rule, the `@starting-style` blocks and the `prefers-reduced-mo
 
 Filament's toast root carries `x-on:close-notification.window="if ($event.detail.id == '<id>') close()"`, and the package documents that event as public API: anything on the page dispatches `close-notification` with an `id` and the matching toast closes itself.
 The port renders neither half.
-The notification id reaches the markup nowhere: Filament's other two uses of it are `wire:key`, Livewire plumbing with no counterpart here, and the Alpine data object, whose id travels back out in the `notificationClosed` / `markedNotificationAsRead` / `markedNotificationAsUnread` events, the first [skipped because the stack holds nothing to forget](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered), the other two [deferred with the database panel](#markasread-and-markasunread-belong-to-the-database-panel).
+The notification id reaches the markup nowhere: Filament's other two uses of it are `wire:key`, Livewire plumbing with no counterpart here, and the Alpine data object, whose id travels back out in the `notificationsClosed` / `markedNotificationAsRead` / `markedNotificationAsUnread` events ([`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js)), the first batching every id closed within 50 ms and [skipped because the stack holds nothing to forget](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered), the other two [deferred with the database panel](#markasread-and-markasunread-belong-to-the-database-panel).
 The [toast controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts) listens for no window event either.
 
 Nothing waits on this, which is why it is **todo** rather than **blocked**: the id is on the object (`getId()`), the event is a plain `CustomEvent`, and `close()` is the method the close button calls.
@@ -122,10 +122,11 @@ Filament sets the date in `DatabaseNotifications::getNotification()` (`$date->di
 ### Custom views and their safe-view gate are unported
 
 `view()` / `viewData()` (support-level `ViewComponent` members) let a notification render an application-supplied Blade view instead of the built-in toast, and `safeViews()` + `isViewSafe()` are the security gate around it: `fromArray()` accepts a `view` key from stored data **only** if the class has whitelisted it, so stored data cannot inject an arbitrary view.
+Filament's `fromArray()` also drops every `viewData` key named after one of the notification's public methods, its view identifier or `attributes` ([`Notification.php:129-133`](../../../vendor/filament/notifications/src/Notification.php)), so stored data cannot shadow a variable the view reads.
 The port's `toArray()` writes neither key and its `fromArray()` reads neither.
 
 **Next step:** port the pair and the gate together, because the whitelist is the reason reading a `view` key off session or database data is safe at all.
-Sylament's [`ViewComponent`](../support/view-component.md) carries `template()`/`templateData()`, so the work is the `safeViews()` allow-list plus the two array keys.
+Sylament's [`ViewComponent`](../support/view-component.md) carries `template()`/`templateData()`, so the work is the `safeViews()` allow-list, the two array keys and the `viewData` key filter.
 
 ### The broadcast and database delivery arms are deferred whole
 

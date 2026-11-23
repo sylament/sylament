@@ -35,7 +35,7 @@ A manager is never routed to: the page that owns the record embeds it through sc
 | [`schemas()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | no counterpart — Livewire has no schema-discovery list | done | — | — |
 | [`getDefaultTestingSchemaName()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`schemas/Concerns/InteractsWithSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php), inherited | done | — | [diverges](#the-managers-testing-helpers-default-to-its-form-where-filaments-default-to-its-table-filters-form) |
 | `mount()` — `loadDefaultActiveTab()` | `mount()` | done | — | [diverges](#the-default-active-tab-loads-at-post-mount-and-the-manager-keeps-no-mount-of-its-own) |
-| The panel id a manager's own live request resolves URLs against | `original_request()` inside Filament's URL arms | todo | — | [detail](#every-url-a-manager-generates-on-its-own-live-request-resolves-the-default-panel) |
+| The panel id a manager's own live request resolves URLs against | `SetUpPanel` as Livewire persistent middleware, bound by [`Livewire/ValidatePanelOrigin.php`](../../../vendor/filament/filament/src/Livewire/ValidatePanelOrigin.php) | todo | — | [detail](#every-url-a-manager-generates-on-its-own-live-request-resolves-the-default-panel) |
 | [`canViewForRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `canViewForRecord()` | in progress | — | [detail](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
 | `isReadOnly()` / `canReorder()`'s read-only arm | `isReadOnly()`, `canReorder()` | blocked | authorization | [detail](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
 | `getDefaultActionAuthorizationResponse()` / `getDefaultActionIndividualRecordAuthorizationResponseResolver()` / `CanAuthorizeAccess::hydrateCanAuthorizeAccess()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php) | blocked | authorization | [detail](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
@@ -140,7 +140,7 @@ The consequence is an invariant on the consumer: the badge statics run on **ever
 
 ### The default active tab loads at post-mount, and the manager keeps no `mount()` of its own
 
-Filament loads it from `mount()` (`RelationManager.php:120-123`), which is safe there because Livewire populates a nested component's matching properties *before* `mount()` runs.
+Filament loads it from `mount()` (`RelationManager.php:127-130`), which is safe there because Livewire populates a nested component's matching properties *before* `mount()` runs.
 ux-twig-component is the other way round: [`ComponentFactory::mountFromObject()`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php) invokes `mount()` first and only then assigns the mount data `mount()` did not consume, so anything the hook reads is still at its declared default.
 That matters for a manager: loading the default active tab **memoises the tab set**, so a `getTabs()` reading the owner key, or a registration property such as a `$tag` its registration sets, would build its tabs (and, through `modifyQueryWithActiveTab()`, scope the table) against values nobody set yet.
 
@@ -150,7 +150,7 @@ The manager is therefore left with no `mount()` at all: its two keys are assigne
 
 ### Lazy loading does not port, so the default properties are empty
 
-Filament's `getDefaultProperties()` carries exactly one entry, `lazy`, from `CanBeLazy`.
+Filament's `getDefaultProperties()` carries exactly one entry, `lazy`, set when `isLazyLoaded()` from `CanBeLazyLoaded` answers true ([`RelationManager.php:353-362`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php)).
 UX ships `loading: 'lazy'|'defer'`, but it defers the *render*, not the mount: the component is still created, mounted, dehydrated and checksummed on the first paint, and a not-yet-arrived child is absent from the client registry, so a dispatch aimed at it is dropped.
 The server-driven tab bar mounts exactly one manager at a time, so the arm buys nothing.
 The method ships answering `[]` because it is the seam a subclass overrides.

@@ -67,7 +67,7 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 | [Search template](../../../packages/panels/templates/components/GlobalSearch/index.html.twig) | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | done | — | [semantics](#the-stimulus-controller-rides-the-inner-element-not-the-live-root) |
 | [Topbar mount](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `fi-topbar-end` | done | — | [semantics](#the-topbar-mount-is-a-threaded-flag-rather-than-a-facade-call) |
 | [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
-| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
+| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | in progress | — | [detail](#focus-leaving-the-search-does-not-close-the-results-panel) · [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | blocked | render hooks | [detail](#the-render-hooks-around-the-field-have-no-port-target) |
 | The field's screen-reader and status layer: the `field.instructions` text through `aria-describedby`, the `role="status"` live region, `results_label` with `aria-controls`, the `results_count` plural, `loading_message` and `failure_message` | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php), [`lang/en/global-search.php`](../../../vendor/filament/filament/resources/lang/en/global-search.php) | todo | — | [detail](#the-fields-screen-reader-and-status-layer-is-not-ported) |
 | Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [detail](#the-field-carries-no-busy-indicator) |
@@ -95,6 +95,13 @@ Doing it that way is what makes the same indicator available to tables' search f
 
 `PanelsRenderHook::GLOBAL_SEARCH_START`/`END` (inside the component) and `GLOBAL_SEARCH_BEFORE`/`AFTER` (around the topbar mount) are four of Filament's render hooks, and the render-hook system as a whole has no port.
 Nothing here is specific to global search: the hooks come back with the system, or not at all.
+
+### Focus leaving the search does not close the results panel
+
+Filament's search root binds `x-on:focusout="focusLeft($event)"` ([`livewire/global-search.blade.php:32`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php)), and `focusLeft()` dismisses the results once focus has moved to an element outside the component ([`resources/js/components/global-search.js:148-158`](../../../vendor/filament/filament/resources/js/components/global-search.js)), so tabbing out of the field or off the last result closes the panel.
+The port's [controller](../../../packages/panels/assets/src/controllers/global_search_controller.ts) closes only on a document `pointerdown` outside its element or on Escape (`connect()` at :61-65, `#onKeydown` and `#onPointerDown` at :108-127), so a keyboard user who tabs past the search leaves its results panel open over the page.
+
+**Next step:** add a `focusout` action on the controller's element that closes the panel when the event's `relatedTarget` lies outside the element and, after a tick, `document.activeElement` does too, as `focusLeft()` checks both.
 
 ## Semantics
 

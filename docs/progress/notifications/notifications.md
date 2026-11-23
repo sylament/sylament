@@ -27,11 +27,11 @@ Toast HTML has one renderer (Twig), the DOM is the only client-side state, and a
 | [Container styles (`.sy-no`, the six placement variants)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notifications.css`](../../../vendor/filament/notifications/resources/css/notifications.css) | done | — | — |
 | [Page-load delivery — `getFlashed()` renders the flashed toasts inline](../../../packages/notifications/src/Twig/Components/Notifications.php) | [`mount()` → `pullNotificationsFromSession()`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | done | — | [semantics](#the-first-reader-of-the-flash-wins-and-both-readers-are-idempotent) |
 | [Live delivery — the stack controller appends the event's HTML](../../../packages/notifications/assets/src/controllers/notifications_controller.ts) | [`#[On('notificationsSent')]` re-request](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | done | — | [diverges](#live-delivery-appends-server-rendered-html-instead-of-re-requesting-the-stack) |
-| `removeNotification()` (`#[On('notificationClosed')]`) | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | skipped | — | [diverges](#a-toast-closes-client-side-and-is-never-re-rendered) |
+| `removeNotification()` (`#[On('notificationClosed')]`) / `removeNotifications()` (`#[On('notificationsClosed')]`) | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | skipped | — | [diverges](#a-toast-closes-client-side-and-is-never-re-rendered) |
 | The `notifications` collection (`Filament\Notifications\Collection`, `Wireable`) | [`Collection.php`](../../../vendor/filament/notifications/src/Collection.php), [`public Collection $notifications`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | skipped | — | [diverges](#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported) |
 | `$isFilamentNotificationsComponent` | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | skipped | — | [diverges](#the-flip-marker-prop-has-nothing-to-mark) |
 | `pushNotificationFromEvent()` (`#[On('notificationSent')]`) | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | todo | — | [detail](#the-client-side-builders-entry-point-waits-on-the-builder) |
-| `handleBroadcastNotification()` / `getBroadcastChannel()` / `getUser()` / `authGuard()` + the Echo `<script>` | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php), [`notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php) | blocked | the broadcast delivery arm | [detail](#the-broadcast-channel-arrives-with-the-broadcast-arm) |
+| `handleBroadcastNotification()` / `handleBroadcastNotifications()` / `getBroadcastChannel()` / `getUser()` / `authGuard()` + the Echo `<script>` | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php), [`notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php) | blocked | the broadcast delivery arm | [detail](#the-broadcast-channel-arrives-with-the-broadcast-arm) |
 
 ## Details
 
@@ -45,7 +45,7 @@ The builder's public API (`new FilamentNotification().title(…).success().send(
 
 ### The broadcast channel arrives with the broadcast arm
 
-Filament's stack subscribes to the authenticated user's private Echo channel: `getUser()` reads `auth(static::$authGuard)->user()`, `getBroadcastChannel()` derives the channel name from the user (or `receivesBroadcastNotificationsOn()`), the view emits an inline `<script>` that binds `window.Echo.private(…).notification(…)`, and `handleBroadcastNotification()` filters on `format === 'filament'` before pushing.
+Filament's stack subscribes to the authenticated user's private Echo channel: `getUser()` reads `auth(static::$authGuard)->user()`, `getBroadcastChannel()` derives the channel name from the user (or `receivesBroadcastNotificationsOn()`), the view emits an inline `<script>` that calls `setUpFilamentBroadcastNotifications()`, which binds `window.Echo.private(…)` and `listen()`s on it for Laravel's `BroadcastNotificationCreated` event ([`resources/js/broadcast-notifications.js:61-62`](../../../vendor/filament/notifications/resources/js/broadcast-notifications.js)), batching what arrives within 500 ms into one `handleBroadcastNotifications()` call, and `handleBroadcastNotification()` filters each on `format === 'filament'` before pushing.
 `authGuard()` exists only to select the guard for that lookup.
 
 **Next step:** none until the broadcast delivery arm is built — the whole group lands with it, and the Symfony-side transport is Mercure rather than Echo.
@@ -94,9 +94,9 @@ The trust level is the one a live morph already has (server-rendered markup writ
 
 ### A toast closes client-side and is never re-rendered
 
-Filament's close is a round trip: the toast animates out, dispatches `notificationClosed`, and `removeNotification($id)` forgets it from the server's collection — necessary, because until the server forgets it any concurrent render morphs the toast back.
+Filament's close is a round trip: the toast animates out and queues its id, the queue dispatches one `notificationsClosed` event carrying every id closed within 50 ms ([`resources/js/components/notification.js:6-36`](../../../vendor/filament/notifications/resources/js/components/notification.js)), and `removeNotifications($ids)` forgets each from the server's collection ([`Livewire/Notifications.php:121-128`](../../../vendor/filament/notifications/src/Livewire/Notifications.php)) — necessary, because until the server forgets it any concurrent render morphs the toast back.
 Sylament's [toast controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts) collapses the element and removes it from the DOM, and that is the entire operation: the server never held it, so nothing can restore it.
-`removeNotification()` is **skipped** rather than todo — there is no state for it to mutate.
+`removeNotification()` and `removeNotifications()` are **skipped** rather than todo — there is no state for either to mutate.
 
 ### The FLIP marker prop has nothing to mark
 

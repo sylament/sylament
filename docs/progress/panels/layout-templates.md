@@ -134,7 +134,7 @@ The cost is that the open state is only readable from the root, so anything aski
 
 ### One toggle button replaces v5's shown/hidden pair
 
-Filament's topbar renders **two** icon buttons — a bars-3 opener under `x-show="! $store.sidebar.isOpen"` and an x-mark closer under `x-show="$store.sidebar.isOpen"`, each with its own icon alias ([`livewire/topbar.blade.php:17-46`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)).
+Filament's topbar renders **two** icon buttons — a bars-3 opener under `x-show="! $store.sidebar.isOpen"` and an x-mark closer under `x-show="$store.sidebar.isOpen"`, each with its own icon alias ([`livewire/topbar.blade.php:33-61`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)).
 Ours renders one `sy-pa-topbar-open-sidebar-btn` whose `toggle` action flips the state and whose `aria-expanded` the controller keeps in sync.
 Two buttons swapped by a reactive expression is an Alpine shape; a static template would have to ship both and hide one with CSS, which buys a second glyph and a second alias for a control that already announces its state to assistive technology.
 The visible delta is that the open drawer's control still shows a hamburger rather than an ×, and that `TOPBAR_CLOSE_SIDEBAR_BUTTON` has no port — it returns if the pair ever does.

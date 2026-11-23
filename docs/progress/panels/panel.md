@@ -145,7 +145,7 @@ That is exactly the mutable static per-request state [the shell is worker-safe](
 An id the registry does not know is a `LogicException` rather than a silent null, since only our own routing writes that attribute.
 
 What statelessness buys is visible in Filament's own code.
-`FilamentManager` carries a second piece of remembered state beside the panel — `protected bool $isCurrentPanelBooted = false`, guarding `bootCurrentPanel()` ([`FilamentManager.php:65-74`](../../../vendor/filament/filament/src/FilamentManager.php)) — and nothing ever sets it back to `false`.
+`FilamentManager` carries a second piece of remembered state beside the panel — `protected bool $isCurrentPanelBooted = false`, guarding `bootCurrentPanel()` ([`FilamentManager.php:68-77`](../../../vendor/filament/filament/src/FilamentManager.php)) — and nothing ever sets it back to `false`.
 Under php-fpm that is invisible, because the manager dies with the request.
 Under a long-running worker the second request onwards finds the flag already true and skips booting its panel entirely, so the colours, icons and render hooks of whichever panel happened to be served first are the ones every later request gets.
 The port has no flag to forget to reset because it has nothing to boot ([the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot)) and nothing to remember.

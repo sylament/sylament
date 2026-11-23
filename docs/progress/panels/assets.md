@@ -84,7 +84,7 @@ The root also carries `--sy-sidebar-width`, the drawer's width, a [runtime token
 ### The active sidebar item paints a fixed `primary` shade
 
 `sidebar.css` writes `text-primary-700 dark:text-primary-400` on the active item's icon and label rather than reading a `--sy-text` slot; the button itself carries no colour at all, only the `bg-gray-100 dark:bg-white/5` highlight.
-Both halves are v5's own values ([`sidebar.css:157-179`](../../../vendor/filament/filament/resources/css/components/sidebar.css)), so the divergence is not the shade but the *mechanism*.
+Both halves are v5's own values ([`sidebar.css:178-200`](../../../vendor/filament/filament/resources/css/components/sidebar.css)), so the divergence is not the shade but the *mechanism*.
 The *never hardcode a shade for a colour a user can set* rule ([why](../../internals/styling.md#why-does-a-policy-pick-the-shade-instead-of-the-stylesheet)) governs the **per-instance** `color` palette, which is chosen by a [contrast policy](../support/color-policies.md) because the palette is not known until render.
 The sidebar has no per-instance colour API — neither `NavigationItem` nor `NavigationGroup` composes `HasColor`, and there is nothing to build a colour map from — so there is no policy to ask and no slot to read; `primary` resolves through the `--sy-primary-*` runtime tokens, so a consumer retheming the palette still gets their colour.
 What would reverse it is the sidebar taking a colour: the shade then moves into a policy slot and the icon/label pair reads the slot variables.

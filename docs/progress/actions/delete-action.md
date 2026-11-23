@@ -49,7 +49,7 @@ It extends [`BulkAction`](bulk-action.md), so it arrives with `bulk()` and `acce
 ### The swallowed exception has nowhere to go yet
 
 Filament calls Laravel's `report($exception)` in its bulk catch blocks, so the counting notification is the *user-facing* answer while the log still carries the cause.
-`Action` has no logger, and an optional `#[Required] ?LoggerInterface` setter on the [`CanUseDatabaseTransactions` registry pattern](#the-manager-registry-is-an-optional-required-injection) needs `psr/log`, a non-`symfony/*` dependency that waits on sign-off.
+`Action` has no logger, and an optional `#[Required] ?LoggerInterface` setter on the [`CanUseDatabaseTransactions` registry pattern](#the-manager-registry-is-an-optional-required-injection) needs `psr/log`, whose [grant](../../internals/dependencies.md#third-party-grants) covers the editable-cell host's log alone, so `actions` waits on extending it.
 So every bulk body's catch swallows silently, `DeleteBulkAction`'s, [`DetachBulkAction`](detach-action.md)'s and [`DissociateBulkAction`](dissociate-action.md)'s alike, and the danger toast is the only trace.
 
 ## Semantics

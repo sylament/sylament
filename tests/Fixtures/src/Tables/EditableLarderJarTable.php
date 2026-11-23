@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Tables;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Sylament\Tables\Columns\SelectColumn;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Columns\TextInputColumn;
@@ -14,9 +15,11 @@ use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -25,7 +28,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * label (at most twelve characters, locked on a wax-sealed jar, its before hook recording
  * the state it replaces and its after hook the row as stored), the position (which must be
  * given), the sealing date, the seal, the supplier's name (any scalar), and the larder's
- * jars, a collection no cell can hold; the larder's name opens the jar.
+ * jars, a collection no cell can hold; the larder's name opens the jar. A refused write is
+ * logged to `WriteLog`.
  */
 #[AsLiveComponent(name: 'Tables:EditableLarderJarTable', template: '@Fixtures/tables/table.html.twig')]
 class EditableLarderJarTable implements InteractsWithTable
@@ -37,6 +41,12 @@ class EditableLarderJarTable implements InteractsWithTable
         private readonly EntityManagerInterface $entityManager,
         private readonly HookLog $hookLog,
     ) {
+    }
+
+    #[Required]
+    public function setTableColumnStateLogger(#[Autowire(service: WriteLog::class)] LoggerInterface $logger): void
+    {
+        $this->tableColumnStateLogger = $logger;
     }
 
     public function table(Table $table): Table

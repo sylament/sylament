@@ -37,6 +37,7 @@ Each but the test tooling is left undeclared because a package the importer alre
 - **`symfony/twig-bridge`** (the `trans` filter) in six packages: `symfony/ux-icons`, which `support` requires, requires `symfony/twig-bundle`, which requires it.
 - **`symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle`** everywhere: every package requires `support`, whose `symfony/stimulus-bundle` requires the first two and whose `symfony/ux-icons` requires framework-bundle, so even `panels`' own `RouteLoaderInterface` import is guaranteed.
 - **`league/flysystem`** in `tables` (`ImageColumn`): `sylament/forms` requires it, and only the disk-path arm reaches it.
+- **`psr/log`** in `tables` (`HasColumns`' logger): `symfony/http-kernel`, which support's `symfony/stimulus-bundle` requires, requires it.
 - **PHPUnit and Symfony's test tooling** in `src/Testing` (`PHPUnit\Framework\Assert`, `KernelBrowser` and the `browser-kit`, `dom-crawler` and `css-selector` it runs on): never declared, not even as a `suggest`, as Symfony's own `Test\` namespaces leave them undeclared, because only an application's test suite loads that code, and that suite installs them.
 
 Background: `docs/internals/dependencies.md`, `docs/internals/monorepo.md`.

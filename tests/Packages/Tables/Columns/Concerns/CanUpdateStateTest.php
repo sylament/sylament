@@ -14,6 +14,7 @@ use Sylament\Tests\Fixtures\Tables\EditableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\IdentifierCellsTable;
 use Sylament\Tests\Fixtures\Tables\RecordsLaneCellsTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\WriteLog;
 
 describe('the write', function (): void {
     it('writes a blank post, empty or only spaces, as null', function (string $input): void {
@@ -71,8 +72,7 @@ describe('the write', function (): void {
             ->call('updateTableColumnState', ['column' => 'larder.jars', 'record' => (string) $jar->id, 'input' => 'Fig']);
 
         expect($tester->response()->getStatusCode())->toBe(200)
-            ->and($tester->render()->crawler()->filter(Selectors::cell((string) $jar->id, 'larder.jars') . ' ' . Selectors::CELL_ERROR)->text())
-            ->toStartWith('The editable column [larder.jars] cannot write to its record: ');
+            ->and($tester->render()->crawler())->toContainElement(Selectors::cell((string) $jar->id, 'larder.jars') . ' ' . Selectors::CELL_ERROR, 'The value is invalid.');
     });
 
     it('throws for a records() row it has nowhere to write, which updateStateUsing() makes editable', function (): void {
@@ -101,6 +101,7 @@ describe('a changed identifier', function (): void {
             ->and($crawler)->toContainElement(Selectors::row($key))
             ->and(preg_grep('/^(UPDATE|INSERT|DELETE) |"START TRANSACTION"/', $this->statementsRun()))->toBe([])
             ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe(["key check on a {$lineClass} by the reader rebound to the registry's manager"])
+            ->and($this::getContainer()->get(WriteLog::class)->records)->toBe([])
             ->and($this->reload($line)->note)->toBe('Kept');
 
         $tester->call('updateTableColumnState', ['column' => 'note', 'record' => $key, 'input' => 'Moved']);
@@ -120,7 +121,7 @@ describe('a changed identifier', function (): void {
 
         $crawler = $tester->call('updateTableColumnState', ['column' => 'invoice', 'record' => $key, 'input' => '8'])->render()->crawler();
 
-        expect($crawler->filter(Selectors::cell($key, 'invoice') . ' ' . Selectors::CELL_ERROR)->text())->toStartWith('The editable column [invoice] cannot write to its record: ')
+        expect($crawler)->toContainElement(Selectors::cell($key, 'invoice') . ' ' . Selectors::CELL_ERROR, 'The value is invalid.')
             ->and($crawler)->toContainElement(Selectors::row($key));
     });
 });

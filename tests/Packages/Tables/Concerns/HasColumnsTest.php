@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Tables\Exceptions\RecordWriteException;
 use Sylament\Tests\Fixtures\Entity\JarSeal;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
@@ -9,6 +10,7 @@ use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Tables\EditableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\RecordsLaneCellsTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
+use Sylament\Tests\Fixtures\Tables\WriteLog;
 use Symfony\Component\DomCrawler\Crawler;
 
 describe('callTableColumnAction', function (): void {
@@ -173,11 +175,17 @@ describe('the refusal', function (): void {
 
         $tester = $this->createLiveComponent(EditableLarderJarTable::class)
             ->call('updateTableColumnState', ['column' => 'sealedOn', 'record' => (string) $jar->id, 'input' => 'next spring']);
+        $records = $this::getContainer()->get(WriteLog::class)->records;
 
-        expect($tester->response()->getStatusCode())->toBe(200)
+        expect($records)->toHaveCount(1)
+            ->and($records[0]['level'])->toBe('error')
+            ->and($records[0]['context']['column'])->toBe('sealedOn')
+            ->and($records[0]['context']['record'])->toBe((string) $jar->id)
+            ->and($records[0]['context']['exception'])->toBeInstanceOf(RecordWriteException::class)
+            ->and($records[0]['context']['exception']->getMessage())->toStartWith('The editable column [sealedOn] cannot write to its record: ')
+            ->and($tester->response()->getStatusCode())->toBe(200)
             ->and($this->reload($jar)->sealedOn)->toBeNull()
-            ->and($tester->render()->crawler()->filter(Selectors::cell((string) $jar->id, 'sealedOn') . ' ' . Selectors::CELL_ERROR)->text())
-            ->toStartWith('The editable column [sealedOn] cannot write to its record: ');
+            ->and($tester->render()->crawler())->toContainElement(Selectors::cell((string) $jar->id, 'sealedOn') . ' ' . Selectors::CELL_ERROR, 'The value is invalid.');
     });
 
     it("lets an exception the application's own write closure throws propagate", function (): void {

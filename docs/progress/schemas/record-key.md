@@ -113,7 +113,7 @@ The tree is invisible to the planner on every platform measured and costs nothin
 ### A key is minted from the value its row would read back
 
 `of()` and `find()` hand their flattened values to `fromValues()` through a private `asStored()`: per component, `$type->convertToPHPValue($type->convertToDatabaseValue($value, $platform), $platform)`, under the field's type in `IdentifierFields::of()->types`.
-`IdentifierFields::of()` resolves each type through the connection's type provider (`getConfiguration()->getTypeProvider()`), never DBAL's deprecated global `Type::getType()`, so a type DoctrineBundle registers for that connection alone, with its injected dependencies, is the instance that mints, decodes and binds.
+`IdentifierFields::of()` resolves each type through the connection, so the instance that mints, decodes and binds is the one the connection's own statements use ([why](../../internals/php.md#dbal-types)).
 Two conversions per component per mint, none for a blank component, which is handed back as it is, and no statement.
 
 Printing the value the record holds in memory is not enough, because for a record the request has just written that is not always the value its row holds.

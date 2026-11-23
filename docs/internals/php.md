@@ -156,7 +156,8 @@ The exception is an integration that Filament itself treats as ambient. An actio
 
 ## DBAL types
 
-A DBAL type is resolved through the connection that binds it, `$connection->getConfiguration()->getTypeProvider()->get($name)`, never through DBAL's global `Type::getType()`, which DBAL 4.6 deprecates. DoctrineBundle hands each connection a provider of its own, so a type registered for one connection, built by the container with its dependencies, is the instance the connection's own statements convert through; the global registry is the fallback a hand-built `Configuration` reads.
+A DBAL type is resolved through the connection that binds it, `$connection->getConfiguration()->getTypeProvider()->get($name)`, never through DBAL's global `Type::getType()`, which DBAL 4.6 deprecates. With ORM 3.8 or later and custom types registered, DoctrineBundle hands each connection a provider of its own, so a type registered for one connection, built by the container with its dependencies, is the instance the connection's own statements convert through; the global registry is the fallback a hand-built `Configuration` reads.
+Before ORM 3.8, which `schemas` still admits (`doctrine/orm: ^3.7`), DoctrineBundle fills only the global registry and the connection's provider falls back to it, so the same call resolves the type and a `dbal.types` entry is one instance; with ORM 3.8 or later it exists twice, a global instance and a per-connection one.
 
 `schemas` therefore requires `doctrine/dbal: ^4.6`, the first version with `Configuration::getTypeProvider()`, rather than carry a `method_exists()` fallback onto the deprecated call as ORM's internal `TypeProviderLocator` does. `actions` and `tables` require `schemas`, so DBAL 3 never installs beside a package that imports a DBAL name, and `ParameterType` and `ArrayParameterType` are the native enums of DBAL 4 everywhere they appear, as values or as declared types.
 

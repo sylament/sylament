@@ -158,7 +158,7 @@ The instance getters (`getTitle()`, `getHeading()`, `getSubheading()` and the re
 ### A breadcrumb may be a message, which the page partial translates
 
 A page's breadcrumb array takes messages where its other instance getters take text: `getBreadcrumbs()`, `getResourceBreadcrumbs()` and `appendBreadcrumb()` take `string|Markup|TranslatableInterface` values, and the key stays the crumb's URL or a plain-text position.
-Its type is a docblock, so the page partial is the one place a message can become text: it maps every value through `translateText()` before it hands the array to support's [`Breadcrumbs`](../support/breadcrumbs.md), which receives text, and a string or a `Markup` passes through unchanged.
+Its type is a docblock and an override replaces the getter, so the page partial is the one place a message can become text: it maps every value through `translateText()` before it hands the array to support's [`Breadcrumbs`](../support/breadcrumbs.md), which receives text, and a string or a `Markup` passes through unchanged.
 The other instance getters keep their native types, as [the static-getter entry](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) says.
 
 ### `getNavigationItems()` takes the panel rather than reaching a facade

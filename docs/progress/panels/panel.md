@@ -166,9 +166,9 @@ The panel already holds every input (its pages, groups and items), the method ne
 The piece worth keeping from it is the cloning discipline, which ours has: groups and items are cloned on the way out, so repeated calls neither accumulate items on a registered group nor let one render's mutation reach the next.
 
 That discipline covers `getNavigation()` and nothing else.
-`getNavigationItems()` and `getNavigationGroups()` hand back the registered objects themselves, and `PanelRegistry` builds each panel once and memoises it — so under a long-running worker those are the same instances for every request the process serves.
+`getNavigationItems()` hands back the registered items and `getNavigationGroups()` hands back each registered `NavigationGroup` itself (a bare message comes back as its translation), and `PanelRegistry` builds each panel once and memoises it — so under a long-running worker those objects are the same instances for every request the process serves.
 Read against them, [`NavigationItem::isActive()`](navigation-item.md) is destructive: it overwrites its `isActiveWhen()` closure with the boolean the first evaluation produced, so a raw item asked once whether it is active answers that way for the life of the process, on every request, whatever the route.
-Navigation is read through `getNavigation()`, whose clones absorb exactly that; the raw getters are registration-time composition surface — what a provider reads to add to what an earlier call registered — and are not a render path.
+Navigation is read through `getNavigation()`, whose clones absorb exactly that; the getters are registration-time composition surface — what a provider reads to add to what an earlier call registered — and are not a render path.
 
 ### Resource navigation is pulled through the registry, not pushed by the resource
 
@@ -215,7 +215,7 @@ A consumer who wants one calls `brandName()`, which is the call a Filament user 
 ### The brand name and a registered navigation group may be messages
 
 `brandName()` and `globalSearchFieldSuffix()` take a `TranslatableInterface` beside the arms they already had (Filament's are `string | Htmlable | Closure | null` and `string | Closure | null`), and their getters keep returning `string|Markup|null` and `?string`, translated through the panel's own translator, so the document title, the logo and the search field read text.
-`navigationGroups()` takes a message for a bare registered group, and `getNavigation()` translates it before it matches the registered group against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
+`navigationGroups()` takes a message for a bare registered group, and `getNavigation()` matches its translation, read from `getNavigationGroups()`, against the items' translated groups; the array key stays the identity that matches by key, and a message cannot be a key.
 `getNavigation()` buckets items by their translated group, so the translated text is a group's identity, as Filament's `__()`-translated group is, and two groups that translate to one text merge; a registered group's array key is the identity a user keeps stable across locales.
 `getNavigationGroups()` answers a bare message as its translation, so its return is Filament's `array<string | int, NavigationGroup | string>`; a `NavigationGroup` comes back as registered, answering translated text from `getLabel()`, and the getter is the registration-time surface [`getNavigation()` reads](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager).
 A panel built with `new` has no translator, so a message throws a `LogicException` naming the class, while a string renders as it is.

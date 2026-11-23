@@ -63,7 +63,7 @@ describe('the write', function (): void {
             ->and($crawler)->toContainElement(Selectors::cell((string) $jar->id, 'supplier.name') . ' ' . Selectors::editableCellState('Bolt'));
     });
 
-    it('refuses a path ending in a collection under its cell, naming the column, and answers 200', function (): void {
+    it('refuses a path ending in a collection under its cell with the generic refusal, and answers 200', function (): void {
         $larder = new Larder('Cellar');
         $larder->addJar($jar = new LarderJar('Plum', position: 1));
         $this->seed($larder);
@@ -121,8 +121,12 @@ describe('a changed identifier', function (): void {
 
         $crawler = $tester->call('updateTableColumnState', ['column' => 'invoice', 'record' => $key, 'input' => '8'])->render()->crawler();
 
+        $records = $this::getContainer()->get(WriteLog::class)->records;
+
         expect($crawler)->toContainElement(Selectors::cell($key, 'invoice') . ' ' . Selectors::CELL_ERROR, 'The value is invalid.')
-            ->and($crawler)->toContainElement(Selectors::row($key));
+            ->and($crawler)->toContainElement(Selectors::row($key))
+            ->and($records)->toHaveCount(1)
+            ->and($records[0]['level'])->toBe('error');
     });
 });
 

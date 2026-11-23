@@ -18,10 +18,10 @@ It is the plural of [`EnumStateCast`](enum-state-cast.md): the whole selection i
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Blank handling | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#blank-state-is-always-an-empty-list-with-no-nullable-switch) |
-| Per-element enum resolution | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [diverges](#the-element-body-is-enumstatecast-rather-than-a-second-copy) |
-| Unresolvable-element handling | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [diverges](#an-unresolvable-element-is-dropped-rather-than-pushed-as-null) |
+| Per-element enum resolution | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#the-element-body-is-the-composed-enumstatecast) |
+| Unresolvable-element handling | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#an-unresolvable-element-is-dropped-and-validation-still-sees-it) |
 | Scalar state wrapping | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [diverges](#the-json-string-arm-is-not-ported) |
-| `set()` stringification | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [diverges](#set-returns-a-list-of-strings-rather-than-a-mixed-array) |
+| `set()` stringification | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | in progress | — | [detail](enum-state-cast.md#set-passes-a-value-that-is-no-case-through-where-filament-answers-null) |
 
 ## Semantics
 
@@ -33,32 +33,18 @@ The flag lands here when a field needs `null` written rather than `[]`, because 
 
 The behaviour needs no guard of its own: [`wrap()`](../support/helpers.md) maps `null` to `[]`, and every other blank spelling survives wrapping only to be dropped by the element cast, so the empty result falls out of the composition.
 
+### An unresolvable element is dropped, and validation still sees it
+
+Filament's `get()` reduce runs each element through its composed `EnumStateCast` and returns the carry unchanged when that answers `null` ([`EnumArrayStateCast.php:43-45`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php)), so an element whose spelling matches no case is dropped, as the port drops it, and the result holds no `null` hole.
+A drop is silent because the field's validation sees the **raw** state, where the unresolvable element is still present, so the payload is rejected at that gate rather than quietly accepted minus one element.
+
+### The element body is the composed `EnumStateCast`
+
+Filament and the port both compose an `EnumStateCast` in a `protected` property and run every element of both directions through it ([`EnumArrayStateCast.php:11-20`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php)), so the scalar and the array cast cannot drift.
+The array cast therefore inherits the port's element cast's [case-scan resolution](enum-state-cast.md#tryfrom-is-replaced-by-a-scan-over-the-cases-string-spellings) and its [non-scalar guard](enum-state-cast.md#only-an-int-or-a-string-is-a-candidate-spelling).
+A blank element comes back from the element cast as `null`, which is the filter both casts apply before reindexing.
+
 ## Divergences
-
-### An unresolvable element is dropped rather than pushed as null
-
-Filament's `get()` reduce pushes the result of `tryFrom()` unconditionally ([`EnumArrayStateCast.php:56`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php)), so an element whose spelling matches no case lands in the returned array as `null`.
-The declared return type is `array<BackedEnum>`, and the value that comes back holds `null`s: a selection of three checkboxes where one was tampered hydrates as `[Case, null, Case]`, and every consumer of the state then has to survive a hole its type says cannot be there.
-
-The port drops it, matching what the sibling [`OptionsArrayStateCast`](options-array-state-cast.md#the-element-body-is-optionstatecast-rather-than-a-second-copy) does with a fail-closed element and keeping `list<BackedEnum>` honest.
-A drop is silent for the same reason it is there: the field's validation sees the **raw** state, where the unresolvable element is still present, so the payload is rejected at that gate rather than quietly accepted minus one element.
-
-### The element body is `EnumStateCast` rather than a second copy
-
-Filament inlines the resolution twice, once in `EnumStateCast` and once per element inside this cast's `array_reduce`, and the two bodies differ: the scalar cast returns `tryFrom()`'s `null` to its caller as a miss, while the array cast keeps that same `null` as a member of the selection.
-
-The port composes an `EnumStateCast`, a `protected` property so a subclass may swap it, and maps it over the wrapped state, so the two casts cannot drift and the array cast inherits the element cast's [case-scan resolution](enum-state-cast.md#tryfrom-is-replaced-by-a-scan-over-the-cases-string-spellings) and its [non-scalar guard](enum-state-cast.md#only-an-int-or-a-string-is-a-candidate-spelling) by construction.
-Filament's per-element `blank()` check lands in the same place: a blank element comes back from the element cast as `null`, which is exactly the filter this one applies before reindexing.
-
-### `set()` returns a list of strings rather than a mixed array
-
-Filament's `set()` drops a blank element, stringifies a `BackedEnum` one and passes every other element through untouched, typed `array<mixed>`.
-The port pins `list<string>` instead: after the element cast has unwrapped the enums, a surviving scalar is `(string)`-coerced and a non-scalar is dropped.
-
-The dehydrate direction writes to a column or an association that holds the backing values, so a `list<string>` is the only shape the destination accepts; leaving an int or an array in it defers the failure to a place with no context about which element caused it.
-The drop is the same tamper defence [`OptionStateCast`](option-state-cast.md) applies: stringifying an array yields the literal `"Array"`, a value that is not an option but looks like one.
-
-The scalar cast keeps Filament's passthrough ([why](enum-state-cast.md#set-is-a-passthrough-not-a-guard)); only the plural one coerces, because only it has a return type to keep honest.
 
 ### The JSON-string arm is not ported
 

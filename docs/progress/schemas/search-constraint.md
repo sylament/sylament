@@ -8,7 +8,7 @@ owns:
 # SearchConstraint (schemas)
 
 [`Sylament\Schemas\Query\SearchConstraint`](../../../packages/schemas/src/Query/SearchConstraint.php) has **no Filament source**.
-Filament's analogue is the `generate_search_column_expression()` / `generate_search_term_expression()` pair ([`vendor/filament/support/src/helpers.php:255-354`](../../../vendor/filament/support/src/helpers.php)), Eloquent-and-driver-specific string assembly with no DQL counterpart to lift.
+Filament's analogue is the `generate_search_column_expression()` / `generate_search_term_expression()` pair ([`vendor/filament/support/src/helpers.php:263-349`](../../../vendor/filament/support/src/helpers.php)), Eloquent-and-driver-specific string assembly with no DQL counterpart to lift.
 
 Tables' [`Query\SearchConstraint`](../../../packages/tables/src/Query/SearchConstraint.php) keeps `forColumn()`, the relation-crossing dispatch a column's search resolves through, and a `like()` that delegates here ([can-search-records.md](../tables/can-search-records.md)).
 `like()` lives in `schemas`, which `forms`, `tables` and `actions`, its three callers, all require.

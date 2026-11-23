@@ -36,7 +36,7 @@ It is the mechanism panels' relation managers mount through: an edit page's cont
 ### `getComponent()` answers a name, not a component object
 
 At the schema root tier `getComponent()` is the finder: [`Schema::getComponent($key)`](schema.md) walks the tree and returns a `Component`.
-Here it answers the **string** the embed will mount: a registered `twig_component` name, or the class-string of any class-backed component, which `ComponentFactory::metadataFor()` resolves to that name through its class-string-keyed `$classMap` ([`ComponentFactory.php:78-81`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php)), so a relation manager can be embedded by class-string whatever name panels registered it under.
+Here it answers the **string** the embed will mount: a registered `twig_component` name, or the class-string of any class-backed component, which `ComponentFactory::metadataFor()` resolves to that name through its class-string-keyed `$classMap` ([`ComponentFactory.php:87-93`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php)), so a relation manager can be embedded by class-string whatever name panels registered it under.
 The collision is Filament's, where both members carry these names too, and it is worth knowing before reading a call site.
 
 ### Preservation rides on the child declaring no updateFromParent props
@@ -54,8 +54,8 @@ The public signature is unchanged.
 
 ### The embed passes no implicit `record` prop
 
-Filament's `getComponentProperties()` prepends `['record' => $this->getRecord()]` to the caller's data, and Livewire quietly ignores a prop the child does not declare ([`Livewire.php:93-95`](../../../vendor/filament/schemas/src/Components/Livewire.php)).
-UX does not ignore it: `ComponentFactory::mountFromObject()` assigns a leftover input prop to a same-named **writable public property**, and what is still left after that becomes an *attribute* on the child's root ([`ComponentFactory.php:99-121`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php)).
+Filament's `getComponentProperties()` prepends `['record' => $this->getRecord()]` to the caller's data, and Livewire quietly ignores a prop the child does not declare ([`Livewire.php:107-121`](../../../vendor/filament/schemas/src/Components/Livewire.php)).
+UX does not ignore it: `ComponentFactory::mountFromObject()` assigns a leftover input prop to a same-named **writable public property**, and what is still left after that becomes an *attribute* on the child's root ([`ComponentFactory.php:145-171`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php)).
 So an implicit `record` would either be swallowed by an unrelated public property or rendered, stringified, into the DOM of every embed that never asked for one.
 The port passes exactly what `data()` names; a child that wants the owner takes it as a declared prop, which is what panels' relation managers do with their `ownerRecord` key string.
 
@@ -64,7 +64,7 @@ The port passes exactly what `data()` names; a child that wants the owner takes 
 Filament hands `LivewireFacade::mount()` a `wire:key`: `getLivewireKey()`, or `"{livewire id}.{component name}"` when the embed is keyless.
 UX has no `wire:key`: a child's identity is its **`id`**, and when the mount props do not carry one it is computed as `crc32(file:line)` plus a per-render counter ([`LiveControllerAttributesCreator.php:89-95`](../../../vendor/symfony/ux-live-component/src/Util/LiveControllerAttributesCreator.php)).
 Every embed on the page renders from the *same* line of the *same* partial, so that counter is render-order dependent: switching a tab would hand the newly active child the id the previously active one had, and the parent's child-preservation walk would treat it as the same component.
-So the partial passes an explicit `id`, which both the attributes creator and [`InterceptChildComponentRenderSubscriber:53-57`](../../../vendor/symfony/ux-live-component/src/EventListener/InterceptChildComponentRenderSubscriber.php) prefer over the deterministic one, derived from `getLiveComponentKey()` (the bare key when there is no live host) with everything outside `[A-Za-z0-9_~=-]` replaced by `-` and prefixed `sy-live-`.
+So the partial passes an explicit `id`, which both the attributes creator and [`InterceptChildComponentRenderSubscriber:65-67`](../../../vendor/symfony/ux-live-component/src/EventListener/InterceptChildComponentRenderSubscriber.php) prefer over the deterministic one, derived from `getLiveComponentKey()` (the bare key when there is no live host) with everything outside `[A-Za-z0-9_~=-]` replaced by `-` and prefixed `sy-live-`.
 
 The public API stays `key()`, Filament's vocabulary, but a keyless embed is a **`LogicException`**, not a silent fallback: Filament's keyless branch keys by component name, which gives two embeds of the same child one identity, and here that is not a cosmetic collision but two live components sharing a DOM id.
 The throw covers a keyless embed *under* a live host too, not only a hostless one: `getLiveComponentKey()` answers `null` on an empty key, matching [Filament's own `blank($key)` guard](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php), so `sy-live-{host id}-` can never be handed out as an id.

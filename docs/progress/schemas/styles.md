@@ -74,7 +74,7 @@ Dropped variants: `.fi-sticky` (no Stimulus sticky controller) and the `fi-verti
 ### Schema CSS drops the fi-width max-width variants and the hidden rule
 
 Filament's `schema.css` defines the `.fi-grid-col.fi-width-*` max-width variants (`3xs`…`7xl`, `none`, `container`) and a `& > .fi-hidden { hidden }` rule.
-Sylament's `schema.css` keeps `text-sm`, inline/growable, gap/dense, the alignment set, the action-wrapper rule (`.sy-inline > .sy-sc-action { contents }`, without Filament's `:not(.fi-hidden)` guard because hidden children are never emitted into the DOM), and `& > .sy-grid-col > .sy-sc-component { h-full }` (vendor's `schema.css:113`, inside the same `& > .fi-grid-col`).
+Sylament's `schema.css` keeps `text-sm`, inline/growable, gap/dense, the alignment set, the action-wrapper rule (`.sy-inline > .sy-sc-action { contents }`, without Filament's `:not(.fi-hidden)` guard because hidden children are never emitted into the DOM), and `& > .sy-grid-col > .sy-sc-component { h-full }` (vendor's `schema.css:132`, inside the same `& > .fi-grid-col`).
 It omits the width variants, because schemas has no `HasMaxWidth` on grid columns, and the `fi-hidden` rule, because no hidden placeholders are rendered (the [schema.md divergence](schema.md#the-schema-renders-visible-children-only-without-hidden-placeholders)).
 It reverses as `HasMaxWidth` lands, and if hidden placeholders arrive with the live-component morphing strategy.
 

@@ -70,7 +70,7 @@ Parsing it strictly first is what makes `internalFormat` a parse contract rather
 ### `get(DateTimeInterface)` keeps the object's wall time where Filament reinterprets it
 
 Filament's `get()` converts **both** arms: the parse is guarded by `if (! $state instanceof CarbonInterface)`, but the two conversion lines — `shiftTimezone($this->timezone)` then `setTimezone(config('app.timezone'))` — run unconditionally after that block.
-`shiftTimezone()` keeps the clock reading and swaps the zone behind it (`vendor/nesbot/carbon/src/Carbon/Traits/Date.php:1889`), so an object handed straight in is re-read as though its wall time had always been the field's.
+`shiftTimezone()` keeps the clock reading and swaps the zone behind it (`vendor/nesbot/carbon/src/Carbon/Traits/Date.php:1892`), so an object handed straight in is re-read as though its wall time had always been the field's.
 
 The port converts the string arm only, and normalises the object arm's PHP type without touching its zone.
 The arm is defensive in both: `state()`, `Set` and hydration pass every value through `set()`, which stores the wire string, so an object reaches `get()` only from a raw-state write or a direct call.
@@ -99,5 +99,5 @@ Filament's `get()` hands whatever survives `blank()` to `Carbon::parse()`, which
 Both directions return `null` here instead, following the [`EnumStateCast`](enum-state-cast.md#only-an-int-or-a-string-is-a-candidate-spelling) precedent.
 A `TypeError` escaping a state cast is a 500 on a request the application was equipped to refuse, and the refusal has a home: the field ships a `ValidDate` constraint over the raw state, so the payload is reported as invalid before `getData()` ever reads the `null`.
 
-This makes `set()` a guard rather than the passthrough [`EnumStateCast::set()`](enum-state-cast.md#set-is-a-passthrough-not-a-guard) is.
-The two casts differ in what they can honestly say about a value they do not recognise: an enum cast only knows how to unwrap an enum and leaves anything else for the next cast in the chain, whereas this one owns the whole conversion to a date and has no answer but `null` for a value that is not one.
+This makes `set()` a guard, as Filament's `EnumStateCast::set()` is and the port's is not yet ([detail](enum-state-cast.md#set-passes-a-value-that-is-no-case-through-where-filament-answers-null)).
+This cast owns the whole conversion to a date, so it has no answer but `null` for a value that is not one.

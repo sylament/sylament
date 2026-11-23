@@ -21,19 +21,16 @@ owns:
 | Already-cast instance passthrough | [`EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | done | — | — |
 | Backing-value resolution | [`EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | done | — | [diverges](#tryfrom-is-replaced-by-a-scan-over-the-cases-string-spellings) |
 | Non-scalar fail-closed guard | [`EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | done | — | [diverges](#only-an-int-or-a-string-is-a-candidate-spelling) |
-| `set()` stringification | [`EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | done | — | [semantics](#set-is-a-passthrough-not-a-guard) |
+| `set()` stringification | [`EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | in progress | — | [detail](#set-passes-a-value-that-is-no-case-through-where-filament-answers-null) |
 
-## Semantics
+## Details
 
-### `set()` is a passthrough, not a guard
+### `set()` passes a value that is no case through, where Filament answers `null`
 
-`get()` fails closed, `set()` does not: a non-`BackedEnum` returns from `set()` untouched, so a raw string, an int or even an array survives the dehydrate direction unchanged.
-That is Filament's behaviour and the port keeps it, which is worth stating because the sibling [`OptionStateCast::set()`](option-state-cast.md) mirrors its own `get()` guard and returns `null` for a non-scalar input.
-
-The asymmetry is deliberate on both casts.
-`OptionStateCast::set()` normalises *to* a string, so a value it cannot stringify honestly has no answer but `null`.
-`EnumStateCast` only knows how to unwrap an enum; anything else is a value some other cast in the chain owns, and swallowing it here would hide it from whatever runs next.
-The array cast is where a non-enum element does get coerced, because there the result type is [pinned to `list<string>`](enum-array-state-cast.md#set-returns-a-list-of-strings-rather-than-a-mixed-array).
+Filament's `set()` resolves its input through `get()` first and answers `null` when no case matches, so only the string spelling of a case's backing value leaves the dehydrate direction ([`EnumStateCast.php:44-53`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php)).
+The port's `set()` unwraps a `BackedEnum` and returns anything else untouched ([`EnumStateCast.php:48-55`](../../../packages/schemas/src/State/Casts/EnumStateCast.php)), so a raw string, an int or an array that names no case is written as it arrived.
+The array cast inherits the gap: [`EnumArrayStateCast`](enum-array-state-cast.md) drops a non-scalar element but keeps a scalar that names no case, where Filament's drops every element its element cast answers `null` for.
+Next step: resolve through `get()` as Filament does, so a case's spelling is normalised and anything else answers `null`, and pin both casts' miss with a test.
 
 ## Divergences
 
@@ -76,8 +73,8 @@ Reverses only if PHP grows a total, backing-type-agnostic lookup.
 
 ### Only an int or a string is a candidate spelling
 
-Filament turns a `Stringable` into its string, returns `null` for any other non-scalar, and hands every remaining scalar to `tryFrom()`, where weak mode coerces `true` and a float such as `1.0` to case `1`.
-The port guards on `is_int()` and `is_string()` alone and returns `null` for everything else, so a `Stringable`, a boolean and a float all resolve to no case.
-A boolean or a float is not a spelling any backed enum carries, and under `strict_types` the scan would otherwise have to restate weak mode's coercions to match Filament.
+Filament turns a `Stringable` into its string and then, as the port does, returns `null` for anything that is not an int or a string before it calls `tryFrom()` ([`EnumStateCast.php:29-35`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php)).
+The port guards on `is_int()` and `is_string()` alone, so a `Stringable` resolves to no case where Filament resolves its string.
+A request never delivers a `Stringable`: it reaches the cast only from PHP code, as a value object an application set itself.
 `null` is the honest answer: the field's own validation sees the untouched raw state and rejects the payload there.
 The `Stringable` arm reverses if a state source delivers a value object as an enum's spelling.

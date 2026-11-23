@@ -46,6 +46,6 @@ The enum case is unwrapped to its `->value` inside the loop; everything else, in
 
 ### The static visibility cache is not ported
 
-Filament's `isHidden()` consults a static cache keyed by component key and closure id when `isVisibilityCacheEnabled()` is true, managed by `enableVisibilityCache()`, `disableVisibilityCache()`, `withVisibilityCache()`, `getVisibilityCacheValue()`, `setVisibilityCacheValue()` and `hasVisibilityCacheKey()`.
+Filament's `isHidden()` consults a static cache keyed by the component's `spl_object_id()` and the closure's when `isVisibilityCacheEnabled()` is true, holding a reference to each keyed object so its id cannot be reused and evicting a replaced closure's entry in `hidden()` and `visible()`, managed by `enableVisibilityCache()`, `disableVisibilityCache()`, `withVisibilityCache()`, `getVisibilityCacheValue()`, `setVisibilityCacheValue()` and `hasVisibilityCacheKey()`.
 The port's `isHidden()` evaluates `isHidden` and then `isVisible` on every call, which is Filament's uncached branch.
 The cache is a render-time optimization the toolkit works without; port it if a profile shows repeated `evaluate()` cost during a render pass.

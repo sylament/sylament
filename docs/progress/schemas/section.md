@@ -40,7 +40,7 @@ The shared ones have their own files: the label is [`HasLabel`](has-label.md), t
 | Array-heading constructor shorthand | [`Section::__construct()`](../../../vendor/filament/schemas/src/Components/Section.php) | skipped | — | [diverges](#the-array-heading-constructor-shorthand-is-dropped) |
 | [Slot setters + key constants](../../../packages/schemas/src/Components/Section.php) | [`Section::afterHeader()` …](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [semantics](#slot-setters-replace-the-seeded-header-and-footer-actions) |
 | [`makeChildSchema()` end-alignment](../../../packages/schemas/src/Components/Section.php) | [`Section::makeChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
-| [`configureChildSchema()` inline + embedded](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
+| [`configureChildSchema()` inline + embedded](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | in progress | — | [detail](#the-content-class-replaces-the-default-child-schemas-extra-attributes) |
 | [`configureChildSchema()` action size/template branch](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [semantics](#slot-setters-replace-the-seeded-header-and-footer-actions) |
 | [Key derivation from heading slug](../../../packages/schemas/src/Components/Section.php) | [`Section::setUp()`](../../../vendor/filament/schemas/src/Components/Section.php) | in progress | — | [detail](#the-heading-derived-key-omits-the-state-path-segment) · [semantics](#a-translated-heading-keys-the-component-as-in-filament) · [diverges](#the-locale-of-a-live-call-is-the-requests-so-a-url-locale-application-prefixes-its-live-route) |
 | [Header actions (`HasHeaderActions` + `setUp` seed)](../../../packages/schemas/src/Components/Concerns/HasHeaderActions.php) | [`Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | done | — | — |
@@ -66,6 +66,12 @@ Filament builds the auto key as `Str::slug(Str::transliterate($heading, strict: 
 Sylament emits `AsciiSlugger()->slug($heading)->lower() . '::section'` with no state-path segment, so two same-heading sections at different state paths collide on one key.
 The `AsciiSlugger` swap is the standard string-helper translation; the missing `{$statePath}::` segment is a gap, since components carry `getStatePath()` and [`Wizard`](wizard.md#the-key-keeps-filaments-state-path-segment-which-section-drops) and `Step` already build their keys with it.
 **Next step:** read `getStatePath()` in the key closure as Filament does, and pin a keyed section under a `statePath()`.
+
+### The content class replaces the default child schema's extra attributes
+
+Filament's `configureChildSchema()` merges `['class' => 'fi-section-content']` into the default child schema's extra attributes with `merge: true` ([`Section.php:242-247`](../../../vendor/filament/schemas/src/Components/Section.php)), so attributes set on that schema elsewhere survive beside it.
+The port sets `sy-section-content` in `getExtraTemplateData()` with a replacing `extraAttributes()` call ([`Section.php:241`](../../../packages/schemas/src/Components/Section.php)), so it overwrites any extra attributes set on the default child schema before the render, such as a subclass's `configureChildSchema()` adds.
+**Next step:** merge the class in `configureChildSchema()` for the `default` key, as Filament does, and pin a child schema's own extra attributes surviving the render.
 
 ## Semantics
 

@@ -239,7 +239,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
      * A string key is the crumb's URL and renders as a link; an int key renders
      * as plain text.
      *
-     * @return array<int|string, string|Markup>
+     * @return array<int|string, string|Markup|TranslatableInterface>
      */
     public function getBreadcrumbs(): array
     {

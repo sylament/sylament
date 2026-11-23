@@ -10,8 +10,8 @@ use Symfony\Contracts\Translation\TranslatableInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
- * A page whose navigation entry (label, group and badge, which are static getters) is catalogue
- * messages, and whose breadcrumbs, a linked crumb and a plain one, it translates itself.
+ * A page whose navigation entry (label, group and badge, which are static getters) and whose
+ * breadcrumbs, a linked crumb and a plain one, are catalogue messages.
  */
 #[AsLiveComponent]
 final class TranslatedDeskPage extends Page
@@ -34,8 +34,8 @@ final class TranslatedDeskPage extends Page
     public function getBreadcrumbs(): array
     {
         return [
-            '/translated/translated-desk-page' => new TranslatableMessage('crumb.home', [], 'fixtures-panels')->trans($this->getTranslator()),
-            new TranslatableMessage('crumb.here', ['page' => 'Desk'], 'fixtures-panels')->trans($this->getTranslator()),
+            '/translated/translated-desk-page' => new TranslatableMessage('crumb.home', [], 'fixtures-panels'),
+            new TranslatableMessage('crumb.here', ['page' => 'Desk'], 'fixtures-panels'),
         ];
     }
 }

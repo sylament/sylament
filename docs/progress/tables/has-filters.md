@@ -23,7 +23,7 @@ owns:
 | [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`HasFilters.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) · [diverges](#the-filters-panel-teleports-because-the-scroll-container-wraps-the-toolbar-too) |
 | [The above- and below-content layouts, the collapsible `<details>` and the filters modal](../../../packages/tables/templates/partials/Table/index.html.twig) | [`HasFilters.php`'s `AboveContent`, `BelowContent` and `Modal` branches](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-collapsible-panel-is-a-details-element-and-the-modal-opens-through-an-invoker-command) |
 | [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-takes-the-apply-actions-visibility-as-a-prop-and-its-groups-stay-keyed) · [detail](#the-resets-are-hand-built-because-getfiltersresetaction-is-not-ported) |
-| [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`HasFilterIndicators.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | done | — | [diverges](#the-chip-is-one-badge-and-the-delete-affordance-is-supports) |
+| [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`HasFilterIndicators.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | — | [detail](#the-indicator-chips-are-not-a-list) · [diverges](#the-chip-is-one-badge-and-the-delete-affordance-is-supports) |
 | [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-panel-takes-the-apply-actions-visibility-as-a-prop-and-its-groups-stay-keyed) |
 | [`deferFilters()` / `hasDeferredFilters()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | — |
 | [`filtersLayout()` / `getFiltersLayout()` and the `hasFilters*()` / `hasCollapsibleFilters()` layout probes](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | in progress | — | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [diverges](#filterslayout-declares-its-shipped-cases-first) |
@@ -69,7 +69,7 @@ The same deferral is recorded on [the modal's own ladder](../support/modal.md#th
 
 ### The resets are hand-built because `getFiltersResetAction()` is not ported
 
-Filament renders both resets from one action object: `getFiltersResetAction()` builds a `resetFilters` action (`->action('resetTableFiltersForm')`, colour `danger`) behind a `filtersResetAction(?Closure)` seam, and `filters.blade.php` takes it as `resetAction`, rendering it as a link in the header and as a button in the footer, each only when it `isVisible()` (`:21`, `:36`).
+Filament renders both resets from one action object: `getFiltersResetAction()` builds a `resetFilters` action (`->action('resetTableFiltersForm')`, colour `danger`) behind a `filtersResetAction(?Closure)` seam, and `HasFilters::generateFiltersHtml()` takes it as `resetAction`, rendering it as a link in the header and as a button in the footer, each only when it `isVisible()` ([`HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) at `:731` and `:747`), as the published-override copy `filters.blade.php` does.
 The port has neither method: the panel's header `Link`, its footer `Button` and the modal footer's `Button` are each wired by hand to `stimulus_action('live', 'action', parameters: {action: 'resetTableFiltersForm'})` ([`Filters/index.html.twig:15`](../../../packages/tables/templates/components/Filters/index.html.twig), [`partials/Table/index.html.twig:359`](../../../packages/tables/templates/partials/Table/index.html.twig)).
 So a caller cannot relabel, recolour or hide the reset: it renders wherever `getFiltersResetActionPosition()` puts it.
 
@@ -78,6 +78,12 @@ So a caller cannot relabel, recolour or hide the reset: it renders wherever `get
 Filament's host applies the filters inside `withAppliedFiltersFormState()`, which points the filters form at the applied bag for the length of a callback.
 The port's host reads each filter's applied slice directly through `getTableFilterState()` ([`Concerns/HasFilters.php:54`](../../../packages/tables/src/Concerns/HasFilters.php), called at `:308` and `:316`), so nothing it does needs the switch.
 Filament's other caller is the `QueryBuilder` filter ([`QueryBuilder.php:83`](../../../vendor/filament/tables/src/Filters/QueryBuilder.php), `:163`), which reads its rule summaries through the form and is not ported.
+
+### The indicator chips are not a list
+
+Filament's chip container carries `role="list"` and each chip badge `role="listitem"` ([`HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) at `:77` and `:116`), so a screen reader announces the active filters as a list and counts them.
+The port's `sy-ta-filter-indicators-badges-ctn` and its `Badge` chips carry no role ([table partial](../../../packages/tables/templates/partials/Table/index.html.twig) at `:422-440`).
+Next step: add `role="list"` to the container and pass `role="listitem"` through each `Badge`'s attributes, and assert both in the indicators render test.
 
 ## Semantics
 
@@ -94,7 +100,7 @@ Turn it off and the selection deliberately outlives the filters, so constraining
 
 ### The trigger badge is composed in the table partial, because `IconButton` has no slot
 
-Filament badges its trigger by calling `->badge($activeFiltersCount)` on the `openFilters` **action**, which the action's own view renders inside the button.
+Filament badges its trigger by calling `->badge((string) $this->getActiveFiltersCount())` on the `openFilters` **action**, which the action's own view renders inside the button.
 Our `Action::badge()` takes no value ([the count stays a template chip](#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip)), and support's `IconButton` renders exactly one thing, `generateIconHtml()`, with no slot and no children.
 So the count is composed one level out: a `.sy-ta-filters-trigger` wrapper holds the icon button and, when the count is above zero, a `.sy-ta-filters-trigger-badge-ctn` span holding an `xs` `Badge`.
 
@@ -112,7 +118,7 @@ Vendor reaches the same place through Alpine, and carries `modalSubmitAction(fal
 A caller wanting a different filters modal changes the layout, not the trigger.
 
 The **active-count badge stays a template chip**.
-Vendor calls `$filtersTriggerAction->badge($activeFiltersCount)` at each render site; our `Action::badge()` takes no value — it selects the badge *template variant* — and the `badge($value)` family is unported, so porting it here would mean smuggling a whole actions feature into a tables change.
+Vendor calls `$filtersTriggerAction->badge((string) $this->getActiveFiltersCount())` at each render site; our `Action::badge()` takes no value — it selects the badge *template variant* — and the `badge($value)` family is unported, so porting it here would mean smuggling a whole actions feature into a tables change.
 The chip therefore keeps its [composition](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) one level out from the trigger, and the actions trail keeps the row.
 
 The **apply action is sized**, and vendor's is not.
@@ -129,8 +135,8 @@ Ours is a native `<details>`, the panel its content and the toggle its `<summary
 
 The server-rendered `open` is a **seed, not the state**: it is `activeFiltersCount > 0`, and being server-rendered is what makes it survive a morph *the user has not toggled through*.
 What carries a manual toggle across one is UX Live's `ExternalMutationTracker`, the same mechanism [the searchable select's id handoff](../forms/select.md#the-hidden-select-lends-its-id-to-the-combobox-button) and [Tabs' active-class writes](../schemas/tabs.md#the-active-tab-is-server-rendered-and-then-owned-by-the-controller) already ride.
-The browser's own write of `open` is an attribute mutation on a node inside the host, so it is recorded (`handleAttributeMutation()`, [`live_controller.js:1293`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js)) and replayed onto the *incoming* node before idiomorph syncs attributes off it (`getChangedElement()` at `:1050`, applied at `:1053`) — a user's collapse therefore outlives every later round trip, the `deferFilters(false)` re-render fired by each field edit included, and a re-toggle back to the seeded value cancels the record rather than pinning it (`ChangingItemsTracker::setItem()`, `:1095`).
-Without that replay the seed would be a defect rather than a default: idiomorph's own `beforeAttributeUpdated` is a no-op (`:466`), so `morphAttributes()` (`:652`) would copy the server's opinion straight back over the user's.
+The browser's own write of `open` is an attribute mutation on a node inside the host, so it is recorded (`handleAttributeMutation()`, [`live_controller.js:1322`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js)) and replayed onto the *incoming* node before idiomorph syncs attributes off it (`getChangedElement()` at `:1077`, applied at `:1080`) — a user's collapse therefore outlives every later round trip, the `deferFilters(false)` re-render fired by each field edit included, and a re-toggle back to the seeded value cancels the record rather than pinning it (`ChangingItemsTracker::setItem()`, `:1118`).
+Without that replay the seed would be a defect rather than a default: idiomorph's own `beforeAttributeUpdated` is a no-op (`:463`), so `morphAttributes()` (`:649`) would copy the server's opinion straight back over the user's.
 
 The record is durable for the **component's** lifetime, not for one round trip, and the seed is a value rather than a live reference — so a user who collapses the panel while no filter is active keeps it collapsed even after the active count rises and the server starts rendering `open` again.
 That is the intended reading of "seed": it decides the first paint and loses to the user from then on, and only a fresh mount (a full page load) hands the decision back to the server.
@@ -165,7 +171,7 @@ Filament's horizontal scroll is on `fi-ta-content-ctn` — the wrapper around th
 So no ancestor of Filament's filters panel clips it, and its dropdown needs no escape.
 Ours puts `overflow-x-auto` on `.sy-ta-ctn`, the one container holding toolbar, indicators, table and footer alike — so without an escape the panel of a short or narrow table is clipped by the box the table itself is scrolled in.
 
-The fix is the remedy Filament applies to the dropdowns that *are* inside its clipping container: `HasRecordActions` stamps every record `ActionGroup` with `->defaultDropdownTeleport(true)` ([`HasRecordActions.php:109`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)).
+The fix is the remedy Filament applies to the dropdowns that *are* inside its clipping container: `HasRecordActions` stamps every record `ActionGroup` with `->defaultDropdownTeleport(true)` ([`HasRecordActions.php:118`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)).
 Teleport is [a positioning strategy, not a DOM move](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase) in both codebases — the panel stays exactly where it was rendered and switches to `position: fixed`, which no `overflow` ancestor can clip — so the open-state machinery that survives a live morph (the `hidden` `MutationObserver` and `panelTargetConnected`, [dropdown.md](../support/dropdown.md#the-open-state-is-a-controller-field-re-asserted-through-a-mutationobserver)) is untouched by it, and nothing about the panel's contents or its live wiring changes.
 
 Two things bound the claim.
@@ -175,7 +181,7 @@ And the structural alternative stays open: porting `fi-ta-content-ctn` would mov
 
 ### The panel takes the apply action's visibility as a prop, and its groups stay keyed
 
-Filament's `filters.blade.php` takes an `applyAction` object and reads `isVisible()` off it in the template.
+Filament's `HasFilters::generateFiltersHtml()`, like the `filters.blade.php` copy it renders when that view is published, takes an `applyAction` object and reads `isVisible()` off it.
 Ours takes both an `applyAction` and the `applyVisible` boolean that gates the footer, computed once in the table partial, and renders the action through `renderComponent()`.
 The resets beside it are [hand-built](#the-resets-are-hand-built-because-getfiltersresetaction-is-not-ported), and `filtersFormSchema()` — the whole-form override closure — is not ported.
 
@@ -195,7 +201,7 @@ The row is gated on the indicator list being non-empty and on nothing else, so a
 No chip class carries a CSS rule: `.sy-ta-filter-indicator` rides on the badge as a named hook a consuming stylesheet can reach — the same shape as the panel's `-header-actions` wrapper — and the chip's whole look is the badge's own, its delete control included (support's `.sy-badge-delete-btn`).
 `.sy-ta-filter-indicators-remove-all-btn` carries no rule either, taking its whole appearance from `IconButton`.
 
-`filters.css` re-derives the vendor rules it ports ([`container.css`](../../../vendor/filament/tables/resources/css/container.css) `:98-135` and `:187-205`) rather than copying them: the header gains `gap-x-3`, the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base width vendor expresses one level up, as `$filtersFormWidth ?? Width::ExtraSmall` handed to the dropdown's `:width` (`Table/Concerns/HasFilters.php:615`).
+`filters.css` re-derives the vendor rules it ports ([`container.css`](../../../vendor/filament/tables/resources/css/container.css) `:98-135` and `:187-205`) rather than copying them: the header gains `gap-x-3`, the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base width vendor expresses one level up, as `$this->getRenderFiltersFormWidth() ?? Width::ExtraSmall` handed to the dropdown's `width` argument (`Table/Concerns/HasFilters.php:615`).
 The indicators row loosens with it — `px-3 py-1.5` to `px-4 py-3`, `gap-x-3` to a wrapping `gap-3`, `items-start` to `items-center`, and a label without `leading-6 whitespace-nowrap` — but its tint is vendor's (`bg-gray-50 dark:bg-white/5`).
 
 ### `FiltersLayout` declares its shipped cases first

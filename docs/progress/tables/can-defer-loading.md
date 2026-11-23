@@ -26,7 +26,7 @@ The table's `CanDeferLoading` and `CanPollRecords` configure the deferred first 
 
 ### The deferred window is server-gated and client-closed
 
-Filament closes the window with `wire:init="loadTable"`, which UX LiveComponent has no counterpart for, so the table controller closes it instead.
+Filament closes the window with `x-intersect.once="$wire.loadTable()"` on the table root ([`CanBeRendered.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeRendered.php) at `:80-82`), so a deferred table loads when it first scrolls into view; the table controller closes it on connect instead, whether or not the table is in view.
 The host carries `$isTableLoaded`, a `LiveProp` that is not writable and changes only through the `loadTable()` action, and `isTableLoaded()` answers true on a table that does not defer, so `Table::isLoaded()` answers for every table and the flag is inert unless `deferLoading()` is on.
 The partial reads it once and gates four reads on the result, each of which reaches the database: the `getRecords` read, the `getPaginator` read, the `getVisibleRecordActionsByRecordKey` map and the selectable-count query.
 

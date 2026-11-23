@@ -42,7 +42,7 @@ Whichever bag the form's state path names receives the write.
 
 Per field the new value is the filter's `getResetState()` entry when it names the field, and otherwise derived from the current state's type: an array resets to `[]`, a bool to `false`, anything else to `null`.
 The bool arm consults [`hasNullableBooleanState()`](../forms/field.md#hasnullablebooleanstate-has-exactly-one-consumer) first and writes `null` instead of `false` when it answers true, which `Select`, `Radio` and `ToggleButtons` do.
-The arm is narrower than it looks, because the fallback runs only for a field the filter's `getResetState()` does not name, and `SelectFilter` seeds `['value' => null]` (`['values' => []]` when multiple) in `setUp()`, as Filament's does at `SelectFilter.php:148`, so every `SelectFilter` and every `TernaryFilter` takes the explicit side and clears before the `match` is reached.
+The arm is narrower than it looks, because the fallback runs only for a field the filter's `getResetState()` does not name, and `SelectFilter` seeds `['value' => null]` (`['values' => []]` when multiple) in `setUp()`, where Filament's seeds `['value' => null]` in either mode (`SelectFilter.php:168`), so every `SelectFilter` and every `TernaryFilter` takes the explicit side and clears before the `match` is reached.
 `Checkbox` and `Toggle` cast through a non-nullable `BooleanStateCast`, where `false` is the resting value, and neither overrides the predicate, so both reset to `false`.
 What the branch decides is a hand-built nullable boolean inside a custom filter schema, `Filter::make('x')->schema([Select::make('f')->boolean()])`, which declares no reset state and clears to `null` rather than to a `false` that a ternary-shaped query arm would read as a choice.
 
@@ -122,7 +122,7 @@ The symptom is a field that silently stops working, not an error anyone can trac
 `[]` walks.
 
 Filament gets away with `null` because Livewire's `data_get`/`data_set` pair tolerates it on both sides; ux-live-component has no such layer, so this is the ordinary Eloquent-to-Symfony shape of that difference rather than a judgment about which default reads better.
-Filament's `null` buys no tri-state either: its boot hook collapses an empty bag to `null` before the session read ([`InteractsWithTable`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) at `:64-73`), so both codebases seed from emptiness, the port testing `=== []` where Filament tests `=== null`.
+Filament's `null` buys no tri-state either: its boot hook collapses an empty bag to `null` before the session read ([`InteractsWithTable`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) at `:73-75`), so both codebases seed from emptiness, the port testing `=== []` where Filament tests `=== null`.
 
 The second half is a rule rather than a type.
 **There is no `getTableFilters()`, and there must never be one**, for either bag.
@@ -159,7 +159,7 @@ Emptying it puts the mount back on the `fill(null)` arm, so a hand-edited URL co
 
 ### A reset state that names a field with `null` is honoured
 
-Filament picks a field's reset value with `$filterResetState[$fieldName] ?? match (…)` ([`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) at `:103`), so a reset state that names a field **with a null value** falls through to the type-derived arm.
+Filament picks a field's reset value with `$filterResetState[$fieldName] ?? match (…)` ([`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) at `:107`), so a reset state that names a field **with a null value** falls through to the type-derived arm.
 The port tests `array_key_exists()`, so the named `null` is written as named.
 For `SelectFilter`'s `['value' => null]` the two agree: the type-derived arm asks `hasNullableBooleanState()` first, which `Select` answers true, so it writes `null` as well.
 They part for a field that keeps a bool its state does not cast, such as a `Hidden` field holding `true`, which the port clears to the named `null` where Filament writes `false`.

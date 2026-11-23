@@ -13,6 +13,7 @@ ports:
   - vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php
   - vendor/filament/tables/src/Table/Concerns/HasRecords.php
   - vendor/filament/tables/resources/js/components/table.js
+  - vendor/filament/tables/resources/js/components/sort-and-grouping.js
   - vendor/filament/tables/resources/css/row.css
   - vendor/filament/tables/resources/css/cell.css
   - vendor/filament/tables/resources/css/container.css
@@ -68,7 +69,7 @@ Read the **import**, never the bare `use`.
 | The four `groupsOnly()` PHP gates: the sort, the eager-load loop, the aggregate batch and `isPaginated()` | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php), [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php), [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-aggregate-batch-is-skipped-under-groupsonly-where-filament-still-fires-it) · [semantics](#groupsonly-hydrates-every-record-to-find-its-groups) · [has-table.md](has-table.md#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [The `grouping` URL bind, one `UrlMapping` arm on each routed page](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`#[Url(as: 'grouping')]` on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and on [`ManageRelatedRecords`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) | done | — | [has-table.md](has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [manage-related-records.md](../panels/manage-related-records.md) |
 | [The toolbar selector: the trigger, its dropdown copy and the inline one](../../../packages/tables/templates/partials/Table/index.html.twig) + [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) | [`CanGroupRecords.php`'s `fi-ta-grouping-settings`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | done | — | [diverges](#the-selectors-two-copies-swap-in-css-rather-than-with-a-utility-class) · [semantics](#the-direction-field-hides-on-the-raw-property-not-on-the-resolved-group) |
-| [The group header row: its id, its colspan, the heading, the description and the collapse button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`CanGroupRecords.php`'s `fi-ta-group-header-row`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | done | — | [diverges](#the-collapse-button-is-a-real-button-with-a-handler-of-its-own) · [diverges](#the-key-segment-of-every-id-this-row-mints-is-percent-encoded) · [diverges](#the-header-rows-colspan-is-read-off-the-thead-and-corrects-vendors-trailing-one-off) · [diverges](#a-groups-label-title-and-description-may-be-messages-and-the-boundaries-compare-the-translated-titles) |
+| [The group header row: its id, its colspan, the heading, the description and the collapse button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`CanGroupRecords.php`'s `fi-ta-group-header-row`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | in progress | — | [detail](#an-empty-group-header-row-is-not-hidden-from-assistive-technology) · [diverges](#the-collapse-button-is-a-real-button-with-a-handler-of-its-own) · [diverges](#the-key-segment-of-every-id-this-row-mints-is-percent-encoded) · [diverges](#the-header-rows-colspan-is-read-off-the-thead-and-corrects-vendors-trailing-one-off) · [diverges](#a-groups-label-title-and-description-may-be-messages-and-the-boundaries-compare-the-translated-titles) |
 | [The collapse state and the group tick: `toggleGroup()`, `group()`, `toggleGroupRecords()` and the two repaint blocks](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`table.js`'s `toggleCollapseGroup()` / `isGroupCollapsed()` / `resetCollapsedGroups()`](../../../vendor/filament/tables/resources/js/components/table.js) | done | — | [diverges](#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open) · [semantics](#three-client-guards-are-load-bearing) · [semantics](#collapse-is-keyed-by-title-and-so-is-the-group-break) |
 | [The stripe restart at each group](../../../packages/tables/templates/partials/Table/index.html.twig) | [`HasRecords.php`'s stripe reset](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [diverges](#the-group-boundaries-are-one-php-map-rather-than-loop-carried-template-state) · [table.md](table.md#surface) |
 
@@ -76,13 +77,19 @@ Read the **import**, never the bare `use`.
 
 ### A default group has no declared direction
 
-Filament's `defaultGroup()` takes a second argument, `$direction = 'asc'`, read back through `getDefaultGroupDirection()`: the mount seeds a selectable default as `"{$id}:{$direction}"`, and `applyGroupingToTableQuery()` falls back to that direction where the property names none ([`Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) at `:79`).
+Filament's `defaultGroup()` takes a second argument, `$direction = 'asc'`, read back through `getDefaultGroupDirection()`: the mount seeds a selectable default as `"{$id}:{$direction}"`, and `applyGroupingToTableQuery()` falls back to that direction where the property names none ([`Concerns\CanGroupRecords`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) at `:84`).
 The port's [`defaultGroup()`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) takes the group alone, `mountTableGrouping()` seeds the bare id, and [`applyGroupingToTableQuery()`](../../../packages/tables/src/Concerns/CanGroupRecords.php) falls back to `'asc'`, so a default group always orders ascending.
 
 ### A grouping persists in no session
 
-Filament's `persistGroupInSession()` makes `updatedTableGrouping()` write `$tableGrouping` under `getTableGroupingSessionKey()`, and the mount reads it back into a blank property ahead of the default seed ([`InteractsWithTable`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) at `:94-111`).
+Filament's `persistGroupInSession()` makes `updatedTableGrouping()` write `$tableGrouping` under `getTableGroupingSessionKey()`, and the mount reads it back into a blank property ahead of the default seed ([`InteractsWithTable`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) at `:103-114`).
 The port has neither the setter nor the arms: `groupTable()` writes no session key, `mountTableGrouping()` reads none, and [`CanPersistTableState`](can-persist-table-state.md) carries no grouping bag, so the URL bind a routed page opts into is the only place a grouping is kept.
+
+### An empty group header row is not hidden from assistive technology
+
+Filament's group header `<tr>` carries `aria-hidden="true"` when it has nothing to show, meaning no title, no label prefix, no description, no collapse button and no group checkbox, and `fi-ta-group-header-row-with-selection` when it carries a group checkbox ([`CanGroupRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) at `:483-501`), the class the stacked-on-mobile layout lays the row out by ([`table.css`](../../../vendor/filament/tables/resources/css/table.css) at `:58-60`).
+The port's row carries only `sy-ta-row sy-ta-group-header-row`, its id and its `data-sy-group` ([table partial](../../../packages/tables/templates/partials/Table/index.html.twig) at `:718-722`), so a screen reader walks an empty group header as a blank row, and no hook marks a header holding a checkbox.
+Next step: compute the header's has-content flag in the partial, add `aria-hidden` from it and the `sy-ta-group-header-row-with-selection` class from the checkbox gate, and assert both in the grouping render test.
 
 ## Semantics
 
@@ -105,7 +112,7 @@ Nothing replaces it: the only builder `orderBy()` in `packages/tables/src` is th
 
 ### The blank key is one `IS NULL` over the left join, the set Filament's `orWhereDoesntHave` pair selects
 
-For a blank key on a relation path, Filament nests `whereHas($relationship, fn ($q) => $q->where($attribute, null))->orWhereDoesntHave($relationship)` inside one `where()` closure ([`Group::scopeQueryByKey()`](../../../vendor/filament/tables/src/Grouping/Group.php) at `:410-418`), so the pair is parenthesised and stays inside the query's other predicates.
+For a blank key on a relation path, Filament nests `whereHas($relationship, fn ($q) => $q->where($attribute, null))->orWhereDoesntHave($relationship)` inside one `where()` closure ([`Group::scopeQueryByKey()`](../../../vendor/filament/tables/src/Grouping/Group.php) at `:414-423`), so the pair is parenthesised and stays inside the query's other predicates.
 The port narrows with a single `andWhere("{$path} IS NULL")` over the left join the relation path mints, which selects the same rows: a row with no related row has a null there too.
 Every scope this class adds is `andWhere`, and every parameter is `sylament_group_<n>`, counter-suffixed, because `setParameter()` overwrites a same-named parameter in silence.
 
@@ -275,10 +282,10 @@ The port [runs one scoped query per group instead](summarizer.md#the-per-group-f
 ### A `scopeQueryByKeyUsing()` return is honoured on both paths, where Filament drops it through `scopeQuery()`
 
 All three closure seams, `orderQueryUsing()`, `scopeQueryUsing()` and `scopeQueryByKeyUsing()`, hand the closure the builder in `namedInjections` and then **coalesce**: the builder the closure returned wins, and the one it was handed stands where it returned nothing, which is what a closure that mutates in place does.
-That is Filament's `return $this->evaluate(…) ?? $query;` ([`Group::orderQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php) at `:354-362`, `scopeQuery()` at `:377-393`, `scopeQueryByKey()` at `:399-410`), typed rather than loose: the coalesce is `instanceof QueryBuilder`, so a closure answering something that is not a builder is treated as one that answered nothing.
+That is Filament's `return $this->evaluate(…) ?? $query;` ([`Group::orderQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php) at `:354-362`, `scopeQuery()` at `:377-393`, `scopeQueryByKey()` at `:399-411`), typed rather than loose: the coalesce is `instanceof QueryBuilder`, so a closure answering something that is not a builder is treated as one that answered nothing.
 
 Vendor is not consistent about it, and the port is.
-`scopeQuery()`'s **no-closure** arm upstream (`:391-393`) calls `$this->scopeQueryByKey($query, …)` and then returns `$query`, so a `scopeQueryByKeyUsing()` closure's returned builder is honoured when the method is called directly and dropped when it is reached through `scopeQuery()`, the per-group summary path.
+`scopeQuery()`'s **no-closure** arm upstream (`:394-396`) calls `$this->scopeQueryByKey($query, …)` and then returns `$query`, so a `scopeQueryByKeyUsing()` closure's returned builder is honoured when the method is called directly and dropped when it is reached through `scopeQuery()`, the per-group summary path.
 The port returns what `scopeQueryByKey()` answered, so one closure behaves the same way on both paths.
 
 ### Both selection lanes key through `getStringKey()` where Filament's records lane reads the column raw

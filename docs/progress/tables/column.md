@@ -85,9 +85,10 @@ A name crossing an association needs nothing declared in `query()`: the [relatio
 | [`wrapHeader()` / `canHeaderWrap()`](../../../packages/support/src/Components/Concerns/CanWrapHeader.php) | [`Support\Concerns\CanWrapHeader`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | done | — | — |
 | [`inline()` / `isInline()`](../../../packages/tables/src/Columns/Concerns/CanBeInline.php) | [`Concerns\CanBeInline`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeInline.php) | done | — | — |
 | [`tooltip()` / `headerTooltip()` / `emptyTooltip()` and their getters](../../../packages/tables/src/Columns/Concerns/HasTooltip.php) | [`Concerns\HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) · [semantics](#the-tables-tier-tooltip-trio-sits-beside-supports-one-tooltip-trait) |
-| [`extraCellAttributes()` / `extraHeaderAttributes()` and their getters](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | [`HasExtraCellAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php), [`HasExtraHeaderAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) · [image-column.md](image-column.md#extra-img-attribute-registrations-merge-defaults-first) |
+| [`extraCellAttributes()` / `extraHeaderAttributes()` and their getters](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | [`HasExtraCellAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php), [`HasExtraHeaderAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | in progress | — | [detail](#the-cell-and-header-attribute-setters-register-a-repeated-array-twice) · [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) · [image-column.md](image-column.md#extra-img-attribute-registrations-merge-defaults-first) |
 | [`getCellClassName()` / `getHeaderCellClassName()`, the per-column hook classes](../../../packages/tables/src/Columns/Column.php) | [`Column.php`'s `str($this->getName())->camel()->kebab()`](../../../vendor/filament/tables/src/Columns/Column.php), [`HasColumns.php`'s `str($columnName)->camel()->kebab()`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | done | — | [semantics](#the-hook-class-kebabs-each-dotted-segment-on-its-own) |
-| Cell rendering: `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` and the five `hasDynamic*()` cache guards | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | skipped | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
+| Cell rendering: `getCellAttributesHtml()`, `getCachedCellAttributesHtml()` with its deprecated alias `getCachedCellAttributeHtml()`, and the five `hasDynamic*()` cache guards | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | skipped | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
+| `lazyLoadedState()` / `isStateLazyLoaded()` / `getLazyLoadedStateGroup()` / `getLazyLoadedStateKey()`, and the cell placeholder | [`Support\Concerns\CanLazyLoadState`](../../../vendor/filament/support/src/Concerns/CanLazyLoadState.php), [`Column::getState()` / `toHtml()`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | — | [detail](#lazy-loaded-column-state-is-not-ported) |
 | Column groups and layouts: `renderInLayout()`, `BelongsToGroup`, `BelongsToLayout` and composing `CanSpanColumns` | [`Column::renderInLayout()`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | — | [unported](README.md#unported) |
 | `BadgeColumn`, `BooleanColumn`, `TagsColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | skipped | — | [deprecated](../renames.md#a-deprecated-filament-member-is-not-ported) |
 
@@ -106,6 +107,20 @@ The row flips when `BelongsToGroup` and `BelongsToLayout` land and the two remai
 Filament's `getRecord()` falls back to `$this->getLayout()?->getRecord()` when the column carries none of its own, so a column nested in a `Columns\Layout\` component reads the row the layout was handed.
 That arm belongs to the unported column-layout tier (its row is above), so the getter returns the column's own record or null.
 It lands with `BelongsToLayout`, in one piece with the `getTable()` chain [waiting on the same tier](#gettable-refuses-without-filaments-three-source-chain).
+
+### The cell and header attribute setters register a repeated array twice
+
+Filament's `extraCellAttributes()` and `extraHeaderAttributes()` return early under `merge: true` when `$attributes` is an array strictly equal to one already in the list ([`HasExtraCellAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php) at `:25`, [`HasExtraHeaderAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) at `:25`), and append every closure registration.
+The port's [`extraCellAttributes()`](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php) and [`extraHeaderAttributes()`](../../../packages/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) append unconditionally, the same gap support's trait carries ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-array-twice-registers-it-twice)), so an array merged twice is registered twice.
+Next step: add the `is_array($attributes) && in_array($attributes, …, true)` early return to both and pin a repeated-array merge.
+
+### Lazy-loaded column state is not ported
+
+Filament's `Column` composes support's [`CanLazyLoadState`](../../../vendor/filament/support/src/Concerns/CanLazyLoadState.php) (`Column.php:36`), whose `lazyLoadedState(bool | Closure $condition = true, ?LazyLoadedStateGroup $group = null, string | Closure | null $key = null)` (`CanLazyLoadState.php:25`) defers a cell's state until the cell enters the viewport.
+While it is on, `getState()` answers `null` outside the lazy render and `toHtml()` renders a loading placeholder inside a `fi-ta-state-placeholder` div ([`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) at `:101-128`, styled at [`cell.css`](../../../vendor/filament/tables/resources/css/cell.css) `:72-79`), which the `filamentLazyLoadedState` Alpine component replaces with the HTML the host's `loadTableColumnStates()` returns.
+Cells sharing a `LazyLoadedStateGroup` resolve their state together through the group's `state()` closure.
+The port's [`Column`](../../../packages/tables/src/Columns/Column.php) has no such member and resolves every cell's state on the first paint.
+Next step: port `CanLazyLoadState`, `LazyLoadedState` and `LazyLoadedStateGroup` into support, the host's `loadTableColumnStates()`, the cell rule, and a Stimulus controller in place of the Alpine component that fetches through a live action, with the `getState()` gate aliasing `HasCellState::getState()` as Filament does.
 
 ## Semantics
 
@@ -202,7 +217,7 @@ A floating tooltip control in support, over the `@floating-ui/dom` it already bu
 
 ### The cache guards behind Filament's memoised cell bag are not ported
 
-Filament builds the `<td>`'s attribute string in PHP, `getCellAttributeHtml()`, and memoises it through `getCachedCellAttributeHtml()`, which is only safe while nothing in the bag varies per row.
+Filament builds the `<td>`'s attribute string in PHP, `getCellAttributesHtml()`, and memoises it through `getCachedCellAttributesHtml()`, which is only safe while nothing in the bag varies per row.
 Five `hasDynamic*()` predicates exist to answer that: `hasDynamicExtraCellAttributes()`, `hasDynamicHiddenFrom()`, `hasDynamicVisibleFrom()`, and the alignment pair on support's traits.
 
 Here the `<td>` bag is assembled in Twig through [`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php), so there is no PHP string to memoise and no cache to guard.

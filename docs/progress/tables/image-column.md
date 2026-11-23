@@ -29,7 +29,7 @@ It ports Filament's [`Filament\Tables\Columns\ImageColumn`](../../../vendor/fila
 | [`defaultImageUrl()`](../../../packages/tables/src/Columns/ImageColumn.php) | [`ImageColumn::defaultImageUrl()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [diverges](#every-emitted-url-passes-sanitize_url-the-passthrough-included) |
 | [`stacked()` / `overlap()` / `ring()`](../../../packages/tables/src/Columns/ImageColumn.php) | [`ImageColumn`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | — |
 | [`limit()` / `limitedRemainingText()` / `limitedRemainingTextSize()`](../../../packages/tables/src/Columns/ImageColumn.php) | [`ImageColumn`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [diverges](#a-zero-or-negative-limit-is-unlimited) |
-| [`extraImgAttributes()`](../../../packages/tables/src/Columns/ImageColumn.php) | [`ImageColumn::extraImgAttributes()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | in progress | — | [detail](#merging-the-same-img-attribute-closure-twice-registers-it-twice) · [semantics](#extra-img-attribute-registrations-merge-defaults-first) |
+| [`extraImgAttributes()`](../../../packages/tables/src/Columns/ImageColumn.php) | [`ImageColumn::extraImgAttributes()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | in progress | — | [detail](#merging-the-same-img-attribute-array-twice-registers-it-twice) · [semantics](#extra-img-attribute-registrations-merge-defaults-first) |
 | [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | — |
 | [`getStateItems()` / `getStateOverLimitCount()` — the cell's image list](../../../packages/tables/src/Columns/ImageColumn.php) | — (Sylament-only) | done | — | [semantics](#getstateitems-resolves-urls-in-php-not-in-the-template) · [diverges](#a-non-string-state-value-falls-to-the-default-image) |
 | [`$template`](../../../packages/tables/src/Columns/ImageColumn.php) + [the partial it names](../../../packages/tables/templates/partials/ImageColumn/index.html.twig) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [text-column.md](text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
@@ -45,10 +45,10 @@ It ports Filament's [`Filament\Tables\Columns\ImageColumn`](../../../vendor/fila
 
 ## Details
 
-### Merging the same img-attribute closure twice registers it twice
+### Merging the same img-attribute array twice registers it twice
 
-Filament's `extraImgAttributes($attributes, merge: true)` returns early when `$attributes` is a `Closure` already in the list (`in_array(…, strict: true)`), so registering one closure instance again changes nothing.
-The port appends unconditionally, as support's `extraAttributes()` does ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-closure-twice-registers-it-twice)): replacing, merging and evaluating closure entries all work, and only that identity check is missing.
+Filament's `extraImgAttributes($attributes, merge: true)` returns early when `$attributes` is an array strictly equal to one already in the list ([`ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) at `:331`), and appends every closure registration.
+The port appends unconditionally, as support's `extraAttributes()` does ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-array-twice-registers-it-twice)): replacing, merging and evaluating entries all work, and only the array check is missing.
 
 ## Semantics
 

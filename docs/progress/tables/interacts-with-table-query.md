@@ -38,7 +38,7 @@ Where it shows is a column asked directly — a hand-built `Column` in a test, o
 ### `splitIndividualSearchTerms()` governs the column's own input alone
 
 The tri-state decides how a column's **own** search input splits its term: `null` defers to the table's `splitSearchTerms()`, and a bool overrides it.
-Only [`applyColumnSearchesToTableQuery()`](host-can-search-records.md#search-is-the-global-term-and-one-term-per-column) reads it (`CanSearchRecords.php:269`), so the global term keeps the table-level flag whatever a column declares.
+Only [`applyColumnSearchesToTableQuery()`](host-can-search-records.md#search-is-the-global-term-and-one-term-per-column) reads it (`CanSearchRecords.php:276`), so the global term keeps the table-level flag whatever a column declares.
 
 ## Divergences
 

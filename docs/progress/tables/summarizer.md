@@ -74,7 +74,7 @@ Grouping — which record starts a group, which one ends it, and the collapse th
 | [`shouldRenderTrailingGroupedTableSummary()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-trailing-group-is-followed-past-the-page-break-with-a-record-not-a-scalar) · [grouping.md](grouping.md#the-group-boundaries-are-one-php-map-rather-than-loop-carried-template-state) |
 | [`Query\SummaryQuery::readRow()` / `readDistinct()` / `qualifyAttribute()`](../../../packages/tables/src/Query/SummaryQuery.php) | [the `->select()` / `->get()` calls inside](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) each summarizer | done | — | [semantics](#every-summary-read-is-one-clone-with-the-order-reset-and-the-paging-cleared) · [diverges](#a-to-many-join-on-the-summarized-query-is-refused-where-filament-inflates-in-silence) · [translations.md](../translations.md#namespaces-with-no-filament-source) |
 | [`Summary` — the band's header row and the two rows under it](../../../packages/tables/templates/components/Summary/index.html.twig) | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | done | — | [diverges](#the-band-is-handed-the-real-all-table-query-even-when-the-all-table-row-is-off) · [semantics](#the-placeholder-cells-follow-the-record-rows-order-not-vendors) · [diverges](#the-table-partial-drops-the-grouped-column-before-it-calls-summary) |
-| [`SummaryRow` — one row: a band row or a group boundary's](../../../packages/tables/templates/components/SummaryRow/index.html.twig) | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | done | — | [diverges](#every-summary-cell-carries-its-columns-responsive-pair-where-vendors-carries-none) · [semantics](#the-heading-cell-spans-to-the-first-summarized-column-and-drops-a-summarizer-on-the-first-one) |
+| [`SummaryRow` — one row: a band row or a group boundary's](../../../packages/tables/templates/components/SummaryRow/index.html.twig) | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | in progress | — | [detail](#the-summary-heading-has-no-responsive-arms) · [diverges](#a-summary-placeholder-cell-carries-sy-ta-cell-where-vendors-is-a-bare-td) · [semantics](#the-heading-cell-spans-to-the-first-summarized-column-and-drops-a-summarizer-on-the-first-one) |
 | [The three summarizer bodies — `index`, `range`, `values`](../../../packages/tables/templates/partials/Summarizer) + [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css) | [`Summarizer::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) and its two overrides, [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns/summaries) | done | — | [diverges](#hiddenlabel-is-honoured-in-all-three-markups-where-vendor-honours-it-in-one) |
 | [The band's placement — inside `<tbody>`, after the record loop, gated on the summary and on the mode](../../../packages/tables/templates/partials/Table/index.html.twig) | [`HasRecords.php`'s `generateSummaryHtml()` call](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-page-row-is-what-the-query-proves-not-what-the-paginator-claims) · [semantics](#a-group-with-no-heading-closes-with-no-summary-row-except-under-groupsonly) · [diverges](#every-row-of-the-band-carries-a-host-scoped-id) |
 | `Count::icons()`'s per-icon counts, its template and its colour policy | [`Count::summarize()`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php)'s icon arm | todo | — | [detail](#counticons-ships-as-api-and-refuses-to-summarize) |
@@ -92,6 +92,14 @@ What an icon count *does* is not built: vendor runs one `COUNT` per distinct ico
 
 The column is not what holds it back: [`IconColumn`](icon-column.md) and its colour policy ship.
 What is missing is the `icon-count` template, a second colour policy under `Colors/Components/` for it, and the per-icon query fan-out.
+
+### The summary heading has no responsive arms
+
+Filament's summary row stops the heading cell's span before the first column carrying `hiddenFrom()` or `visibleFrom()`, and spans one cell when the first column carries one ([`CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) at `:345-360`); that heading cell then carries `fi-ta-summary-row-heading-cell-responsive` (`:386`).
+For each breakpoint at which the first column is hidden, the row lists the breakpoint in `data-summary-heading-hidden-at`, and the first summarized cell visible there repeats the heading in a `fi-ta-summary-row-heading-fallback` span whose `data-visible-at` names that breakpoint (`:298-336`, `:399-401`).
+[`table.css`](../../../vendor/filament/tables/resources/css/table.css) hides the fallback and shows it per breakpoint from `:268`, so the row keeps a visible heading when its first column is hidden.
+The port's [`SummaryRow`](../../../packages/tables/templates/components/SummaryRow/index.html.twig) spans to the first summarized column whatever the breakpoints (`:36-46`) and renders no fallback, so a `hiddenFrom()` first column takes the row's heading with it at that breakpoint.
+Next step: port the span break, the responsive heading-cell class, the `data-summary-heading-hidden-at` attribute, the fallback span and its rules in `summary.css`, and cover a `hiddenFrom()` first column in the summary render test.
 
 ## Semantics
 
@@ -228,7 +236,7 @@ Its exactness inherits the sort's: with the identifier tiebreaker on, "the recor
 Under `defaultKeySort(false)` there is no total order and the probe can disagree — inherited from the sort lane, and still strictly better than Filament, which has no tiebreaker at all.
 One arm is unreachable rather than untested: the `'all'` per-page conjunct, because a query-lane `'all'` paginator carries a total, so `hasMorePages()` answers false two guards earlier.
 It is kept because the signature it guards is real.
-Vendor's fifth arm, the `CursorPaginator` branch at [`CanSummarizeRecords:46-55`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php), has no counterpart here at all: `PaginationMode::Cursor` throws in [`paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php), so the mode the arm exists for cannot reach this method — it is skipped on the pagination row's own grounds.
+Vendor's fifth arm, the `CursorPaginator` branch at [`CanSummarizeRecords:48-57`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php), has no counterpart here at all: `PaginationMode::Cursor` throws in [`paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php), so the mode the arm exists for cannot reach this method — it is skipped on the pagination row's own grounds.
 
 ### A group with no heading closes with no summary row, except under `groupsOnly()`
 
@@ -251,7 +259,8 @@ The six booleans replace vendor's two position enums for the same reason the rec
 ### The heading cell spans to the first summarized column, and drops a summarizer on the first one
 
 The row's leading `<th scope="row">` spans from the first column up to the first one that has a summarizer for this query — so a summarizer declared on the **first** column is absorbed by the heading cell and never renders.
-That is vendor's arithmetic exactly, and it is worth knowing before writing a fixture: a `Range` on column one shows nothing until the row has a heading cell of its own (which `groupsOnly()` and the content layout's `extraHeadingColumn` give it).
+That is vendor's arithmetic for columns with no breakpoint, and it is worth knowing before writing a fixture: a `Range` on column one shows nothing until the row has a heading cell of its own (which `groupsOnly()` and the content layout's `extraHeadingColumn` give it).
+Vendor also stops the span before a responsive column, which the port does not ([detail](#the-summary-heading-has-no-responsive-arms)).
 
 `<th scope="row">` is on the heading cell and `<th scope="col">` only on *labelled* header cells; an empty placeholder in the header row stays a `<td>` so a screen reader announces no blank column header.
 Both are vendor's own a11y notes, ported with their reasons.
@@ -341,7 +350,7 @@ The class is support's [`.sy-sr-only`](../forms/styles.md#most-screen-reader-mar
 ### Every row of the band carries a host-scoped id
 
 The band's three rows are `<hostId>.table.summary.{header,page,all}` and a group boundary's is `<hostId>.table.group-summary.<key>`, the key percent-encoded the way [the group header row's is](grouping.md#the-key-segment-of-every-id-this-row-mints-is-percent-encoded).
-Vendor gives the band no ids at all.
+Vendor keys a group boundary's row with `wire:key`, `<livewireId>.table.groups.<md5 of the grouping id and the group key>.summary` ([`HasRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) at `:707` and `:722`), and gives the band's three rows none, fencing its optional page rows between Livewire morph markers instead ([`CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) at `:155-215`).
 They exist because the rows are morph identity: whether a page row renders changes with the paginator, so an unidentified band pairs positionally and idiomorph can replace one row's whole `innerHTML` with another's — the defect class [the per-column search cells](can-search-records.md#the-search-cells-carry-morph-keys-because-they-are-the-one-per-column-element-that-moves) guard against too.
 
 ### The band is handed the real all-table query even when the all-table row is off
@@ -350,20 +359,18 @@ Under `summaries(allTableCondition: false)` vendor passes `null` as the band's a
 The port passes the real query either way and lets the visibility filter run, so a `hidden()` summarizer stops labelling its column.
 It is the consistent answer, and the only place the two behaviours are visible is that header row.
 
-### Every summary cell carries its column's responsive pair, where vendor's carries none
+### A summary placeholder cell carries `sy-ta-cell`, where vendor's is a bare `<td>`
 
-`Column` emits `<bp>:sy-ta-hidden` / `<bp>:sy-ta-visible` on every `<th>` and `<td>` it owns, and the per-column search cells replicate the pair.
-Vendor's `summary/row.blade.php` emits neither, so at parity a `hiddenFrom('md')` column's summary cell would render below `md` while its header and its cells are hidden — one cell wider than the row it belongs to.
-`SummaryRow` stamps the pair from `getHiddenFrom()` / `getVisibleFrom()` on every per-column cell.
+A placeholder cell carries `sy-ta-cell` where vendor emits a bare `<td>` ([`CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) at `:441` and `:445`), matching the per-column search row's placeholders and buying the cell its own edge padding.
 
-One edge is unfixable rather than unfixed, and vendor does not try either: the heading cell spans several columns, and it inherits the **first** one's pair.
-Where it spans a single column that is exactly right; where it spans a responsive column and a static one, no colspan can be — the row is one cell off with the pair and `span − 1` off without it.
+Filament's summary row stamps its column's `fi-hidden` / `fi-visible` pair on every per-column cell (`:387-388`), and `SummaryRow` stamps `<bp>:sy-ta-hidden` / `<bp>:sy-ta-visible` from `getHiddenFrom()` / `getVisibleFrom()` the same way, as `Column` does on every `<th>` and `<td>` it owns and the per-column search cells replicate.
+Filament's heading cell stops its span before the first responsive column and spans one cell when the first column is responsive (`:345-360`), so it never carries one column's pair across several.
+The port's span runs to the first summarized column whatever the breakpoints, so a heading spanning a responsive column and a static one is one cell off at that breakpoint ([detail](#the-summary-heading-has-no-responsive-arms)).
 The band's own cells are right in every case that does not span.
 
-Two smaller shape notes ride along.
-A placeholder cell carries `sy-ta-cell` where vendor emits a bare `<td>`, matching the per-column search row's placeholders and buying the cell its own edge padding.
-And `Summary` / `SummaryRow` are **sibling** components rather than `components/Summary/Row/`, because the architecture test admits only `components/<Name>/index.html.twig` — and a group boundary renders `SummaryRow` alone, so the pair is right either way.
-`getExtraHeaderAttributeBag()` and `canHeaderWrap()` have no counterpart on this port's `Column` and are dropped with vendor's `fi-wrapped` split, which is a no-op upstream.
+Two more shape notes ride along.
+`Summary` / `SummaryRow` are **sibling** components rather than `components/Summary/Row/`, because the architecture test admits only `components/<Name>/index.html.twig` — and a group boundary renders `SummaryRow` alone, so the pair is right either way.
+`getExtraHeaderAttributeBag()` has no counterpart on this port's `Column`, so the summary header cell drops it, and it drops vendor's `canHeaderWrap()` `fi-wrapped` split with it, which is a no-op upstream because the `fi-wrapped` rules sit under `.fi-ta-header-cell`, a class the summary header cell does not carry.
 
 Both components publish an `extraHeadingColumn` and a `placeholderColumns` prop that no call site sets: the table layout never needs either, and the content layout that does waits on the layout columns.
 

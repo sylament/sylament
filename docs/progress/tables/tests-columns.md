@@ -25,6 +25,7 @@ Its driving helpers send the host's own live action or prop write, under the hos
 | `assertCanRenderTableColumn()` / `assertCanNotRenderTableColumn()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableRecordKeyExists()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableColumnStateSet()` / `assertTableColumnStateNotSet()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
+| `assertTableColumnEnabled()` / `assertTableColumnDisabled()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableColumnFormattedStateSet()` / `assertTableColumnFormattedStateNotSet()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableColumnHasExtraAttributes()` / `assertTableColumnDoesNotHaveExtraAttributes()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |
 | `assertTableColumnHasDescription()` / `assertTableColumnDoesNotHaveDescription()` | [`Testing/TestsColumns.php`](../../../vendor/filament/tables/src/Testing/TestsColumns.php) | todo | — | — |

@@ -172,7 +172,7 @@ The tooltip rides the same element when both are set, as one `title`.
 ### `getStateItems()` is the cell's value list
 
 `getStateItems()` is `getFormattedState()`'s per-item successor.
-A non-array `Traversable` state, a Doctrine `Collection` or an `ArrayIterator`, is materialized with `iterator_to_array()` first, the same unwrap Filament's own `toEmbeddedHtml()` runs before its `Arr::wrap()` (`$state instanceof Collection`, [`TextColumn.php:285-287`](../../../vendor/filament/tables/src/Columns/TextColumn.php)).
+A non-array `Traversable` state, a Doctrine `Collection` or an `ArrayIterator`, is materialized with `iterator_to_array()` first, the same unwrap Filament's own `toEmbeddedHtml()` runs before its `Arr::wrap()` (`$state instanceof Collection`, [`TextColumn.php:290-292`](../../../vendor/filament/tables/src/Columns/TextColumn.php)).
 [`wrap()`](../support/helpers.md) itself only spreads arrays and leaves anything else, a `Traversable` included, as one item, so this unwrap has to run first; only then does `wrap($state)` turn a scalar into one item and leave an array, native or just materialized, as many.
 
 Three steps then run, in Filament's order.
@@ -192,7 +192,7 @@ Badging a multi-value column is what turns per-value colouring back on.
 
 ### The collapsed join is Filament's default, not a simplification
 
-A multi-value state collapses to a single comma-joined item by default ([`TextColumn.php:371-385`](../../../vendor/filament/tables/src/Columns/TextColumn.php)); `listWithLineBreaks()` keeps the items as separate lines, `bulleted()` renders them as a `<ul>` with markers, and `limitList()` / `expandableLimitedList()` truncate the set with an expand trigger.
+A multi-value state collapses to a single comma-joined item by default ([`TextColumn.php:384-399`](../../../vendor/filament/tables/src/Columns/TextColumn.php)); `listWithLineBreaks()` keeps the items as separate lines, `bulleted()` renders them as a `<ul>` with markers, and `limitList()` / `expandableLimitedList()` truncate the set with an expand trigger.
 The default is the one a reader mistakes for a missing feature.
 
 A `TextColumn` over `['symfony', 'forms']` renders `symfony, forms` in Filament because `toEmbeddedHtml()` reduces the column's state to one item per list entry *before* any item reaches `formatState()`, so the array `formatState()` itself coerces to JSON is always a single item's own value (a JSON column, say), never the column's whole list.
@@ -207,7 +207,7 @@ The two read as interchangeable escape hatches and are not: the item list calls 
 
 `description()`, `prefix()` and `suffix()` take a message.
 `formatState()` translates a message the pipeline holds, whether `formatStateUsing()` answered it or the state is an enum that implements `TranslatableInterface` and no `HasLabel` (an enum with both keeps its `HasLabel` label), before the `is_scalar` test, the `Markup` decision, the limit and the affixes.
-A message is never `Markup`, so a translated label that holds HTML is escaped as text, and a message's own id never reaches the cell, though a `TranslatableMessage` is `Stringable`.
+A message is never `Markup`, so a translated label that holds HTML is escaped as text, and the translation is what lets the cell print it at all: Symfony's `TranslatableMessage` has no `__toString()`, so an untranslated message reaching Twig fails the render.
 
 ## Divergences
 
@@ -286,7 +286,7 @@ A Twig template has no such preamble: it reads `component.x` per value, and anyt
 
 Filament's `toEmbeddedHtml()` has two single-element paths.
 `canRenderOptimized()` sends a single plain value with no bullets, line breaks, icon, tooltip, copy control, weight, font family, line clamp, size, description, wrap or extra attributes to `toOptimizedHtml()`, which emits one `div.fi-ta-text.fi-ta-text-item`; its `hasBulleted()`, `hasListWithLineBreaks()` and `hasSize()` predicates exist only to feed that test.
-Past it, a cell holding a single value with no descriptions, no bullets and no line clamp merges the item element's attributes onto the outer `div` ([`TextColumn.php:497-499`](../../../vendor/filament/tables/src/Columns/TextColumn.php)), falling back to the two-element shape otherwise.
+Past it, a cell holding a single value with no descriptions, no bullets and no line clamp merges the item element's attributes onto the outer `div` ([`TextColumn.php:513-533`](../../../vendor/filament/tables/src/Columns/TextColumn.php)), falling back to the two-element shape otherwise.
 The port always splits: `div.sy.sy-ta-text` wrapping one `span.sy-ta-text-item` per value, whatever the cell holds, so neither path nor the three predicates is ported.
 
 It costs one span per cell.
@@ -306,7 +306,7 @@ Filament's compound `:not(.fi-ta-text-has-badges.fi-ta-text-has-line-breaks)` gu
 
 ### A badged icon goes through the `Badge`'s own props, and loses `iconColor()` doing it
 
-Filament builds the badge span by hand inside `toEmbeddedHtml()`, as the item's content attributes ([`TextColumn.php:439-472`](../../../vendor/filament/tables/src/Columns/TextColumn.php)), and encloses `iconBefore` / content / `iconAfter` within it, so the icon it renders for the plain case is the same markup it drops inside the pill, colour attributes and all.
+Filament builds the badge span by hand inside `toEmbeddedHtml()`, as the item's content attributes ([`TextColumn.php:463-502`](../../../vendor/filament/tables/src/Columns/TextColumn.php)), and encloses `iconBefore` / content / `iconAfter` within it, so the icon it renders for the plain case is the same markup it drops inside the pill, colour attributes and all.
 The port renders badges through the real [`Badge`](../support/badge.md) component instead, so the badged branch passes `icon`, `iconSize` and `iconPosition` to its props and lets it place the icon beside its own label container.
 Structure matches Filament exactly; one thing does not survive the handoff.
 

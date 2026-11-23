@@ -161,7 +161,7 @@ Two paths would reopen it, and neither is wired here: the `open` `LiveProp`, whi
 
 The mount passes `:teleport="true"`; Filament's does not.
 The reason is one level below the markup, in which element scrolls.
-Filament's horizontal scroll is on `fi-ta-content-ctn` — the wrapper around the table *content*, a sibling **below** the toolbar (`content.css:21`, `@apply relative divide-y … overflow-x-auto`) — and its outer `fi-ta-ctn` clips only when the table has no header at all (`container.css:4`, `&:not(.fi-ta-ctn-with-header) { @apply overflow-hidden; }`), which a filtered table never is: `$hasHeader` is computed with `|| $hasFilters` (`index.blade.php:140`).
+Filament's horizontal scroll is on `fi-ta-content-ctn` — the wrapper around the table *content*, a sibling **below** the toolbar (`content.css:21`, `@apply relative divide-y … overflow-x-auto`) — and its outer `fi-ta-ctn` clips only when the table has no header at all (`container.css:4`, `&:not(.fi-ta-ctn-with-header) { @apply overflow-hidden; }`), which a filtered table never is: `$hasHeader` is computed with `|| $hasFilters` (`Table/Concerns/HasHeader.php:63`, `hasRenderHeader()`, which includes `isFilterable()`).
 So no ancestor of Filament's filters panel clips it, and its dropdown needs no escape.
 Ours puts `overflow-x-auto` on `.sy-ta-ctn`, the one container holding toolbar, indicators, table and footer alike — so without an escape the panel of a short or narrow table is clipped by the box the table itself is scrolled in.
 
@@ -195,7 +195,7 @@ The row is gated on the indicator list being non-empty and on nothing else, so a
 No chip class carries a CSS rule: `.sy-ta-filter-indicator` rides on the badge as a named hook a consuming stylesheet can reach — the same shape as the panel's `-header-actions` wrapper — and the chip's whole look is the badge's own, its delete control included (support's `.sy-badge-delete-btn`).
 `.sy-ta-filter-indicators-remove-all-btn` carries no rule either, taking its whole appearance from `IconButton`.
 
-`filters.css` re-derives the vendor rules it ports ([`container.css`](../../../vendor/filament/tables/resources/css/container.css) `:98-135` and `:187-205`) rather than copying them: the header gains `gap-x-3`, the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base width vendor expresses one level up, as `$filtersFormWidth ?? Width::ExtraSmall` handed to the dropdown's `:width` (`index.blade.php:651`).
+`filters.css` re-derives the vendor rules it ports ([`container.css`](../../../vendor/filament/tables/resources/css/container.css) `:98-135` and `:187-205`) rather than copying them: the header gains `gap-x-3`, the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base width vendor expresses one level up, as `$filtersFormWidth ?? Width::ExtraSmall` handed to the dropdown's `:width` (`Table/Concerns/HasFilters.php:615`).
 The indicators row loosens with it — `px-3 py-1.5` to `px-4 py-3`, `gap-x-3` to a wrapping `gap-3`, `items-start` to `items-center`, and a label without `leading-6 whitespace-nowrap` — but its tint is vendor's (`bg-gray-50 dark:bg-white/5`).
 
 ### `FiltersLayout` declares its shipped cases first

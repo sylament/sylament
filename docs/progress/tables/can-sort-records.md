@@ -21,7 +21,7 @@ owns:
 
 ### `defaultSortOptionLabel()` waits on the layouts' sorting dropdown
 
-Filament reads the label in one place: the empty option of the column select in its sorting settings dropdown, which `index.blade.php` renders only for a table with a content layout or one stacked on mobile.
+Filament reads the label in one place: the empty option of the column select in its sorting settings dropdown, which `HasContent.php` (`generateContentHeaderHtml()`) and `HasColumns.php` (`generateStackedHeaderHtml()`) render only for a table with a content layout or one stacked on mobile.
 The port renders neither layout, so nothing would read the label, and it lands with the dropdown.
 
 ## Semantics

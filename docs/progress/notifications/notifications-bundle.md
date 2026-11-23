@@ -59,7 +59,7 @@ Unlike the toast stack, that component is free to be a UX **live** component: it
 
 ### Carrying a pending toast across a logout waits on auth
 
-Symfony's `invalidate_session: true` (`SessionLogoutListener`, priority 0 on `LogoutEvent`) drops a toast sent before a logout, where Filament's `rotateScope(shouldPreservePublishedNotifications: true)` carries it over.
+Filament carries a pending toast across a logout, which the port's flash bag does not ([why](#the-flash-bag-replaces-filaments-notification-mailbox-and-owns-the-key)).
 The port waits because a carrier imports `LogoutEvent` from `symfony/security-http` and is tested against a firewall in the test kernel, both of which the auth work brings.
 
 **Next step:** with auth, add a `LogoutEvent` subscriber that takes the pending toasts before the invalidation (priority above 0) and puts them back after it (priority below 0), or record why not.

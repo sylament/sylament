@@ -72,6 +72,7 @@ The whole inverse family is therefore not ported.
 
 Both classes follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape, the bulk one under `dissociate.multiple.…`.
 The counting failure titles beside them, `dissociate.multiple.notifications.dissociated_partial.title` and `dissociate.multiple.notifications.dissociated_none.title`, have no Filament key; they are [an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
+The none title is an ICU plural over the count and prints it as a locale-grouped ICU number, while the partial title's counts stay digit strings that get no grouping ([i18n.md](../../internals/i18n.md#plural-and-the-other-english-shapes-stay-english)).
 
 ### The fetching arm is atomic where Filament's is per-record
 

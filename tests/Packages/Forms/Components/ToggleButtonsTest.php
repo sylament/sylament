@@ -67,12 +67,14 @@ describe('rendering', function (): void {
         expect($before->filter('input[data-model$="data.channels"][aria-invalid="false"], input[data-model$="data.size"][aria-invalid="false"]'))->toHaveCount(4)
             ->and($before->filter('[aria-labelledby$="-label"][aria-invalid]'))->toHaveCount(0);
 
-        $render = $tester->fillForm(['confirmed' => 'x'])->call('save')->assertHasFormErrors(['channels', 'size', 'confirmed'])->render()->crawler();
+        $render = $tester->fillForm(['confirmed' => 'x', 'groupedCode' => 'x'])->call('save')->assertHasFormErrors(['channels', 'size', 'confirmed', 'groupedCode'])->render()->crawler();
 
         expect($render->filter('input[data-model$="data.channels"][aria-invalid="true"]'))->toHaveCount(2)
             ->and($render->filter('input[data-model$="data.size"][aria-invalid="true"]'))->toHaveCount(2)
             ->and($render->filter('input[data-model$="data.confirmed"][aria-invalid="true"]'))->toHaveCount(2)
             ->and($render->filter('[role="radiogroup"][aria-labelledby="form.confirmed-label"]:not([aria-invalid])'))->toHaveCount(1)
+            ->and($render->filter('input[data-model$="data.groupedCode"][aria-invalid="true"]'))->toHaveCount(2)
+            ->and($render->filter('[role="radiogroup"][aria-labelledby="form.groupedCode-label"]:not([aria-invalid])'))->toHaveCount(1)
             ->and($render->filter('[role="radiogroup"][aria-invalid]')->each(static fn (Crawler $group): string => $group->attr('aria-labelledby') . '=' . $group->attr('aria-invalid')))
             ->toBe(['form.size-label=true', 'form.level-label=true'])
             ->and($render->filter('[role="group"][aria-invalid]'))->toHaveCount(0);

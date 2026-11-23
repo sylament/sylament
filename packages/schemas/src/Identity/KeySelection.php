@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Identity;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 
@@ -65,7 +64,7 @@ final readonly class KeySelection
 
             $values[] = is_object($value) || (!$convertFields && !$this->fields->associations[$index])
                 ? $value
-                : Type::getType($this->fields->types[$index])->convertToPHPValue($value, $platform);
+                : $this->fields->types[$index]->convertToPHPValue($value, $platform);
         }
 
         return $this->fields->toKey($values);

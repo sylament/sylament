@@ -7,7 +7,6 @@ namespace Sylament\Schemas\Identity;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder as DbalQueryBuilder;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\OrderBy;
 use Doctrine\ORM\Query\Parameter;
@@ -53,7 +52,7 @@ final class IdentifierConstraint
         }
 
         if (!$fields->isComposite()) {
-            $query->setParameter($parameter, $values[0], Type::getType($fields->types[0])->getBindingType());
+            $query->setParameter($parameter, $values[0], $fields->types[0]->getBindingType());
 
             return sprintf('%s.%s <> :%s', $alias, $fields->names[0], $parameter);
         }
@@ -247,7 +246,7 @@ final class IdentifierConstraint
         }
 
         if (!$fields->isComposite()) {
-            $query->setParameter($parameter, array_column($tuples, 0), match (Type::getType($fields->types[0])->getBindingType()) {
+            $query->setParameter($parameter, array_column($tuples, 0), match ($fields->types[0]->getBindingType()) {
                 ParameterType::INTEGER => ArrayParameterType::INTEGER,
                 ParameterType::ASCII => ArrayParameterType::ASCII,
                 ParameterType::BINARY => ArrayParameterType::BINARY,
@@ -321,7 +320,7 @@ final class IdentifierConstraint
 
         foreach ($operands as $index => $operand) {
             $name = $fields->isComposite() ? "{$parameter}_{$index}" : $parameter;
-            $type = Type::getType($fields->types[$index])->getBindingType();
+            $type = $fields->types[$index]->getBindingType();
 
             if ($append && $query instanceof QueryBuilder) {
                 $query->getParameters()->add(new Parameter($name, $values[$index], $type));

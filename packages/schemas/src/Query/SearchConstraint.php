@@ -8,7 +8,6 @@ use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Types\GuidType;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\TextType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\QueryBuilder;
 
@@ -63,7 +62,7 @@ final class SearchConstraint
             return false;
         }
 
-        $instance = Type::getType($type);
+        $instance = $query->getEntityManager()->getConnection()->getConfiguration()->getTypeProvider()->get($type);
 
         return !$instance instanceof TextType && (!$instance instanceof StringType || $instance instanceof GuidType);
     }

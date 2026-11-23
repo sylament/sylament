@@ -16,6 +16,7 @@
         "php": "^8.5",
         "ext-intl": "*",
         "ext-mbstring": "*",
+        "doctrine/dbal": "^4.6",
         "doctrine/orm": "^3.7",
         "sylament/actions": "self.version",
         "sylament/support": "self.version",

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Doctrine\DBAL\Types\Type;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Tests\Fixtures\Entity\CipherStrongbox;
@@ -100,9 +99,7 @@ describe('decode through the writer', function (): void {
 
     it('reaches a refusing writer once for a component its reader refused', function (): void {
         $em = $this->entityManager();
-        $em->getConnection();
-
-        $type = Type::getType(CipherType::NAME);
+        $type = $em->getConnection()->getConfiguration()->getTypeProvider()->get(CipherType::NAME);
         assert($type instanceof CipherType);
         $writes = $type->writes;
 

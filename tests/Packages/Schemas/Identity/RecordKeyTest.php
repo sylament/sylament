@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Types\IntegerType;
+use Doctrine\DBAL\Types\SmallIntType;
 use Random\Engine\Mt19937;
 use Random\Randomizer;
 use Sylament\Schemas\Identity\IdentifierConstraint;
@@ -360,8 +362,8 @@ describe('properties', function (): void {
             ShortlinkSlot::class => static fn (): array => [str_replace(['Ž', 'á', '€'], 'x', $text()), $random->getInt(-32_768, 32_767)],
             CodeKeyedSlate::class => static fn (): array => [$text()],
         ];
-        $widths = ['smallint' => 32_767, 'integer' => 2_147_483_647];
-        $widerThanItsColumn = static fn (IdentifierFields $fields, array $values): bool => array_any($values, static fn (mixed $value, int $index): bool => is_int($value) && isset($widths[$fields->types[$index]]) && ($value > $widths[$fields->types[$index]] || $value < -$widths[$fields->types[$index]] - 1));
+        $widths = [SmallIntType::class => 32_767, IntegerType::class => 2_147_483_647];
+        $widerThanItsColumn = static fn (IdentifierFields $fields, array $values): bool => array_any($values, static fn (mixed $value, int $index): bool => is_int($value) && isset($widths[$fields->types[$index]::class]) && ($value > $widths[$fields->types[$index]::class] || $value < -$widths[$fields->types[$index]::class] - 1));
         $misspellings = [
             mb_strtolower(...),
             mb_strtoupper(...),

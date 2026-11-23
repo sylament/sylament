@@ -125,12 +125,10 @@ final class RecordKey
         $types = IdentifierFields::of($entityManager, $class)->types;
 
         return array_map(
-            static function (mixed $value, string $name) use ($platform): mixed {
+            static function (mixed $value, Type $type) use ($platform): mixed {
                 if (blank($value)) {
                     return $value;
                 }
-
-                $type = Type::getType($name);
 
                 return $type->convertToPHPValue($type->convertToDatabaseValue($value, $platform), $platform);
             },

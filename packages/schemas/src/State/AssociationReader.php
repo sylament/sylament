@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\State;
 
 use BackedEnum;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -626,7 +625,9 @@ class AssociationReader
     private function isIdentifierTaken(object $record, ClassMetadata $metadata, array &$claimed): bool
     {
         $entityManager = $this->requireEntityManager();
-        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $connection = $entityManager->getConnection();
+        $platform = $connection->getDatabasePlatform();
+        $typeProvider = $connection->getConfiguration()->getTypeProvider();
         $parts = [];
 
         foreach ($metadata->identifier as $field) {
@@ -644,7 +645,7 @@ class AssociationReader
 
             $type = $metadata->getTypeOfField($field);
             $value = $value instanceof BackedEnum ? $value->value : $value;
-            $parts[] = 'v' . serialize($type === null ? $value : Type::getType($type)->convertToDatabaseValue($value, $platform));
+            $parts[] = 'v' . serialize($type === null ? $value : $typeProvider->get($type)->convertToDatabaseValue($value, $platform));
         }
 
         $claim = $metadata->rootEntityName . "\0" . implode("\0", $parts);
@@ -1086,7 +1087,9 @@ class AssociationReader
         $values = RecordKey::values($entityManager, $relationship->owner, $ownerClass)
             ?? throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $relationship->owner::class));
 
-        return $query->setParameter('sylament_relationship_owner', $values[0], IdentifierFields::of($entityManager, $ownerClass)->types[0]);
+        $type = IdentifierFields::of($entityManager, $ownerClass)->types[0];
+
+        return $query->setParameter('sylament_relationship_owner', $type->convertToDatabaseValue($values[0], $entityManager->getConnection()->getDatabasePlatform()), $type->getBindingType());
     }
 
     /**

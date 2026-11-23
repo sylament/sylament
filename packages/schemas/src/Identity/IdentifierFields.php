@@ -25,7 +25,7 @@ final readonly class IdentifierFields
      * @param class-string $class
      * @param list<string> $names        in the mapping's identifier order
      * @param list<bool>   $associations whether the field at that index is a to-one association
-     * @param list<string> $types        the DBAL type name a value of that field binds as
+     * @param list<Type>   $types        the DBAL type a value of that field binds as
      */
     private function __construct(
         public string $class,
@@ -41,6 +41,7 @@ final readonly class IdentifierFields
     public static function of(EntityManagerInterface $entityManager, string $class): self
     {
         $metadata = $entityManager->getClassMetadata($class);
+        $typeProvider = $entityManager->getConnection()->getConfiguration()->getTypeProvider();
         $associations = [];
         $types = [];
 
@@ -55,8 +56,8 @@ final readonly class IdentifierFields
                 $field = $owner->getSingleIdentifierFieldName();
             }
 
-            $types[] = $owner->getTypeOfField($field)
-                ?? throw new LogicException(sprintf('The identifier field [%s::$%s] maps no DBAL type, so a record key cannot be bound against it.', $class, $name));
+            $types[] = $typeProvider->get($owner->getTypeOfField($field)
+                ?? throw new LogicException(sprintf('The identifier field [%s::$%s] maps no DBAL type, so a record key cannot be bound against it.', $class, $name)));
         }
 
         return new self($metadata->getName(), $metadata->identifier, $associations, $types);
@@ -179,7 +180,7 @@ final readonly class IdentifierFields
         $values = [];
 
         foreach ($components as $index => $component) {
-            $type = Type::getType($this->types[$index]);
+            $type = $this->types[$index];
 
             try {
                 $value = $type->convertToPHPValue($component, $platform);
@@ -235,7 +236,7 @@ final readonly class IdentifierFields
         $platform = $entityManager->getConnection()->getDatabasePlatform();
 
         return array_map(
-            static fn (mixed $value, string $type): mixed => Type::getType($type)->convertToDatabaseValue($value, $platform),
+            static fn (mixed $value, Type $type): mixed => $type->convertToDatabaseValue($value, $platform),
             $values,
             $this->types,
         );
@@ -309,23 +310,21 @@ final readonly class IdentifierFields
      * matched by class, so a type registered under a name of its own is checked
      * as the family it extends.
      */
-    private function hasShapeOf(string $component, string $type, AbstractPlatform $platform): bool
+    private function hasShapeOf(string $component, Type $type, AbstractPlatform $platform): bool
     {
-        $instance = Type::getType($type);
-
-        if ($instance instanceof BooleanType) {
+        if ($type instanceof BooleanType) {
             return $component === '0' || $component === '1';
         }
 
-        if ($instance instanceof BigIntType) {
+        if ($type instanceof BigIntType) {
             return preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1;
         }
 
-        if ($instance instanceof DecimalType) {
+        if ($type instanceof DecimalType) {
             return preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/D', $component) === 1;
         }
 
-        if ($instance instanceof GuidType) {
+        if ($type instanceof GuidType) {
             return !$this->hasNativeGuidType($platform)
                 || preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/D', $component) === 1;
         }

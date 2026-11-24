@@ -412,21 +412,39 @@ class KeyValue extends Field
 
     /**
      * The per-row preamble a template cannot express in a single getter call:
-     * every row's delete trigger is the shared action bound to that row's index.
+     * every row's delete trigger is the shared action bound to that row's index,
+     * and, while the reorder action can run, the label and description id of
+     * the row its screen-reader move buttons describe.
      *
      * @return array<array-key, mixed>
      */
     public function getExtraTemplateData(): array
     {
         $deleteAction = $this->getAction($this->getDeleteActionName());
+        $reorderAction = $this->getAction($this->getReorderActionName());
+        $rawRows = $this->getRawRows();
+
+        $isReorderable = false;
+        $announcesReordering = false;
+
+        if ($this->isReorderable() && ($reorderAction instanceof Action) && $reorderAction->isVisible() && (! $reorderAction->isDisabled())) {
+            $isReorderable = true;
+            $announcesReordering = ($reorderAction->getAction() instanceof Closure) && (! $reorderAction->shouldOpenModal());
+
+            if ((count($rawRows) > 1) && ($this->modifyReorderActionUsing === null)) {
+                $reorderAction = (clone $reorderAction)->extraAttributes(['aria-hidden' => 'true', 'tabindex' => '-1'], merge: true);
+            }
+        }
 
         $rows = [];
 
-        foreach ($this->getRawRows() as $index => $row) {
+        foreach ($rawRows as $index => $row) {
             $rows[] = [
                 'index' => $index,
                 'key' => $row['key'],
                 'value' => $row['value'],
+                'reorderingLabel' => $isReorderable ? $this->getReorderingLabel($row['key']) : null,
+                'reorderingDescriptionId' => $isReorderable ? $this->getId() . '-row-' . $index : null,
                 'deleteAction' => $deleteAction?->__invoke(['row' => $index]),
             ];
         }
@@ -434,9 +452,22 @@ class KeyValue extends Field
         return [
             'rows' => $rows,
             'addAction' => $this->getAction($this->getAddActionName()),
-            'reorderAction' => $this->getAction($this->getReorderActionName()),
+            'reorderAction' => $reorderAction,
+            'isReorderable' => $isReorderable,
+            'announcesReordering' => $announcesReordering,
             'animationDuration' => $this->getReorderAnimationDuration(),
         ];
+    }
+
+    /**
+     * The name a row's reordering description and announcement give it: its
+     * key, trimmed, or the generic row name when that leaves nothing.
+     */
+    private function getReorderingLabel(mixed $key): string
+    {
+        $label = is_scalar($key) ? mb_trim((string) $key) : '';
+
+        return $label !== '' ? $label : new TranslatableMessage('components.key_value.reordering.row', domain: 'sylament-forms')->trans($this->getTranslator());
     }
 
     /**

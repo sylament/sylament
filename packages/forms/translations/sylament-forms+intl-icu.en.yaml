@@ -86,6 +86,10 @@ components:
                 label: 'Add row'
             delete:
                 label: 'Delete row'
+            move_down:
+                label: 'Move down'
+            move_up:
+                label: 'Move up'
             reorder:
                 label: 'Reorder row'
         columns:
@@ -98,6 +102,10 @@ components:
                 label: 'Key'
             value:
                 label: 'Value'
+        reordering:
+            moved: '{label} moved to position {position} of {count}'
+            position: '{label}, position {position, number} of {count, number}'
+            row: 'Row'
     radio:
         boolean:
             'false': 'No'

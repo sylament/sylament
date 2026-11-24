@@ -34,12 +34,14 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`getDeleteAction()`](../../../packages/forms/src/Components/KeyValue.php) with `deleteAction()`, `getDeleteActionName()`, `deleteActionLabel()`, `getDeleteActionLabel()`, `deletable()`, `isDeletable()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-delete-and-reorder-labels-are-honoured-where-filament-ignores-its-own-setters) · [semantics](#a-trigger-argument-is-re-validated-against-the-rows-the-server-rendered) · [diverges](#a-disabled-field-has-no-structural-actions-at-all) |
 | [`getReorderAction()`](../../../packages/forms/src/Components/KeyValue.php) with `reorderAction()`, `getReorderActionName()`, `reorderActionLabel()`, `getReorderActionLabel()`, `reorderable()`, `isReorderable()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-delete-and-reorder-labels-are-honoured-where-filament-ignores-its-own-setters) · [semantics](#the-reorder-order-is-hardened-and-the-indexes-it-names-are-sound) · [diverges](#a-disabled-field-has-no-structural-actions-at-all) |
 | [`editableKeys()`](../../../packages/forms/src/Components/KeyValue.php) / `canEditKeys()` / `editableValues()` / `canEditValues()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [semantics](#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) |
-| [`keyLabel()`](../../../packages/forms/src/Components/KeyValue.php), `valueLabel()`, `keyPlaceholder()`, `valuePlaceholder()` and their getters | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [semantics](#the-seven-texts-are-catalogue-messages) |
+| [`keyLabel()`](../../../packages/forms/src/Components/KeyValue.php), `valueLabel()`, `keyPlaceholder()`, `valuePlaceholder()` and their getters | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [semantics](#the-fields-texts-are-catalogue-messages) |
 | [`HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php), the drag control's duration | [`support/…/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | [sortable.md](../support/sortable.md) |
 | [`hydrateRows()`](../../../packages/forms/src/Components/KeyValue.php), the blank-row pad, a Sylament addition | — | done | — | [semantics](#the-raw-bag-is-never-empty-and-never-sparse) |
 | [`mutateStateForValidation()`](../../../packages/forms/src/Components/KeyValue.php) / `mutatesStateForValidation()`, a Sylament addition | — | done | — | [semantics](#validation-reads-the-raw-bag-so-the-field-hands-it-the-map) |
 | [`key-value.css`](../../../packages/forms/assets/src/styles/components/key-value.css): the table skin, the chrome columns and the add row | [`components/key-value.css`](../../../vendor/filament/forms/resources/css/components/key-value.css) | done | — | [styles.md](styles.md) |
 | [`sylament--forms--key-value`](../../../packages/forms/assets/src/controllers/key_value_controller.ts): the reorder bridge and the focus guard | [`resources/js/components/key-value.js`](../../../vendor/filament/forms/resources/js/components/key-value.js) | done | — | [diverges](#the-controller-is-a-reorder-bridge-and-a-focus-guard-not-a-row-store) |
+| The [screen-reader reordering layer](../../../packages/forms/templates/partials/KeyValue/index.html.twig): each row's hidden move buttons and description, the polite reorder status, and the [move and its announcement](../../../packages/forms/assets/src/controllers/key_value_controller.ts) | [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) · [`key-value.js`'s `moveRow()` and `rowDescription()`](../../../vendor/filament/forms/resources/js/components/key-value.js) | done | — | [diverges](#a-move-button-mounts-the-reorder-action-and-names-the-moved-row-by-the-index-it-lands-at) · [diverges](#a-rows-description-is-fixed-at-the-last-render-and-renders-after-the-table) · [semantics](#the-drag-handle-leaves-the-accessibility-tree-while-more-than-one-row-can-move) |
+| Sorting paused while a move or a drag waits on its request, a Sylament addition | — | todo | — | [detail](#sorting-stays-live-while-a-move-waits-so-a-second-drag-names-renumbered-rows) |
 | `.fi-fo-key-value-wrp` inline-label rule | [`components/key-value.css`](../../../vendor/filament/forms/resources/css/components/key-value.css) | blocked | schemas' `HasInlineLabel` | [detail](#the-inline-label-rule-waits-on-hasinlinelabel) |
 | `loadingPlaceholder()` / `getLoadingPlaceholder()` and the async wrapper | [`Concerns/HasLoadingPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingPlaceholder.php) · [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | todo | — | [select.md](select.md#the-js-control-has-no-loading-placeholder) |
 | `HasExtraAlpineAttributes` | [`support/…/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
@@ -53,6 +55,13 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 Vendor's stylesheet ends with a second block, `.fi-fo-key-value-wrp .fi-fo-field-has-inline-label .fi-fo-field-label-col { @apply sm:pt-1.5 }`, which nudges the label column down so it lines up with the first row of the table when the field's label sits beside its control.
 Nothing emits `sy-fo-field-has-inline-label`, because schemas' `HasInlineLabel` is unported; the same arm is [outstanding on `field.css`, `select.css`, `tags-input.css`, `textarea.css`, `toggle-buttons.css` and `toggle.css`](styles.md#the-inline-label-arms-wait-on-schemas-hasinlinelabel).
 The rule lands with that concern, in one change across every field that carries one.
+
+### Sorting stays live while a move waits, so a second drag names renumbered rows
+
+The `reorder` action names rows by index, and the server renumbers them once it permutes them, so an order computed before a move's re-render lands names rows that are no longer at those indexes.
+The announcer drops a move button's press while another move waits, but support's [sortable controller](../support/sortable.md) exposes no pause, so a drag made before the last move or drag has landed sends an order over the old indexes, which the server applies to the rows already moved, and the field settles in an order the user never dragged.
+Filament moves its rows client-side, so it has no request to wait on; the repeater and the table share the missing pause ([forms-bundle.md](forms-bundle.md#sorting-stays-live-through-a-repeater-move-and-a-failed-drag-keeps-its-order)), where a stale order still names the right items.
+Next step: the sortable pause those entries name, taken by this controller around a move's request.
 
 ## Semantics
 
@@ -104,10 +113,16 @@ The hooks see `getState()`, the map, never the row list.
 This is Filament's own sniff, kept.
 A map whose *values* are arrays therefore reads as a row list and comes back mangled, which is not a shape a key/value field can hold anyway, because both cells are text inputs.
 
-### The seven texts are catalogue messages
+### The field's texts are catalogue messages
 
 The add, delete and reorder action labels and the key and value column labels read `components.key_value.actions.{add,delete,reorder}.label` and `components.key_value.fields.{key,value}.label`, and the two screen-reader column headings read `components.key_value.columns.{reorder,actions}.label`.
+The two hidden move buttons read `components.key_value.actions.{move_up,move_down}.label`, a row's description `components.key_value.reordering.position` over `reordering.row` for a row with no key, and the controller's `movedMessage` value `reordering.moved` with `label`, `position` and `count` set to `__LABEL__`, `__POSITION__` and `__COUNT__`, as the repeater's are.
 The two placeholder setters take a message as the label setters do, and have no default.
+
+### The drag handle leaves the accessibility tree while more than one row can move
+
+Filament binds `tabindex="-1"` and `aria-hidden="true"` onto the reorder action while `rows.length > 1`, unless a `reorderAction()` modifier reshapes it ([`KeyValue.php:406-411`](../../../vendor/filament/forms/src/Components/KeyValue.php)), since a screen reader then moves a row through its move buttons, and a lone row has none enabled.
+The port renders the same two attributes onto a copy of the action while the field holds more than one row, and no modifier is declared, so the handle every row shares changes only on a re-render, which every add and delete is.
 
 ## Divergences
 
@@ -137,12 +152,34 @@ That is not only about the chrome: each of the three actions is `visible()` on i
 Without the guard the template would hide the triggers while a hand-made live request could still add, delete and reorder the rows of a field the user was never offered.
 `canEditKeys()` / `canEditValues()` are deliberately *not* guarded: they are cell-level, and the template already pairs each with `disabled()` on the input itself.
 
+### A move button mounts the reorder action, and names the moved row by the index it lands at
+
+Filament renders two plain buttons per row in an `fi-sr-only` box, `tabindex="-1"` and `data-reorder-hidden`, disabled at the list's ends and described by the row's description, whose click runs `moveRow()`: the row is spliced in the Alpine list and the polite `reorderStatus` span reads `reordering.moved` on the next tick ([`KeyValue.php:485-518`](../../../vendor/filament/forms/src/Components/KeyValue.php), [`key-value.js:81-125`](../../../vendor/filament/forms/resources/js/components/key-value.js)).
+The port renders the same buttons in an `sy-sr-only` box, but the rows are [server-owned](#the-rows-are-server-owned-and-the-three-actions-are-real), so a press runs the controller's `move`, which builds the order with the row one place up or down from the rendered rows and mounts the existing [`reorder` action](#the-reorder-order-is-hardened-and-the-indexes-it-names-are-sound) with it, the call a drag makes; there is no move action on the server.
+Both go through the [`ReorderAnnouncer`](../tables/table.md#a-move-is-announced-once-its-own-request-lands-from-a-token-message), which writes the moved message into the status span once the request's re-render is morphed in, and announces nothing when UX answers with an error.
+A row keeps no identity across that re-render, since the server renumbers the rows it permutes, so the controller names the moved row by the index it lands at and rebuilds the order before the move in those landed indexes with `orderBeforeDrag()`.
+The announcement therefore trusts that the response applied the order sent, as the hardened action does for every full order, which is why the field gives the controller its `movedMessage` value only while the reorder action still runs its own closure and opens no modal: a confirming reorder action mounts without moving anything, so its moves and drags go unannounced.
+While one move waits, the announcer drops the next press, whose order would name rows the request is about to renumber; a drag in that window is the [open gap](#sorting-stays-live-while-a-move-waits-so-a-second-drag-names-renumbered-rows).
+Filament returns focus only to a pressed control that is not `data-reorder-hidden` (`key-value.js:113-123`), so its move buttons get none, and the announcer's `restoreFocus` stays off.
+A press first blurs whatever holds focus, as the [focus guard](#the-controller-is-a-reorder-bridge-and-a-focus-guard-not-a-row-store) does before a mouse press, so a cell's caret cannot carry its pre-request value over the morph when assistive technology clicks without a `mousedown`.
+Filament's pressed button travels with its row, while the port's re-render leaves it at its index, on the row moved into that place.
+The buttons, the descriptions, the status, the reorder column and the drag control render only while the reorder action is visible and enabled, as Filament's `$isReorderable` gates them (`KeyValue.php:389`), so a move never mounts an action that would refuse it.
+
+### A row's description is fixed at the last render, and renders after the table
+
+Filament's description is an `x-text` of `rowDescription()` over the live `row.key`, trimmed, or `reordering.row` when that leaves nothing, so it follows each keystroke.
+The port's is `components.key_value.reordering.position` rendered by the server over the same label, so a key typed since the last request reaches the description, and the buttons' `aria-describedby`, only on the next one.
+The moved message is not stale: the move's own request carries the typed key, and the label is read from the re-rendered description.
+Filament renders each description in its row's reorder cell; the port renders them after the table, under `{id}-row-{index}`, because an id inside a row would give idiomorph an anchor on a row the drag control has already moved and change how the drag's re-render pairs the rows.
+The buttons reach the description through `aria-describedby` either way, but a screen reader reading the page in order meets the descriptions after the table rather than in each row.
+
 ### The controller is a reorder bridge and a focus guard, not a row store
 
 `key-value.js` is the whole field in Filament: it owns the row list, adds, deletes and reorders it client-side, prunes blank keys out of the state, and re-derives its rows from a `$watch` on the entangled value.
 None of that has anywhere to live here, because the server owns the rows, so [`key_value_controller.ts`](../../../packages/forms/assets/src/controllers/key_value_controller.ts) keeps two behaviours.
 
 `reorder(event)` turns support's drag control's `end` event into the host's `reorder` action, as the repeater's controller does; the binding rides the same element as the sortable controller because that event does not bubble.
+`move(event)` does the same for a hidden move button, and both announce the landed move ([above](#a-move-button-mounts-the-reorder-action-and-names-the-moved-row-by-the-index-it-lands-at)).
 
 The capture-phase `mousedown` listener is the subtle one.
 WebKit does not focus a clicked `<button>`, so the caret stays in the cell the user was typing in; the live morph then restores focus to the element at that position after the response, and the browser's own value, the pre-request one, wins over the re-rendered row sitting at that index.

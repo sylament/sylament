@@ -5,7 +5,7 @@
 {% set canEditKeys = component.canEditKeys %}
 {% set canEditValues = component.canEditValues %}
 
-{% set hasReorderColumn = component.isReorderable %}
+{% set hasReorderColumn = isReorderable %}
 {% set hasActionsColumn = component.isDeletable %}
 {% set hasAddAction = component.isAddable %}
 
@@ -15,10 +15,14 @@
 {% set valuePlaceholder = component.getValuePlaceholder %}
 {% set statePath = component.getStatePath %}
 
-{% set keyValueStimulus = stimulus_controller(keyValueController, {key: component.getKey}) %}
+{% set keyValueStimulus = stimulus_controller(keyValueController, {
+    key: component.getKey,
+    movedMessage: announcesReordering ? 'components.key_value.reordering.moved'|trans({label: '__LABEL__', position: '__POSITION__', count: '__COUNT__'}, domain: 'sylament-forms') : null,
+}) %}
 {% set sortableStimulus = hasReorderColumn ? stimulus_controller(sortableController, {
     animationDuration: animationDuration,
 })|stimulus_action(keyValueController, 'reorder', sortableController ~ ':end') : null %}
+{% set moveStimulus = hasReorderColumn ? stimulus_action(keyValueController, 'move', 'click') : null %}
 
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
     <twig:SylamentSupport:InputWrapper
@@ -56,6 +60,24 @@
                             {% if hasReorderColumn %}
                                 <td class="sy-fo-key-value-action-col">
                                     <div class="sy-fo-key-value-table-row-sortable-handle">{{ renderComponent(reorderAction) }}</div>
+                                    <div class="sy-sr-only">
+                                        <button {{ attrs({
+                                            type: 'button',
+                                            tabindex: '-1',
+                                            'data-reorder-hidden': true,
+                                            'data-reorder-direction': 'up',
+                                            'aria-describedby': row.reorderingDescriptionId,
+                                            disabled: loop.first,
+                                        }, moveStimulus) }}>{{ 'components.key_value.actions.move_up.label'|trans(domain: 'sylament-forms') }}</button>
+                                        <button {{ attrs({
+                                            type: 'button',
+                                            tabindex: '-1',
+                                            'data-reorder-hidden': true,
+                                            'data-reorder-direction': 'down',
+                                            'aria-describedby': row.reorderingDescriptionId,
+                                            disabled: loop.last,
+                                        }, moveStimulus) }}>{{ 'components.key_value.actions.move_down.label'|trans(domain: 'sylament-forms') }}</button>
+                                    </div>
                                 </td>
                             {% endif %}
 
@@ -92,6 +114,26 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            {% if hasReorderColumn %}
+                {% for row in rows %}
+                    <span {{ attrs({
+                        id: row.reorderingDescriptionId,
+                        class: 'sy-sr-only',
+                        'data-reorder-description': row.index,
+                        'data-reorder-label': row.reorderingLabel,
+                    }, stimulus_target(keyValueController, 'reorderDescription')) }}>{{ 'components.key_value.reordering.position'|trans({label: row.reorderingLabel, position: loop.index, count: loop.length}, domain: 'sylament-forms') }}</span>
+                {% endfor %}
+
+                <span {{ attrs({
+                    id: component.getId ~ '-reorder-status',
+                    class: 'sy-sr-only',
+                    role: 'status',
+                    'aria-live': 'polite',
+                    'aria-atomic': 'true',
+                    'data-live-ignore': true,
+                }, stimulus_target(keyValueController, 'reorderStatus')) }}></span>
+            {% endif %}
 
             {% if hasAddAction %}
                 <div class="sy-fo-key-value-add-action-ctn">{{ renderComponent(addAction) }}</div>

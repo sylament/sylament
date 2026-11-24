@@ -76,11 +76,11 @@ describe('rendering', function (): void {
             ['pairs' => [['key' => 'colour', 'value' => 'red']]],
         );
 
-        expect($crawler)->toContainButtons('tbody button', ['Move pair', 'Remove pair'])
+        expect($crawler)->toContainButtons('tbody button', ['Move pair', 'Move up', 'Move down', 'Remove pair'])
             ->and($this->renderSchemaComponent(
                 KeyValue::make('pairs')->reorderable()->deleteAction(static fn (Action $action): Action => $action->label('Drop pair'))->reorderAction(static fn (Action $action): Action => $action->label('Drag pair')),
                 ['pairs' => [['key' => 'colour', 'value' => 'red']]],
-            ))->toContainButtons('tbody button', ['Drag pair', 'Drop pair']);
+            ))->toContainButtons('tbody button', ['Drag pair', 'Move up', 'Move down', 'Drop pair']);
     });
 
     it('wires its controller and binds the end of a drag to its reorder action', function (): void {
@@ -94,6 +94,69 @@ describe('rendering', function (): void {
             ->and($container->filter('tbody button' . SupportSelectors::SORTABLE_HANDLE))->toHaveCount(2)
             ->and($container->filter('tbody button' . SupportSelectors::SORTABLE_HANDLE . '[data-action]'))->toHaveCount(0);
     });
+});
+
+describe('screen-reader reordering', function (): void {
+    it('describes each row by its trimmed key, or as a row, with its place, points its hidden move buttons at it, and holds the moved message for an empty status region', function (): void {
+        $crawler = $this->renderSchemaComponent(KeyValue::make('pairs')->reorderable(), ['pairs' => [['key' => ' colour ', 'value' => 'red'], ['key' => ' ', 'value' => 'L'], ['key' => 'fit', 'value' => 'slim']]]);
+        $container = $crawler->filter('[data-controller~="sylament--forms--key-value"]');
+        $descriptions = $container->filter('[data-reorder-description]');
+
+        expect($descriptions->each(static fn (Crawler $description): array => [$description->text(), $description->attr('data-reorder-label'), $description->attr('data-reorder-description')]))->toBe([
+            ['colour, position 1 of 3', 'colour', '0'],
+            ['Row, position 2 of 3', 'Row', '1'],
+            ['fit, position 3 of 3', 'fit', '2'],
+        ])
+            ->and($container)->toContainButtons('tbody .sy-sr-only button', ['Move up', 'Move down', 'Move up', 'Move down', 'Move up', 'Move down'])
+            ->and($container->filter('tbody [data-reorder-direction]')->each(static fn (Crawler $button): array => [
+                $button->attr('data-reorder-direction'),
+                $descriptions->filter(sprintf('[id="%s"]', $button->attr('aria-describedby')))->attr('data-reorder-description'),
+                $button->attr('disabled') !== null,
+                $button->attr('tabindex'),
+                $button->attr('data-reorder-hidden'),
+                $button->attr('data-action'),
+            ]))->toBe([
+                ['up', '0', true, '-1', 'true', 'click->sylament--forms--key-value#move'],
+                ['down', '0', false, '-1', 'true', 'click->sylament--forms--key-value#move'],
+                ['up', '1', false, '-1', 'true', 'click->sylament--forms--key-value#move'],
+                ['down', '1', false, '-1', 'true', 'click->sylament--forms--key-value#move'],
+                ['up', '2', false, '-1', 'true', 'click->sylament--forms--key-value#move'],
+                ['down', '2', true, '-1', 'true', 'click->sylament--forms--key-value#move'],
+            ])
+            ->and($container)->toContainElement('[role="status"][aria-live="polite"][aria-atomic="true"][data-live-ignore]', '')
+            ->and($container->attr('data-sylament--forms--key-value-moved-message-value'))->toBe('__LABEL__ moved to position __POSITION__ of __COUNT__');
+    });
+
+    it('renders no move button, row description or status region while the reorder action cannot run', function (Closure $field): void {
+        $crawler = $this->renderSchemaComponent($field(), ['pairs' => [['key' => 'colour', 'value' => 'red'], ['key' => 'size', 'value' => 'L']]]);
+
+        expect($crawler->filter('tbody tr'))->toHaveCount(2)
+            ->and($crawler->filter(SupportSelectors::SORTABLE_CONTROLLER . ', ' . SupportSelectors::SORTABLE_HANDLE . ', [data-reorder-direction], [data-reorder-description], [role="status"]'))->toHaveCount(0)
+            ->and($crawler->filter('[data-sylament--forms--key-value-moved-message-value]'))->toHaveCount(0);
+    })->with([
+        'not reorderable' => [fn (): KeyValue => KeyValue::make('pairs')],
+        'a reorder action its modifier disables' => [fn (): KeyValue => KeyValue::make('pairs')->reorderable()->reorderAction(static fn (Action $action): Action => $action->disabled())],
+    ]);
+
+    it('holds no moved message while the reorder action opens a modal, so a move goes unannounced', function (): void {
+        $crawler = Action::configureUsing(
+            static fn (Action $action): Action => $action->requiresConfirmation(),
+            during: fn (): Crawler => $this->renderSchemaComponent(KeyValue::make('pairs')->reorderable(), ['pairs' => [['key' => 'colour', 'value' => 'red'], ['key' => 'size', 'value' => 'L']]]),
+        );
+
+        expect($crawler->filter('[data-reorder-direction]'))->toHaveCount(4)
+            ->and($crawler->filter('[data-sylament--forms--key-value-moved-message-value]'))->toHaveCount(0);
+    });
+
+    it('takes the drag handle out of reach while the rows have a move button to use, unless a reorderAction() modifier reshapes it', function (Closure $field, array $pairs, array $hidden): void {
+        $crawler = $this->renderSchemaComponent($field(), ['pairs' => $pairs]);
+
+        expect($crawler->filter(SupportSelectors::SORTABLE_HANDLE)->each(static fn (Crawler $handle): array => [$handle->attr('aria-hidden'), $handle->attr('tabindex')]))->toBe($hidden);
+    })->with([
+        'two rows' => [fn (): KeyValue => KeyValue::make('pairs')->reorderable(), [['key' => 'colour', 'value' => 'red'], ['key' => 'size', 'value' => 'L']], [['true', '-1'], ['true', '-1']]],
+        'one row, both its moves disabled' => [fn (): KeyValue => KeyValue::make('pairs')->reorderable(), [['key' => 'colour', 'value' => 'red']], [[null, null]]],
+        'a reorderAction() modifier' => [fn (): KeyValue => KeyValue::make('pairs')->reorderable()->reorderAction(static fn (Action $action): Action => $action->color('primary')), [['key' => 'colour', 'value' => 'red'], ['key' => 'size', 'value' => 'L']], [[null, null], [null, null]]],
+    ]);
 });
 
 describe('state', function (): void {
@@ -301,6 +364,6 @@ it('translates its labels and placeholders given as messages', function (): void
     expect($render->filter('thead th:not(.sy-fo-key-value-action-col)')->each(static fn (Crawler $heading): string => $heading->text()))->toBe(['Name (translated)', 'Amount (translated)'])
         ->and($render->filter('tbody input')->each(static fn (Crawler $input): array => [$input->attr('aria-label'), $input->attr('placeholder')]))
         ->toBe([['Name (translated)', 'Name here (translated)'], ['Amount (translated)', 'Amount here (translated)']])
-        ->and($render)->toContainButtons('tbody button', ['Move a pair (translated)', 'Drop a pair (translated)'])
+        ->and($render)->toContainButtons('tbody button', ['Move a pair (translated)', 'Move up', 'Move down', 'Drop a pair (translated)'])
         ->and($render->filter('.sy-fo-key-value-add-action-ctn button')->text())->toBe('Add a pair (translated)');
 });

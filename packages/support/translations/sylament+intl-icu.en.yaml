@@ -8,6 +8,7 @@ components/copyable:
     label: 'Copy {label}'
     messages:
         copied: 'Copied'
+        failed: 'Could not copy'
 components/modal:
     actions:
         close:

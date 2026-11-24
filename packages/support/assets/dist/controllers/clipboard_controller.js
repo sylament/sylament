@@ -15,9 +15,11 @@ class clipboard_controller_default extends Controller {
   static values = {
     text: String,
     message: String,
+    failureMessage: String,
     duration: { type: Number, default: 2e3 }
   };
   #timer;
+  #shown;
   connect() {
     this.element.setAttribute("tabindex", "0");
   }
@@ -28,20 +30,19 @@ class clipboard_controller_default extends Controller {
   async copy(event) {
     event.preventDefault();
     event.stopPropagation();
-    if (!navigator.clipboard) {
-      return;
-    }
     try {
       await navigator.clipboard.writeText(this.textValue);
     } catch {
+      this.#show(this.failureMessageValue);
       return;
     }
-    this.#confirm();
+    this.#show(this.messageValue);
   }
-  #confirm() {
-    this.element.setAttribute("data-copy-message", this.messageValue);
+  #show(message) {
+    this.#shown = message;
+    this.element.setAttribute("data-copy-message", message);
     this.element.setAttribute("data-copied", "");
-    liveRegion().textContent = this.messageValue;
+    liveRegion().textContent = message;
     window.clearTimeout(this.#timer);
     this.#timer = window.setTimeout(() => this.#reset(), this.durationValue);
   }
@@ -49,9 +50,10 @@ class clipboard_controller_default extends Controller {
     this.element.removeAttribute("data-copied");
     this.element.removeAttribute("data-copy-message");
     const region = document.querySelector(`.${LIVE_REGION_CLASS}`);
-    if (region instanceof HTMLElement && region.textContent === this.messageValue) {
+    if (region instanceof HTMLElement && region.textContent === this.#shown) {
       region.textContent = "";
     }
+    this.#shown = void 0;
   }
 }
 export {

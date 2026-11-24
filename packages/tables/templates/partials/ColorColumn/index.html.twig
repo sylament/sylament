@@ -31,6 +31,7 @@
             {%- set itemCopyAttributes = item.copyable ? stimulus_controller(clipboardController, {
                 text: item.copyableState,
                 message: item.copyMessage,
+                failureMessage: 'components/copyable.messages.failed'|trans(domain: 'sylament'),
                 duration: item.copyMessageDuration,
             })
                 |stimulus_action(clipboardController, 'copy', 'click')

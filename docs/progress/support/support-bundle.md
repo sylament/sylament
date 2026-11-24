@@ -82,7 +82,7 @@ One pass serves every package, since each package that ships a test-only service
 ### The catalogue holds the keys support's code reads
 
 [`sylament+intl-icu.en.yaml`](../../../packages/support/translations/sylament+intl-icu.en.yaml) is the `sylament` domain, Filament's `filament::` namespace, and carries Filament's `components/*` keys for the badge, breadcrumbs, copyable, modal, pagination, section and tabs texts support's templates and traits render.
-Filament's `components/button` (`messages.uploading_file`), `components/input/one-time-code`, `loading` and `components/copyable.messages.failed` keys ship nowhere, because no ported code renders them: the button's upload state, the one-time-code input and the loading indicator's text are unported, and the copy failure is [a gap of the controller](copyable.md#a-failed-copy-shows-nothing-where-filament-says-could-not-copy).
+Filament's `components/button` (`messages.uploading_file`), `components/input/one-time-code`, and `loading` keys ship nowhere, because no ported code renders them: the button's upload state, the one-time-code input and the loading indicator's text are unported.
 
 ## Divergences
 

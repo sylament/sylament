@@ -44,10 +44,11 @@ describe('its swatches', function (): void {
             $swatch->attr('style'),
             $swatch->attr('data-sylament--support--clipboard-text-value'),
             $swatch->attr('data-sylament--support--clipboard-message-value'),
+            $swatch->attr('data-sylament--support--clipboard-failure-message-value'),
             $swatch->attr('data-sylament--support--clipboard-duration-value'),
         ]))->toBe([
-            ['button', 'Copy #fff', 'background-color: #fff', '#fff', 'Paint copied', '500'],
-            ['button', 'Copy colour', null, 'red;position:fixed', 'Paint copied', '500'],
+            ['button', 'Copy #fff', 'background-color: #fff', '#fff', 'Paint copied', 'Could not copy', '500'],
+            ['button', 'Copy colour', null, 'red;position:fixed', 'Paint copied', 'Could not copy', '500'],
         ])
             ->and($swatches->filter(SupportSelectors::COPYABLE . SupportSelectors::CLIPBOARD_CONTROLLER . SupportSelectors::CLIPBOARD_COPY . ':not([tabindex])'))->toHaveCount(2);
     });

@@ -150,6 +150,7 @@ describe('its markup', function (): void {
         $badged = $this->renderViewComponent(TextColumn::make('tags')->record(['tags' => ['oak', 'ash']])->badge()->copyable()->tooltip('Tag'));
 
         expect($plain)->toContainElement(Selectors::TEXT_ITEM . ' span' . SupportSelectors::COPYABLE . '[role="button"][title="Price"]' . SupportSelectors::clipboardValue('text', '$1,234.50'), '$1,234.50')
+            ->and($plain->filter(SupportSelectors::COPYABLE)->attr('data-sylament--support--clipboard-failure-message-value'))->toBe('Could not copy')
             ->and($plain->filter(Selectors::TEXT_ITEM . ' > svg')->text())->toBe('Star')
             ->and($plain->filter(SupportSelectors::COPYABLE . ' svg, button'))->toHaveCount(0)
             ->and($badged->filter(SupportSelectors::BADGE . SupportSelectors::COPYABLE . '[role="button"][title="Tag"]')->each(static fn (Crawler $badge): ?string => $badge->attr('data-sylament--support--clipboard-text-value')))->toBe(['oak', 'ash']);

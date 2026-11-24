@@ -5,6 +5,7 @@ components:
                 label: 'Deselect all'
             select_all:
                 label: 'Select all'
+        required_description: 'Select at least one option.'
     file_upload:
         actions:
             download:
@@ -160,6 +161,7 @@ components:
         no_options_message: 'No options available.'
         no_search_results_message: 'No options match your search.'
         placeholder: 'Select an option'
+        required_description: 'Select an option.'
         search_label: 'Search'
         search_prompt: 'Start typing to search...'
         searching_message: 'Searching...'
@@ -183,3 +185,4 @@ components:
         boolean:
             'false': 'No'
             'true': 'Yes'
+        required_description: 'Select at least one option.'

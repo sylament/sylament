@@ -51,7 +51,7 @@ It ships no JavaScript: the controls are real radios and checkboxes bound with `
 | [`CanFixIndistinctState`](../../../packages/forms/src/Components/Concerns/CanFixIndistinctState.php) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [can-fix-indistinct-state.md](can-fix-indistinct-state.md) |
 | [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [can-disable-options-when-selected-in-sibling-repeater-items.md](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 | The non-required single-choice mode — `<button aria-pressed>` and the `toggleButtonsFormComponent` Alpine component | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [detail](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) |
-| `getRequiredDescription()` | [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — | [field.md](field.md#the-accessibility-members-describe-what-the-wrapper-renders) |
+| `getRequiredDescription()` — `components.toggle_buttons.required_description` while required and enabled | [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [field.md](field.md#the-accessibility-members-describe-what-the-wrapper-renders) |
 
 ## Details
 

@@ -68,6 +68,14 @@ describe('rendering', function (): void {
             ->and($invalid($tester->call('save')->render()->crawler()))->toBe(['true', 'true']);
     });
 
+    it('describes a required, enabled list to a screen reader as needing at least one option', function (): void {
+        $list = static fn (): CheckboxList => CheckboxList::make('tags')->options(['fern' => 'Fern'])->required();
+        $description = Selectors::FIELD_WRAPPER . ' span' . SupportSelectors::SCREEN_READER_ONLY . '[id="schema.tags-required"]';
+
+        expect($this->renderSchemaComponent($list()))->toContainElement($description, 'Select at least one option.')
+            ->and($this->renderSchemaComponent($list()->disabled()))->not->toContainElement($description);
+    });
+
     it('carries the disabled and autofocus switches on its options', function (): void {
         $options = ['fern' => 'Fern', 'moss' => 'Moss'];
         $switches = fn (CheckboxList $list): array => $this->renderSchemaComponent($list)->filter('input[type="checkbox"]')->each(static fn (Crawler $input): array => [$input->attr('disabled') !== null, $input->attr('autofocus') !== null]);

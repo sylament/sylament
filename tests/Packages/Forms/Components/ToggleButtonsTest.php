@@ -309,6 +309,14 @@ describe('validation', function (): void {
 });
 
 describe('required()', function (): void {
+    it('describes a required, enabled field to a screen reader as needing at least one option', function (): void {
+        $field = static fn (): ToggleButtons => ToggleButtons::make('level')->options(['low' => 'Low'])->required();
+        $description = Selectors::FIELD_WRAPPER . ' span' . SupportSelectors::SCREEN_READER_ONLY . '[id="schema.level-required"]';
+
+        expect($this->renderSchemaComponent($field()))->toContainElement($description, 'Select at least one option.')
+            ->and($this->renderSchemaComponent($field()->disabled()))->not->toContainElement($description);
+    });
+
     it('rejects no answer in either multiplicity and counts a boolean No as an answer', function (): void {
         $host = $this->validatingRecordMappingHost();
         $schema = $host->mapping(

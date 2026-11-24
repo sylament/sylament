@@ -142,6 +142,13 @@ class ToggleButtons extends Field implements Contracts\CanDisableOptions, HasNes
         return (bool) $this->evaluate($this->isMultiple);
     }
 
+    public function getRequiredDescription(): ?string
+    {
+        return ($this->isRequired() && (! $this->isDisabled()))
+            ? new TranslatableMessage('components.toggle_buttons.required_description', domain: 'sylament-forms')->trans($this->getTranslator())
+            : null;
+    }
+
     public function getTemplate(): ?string
     {
         return $this->evaluate($this->template)

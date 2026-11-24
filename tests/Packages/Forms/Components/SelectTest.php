@@ -173,6 +173,18 @@ describe('JS control render', function (): void {
             ->and($this->renderSchemaComponent(Select::make('plant')->options(['fern' => 'Fern'])->native(false))->filter(Selectors::JS_CONTROL)->attr('aria-required'))->toBeNull();
     });
 
+    it('describes a required, enabled JS control to a screen reader as needing an option, where a required plain native select needs no description', function (): void {
+        $select = static fn (): Select => Select::make('plant')->options(['fern' => 'Fern'])->required();
+        $description = Selectors::FIELD_WRAPPER . ' span' . SupportSelectors::SCREEN_READER_ONLY . '[id="schema.plant-required"]';
+
+        expect($this->renderSchemaComponent($select()->native(false)))
+            ->toContainElement(Selectors::JS_CONTROL . '[aria-describedby="schema.plant-required"]')
+            ->toContainElement($description, 'Select an option.')
+            ->and($this->renderSchemaComponent($select()->native(false)->disabled()))->not->toContainElement($description)
+            ->and($this->renderSchemaComponent($select()))->toContainElement(Selectors::NATIVE_SELECT . ':not([aria-describedby])')
+            ->not->toContainElement($description);
+    });
+
     it('hands the controller the selection with its labels, and holds a selected value the map lacks as a selected option, even beside a key that reads as the same number', function (): void {
         $render = $this->createLiveComponent(SelectForm::class)->fillForm(['chosen' => 'moss', 'searchable' => 'yew', 'codes' => ['001']])->render()->crawler();
 

@@ -324,6 +324,13 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNest
         return $constraints;
     }
 
+    public function getRequiredDescription(): ?string
+    {
+        return ($this->isRequired() && (! $this->isDisabled()))
+            ? new TranslatableMessage('components.checkbox_list.required_description', domain: 'sylament-forms')->trans($this->getTranslator())
+            : null;
+    }
+
     /**
      * Run a declared `…Action()` modifier over a freshly built action, keeping the
      * built one when the modifier declares no replacement.

@@ -1155,6 +1155,15 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return $this->isMultiple();
     }
 
+    public function getRequiredDescription(): ?string
+    {
+        if ((! $this->isRequired()) || $this->isDisabled() || ($this->isNative() && (! $this->isSearchable()) && (! $this->isMultiple()) && (! $this->isHtmlAllowed()))) {
+            return null;
+        }
+
+        return new TranslatableMessage('components.select.required_description', domain: 'sylament-forms')->trans($this->getTranslator());
+    }
+
     /**
      * Validation runs against the raw state. A multiple select whose raw state is
      * not an array is failed by a type constraint alone — `Choice(multiple: true)`

@@ -20,8 +20,8 @@ describe('render', function (): void {
 
         expect($render->filter(sprintf('[id="%s"]', $group->attr('aria-labelledby')))->text())->toBe('Plan')
             ->and($group->filter(Selectors::RADIO)->each(static fn (Crawler $input): array => [$input->attr('value'), $input->attr('id'), $input->attr('name'), $input->attr('data-model'), $input->attr('aria-invalid')]))->toBe([
-                ['basic', 'schema.plan-basic', 'schema.plan', 'norender|data.plan', 'false'],
-                ['pro', 'schema.plan-pro', 'schema.plan', 'norender|data.plan', 'false'],
+                ['basic', 'schema.plan-basic', 'schema.plan', 'norender|data.plan', null],
+                ['pro', 'schema.plan-pro', 'schema.plan', 'norender|data.plan', null],
             ])
             ->and($group->filter('label')->each(static fn (Crawler $option): array => [
                 $option->filter(Selectors::RADIO_OPTION_LABEL)->text(),
@@ -136,18 +136,18 @@ describe('layout', function (): void {
 });
 
 describe('validation', function (): void {
-    it('refuses a value it does not offer, marking the group and every option invalid', function (): void {
-        $group = static fn (Crawler $render): ?string => $render->filter('[role="radiogroup"][aria-labelledby="form.plan-label"]')->attr('aria-invalid');
-        $invalid = static fn (Crawler $render): array => $render->filter('[aria-labelledby="form.plan-label"] ' . Selectors::RADIO)->each(static fn (Crawler $input): ?string => $input->attr('aria-invalid'));
+    it('refuses a value it does not offer, marking the group and every option invalid and described by the error list', function (): void {
+        $group = static fn (Crawler $render): array => $render->filter('[role="radiogroup"][aria-labelledby="form.plan-label"]')->each(static fn (Crawler $group): array => [$group->attr('aria-invalid'), $group->attr('aria-describedby')]);
+        $options = static fn (Crawler $render): array => $render->filter('[aria-labelledby="form.plan-label"] ' . Selectors::RADIO)->each(static fn (Crawler $input): array => [$input->attr('aria-invalid'), $input->attr('aria-describedby')]);
         $tester = $this->createLiveComponent(RadioForm::class)->fillForm(['plan' => 'gold']);
 
-        expect($invalid($tester->render()->crawler()))->toBe(['false', 'false', 'false'])
-            ->and($group($tester->render()->crawler()))->toBeNull();
+        expect($options($tester->render()->crawler()))->toBe([[null, null], [null, null], [null, null]])
+            ->and($group($tester->render()->crawler()))->toBe([[null, null]]);
 
         $tester->call('save')->assertHasFormErrors(['plan' => Choice::class]);
 
-        expect($invalid($tester->render()->crawler()))->toBe(['true', 'true', 'true'])
-            ->and($group($tester->render()->crawler()))->toBe('true');
+        expect($options($tester->render()->crawler()))->toBe([['true', 'form.plan-error'], ['true', 'form.plan-error'], ['true', 'form.plan-error']])
+            ->and($group($tester->render()->crawler()))->toBe([['true', 'form.plan-error']]);
     });
 
     it('validates an enum radio by its cases, refusing a value no case backs though the enum cast reads it as nothing selected', function (string $state, bool $isValid): void {
@@ -185,6 +185,15 @@ describe('validation', function (): void {
 });
 
 describe('required', function (): void {
+    it('marks a required, enabled group aria-required, never a disabled one, and describes the group and every radio by its helper text', function (): void {
+        $radio = static fn (): Radio => Radio::make('plan')->options(['basic' => 'Basic', 'pro' => 'Pro'])->helperText('Billed monthly.')->required();
+        $render = $this->renderSchemaComponent($radio());
+
+        expect($render)->toContainElement(Selectors::RADIO_GROUP . '[aria-required="true"][aria-describedby="schema.plan-helper-text"]')
+            ->and($render->filter(Selectors::RADIO . '[aria-describedby="schema.plan-helper-text"]'))->toHaveCount(2)
+            ->and($this->renderSchemaComponent($radio()->disabled()))->toContainElement(Selectors::RADIO_GROUP . ':not([aria-required])');
+    });
+
     it('accepts either answer of a required boolean radio, No included, refuses only no answer, and renders no required attribute', function (): void {
         $tester = $this->createLiveComponent(RadioForm::class);
         $inputs = $tester->render()->crawler()->filter('[aria-labelledby="form.subscribed-label"] ' . Selectors::RADIO);

@@ -112,8 +112,8 @@ The port keeps only the attribute on each input and emits no class pair, with [`
 
 This is not a Radio decision — it is the translation already made for [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css), whose vendor source keys off `.fi-invalid` in exactly the same way, and it holds for the same two reasons: the attribute is the part a screen reader reads, and one emission serves both jobs where the vendor pair serves only styling.
 The `valid` half has nothing to key at all — the base rule *is* the valid state — so it is dropped rather than emitted as a class no stylesheet mentions.
-It is a bare boolean, so a valid field renders `aria-invalid="false"` instead of dropping the attribute, because the bag [stringifies booleans for `aria-` names](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value); `CheckboxList` and `ToggleButtons` render it the same way, while the controls that spread [`getAccessibilityAttributes()`](field.md#the-accessibility-members-describe-what-the-wrapper-renders) render `"true"` or nothing, as Filament's do.
-The radiogroup carries `aria-invalid="true"` too while the field has an error, as Filament's does, and no attribute while it is valid.
+The attribute comes from [`getAccessibilityAttributes()`](field.md#the-accessibility-members-describe-what-the-wrapper-renders), spread on every input as on `CheckboxList`'s and `ToggleButtons`', so an input carries `aria-invalid="true"` while the field has an error and no attribute while it is valid, as Filament's does.
+The radiogroup takes the same pair, so it carries `aria-invalid="true"` and the `aria-describedby` its inputs carry, and an `aria-required="true"` while the field is required and enabled, as Filament's does.
 Reversible by adding the pair back if a consumer's CSS needs a class hook the attribute selector cannot give it.
 
 ### `extraAttributes()` stays on the field wrapper

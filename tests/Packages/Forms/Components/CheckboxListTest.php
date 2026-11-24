@@ -60,19 +60,26 @@ describe('rendering', function (): void {
         expect($this->renderSchemaComponent(CheckboxList::make('tags')->options(['first' => 'First'])->stateCast(TaggingStateCast::First))->filter('input[type="checkbox"]')->each(static fn (Crawler $input): array => [$input->attr('value'), $input->attr('checked')]))->toBe([['first', null]]);
     });
 
-    it('marks every option invalid once the field has an error', function (): void {
-        $invalid = static fn (Crawler $render): array => $render->filter('[aria-labelledby="form.chosen-label"] input[type="checkbox"]')->each(static fn (Crawler $input): ?string => $input->attr('aria-invalid'));
+    it('marks every option invalid once the field has an error, and describes the group and every option by the error list, the group staying unmarked', function (): void {
+        $options = static fn (Crawler $render): array => $render->filter('[aria-labelledby="form.chosen-label"] input[type="checkbox"]')->each(static fn (Crawler $input): array => [$input->attr('aria-invalid'), $input->attr('aria-describedby')]);
         $tester = $this->createLiveComponent(CheckboxListForm::class);
 
-        expect($invalid($tester->render()->crawler()))->toBe(['false', 'false'])
-            ->and($invalid($tester->call('save')->render()->crawler()))->toBe(['true', 'true']);
+        expect($options($tester->render()->crawler()))->toBe([[null, 'form.chosen-required'], [null, 'form.chosen-required']]);
+
+        $render = $tester->call('save')->render()->crawler();
+
+        expect($options($render))->toBe([['true', 'form.chosen-error form.chosen-required'], ['true', 'form.chosen-error form.chosen-required']])
+            ->and($render)->toContainElement('[role="group"][aria-labelledby="form.chosen-label"][aria-describedby="form.chosen-error form.chosen-required"]:not([aria-invalid])');
     });
 
-    it('describes a required, enabled list to a screen reader as needing at least one option', function (): void {
-        $list = static fn (): CheckboxList => CheckboxList::make('tags')->options(['fern' => 'Fern'])->required();
+    it('describes a required, enabled list to a screen reader as needing at least one option, naming the text after the helper text on the group and every option', function (): void {
+        $list = static fn (): CheckboxList => CheckboxList::make('tags')->options(['fern' => 'Fern', 'moss' => 'Moss'])->helperText('Pick the ones you grow.')->required();
         $description = Selectors::FIELD_WRAPPER . ' span' . SupportSelectors::SCREEN_READER_ONLY . '[id="schema.tags-required"]';
+        $render = $this->renderSchemaComponent($list());
 
-        expect($this->renderSchemaComponent($list()))->toContainElement($description, 'Select at least one option.')
+        expect($render)->toContainElement($description, 'Select at least one option.')
+            ->toContainElement('[role="group"][aria-describedby="schema.tags-helper-text schema.tags-required"]')
+            ->and($render->filter('input[type="checkbox"][aria-describedby="schema.tags-helper-text schema.tags-required"]'))->toHaveCount(2)
             ->and($this->renderSchemaComponent($list()->disabled()))->not->toContainElement($description);
     });
 

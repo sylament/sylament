@@ -227,12 +227,12 @@ Nothing strips or rewrites them — silently discarding the caller's content wou
 
 ### A single, non-required field's inputs carry `aria-invalid` where Filament's deselectable buttons carry none
 
-Filament marks the inputs of its checkbox and radio arms with `aria-invalid` while the field has an error, and leaves the deselectable arm's buttons unmarked (`ToggleButtons.php:119`, `:256`: `$isToggleButton ? null : …`).
-It marks the container only in the single-required arm, which is also the `radiogroup` one (`:134`, `:265`); every other container is a `role="group"` carrying no `aria-invalid`.
+Filament spreads the field's `aria-describedby` from `getAccessibilityAttributes()` on every input, button and container, and its `aria-invalid` on the inputs of its checkbox and radio arms, leaving the deselectable arm's buttons unmarked (`ToggleButtons.php:118-119`, `:255-256`: `$isToggleButton ? null : …`).
+It marks the container `aria-invalid` only in the single-required arm, which is also the `radiogroup` one, and `aria-required="true"` there while the field is enabled (`:133-137`, `:264-268`); every other container is a `role="group"` carrying neither.
 Neither tree emits a `fi-valid` / `fi-invalid` class pair, and vendor's `toggle-buttons.css` has no invalid arm (the buttons carry a colour, not a ring).
 
-The port marks the container of a single, required field `aria-invalid="true"` while the field has an error, in both trees, as Filament does, and writes `aria-invalid` on every input it renders, the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid)); no stylesheet keys off it.
-A single, non-required field renders as radios here, because the [deselectable arm](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) is not built, so its inputs carry the attribute where Filament's buttons carry none.
+The port gives the container the same three attributes under the same gates, in both trees, and spreads the whole pair on every input it renders, its `aria-invalid` being the attribute the port's other option fields emit in place of their vendor class pair ([`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid)); no stylesheet keys off it.
+A single, non-required field renders as radios here, because the [deselectable arm](#a-non-required-single-choice-renders-as-deselectable-toggle-buttons) is not built, so its inputs carry `aria-invalid` where Filament's buttons carry none, and its container stays a `role="radiogroup"` around those radios where Filament's, holding buttons, is a `group`; like Filament's, it carries no `aria-invalid` or `aria-required`.
 
 ### The extra input attributes win where Filament's lose by going last
 

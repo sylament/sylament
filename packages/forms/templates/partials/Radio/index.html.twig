@@ -1,7 +1,7 @@
 {% set state = component.getOptionComparisonState %}
 {% set stateKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set isInline = component.isInline %}
-{% set hasErrors = component.getErrorMessages is not empty %}
+{% set accessibilityAttributes = component.getAccessibilityAttributes %}
 
 {% set gridAttributes = isInline
     ? null
@@ -13,8 +13,8 @@
                 class: ['sy', 'sy-fo-radio', {'sy-inline': isInline}],
                 role: 'radiogroup',
                 'aria-labelledby': component.getId ~ '-label',
-                'aria-invalid': hasErrors ? 'true' : null,
-            }, gridAttributes) }}
+                'aria-required': component.isRequired and not component.isDisabled ? 'true' : null,
+            }, accessibilityAttributes, gridAttributes) }}
     >
         {% for value, label in component.getOptions %}
             <label class="sy-fo-radio-label">
@@ -26,10 +26,9 @@
                     value: value,
                     checked: stateKeys has some (key => key is same as (value ~ '')),
                     'data-model': component.getDataModel,
-                    'aria-invalid': hasErrors,
                     disabled: component.isDisabled or component.isOptionDisabled(value, label),
                     autofocus: loop.first and component.isAutofocused,
-                }, component.getExtraInputAttributes) }}>
+                }, accessibilityAttributes, component.getExtraInputAttributes) }}>
 
                 <div class="sy-fo-radio-label-text">
                     <p>{{ label }}</p>

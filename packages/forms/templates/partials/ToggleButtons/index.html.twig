@@ -2,7 +2,8 @@
 {% set stateKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set isMultiple = component.isMultiple %}
 {% set areButtonLabelsHidden = component.areButtonLabelsHidden %}
-{% set hasErrors = component.getErrorMessages is not empty %}
+{% set isSingleRequired = not isMultiple and component.isRequired %}
+{% set accessibilityAttributes = component.getAccessibilityAttributes %}
 
 {% set gridAttributes = component.isInline
     ? null
@@ -14,7 +15,9 @@
                 class: ['sy', 'sy-fo-toggle-buttons', {'sy-inline': component.isInline}],
                 role: isMultiple ? 'group' : 'radiogroup',
                 'aria-labelledby': component.getId ~ '-label',
-                'aria-invalid': not isMultiple and component.isRequired and hasErrors ? 'true' : null,
+                'aria-describedby': accessibilityAttributes['aria-describedby'],
+                'aria-invalid': isSingleRequired ? accessibilityAttributes['aria-invalid'] : null,
+                'aria-required': isSingleRequired and not component.isDisabled ? 'true' : null,
             }, gridAttributes) }}
     >
         {% for value, label in component.getOptions %}
@@ -35,10 +38,9 @@
                     value: value,
                     checked: stateKeys has some (key => key is same as (value ~ '')),
                     'data-model': component.getDataModel,
-                    'aria-invalid': hasErrors,
                     disabled: isOptionDisabled,
                     autofocus: loop.first and component.isAutofocused,
-                }, component.getExtraInputAttributes) }}>
+                }, accessibilityAttributes, component.getExtraInputAttributes) }}>
 
                 <label {{ attrs({
                     class: ['sy-btn', 'sy-size-md', {'sy-disabled': isOptionDisabled}, colorAttrs.class],

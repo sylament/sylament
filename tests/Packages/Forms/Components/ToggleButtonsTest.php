@@ -64,7 +64,7 @@ describe('rendering', function (): void {
         $tester = $this->createLiveComponent(BoolFieldsForm::class);
         $before = $tester->render()->crawler();
 
-        expect($before->filter('input[data-model$="data.channels"][aria-invalid="false"], input[data-model$="data.size"][aria-invalid="false"]'))->toHaveCount(4)
+        expect($before->filter('input[data-model$="data.channels"]:not([aria-invalid]), input[data-model$="data.size"]:not([aria-invalid])'))->toHaveCount(4)
             ->and($before->filter('[aria-labelledby$="-label"][aria-invalid]'))->toHaveCount(0);
 
         $render = $tester->fillForm(['confirmed' => 'x', 'groupedCode' => 'x'])->call('save')->assertHasFormErrors(['channels', 'size', 'confirmed', 'groupedCode'])->render()->crawler();
@@ -77,8 +77,21 @@ describe('rendering', function (): void {
             ->and($render->filter('[role="radiogroup"][aria-labelledby="form.groupedCode-label"]:not([aria-invalid])'))->toHaveCount(1)
             ->and($render->filter('[role="radiogroup"][aria-invalid]')->each(static fn (Crawler $group): string => $group->attr('aria-labelledby') . '=' . $group->attr('aria-invalid')))
             ->toBe(['form.size-label=true', 'form.level-label=true'])
-            ->and($render->filter('[role="group"][aria-invalid]'))->toHaveCount(0);
+            ->and($render->filter('[role="group"][aria-invalid]'))->toHaveCount(0)
+            ->and($render)->toContainElement('[role="radiogroup"][aria-labelledby="form.level-label"][aria-describedby="form.level-error form.level-required"]')
+            ->toContainElement('input[data-model$="data.level"][aria-describedby="form.level-error form.level-required"]');
     });
+
+    it('describes its group and every input by its helper text and required description, and marks a single, required, enabled group aria-required, never a multiple or a disabled one', function (bool $grouped): void {
+        $field = static fn (): ToggleButtons => ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->helperText('Pick one.')->required()->grouped($grouped);
+        $described = '[aria-describedby="schema.level-helper-text schema.level-required"]';
+        $single = $this->renderSchemaComponent($field());
+
+        expect($single)->toContainElement('[role="radiogroup"][aria-required="true"]' . $described)
+            ->and($single->filter('input[type="radio"]' . $described))->toHaveCount(2)
+            ->and($this->renderSchemaComponent($field()->multiple()))->toContainElement('[role="group"]' . $described . ':not([aria-required])')
+            ->and($this->renderSchemaComponent($field()->disabled()))->toContainElement('[role="radiogroup"][aria-describedby="schema.level-helper-text"]:not([aria-required])');
+    })->with('variants');
 
     it("marks a refused option disabled on its input and its label's class, not by a label attribute, and every option of a disabled field", function (bool $grouped): void {
         $render = $this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->disableOptionWhen(fn (string $value): bool => $value === 'high')->grouped($grouped));

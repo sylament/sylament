@@ -5,7 +5,7 @@
 {% set options = component.getOptions %}
 {% set isDisabled = component.isDisabled %}
 {% set isHtmlAllowed = component.isHtmlAllowed %}
-{% set hasErrors = component.getErrorMessages is not empty %}
+{% set accessibilityAttributes = component.getAccessibilityAttributes %}
 
 {% set hasSearch = component.isSearchable and not isDisabled %}
 {% set hasBulkToggle = component.isBulkToggleable and not isDisabled and options is not empty %}
@@ -20,6 +20,7 @@
                 class: ['sy', 'sy-fo-checkbox-list'],
                 role: 'group',
                 'aria-labelledby': component.getId ~ '-label',
+                'aria-describedby': accessibilityAttributes['aria-describedby'],
             }, hasController ? stimulus_controller(controller, {debounce: component.getSearchDebounce}) : null) }}
     >
         {% if hasSearch %}
@@ -63,10 +64,9 @@
                             value: value,
                             checked: stateKeys has some (key => key is same as (value ~ '')),
                             'data-model': component.getDataModel,
-                            'aria-invalid': hasErrors,
                             disabled: isDisabled or component.isOptionDisabled(value, label),
                             autofocus: loop.first and component.isAutofocused,
-                        }, component.getExtraInputAttributes) }}>
+                        }, accessibilityAttributes, component.getExtraInputAttributes) }}>
 
                         <div class="sy-fo-checkbox-list-option-text">
                             {# Security: allowHtml() renders the option label unescaped, and only the

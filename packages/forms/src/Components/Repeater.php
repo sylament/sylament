@@ -1336,7 +1336,8 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
      * The per-item preamble a template cannot express in a single getter call:
      * each item's triggers are the shared structural action bound to that item's
      * key, and a surface that is off drops out of the row rather than rendering
-     * an invisible trigger.
+     * an inert trigger; the move buttons a drag-only list renders visually hidden
+     * are a screen reader's working path, not an inert one.
      *
      * @return array<array-key, mixed>
      */

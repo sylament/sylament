@@ -44,20 +44,12 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 | [`scrollable(false)` overflow dropdown](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [the dropdown branch of `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-overflow-dropdown-rides-on-supports-dropdown-and-renders-its-active-trigger-server-side) |
 | [`sy-cloak` while persisting](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`x-cloak` on the nav](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#cloaking-is-limited-to-persisttab-so-no-js-still-shows-a-tab) |
 | [`tabs.css`](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
-| `aria-label` on the overflow "more" button and the active overflow trigger | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | todo | — | [detail](#the-overflow-controls-carry-no-accessible-name) |
+| `aria-label` on the overflow "more" button and the active overflow trigger | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-active-overflow-trigger-names-itself-with-a-port-added-message) |
 | `startRenderHooks()` / `endRenderHooks()` / `getStartRenderHooks()` / `getEndRenderHooks()` / `getRenderHookScopes()` | [`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | blocked | a render-hook registry | [detail](#the-render-hook-trio-waits-on-the-render-hook-design) |
 | `HasExtraAlpineAttributes` | [`Concerns/HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) · [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `getTabVisibilityJs()` (`hiddenJs`/`visibleJs` per tab) | [the closure in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) |
 
 ## Details
-
-### The overflow controls carry no accessible name
-
-Filament gives the ellipsis "more" button `aria-label="More tabs"` and the active overflow-trigger tab `aria-label="More tabs: {tab label}"`, both from `filament-schemas::components.tabs.actions.more.label`.
-Ours renders neither: the button holds only its icon, and the trigger tab holds only the tab's label, so a screen reader announces an unnamed button.
-The key is `components.tabs.actions.more.label` in `sylament-schemas`, and the trigger's text is a second, parameterised message (`More tabs: {tab}`) rather than a join in Twig, as [`catalogues.md`](../../../.claude/rules/catalogues.md) requires of a composed text; neither is in the catalogue yet.
-A `Markup` tab label is reduced to plain text before it enters that message, as Filament's `strip_tags()` does (`Tabs.php`) and as [the `striptags` rule](../../internals/i18n.md#a-message-renders-exactly-as-the-string-it-becomes) requires.
-Next step: add both messages and render them as the two `aria-label` values.
 
 ### The render-hook trio waits on the render-hook design
 
@@ -193,6 +185,12 @@ Reverse it by spreading the extra attributes after the wiring.
 `scrollable(false)` ports whole, onto support's [`Dropdown`](../support/dropdown.md)/[`DropdownItem`](../support/dropdown-item.md) rather than Filament's `x-float` panel: the trigger tabs, the ellipsis "more" button and the dropdown list are all in the DOM from the server, and the controller decides what is visible after measuring.
 Two differences fall out of the shared chrome.
 The active trigger tab renders `sy-active` **and** `aria-current="true"` server-side (Filament binds only the class, in Alpine) because support's `TabsItem` derives `aria-current` from `active`; and the nav's `sy-invisible` guard is added by the controller before its first measurement rather than rendered, so a no-JS page keeps a visible nav.
+
+### The active overflow trigger names itself with a port-added message
+
+The ellipsis "more" button carries `components.tabs.actions.more.label` (`More tabs`), Filament's key, and each trigger tab carries `aria-label="More tabs: {tab}"` from `components.tabs.actions.more.active_label`, a key the port adds beside it because [`catalogues.md`](../../../.claude/rules/catalogues.md) makes a composed text one message and Filament joins the two with `. ': ' .` in PHP.
+The `{tab}` argument is the tab's label reduced by `striptags` and `trim` ([the rule](../../internals/i18n.md#a-message-renders-exactly-as-the-string-it-becomes)), where Filament decodes entities after `strip_tags()`; a `Markup` label holding an entity such as `&amp;` therefore names the trigger with the entity written out.
+Every tab renders its own trigger with its own name from the server and the controller only toggles which one shows, so no client update replaces the name.
 
 ### Alpine-only surface is skipped, not deferred
 

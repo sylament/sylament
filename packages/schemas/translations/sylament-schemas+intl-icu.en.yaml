@@ -1,4 +1,9 @@
 components:
+    tabs:
+        actions:
+            more:
+                active_label: 'More tabs: {tab}'
+                label: 'More tabs'
     wizard:
         actions:
             next_step:

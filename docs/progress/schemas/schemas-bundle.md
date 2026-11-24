@@ -56,8 +56,8 @@ Next step: port them with the `Commands/` subtree.
 
 ### The catalogue holds only the keys schemas' code reads
 
-The bundle [wires nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and `sylament-schemas+intl-icu.en.yaml` holds the [wizard's](wizard.md#the-default-back-and-next-labels-and-the-step-status-texts-come-from-the-catalogue) texts.
-Filament's other keys have no host here and ship nowhere until one exists: `components.callout.statuses.*`, `components.tabs.actions.more.label`, and the support-namespace `loading.*`, which Filament's lazy schemas and JS-rendered components read.
+The bundle [wires nothing](../../internals/i18n.md#every-package-ships-its-catalogue-in-translations-which-loads-with-no-wiring), and `sylament-schemas+intl-icu.en.yaml` holds the [wizard's](wizard.md#the-default-back-and-next-labels-and-the-step-status-texts-come-from-the-catalogue) texts and the [Tabs overflow controls'](tabs.md#the-active-overflow-trigger-names-itself-with-a-port-added-message).
+Filament's other keys have no host here and ship nowhere until one exists: `components.callout.statuses.*` and the support-namespace `loading.*`, which Filament's lazy schemas and JS-rendered components read.
 The Section collapse and expand labels, and the Tabs navigation label, are support's own keys in the `sylament` domain, because support's templates render them.
 `validators.en.yaml` holds *This value cannot be changed.*, the record-key refusal Symfony's own catalogue lacks; *This value is already used.* and *This value should not be blank.* are Symfony's and need no entry.
 

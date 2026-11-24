@@ -13,6 +13,7 @@ use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
+use Twig\Markup;
 
 describe('client mode', function (): void {
     it('names its tablist after its label and shows each visible tab with its panel, leaving a hidden one out of both', function (): void {
@@ -90,12 +91,19 @@ describe('client mode', function (): void {
             ->toContainElement(Selectors::tabsTarget('triggerTab'), 'chevron-downOpen 3')
             ->toContainElement(Selectors::tabsTarget('triggerTab') . '[aria-current="true"]', 'chevron-downClosed')
             ->toContainElement(Selectors::tabsTarget('dropdown') . ' ' . Selectors::tabsTarget('moreButton'), 'ellipsis-horizontal')
+            ->toContainButtons(Selectors::tabsTarget('moreButton'), ['More tabs'])
+            ->toContainButtons(Selectors::tabsTarget('triggerTab'), ['More tabs: Open', 'More tabs: Closed'])
             ->toContainElement(Selectors::tabsTarget('dropdownItem'), 'Open 3')
             ->toContainElement(Selectors::tabsTarget('dropdownItem') . SupportSelectors::SELECTED, 'Closed')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->tabs($tabs())))
             ->toContainElement(Selectors::TABS . ':not([data-sylament--schemas--tabs-scrollable-value])')
             ->toContainButtons(Selectors::TAB, ['Open 3', 'Closed'])
             ->not->toContainElement(Selectors::tabsTarget('dropdown'));
+    });
+
+    it('names an overflow trigger after its tab with the markup of a label stripped', function (): void {
+        expect($this->renderSchemaComponent(Tabs::make('Orders')->scrollable(false)->tabs([Tab::make('Open')->label(new Markup('<em>Open</em> now', 'UTF-8'))])))
+            ->toContainButtons(Selectors::tabsTarget('triggerTab'), ['More tabs: Open now']);
     });
 
     it('hides itself until its controller has restored a persisted tab, and only then', function (): void {

@@ -1507,19 +1507,17 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     /**
      * A move action's reordering hooks, as Filament's: the item's description,
      * the direction, a visually hidden control's tab stop, and, on a move action
-     * no modifier and no modal reshapes, the mount the repeater controller takes
-     * over to announce the move once it lands.
+     * that still mounts its own closure and opens no modal, the mount the
+     * repeater controller takes over to announce the move once it lands.
      *
      * @return array<string, mixed>
      */
     protected function getReorderingActionAttributes(Action $action, string $direction, bool $isVisuallyHidden): array
     {
-        $modifier = $direction === 'up' ? $this->modifyMoveUpActionUsing : $this->modifyMoveDownActionUsing;
-
         return [
             ...($isVisuallyHidden ? ['tabindex' => '-1', 'data-reorder-hidden' => true] : []),
             'data-reorder-direction' => $direction,
-            ...(($modifier === null && ! $action->shouldOpenModal()) ? ['data-reorder-action' => $action->getName()] : []),
+            ...(($action->getAction() instanceof Closure && $action->isLiveComponentClickHandlerEnabled() && ! $action->shouldOpenModal()) ? ['data-reorder-action' => $action->getName()] : []),
             'aria-describedby' => $this->getReorderingDescriptionId($this->getItemArgument($action->getArguments())),
         ];
     }

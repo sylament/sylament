@@ -468,7 +468,7 @@ describe('screen-reader reordering', function (): void {
         'a reorderAction() modifier' => [fn (): Repeater => Repeater::make('lines')->reorderAction(static fn (Action $action): Action => $action->color('primary')), ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']], [[null, null], [null, null]]],
     ]);
 
-    it('hands the controller only a move button no modifier or modal reshapes', function (Closure $configure, bool $confirmsEveryAction, array $buttons): void {
+    it('hands the controller every move button that still mounts its own action and opens no modal', function (Closure $configure, bool $confirmsEveryAction, array $buttons): void {
         $repeater = $configure(Repeater::make('lines')->reorderableWithButtons()->components([TextInput::make('name')]));
         $render = fn (): Crawler => $this->renderSchemaComponent($repeater, ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]]);
         $crawler = $confirmsEveryAction ? Action::configureUsing(static fn (Action $action): Action => $action->requiresConfirmation(), during: $render) : $render();
@@ -476,7 +476,8 @@ describe('screen-reader reordering', function (): void {
         expect($crawler->filter(FormsSelectors::repeaterItem('b') . ' [data-reorder-direction]')->each(static fn (Crawler $button): array => [$button->attr('data-reorder-direction'), $button->attr('data-reorder-action'), $button->attr('aria-describedby') !== null]))->toBe($buttons);
     })->with([
         'as built' => [fn (Repeater $repeater): Repeater => $repeater, false, [['up', 'moveUp', true], ['down', 'moveDown', true]]],
-        'a moveUpAction() modifier' => [fn (Repeater $repeater): Repeater => $repeater->moveUpAction(static fn (Action $action): Action => $action->color('primary')), false, [['up', null, true], ['down', 'moveDown', true]]],
+        'a moveUpAction() modifier that keeps the move' => [fn (Repeater $repeater): Repeater => $repeater->moveUpAction(static fn (Action $action): Action => $action->color('primary')), false, [['up', 'moveUp', true], ['down', 'moveDown', true]]],
+        'a moveUpAction() modifier that links away' => [fn (Repeater $repeater): Repeater => $repeater->moveUpAction(static fn (Action $action): Action => $action->url('https://example.com')), false, [['up', null, true], ['down', 'moveDown', true]]],
         'a confirmation every action requires' => [fn (Repeater $repeater): Repeater => $repeater, true, [['up', null, true], ['down', null, true]]],
     ]);
 });

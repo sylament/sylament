@@ -40,11 +40,11 @@ it('describes the field with its keyboard instructions and leaves its status reg
 });
 
 it('names the results region the field controls and puts the text the status region announces for it on it, for no, one and several results', function (): void {
-    $this->seed(new Article('Moon landing'), new Article('Harvest moon'));
+    $this->seed(new Article('Moon landing'), new Article('Moon harvest'));
     $render = fn (string $panelId, string $term): Crawler => $this->createLiveComponent(GlobalSearch::class, ['panelId' => $panelId])->set('search', $term)->render()->crawler();
     $message = fn (Crawler $search): ?string => $search->filter(Selectors::GLOBAL_SEARCH_RESULTS)->attr('data-message');
 
-    $several = $render('search', 'moon');
+    $several = $render('search', 'Moon');
     $results = $several->filter(Selectors::GLOBAL_SEARCH_RESULTS);
 
     expect($several->filter('input' . Selectors::GLOBAL_SEARCH_INPUT)->attr('aria-controls'))->toBe($results->attr('id'))

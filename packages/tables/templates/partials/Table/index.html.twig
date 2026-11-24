@@ -227,7 +227,19 @@
         one: 'table.selection_indicator.selected_count'|trans({count: 1, shown: '__COUNT__'}, domain: 'sylament-tables'),
         other: 'table.selection_indicator.selected_count'|trans({count: 2, shown: '__COUNT__'}, domain: 'sylament-tables'),
     },
+    movedMessage: isReorderable ? 'table.reordering.moved'|trans({label: '__LABEL__', position: '__POSITION__', count: '__COUNT__'}, domain: 'sylament-tables') : null,
 }) : null) }}>
+    {% if isReorderable %}
+        <span {{ attrs({
+            id: hostId ~ '.table.reorder-status',
+            class: 'sy-ta-sr-only',
+            role: 'status',
+            'aria-live': 'polite',
+            'aria-atomic': 'true',
+            'data-live-ignore': true,
+        }, stimulus_target('sylament--tables--table', 'reorderStatus')) }}></span>
+    {% endif %}
+
     <div class="sy-ta-ctn">
         {% if headerVisible %}
             <div {{ attrs({class: classes('sy-ta-header', {'sy-ta-header-adaptive-actions-position': headerActions is not empty and headerActionsAdaptive})}) }}>
@@ -813,15 +825,46 @@
                                     'data-sy-group': boundary is not null ? boundary.title ~ '' : null,
                                 }) }}>
                                     {% if isReordering %}
+                                        {# The record title only where the table names one, as Filament's does; an
+                                           array row has no title to read, so it is named by its key. #}
+                                        {% set reorderLabel = record is not iterable and (component.hasCustomRecordTitle or component.getRecordTitleAttribute is filled) ? component.getRecordTitle(record) : recordKey %}
+                                        {% set reorderDescriptionId = hostId ~ '.table.reorder.' ~ (recordKey|url_encode) %}
+
                                         <td class="sy-ta-cell sy-ta-reorder-handle-cell">
                                             <twig:SylamentSupport:IconButton
                                                 class="sy-ta-reorder-handle"
                                                 icon="heroicons:bars-2"
                                                 :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::REORDER_HANDLE')"
                                                 color="gray"
-                                                :label="'table.actions.reorder_record.label'|trans({key: recordKey}, domain: 'sylament-tables')"
+                                                aria-hidden="true"
+                                                tabindex="-1"
                                                 :data-sortable-handle="true"
                                             />
+
+                                            <span {{ attrs({
+                                                id: reorderDescriptionId,
+                                                class: 'sy-ta-sr-only',
+                                                'data-reorder-description': recordKey,
+                                                'data-reorder-label': reorderLabel,
+                                            }, stimulus_target('sylament--tables--table', 'reorderDescription')) }}>{{ 'table.reordering.position'|trans({label: reorderLabel, position: loop.index, count: loop.length}, domain: 'sylament-tables') }}</span>
+
+                                            <div class="sy-ta-sr-only">
+                                                <button {{ attrs({
+                                                    type: 'button',
+                                                    tabindex: '-1',
+                                                    disabled: loop.first,
+                                                    'aria-describedby': reorderDescriptionId,
+                                                    'data-reorder-direction': 'up',
+                                                }, stimulus_action('sylament--tables--table', 'move', 'click')) }}>{{ 'table.actions.move_record_up.label'|trans({label: reorderLabel}, domain: 'sylament-tables') }}</button>
+
+                                                <button {{ attrs({
+                                                    type: 'button',
+                                                    tabindex: '-1',
+                                                    disabled: loop.last,
+                                                    'aria-describedby': reorderDescriptionId,
+                                                    'data-reorder-direction': 'down',
+                                                }, stimulus_action('sylament--tables--table', 'move', 'click')) }}>{{ 'table.actions.move_record_down.label'|trans({label: reorderLabel}, domain: 'sylament-tables') }}</button>
+                                            </div>
                                         </td>
                                     {% endif %}
                                     {% if actionsBeforeCells %}{{ actionsCell }}{% endif %}

@@ -14,11 +14,12 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
  * filters' trigger, panel, modal, form fields and indicators, the column manager's trigger,
  * dialog, items and controls, the length either modal caps its window at, the grouping settings
  * and a group's header, checkbox and summary row, the summary band and a summarizer's body, the
- * reorder triggers and handles, the editable cells and their errors, and the empty, loading,
- * striped, bulleted and responsive looks; each named by the `sy-ta-` class that is its one
- * hook, by the id the table template gives it under its host id, by its accessible name, or by
- * the Stimulus controller, target, value or live action that wires it or the inline style that
- * sizes it, with a static helper for a family keyed by a record, a column or a value.
+ * reorder triggers, handles, descriptions, move buttons and status, the editable cells and
+ * their errors, and the empty, loading, striped, bulleted and responsive looks; each named by
+ * the `sy-ta-` class that is its one hook, by the id the table template gives it under its host
+ * id, by its accessible name, or by the Stimulus controller, target, value or live action that
+ * wires it or the inline style that sizes it, with a static helper for a family keyed by a
+ * record, a column or a value.
  */
 final class Selectors
 {
@@ -304,7 +305,7 @@ final class Selectors
     /**
      * The screen-reader status that announces how many results a loaded table holds.
      */
-    public const string RESULT_COUNT = '[role="status"][aria-live="polite"][aria-atomic="true"]';
+    public const string RESULT_COUNT = '[role="status"][aria-live="polite"][aria-atomic="true"]:not([data-live-ignore])';
 
     /**
      * The busy status a deferred table renders in place of its records until it loads.
@@ -370,6 +371,11 @@ final class Selectors
      * The toolbar's trigger closing the reorder mode, by its accessible name.
      */
     public const string FINISH_REORDERING_TRIGGER = 'button[aria-label="Finish reordering records"]';
+
+    /**
+     * The screen-reader status a reorderable table announces a landed move in, left alone by the morph and written by its controller alone.
+     */
+    public const string REORDER_STATUS = '[data-sylament--tables--table-target="reorderStatus"][role="status"][aria-live="polite"][aria-atomic="true"][data-live-ignore]';
 
     /**
      * The icon button opening the grouping settings, by its accessible name.
@@ -446,11 +452,27 @@ final class Selectors
     }
 
     /**
-     * The drag handle of the record with this key, while the table is reordering.
+     * The drag handle in the row of the record with this key, while the table is reordering.
      */
     public static function reorderHandle(string $key): string
     {
-        return "button[data-sortable-handle][aria-label=\"Reorder item {$key}\"]";
+        return self::row($key) . ' button' . SupportSelectors::SORTABLE_HANDLE;
+    }
+
+    /**
+     * The screen-reader description of the record with this key, naming its place while the table is reordering; its data attribute is the controller's hook.
+     */
+    public static function reorderDescription(string $key): string
+    {
+        return "[data-reorder-description=\"{$key}\"]";
+    }
+
+    /**
+     * The screen-reader move buttons in the row of the record with this key, up then down, while the table is reordering.
+     */
+    public static function reorderMoves(string $key): string
+    {
+        return self::row($key) . ' button[data-reorder-direction]';
     }
 
     /**

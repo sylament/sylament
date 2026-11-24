@@ -22,7 +22,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A table of larder jars a user reorders by their position, with rows linking to each
  * jar, a sortable label, a header and a record action, and a reorder trigger stamped
  * with the mode it opens; the hooks around a drag record the order they were handed.
- * The reorder column, its condition and its authorization are mount props.
+ * The reorder column, its condition, its authorization and the record title attribute
+ * are mount props.
  */
 #[AsLiveComponent(name: 'Tables:ReorderableLarderJarTable', template: '@Fixtures/tables/table-with-modals.html.twig')]
 class ReorderableLarderJarTable implements InteractsWithActions, InteractsWithTable
@@ -40,6 +41,9 @@ class ReorderableLarderJarTable implements InteractsWithActions, InteractsWithTa
     #[LiveProp]
     public bool $reorderAuthorized = true;
 
+    #[LiveProp]
+    public ?string $recordTitleAttribute = null;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly HookLog $hookLog,
@@ -55,6 +59,7 @@ class ReorderableLarderJarTable implements InteractsWithActions, InteractsWithTa
             ])
             ->defaultSort('position')
             ->recordUrl(static fn (LarderJar $record): string => "/jars/{$record->id}")
+            ->recordTitleAttribute($this->recordTitleAttribute)
             ->reorderable($this->reorderColumn, condition: $this->reorderCondition)
             ->authorizeReorder($this->reorderAuthorized)
             ->reorderRecordsTriggerAction(static fn (Action $action, bool $isReordering): Action => $action->extraAttributes(['data-opens' => $isReordering ? 'browsing' : 'reordering']))

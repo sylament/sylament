@@ -135,3 +135,43 @@ describe('reorderTable()', function (): void {
             ->toThrow(LogicException::class, 'Table [' . LockableReorderLarderJarTable::class . '] reorders records it does not query; a position column is written through the [query()] and [relationship()] lanes only.');
     });
 });
+
+describe('moveTableRecord()', function (): void {
+    it('swaps a record with its neighbour in the direction it moves, writing the whole order through reorderTable()', function (string $direction, array $labels): void {
+        $this->seed($apple = new LarderJar('Apple', position: 1), $banana = new LarderJar('Banana', position: 2), $cherry = new LarderJar('Cherry', position: 3));
+        $jars = ['Apple' => $apple, 'Banana' => $banana, 'Cherry' => $cherry];
+        $order = implode(',', array_map(static fn (string $label): string => (string) $jars[$label]->id, $labels));
+
+        $this->createLiveComponent(LockableReorderLarderJarTable::class)
+            ->call('toggleTableReordering')
+            ->call('moveTableRecord', ['recordKey' => (string) $banana->id, 'direction' => $direction]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(["before {$order}", "after {$order}"])
+            ->and(array_map(fn (string $label): int => $this->reload($jars[$label])->position, $labels))->toBe([1, 2, 3]);
+    })->with([
+        'up' => ['up', ['Banana', 'Apple', 'Cherry']],
+        'down' => ['down', ['Apple', 'Cherry', 'Banana']],
+    ]);
+
+    it('writes nothing for a move past either end, outside the reorder mode, for a key the table does not list, or in a direction other than up or down', function (array $variants, bool $reordering, string $label, string $direction): void {
+        $this->seed($apple = new LarderJar('Apple', position: 1), $banana = new LarderJar('Banana', position: 2), $spare = new LarderJar('Spare', position: 3));
+        $jars = ['Apple' => $apple, 'Banana' => $banana, 'Spare' => $spare];
+
+        $tester = $this->createLiveComponent(LockableReorderLarderJarTable::class, ['variants' => $variants]);
+
+        if ($reordering) {
+            $tester->call('toggleTableReordering');
+        }
+
+        $tester->call('moveTableRecord', ['recordKey' => (string) $jars[$label]->id, 'direction' => $direction]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([])
+            ->and([$this->reload($apple)->position, $this->reload($banana)->position, $this->reload($spare)->position])->toBe([1, 2, 3]);
+    })->with([
+        'the first record up' => [[], true, 'Apple', 'up'],
+        'the last record down' => [[], true, 'Spare', 'down'],
+        'outside the reorder mode' => [[], false, 'Banana', 'up'],
+        'a record the query leaves out' => [['scoped'], true, 'Spare', 'up'],
+        'sideways' => [[], true, 'Banana', 'left'],
+    ]);
+});

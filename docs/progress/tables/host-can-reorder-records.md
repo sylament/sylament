@@ -1,5 +1,5 @@
 ---
-description: 'The host trait `CanReorderRecords` that `HasTable` composes: the reorder mode flag, its toggle and the `reorderTable()` write.'
+description: 'The host trait `CanReorderRecords` that `HasTable` composes: the reorder mode flag, its toggle, the `reorderTable()` write and the `moveTableRecord()` one-step move.'
 ports:
   - vendor/filament/tables/src/Concerns/CanReorderRecords.php
 owns:
@@ -12,7 +12,7 @@ owns:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [Reordering — `$isTableReordering` / `toggleTableReordering()` / `isTableReordering()` / `reorderTable()`](../../../packages/tables/src/Concerns/CanReorderRecords.php) | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | done | — | [semantics](#reordertable-is-gated-by-reorderable-never-by-the-reorder-mode) · [semantics](#a-refused-key-leaves-a-gap-in-the-numbering-and-a-smuggled-one-does-not) · [diverges](#the-reorder-write-is-a-unit-of-work-flush-not-one-mass-case-update) · [table.md](table.md#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render) |
-| `moveTableRecord()` — the one-step keyboard move | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | todo | — | [table.md](table.md#the-reorder-rows-carry-no-keyboard-or-screen-reader-controls) |
+| [`moveTableRecord()` — the one-step keyboard move](../../../packages/tables/src/Concerns/CanReorderRecords.php) | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | done | — | [semantics](#movetablerecord-asks-the-reorder-mode-and-moves-only-among-the-listed-records) · [table.md](table.md#the-reorder-cell-names-its-hooks-for-any-list-and-ids-its-description-by-the-encoded-key) |
 | `makeTableReorderColumnExpression()` — the mass `CASE` expression | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | skipped | — | [diverges](#the-reorder-write-is-a-unit-of-work-flush-not-one-mass-case-update) |
 | `reorderTable()`'s `BelongsToMany` pivot-column arm | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | skipped | — | [diverges](#the-pivot-column-arm-is-not-ported-because-a-join-table-with-a-position-is-an-entity) |
 | `isTablePaginationEnabledWhileReordering()` / `getTableReorderColumn()` | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | skipped | — | [deprecated: override `table()`](../README.md#statuses) |
@@ -38,6 +38,14 @@ A gap is therefore parity, not a defect, and reordering is position-ordered rath
 
 A key that is **not a printable scalar** never reaches the loop: the bag is filtered (`is_scalar($key) && ! is_bool($key)`) and `array_values()`-compacted *before* numbering, so a smuggled array or object shifts every later key up one and leaves no gap.
 That compaction is ours (vendor hands `$order` straight to `$connection->escape()`), and it is the shape the `#[LiveArg] array $order` edge needs, because the keys are client-supplied.
+
+### `moveTableRecord()` asks the reorder mode, and moves only among the listed records
+
+The screen-reader move buttons call `moveTableRecord($recordKey, $direction)`, Filament's body line for line: it returns unless `isTableReordering()` holds and the direction is `up` or `down`, builds the order from the keys of the records the table lists, finds the key with a strict `array_search()`, swaps it with its neighbour, returns past either end, and writes the swapped order through `reorderTable()`.
+Unlike `reorderTable()` it asks the mode as well as `reorderable()`, because Filament's does; the mode is still chrome, so the guard that matters is the one `reorderTable()` repeats.
+The client's key is only compared against the listed keys, never decoded or queried, so a key the table's query leaves out, an invented one and a malformed one all write nothing, and the order `reorderTable()` re-resolves is the server's own.
+The listed records are the current page when `paginatedWhileReordering()` is on and the whole filtered table otherwise, so a record at a page edge cannot cross onto the next page, as in Filament, where the move button at that edge is disabled.
+Filament passes the moved key on as `reorderTable()`'s second argument, which reads it nowhere; the port's `reorderTable()` takes the order alone, as the divergence below records.
 
 ## Divergences
 

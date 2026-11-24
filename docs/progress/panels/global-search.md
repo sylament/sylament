@@ -68,7 +68,7 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 | [Search template](../../../packages/panels/templates/components/GlobalSearch/index.html.twig) | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | done | — | [semantics](#the-stimulus-controller-rides-the-inner-element-not-the-live-root) |
 | [Topbar mount](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `fi-topbar-end` | done | — | [semantics](#the-topbar-mount-is-a-threaded-flag-rather-than-a-facade-call) |
 | [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
-| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | in progress | — | [detail](#focus-leaving-the-search-does-not-close-the-results-panel) · [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) · [diverges](#nothing-dispatches-an-open-event-the-response-to-a-keystroke-reopens-the-panel) |
+| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | in progress | — | [detail](#focus-leaving-the-search-does-not-close-the-results-panel) · [detail](#escape-inside-the-results-drops-focus-to-the-page) · [detail](#down-arrow-on-a-closed-panel-does-not-reopen-it) · [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) · [diverges](#nothing-dispatches-an-open-event-the-response-to-a-keystroke-reopens-the-panel) |
 | Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | blocked | render hooks | [detail](#the-render-hooks-around-the-field-have-no-port-target) |
 | The field's screen-reader and status layer: the `field.instructions` text through `aria-describedby`, the `role="status"` live region, `results_label` with `aria-controls`, the `results_count` plural, `loading_message` and `failure_message` | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php), [`lang/en/global-search.php`](../../../vendor/filament/filament/resources/lang/en/global-search.php), [`js/components/global-search.js`](../../../vendor/filament/filament/resources/js/components/global-search.js) | done | — | [semantics](#the-status-region-is-written-by-the-controller-alone) · [diverges](#a-render-answers-the-search-by-a-keystroke-counter-not-by-its-query) · [diverges](#the-keyboard-instructions-say-the-arrows-stop-on-result-actions) · [diverges](#nothing-dispatches-an-open-event-the-response-to-a-keystroke-reopens-the-panel) |
 | Each result action described by its category and result headings (`aria-describedby`) | the per-action `aria-describedby` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | todo | — | [detail](#a-result-action-is-not-described-by-its-headings) |
@@ -105,6 +105,20 @@ Filament's search root binds `x-on:focusout="focusLeft($event)"` ([`livewire/glo
 The port's [controller](../../../packages/panels/assets/src/controllers/global_search_controller.ts) closes only on a document `pointerdown` outside its element or on Escape (`connect()` at :79-92, `#onKeydown` and `#onPointerDown` at :231-250), so a keyboard user who tabs past the search leaves its results panel open over the page.
 
 **Next step:** add a `focusout` action on the controller's element that closes the panel when the event's `relatedTarget` lies outside the element and, after a tick, `document.activeElement` does too, as `focusLeft()` checks both.
+
+### Escape inside the results drops focus to the page
+
+Filament's `keydown()` handles Escape only while a term is typed, dismisses the results, and returns focus to the field when the key was pressed inside them ([`resources/js/components/global-search.js:179-189`](../../../vendor/filament/filament/resources/js/components/global-search.js)).
+The port's document `#onKeydown` closes the panel on every Escape and moves focus nowhere ([controller](../../../packages/panels/assets/src/controllers/global_search_controller.ts)), so a keyboard user who presses Escape on a focused result is left on a hidden element and focus falls to the page, though the field's instructions promise Escape closes the results.
+
+**Next step:** in `#onKeydown`, return unless a term is typed, note whether the event target lies inside the results panel before `close()`, and focus the input after closing when it did.
+
+### Down arrow on a closed panel does not reopen it
+
+Filament's Down arrow in the field reopens a dismissed panel for the typed term and then focuses its first result ([`resources/js/components/global-search.js:192-213`](../../../vendor/filament/filament/resources/js/components/global-search.js)).
+The port's `focusFirstResult()` focuses the first result only while the panel shows ([controller](../../../packages/panels/assets/src/controllers/global_search_controller.ts)), so after Escape or a click outside, Down does nothing until the user types again, though the instructions say Down browses the results.
+
+**Next step:** when the panel is hidden, a term is typed and the rendered results are current, clear the dismissed flag, unhide the panel, announce its `data-message`, and then focus the first result.
 
 ## Semantics
 

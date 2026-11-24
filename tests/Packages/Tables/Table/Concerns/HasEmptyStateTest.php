@@ -22,6 +22,7 @@ it('shows an empty table an empty state in place of the table, and a table with 
     $filled = $this->createLiveComponent(ProductTable::class)->render()->crawler();
 
     expect($empty->filter(Selectors::EMPTY_STATE . '[role="status"]'))->toHaveCount(1)
+        ->and($empty)->toContainElement(Selectors::RESULT_COUNT, 'No results')
         ->and($empty->filter(Selectors::TABLE))->toHaveCount(0)
         ->and($filled->filter(Selectors::TABLE))->toHaveCount(1)
         ->and($filled->filter(Selectors::EMPTY_STATE))->toHaveCount(0);

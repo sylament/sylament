@@ -78,6 +78,17 @@ describe('the pagination mode', function (): void {
         'simple' => ['Simple', 'Showing 1 to 2 results', 0],
     ]);
 
+    it('announces the total across all pages in the default mode, and the page count with no total in the simple one', function (string $mode, string $announcement): void {
+        $this->seed(...array_map(static fn (int $number): LarderJar => new LarderJar(sprintf('Jar %02d', $number)), range(1, 11)));
+
+        $crawler = $this->createLiveComponent(PagedLarderJarTable::class, ['options' => [2, 5, 'all'], 'mode' => $mode])->render()->crawler();
+
+        expect($crawler)->toContainElement(Selectors::RESULT_COUNT, $announcement);
+    })->with([
+        'default' => ['Default', '11 results'],
+        'simple' => ['Simple', '2 results'],
+    ]);
+
     it('renders the rows a records() closure returns as it returns them, whatever the mode', function (): void {
         $crawler = $this->createLiveComponent(RecordsPerPageReadingTable::class, ['variants' => ['simple']])
             ->set('tableRecordsPerPage', '5')

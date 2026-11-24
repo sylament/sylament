@@ -512,6 +512,11 @@
                 <span class="sy-ta-sr-only">{{ 'table.loading'|trans(domain: 'sylament-tables') }}</span>
             </div>
         {% else %}
+            {# The total across all pages, so the region announces only when the result set
+               changes and not on every page turn; a paginator with no total reports its page. #}
+            {% set resultCount = paginator is not null and paginator.getTotalRecordCount is not null ? paginator.getTotalRecordCount : records|length %}
+            <div role="status" aria-live="polite" aria-atomic="true" class="sy-ta-sr-only">{{ 'table.result_count'|trans({count: resultCount}, domain: 'sylament-tables') }}</div>
+
             {% if records is not empty or isSearchableByColumn %}
                 {% set actionsHeaderCell %}<th scope="col" aria-label="{{ 'table.columns.actions.label'|trans({count: component.getFlatRecordActions|length}, domain: 'sylament-tables') }}" class="sy-ta-actions-header-cell sy-ta-empty-header-cell"></th>{% endset %}
 
@@ -564,7 +569,10 @@
                     checkboxTrailing: checkboxTrailing,
                 } %}
 
-                <table {{ attrs({class: classes('sy-ta-table', {'sy-ta-table-reordering': isReordering})}) }}>
+                <table {{ attrs({
+                    'aria-label': (heading|striptags|trim) ?: component.getPluralRecordLabel,
+                    class: classes('sy-ta-table', {'sy-ta-table-reordering': isReordering}),
+                }) }}>
                     <thead>
                         <tr>
                             {% if isReordering and records is not empty %}<th scope="col" class="sy-ta-reorder-header-cell sy-ta-empty-header-cell"></th>{% endif %}

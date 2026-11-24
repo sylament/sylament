@@ -84,6 +84,7 @@ table:
         label_prefix: '{label}: '
     loading: 'Loading'
     reorder_indicator: 'Drag and drop the records into order.'
+    result_count: '{count, plural, =0 {No results} one {# result} other {# results}}'
     selection_indicator:
         actions:
             deselect_all:

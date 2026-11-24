@@ -302,6 +302,11 @@ final class Selectors
     public const string COLUMN_SEARCH_ROW = 'tr.sy-ta-column-search-row';
 
     /**
+     * The screen-reader status that announces how many results a loaded table holds.
+     */
+    public const string RESULT_COUNT = '[role="status"][aria-live="polite"][aria-atomic="true"]';
+
+    /**
      * The busy status a deferred table renders in place of its records until it loads.
      */
     public const string LOADING = '[role="status"][aria-busy="true"]';

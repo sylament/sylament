@@ -27,7 +27,6 @@ describe('partial', function (): void {
         $crawler = $this->createLiveComponent(ProductTable::class)->render()->crawler();
 
         expect($crawler->filter('.sy.sy-ta ' . Selectors::TABLE))->toHaveCount(1)
-            ->and($crawler->filter(Selectors::TABLE)->attr('aria-label'))->toBeNull()
             ->and($crawler->filter(Selectors::HEADER))->toHaveCount(0)
             ->and($crawler->filter(Selectors::TOOLBAR))->toHaveCount(0);
     });

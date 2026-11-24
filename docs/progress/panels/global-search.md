@@ -9,6 +9,7 @@ ports:
   - vendor/filament/filament/src/Panel/Concerns/HasGlobalSearch.php
   - vendor/filament/filament/src/Livewire/GlobalSearch.php
   - vendor/filament/filament/resources/views/livewire/global-search.blade.php
+  - vendor/filament/filament/resources/js/components/global-search.js
 owns:
   - packages/panels/assets/src/controllers/global_search_controller.ts
   - packages/panels/assets/src/styles/components/global-search.css
@@ -63,13 +64,14 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 | `globalSearchPosition` | `HasGlobalSearch::globalSearch()`'s `$position` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchFieldKeyBindingSuffix()` | `Panel\Concerns\HasGlobalSearch::globalSearchFieldKeyBindingSuffix()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchResourceOptIn()` | `Panel\Concerns\HasGlobalSearch::globalSearchResourceOptIn()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
-| [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | done | — | [semantics](#the-component-restores-its-panel-onto-a-live-request) · [diverges](#nothing-dispatches-an-open-event-a-morph-reopens-the-panel) · [diverges](#the-searched-term-is-trimmed) |
+| [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | done | — | [semantics](#the-component-restores-its-panel-onto-a-live-request) · [diverges](#nothing-dispatches-an-open-event-the-response-to-a-keystroke-reopens-the-panel) · [diverges](#the-searched-term-is-trimmed) |
 | [Search template](../../../packages/panels/templates/components/GlobalSearch/index.html.twig) | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | done | — | [semantics](#the-stimulus-controller-rides-the-inner-element-not-the-live-root) |
 | [Topbar mount](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `fi-topbar-end` | done | — | [semantics](#the-topbar-mount-is-a-threaded-flag-rather-than-a-facade-call) |
 | [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
-| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | in progress | — | [detail](#focus-leaving-the-search-does-not-close-the-results-panel) · [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
+| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | in progress | — | [detail](#focus-leaving-the-search-does-not-close-the-results-panel) · [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) · [diverges](#nothing-dispatches-an-open-event-the-response-to-a-keystroke-reopens-the-panel) |
 | Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | blocked | render hooks | [detail](#the-render-hooks-around-the-field-have-no-port-target) |
-| The field's screen-reader and status layer: the `field.instructions` text through `aria-describedby`, the `role="status"` live region, `results_label` with `aria-controls`, the `results_count` plural, `loading_message` and `failure_message` | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php), [`lang/en/global-search.php`](../../../vendor/filament/filament/resources/lang/en/global-search.php) | todo | — | [detail](#the-fields-screen-reader-and-status-layer-is-not-ported) |
+| The field's screen-reader and status layer: the `field.instructions` text through `aria-describedby`, the `role="status"` live region, `results_label` with `aria-controls`, the `results_count` plural, `loading_message` and `failure_message` | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php), [`lang/en/global-search.php`](../../../vendor/filament/filament/resources/lang/en/global-search.php), [`js/components/global-search.js`](../../../vendor/filament/filament/resources/js/components/global-search.js) | done | — | [semantics](#the-status-region-is-written-by-the-controller-alone) · [diverges](#a-render-answers-the-search-by-a-keystroke-counter-not-by-its-query) · [diverges](#the-keyboard-instructions-say-the-arrows-stop-on-result-actions) · [diverges](#nothing-dispatches-an-open-event-the-response-to-a-keystroke-reopens-the-panel) |
+| Each result action described by its category and result headings (`aria-describedby`) | the per-action `aria-describedby` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | todo | — | [detail](#a-result-action-is-not-described-by-its-headings) |
 | Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [detail](#the-field-carries-no-busy-indicator) |
 | Results panel enter/leave fade | `x-transition:enter-start` / `x-transition:leave-end` on `fi-global-search-results-ctn` | skipped | — | [diverges](#the-panel-opens-and-closes-with-no-fade) |
 | Topbar-end `x-persist` | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `x-persist="topbar.end.panel-…"` | skipped | — | [diverges](#there-is-no-spa-navigation-for-the-field-to-survive) |
@@ -77,11 +79,12 @@ The `Topbar` template that mounts it is [layout-templates.md](layout-templates.m
 
 ## Details
 
-### The field's screen-reader and status layer is not ported
+### A result action is not described by its headings
 
-The template reads three of Filament's `global-search.*` keys, `field.label`, `field.placeholder` and `no_results_message`, and renders none of the layer Filament builds around them.
-Filament describes the field with its `field.instructions` keyboard help through `aria-describedby`, names the results list with `results_label` through `aria-controls`, and announces a `role="status"` live region holding the `results_count` plural, `loading_message` while a search runs and `failure_message` when one fails.
-Porting it brings those keys into the catalogue with the markup that reads them, and the count needs the [plural-form map](../../internals/i18n.md#a-count-the-browser-updates-reaches-it-as-a-map-of-plural-forms) only if the controller updates it.
+Filament gives each category heading and each result heading an id and sets every result action's `aria-describedby` to both ([`livewire/global-search.blade.php:113-131`, `:184-185`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php)), so a screen reader reads an action's label with the category and the record it acts on.
+The port's headings carry no id and its template renders each action through `renderComponent(action)` as the result built it, so an action reads its own label alone.
+
+**Next step:** id the headings in the template and hand it the actions through a component method that clones each one with the two ids merged into its extra attributes, as Filament's `(clone $action)->extraAttributes()` does, since a template cannot clone an action.
 
 ### The field carries no busy indicator
 
@@ -99,7 +102,7 @@ Nothing here is specific to global search: the hooks come back with the system, 
 ### Focus leaving the search does not close the results panel
 
 Filament's search root binds `x-on:focusout="focusLeft($event)"` ([`livewire/global-search.blade.php:32`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php)), and `focusLeft()` dismisses the results once focus has moved to an element outside the component ([`resources/js/components/global-search.js:148-158`](../../../vendor/filament/filament/resources/js/components/global-search.js)), so tabbing out of the field or off the last result closes the panel.
-The port's [controller](../../../packages/panels/assets/src/controllers/global_search_controller.ts) closes only on a document `pointerdown` outside its element or on Escape (`connect()` at :61-65, `#onKeydown` and `#onPointerDown` at :108-127), so a keyboard user who tabs past the search leaves its results panel open over the page.
+The port's [controller](../../../packages/panels/assets/src/controllers/global_search_controller.ts) closes only on a document `pointerdown` outside its element or on Escape (`connect()` at :79-92, `#onKeydown` and `#onPointerDown` at :231-250), so a keyboard user who tabs past the search leaves its results panel open over the page.
 
 **Next step:** add a `focusout` action on the controller's element that closes the panel when the event's `relatedTarget` lies outside the element and, after a tick, `document.activeElement` does too, as `focusLeft()` checks both.
 
@@ -135,6 +138,14 @@ The topbar field is a live component of its own, so it re-renders on a request c
 `mount()` therefore reads the panel once (`CurrentPanel::get() ?? PanelRegistry::getDefault()`) into a `LiveProp`, and a `#[PostHydrate]` hook stamps that id back onto the request every subsequent round trip.
 Without the stamp the provider would silently search the **default** panel's resources and every `Resource::getUrl()` underneath would generate against it — right on a single-panel application, wrong the moment there are two.
 
+### The status region is written by the controller alone
+
+The template renders the `role="status"` paragraph empty, with Filament's `aria-atomic="true"` and with `data-live-ignore`, UX LiveComponent's `wire:ignore`, so a morph never touches what the controller wrote.
+The results text rides the results container's `data-message`, as in Filament: the `results_count` plural over every category's results, or `no_results_message`, both formatted by the server, so no [plural-form map](../../internals/i18n.md#a-count-the-browser-updates-reaches-it-as-a-map-of-plural-forms) reaches the browser.
+The controller writes the region when `global-search.js` does: after a render that answers the latest keystroke, the container's `data-message` while the panel is open and nothing while it is closed; `loading_message` 350 ms after a search request starts; `failure_message` when UX's `response:error` hook reports the latest request, or 30 s after a search request starts with no response; and nothing on a keystroke and on a close.
+The two messages reach it as Stimulus values the template fills from the catalogue, where Filament's `x-data` takes them from `__()`, so no English ships in the TypeScript.
+A request that dies without a response, a dropped connection, reaches no UX hook, so the 30 s timeout is its only report, as it is in Filament.
+
 ### The Stimulus controller rides the inner element, not the live root
 
 The root `div` renders the live component's own `attributes` bag, which always carries `data-controller="live"`, and [`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php) resolves a repeated scalar attribute by letting the later source win rather than by appending — so a `stimulus_controller()` merged into that same bag would replace the live binding and take the whole component down with it.
@@ -154,11 +165,12 @@ Filament puts this on `FilamentManager`, which delegates every other question he
 There is no manager in this port — a panel is reached through `PanelRegistry`/`CurrentPanel` — so the method sits on `Panel` under its Filament name: false when the provider is switched off, otherwise true as soon as one registered resource `canGloballySearch()`.
 Filament memoises the answer per request because each resource's check runs an authorization policy; ours only asks whether a resource named searchable attributes, so it re-reads them instead.
 
-### Nothing dispatches an open event; a morph reopens the panel
+### Nothing dispatches an open event; the response to a keystroke reopens the panel
 
 Filament's component dispatches `open-global-search-results` from `getResults()`, and the results container listens for it on the window to set its Alpine `isOpen` back to true.
-We need no such event: the container is only in the markup when `getResults()` answered non-null, and every live morph re-stamps the server's markup over whatever the client did — so a client-set `hidden` from the close action is wiped by the next search response, which is exactly the reopen Filament buys with the event.
-Behaviour identical, one less moving part.
+We need no such event: the container is only in the markup when `getResults()` answered non-null, and after every render the controller sets its `hidden` from whether the panel was closed since the last keystroke, so typing reopens it with the next response and a response landing after a close leaves it closed, as Filament's `isDismissed` does.
+The controller derives it after the render rather than leaving it to the morph because UX LiveComponent re-applies an attribute the client set to the element the morph keeps, so a `hidden` from the close action would otherwise survive every later search.
+Because the container comes and goes, the field carries `aria-controls` only while the container is there, where Filament's container is always in the markup and the attribute always resolves.
 
 ### The searchability check and the result URL ladder drop Filament's authorization gates
 
@@ -249,9 +261,24 @@ The binding **values** are Filament's mousetrap-style combos, unchanged.
 ### The panel opens and closes with no fade
 
 Filament's results container is Alpine-driven: `x-show="isOpen"` plus `x-transition:enter-start="fi-transition-enter-start"` and `x-transition:leave-end="fi-transition-leave-end"`, a pair of opacity classes that fade the panel in and out.
-Ours is the bare `hidden` attribute — the controller sets it to close, and the next morph re-stamps the server's markup without it — so both directions are instant.
+Ours is the bare `hidden` attribute, which the controller sets to close and clears after the first response to a keystroke, so both directions are instant.
 `hidden` is `display: none`, which a plain CSS transition does not animate in or out of, so keeping the fade would mean re-introducing the two state classes and the timing that sequences them against the attribute, for an affordance a server-driven open/close already makes unambiguous.
 The two `fi-transition-*` rules are therefore not ported either.
+
+### A render answers the search by a keystroke counter, not by its query
+
+Filament's results container carries `data-query` and `data-has-results`, and `synchronizeResults()` treats a response as current when its query matches the field's and its revision is the latest.
+The port's controller bumps a counter on every keystroke, stamps it on each request as UX starts it, and treats a render as current when its request carried the latest count, which is enough because UX sends one request at a time and holds the next one back.
+The container therefore carries only `data-message`, and the status paragraph a fixed `id` beside the field's others, so the morph pairs the ignored node with its server copy by id.
+Filament arms its 30 s failure timeout on the keystroke as well as when the request starts; the port arms it only when a search request starts, because UX sends no request for a keystroke that leaves the value unchanged, so a timeout armed by it would report a search that was never sent.
+A keystroke leaves a running timeout armed, so a request that never answers is still reported while the next one waits behind it.
+Filament also closes the panel on a failure; the port announces it and leaves the panel as the last response drew it.
+
+### The keyboard instructions say the arrows stop on result actions
+
+Filament's `field.instructions` reads "Use Up and Down arrows to move between results, and Tab to reach result actions", because its arrow handler moves through the result links alone.
+The port's controller moves Up and Down through every link and enabled button in the panel, a result's actions included, so our English under Filament's key says so: "Use Up and Down arrows to move between results and their actions."
+Its other two sentences, Down from the field to browse and Escape to close, are Filament's, and Tab still reaches a result's actions in document order.
 
 ### There is no SPA navigation for the field to survive
 

@@ -1,7 +1,13 @@
 {% set searchController = 'sylament--panels--global-search' %}
+{% set instructionsId = 'sy-pa-global-search-instructions' %}
+{% set resultsId = 'sy-pa-global-search-results' %}
 
 {% set panel = this.getPanel %}
 {% set results = this.getResults %}
+{% set resultsCount = results is null ? 0 : results.getCategories|reduce((count, groupResults) => count + groupResults|length, 0) %}
+{% set resultsMessage = resultsCount > 0
+    ? 'global-search.results_count'|trans({count: resultsCount}, domain: 'sylament-panels')
+    : 'global-search.no_results_message'|trans(domain: 'sylament-panels') %}
 
 <div {{ attrs({class: 'sy sy-pa-global-search-ctn'}, attributes.all) }}>
     {# The search controller must never merge into the live root's bag above: that
@@ -9,7 +15,11 @@
        attribute rather than appending to it. #}
     <div {{ attrs(
         {class: 'sy-pa-global-search'},
-        stimulus_controller(searchController, {keyBindings: panel.getGlobalSearchKeyBindings}),
+        stimulus_controller(searchController, {
+            keyBindings: panel.getGlobalSearchKeyBindings,
+            loadingMessage: 'global-search.loading_message'|trans(domain: 'sylament-panels'),
+            failureMessage: 'global-search.failure_message'|trans(domain: 'sylament-panels'),
+        }),
     ) }}>
         <div class="sy-pa-global-search-field">
             <label for="sy-pa-global-search-input" class="sy-pa-global-search-label">{{ 'global-search.field.label'|trans(domain: 'sylament-panels') }}</label>
@@ -29,13 +39,31 @@
                     placeholder: 'global-search.field.placeholder'|trans(domain: 'sylament-panels'),
                     autocomplete: 'off',
                     maxlength: 1000,
-                }, stimulus_target(searchController, 'input')|stimulus_action(searchController, 'focusFirstResult', 'keydown.down')) }}>
+                    'aria-describedby': instructionsId,
+                    'aria-controls': results is null ? null : resultsId,
+                }, stimulus_target(searchController, 'input')|stimulus_action(searchController, 'focusFirstResult', 'keydown.down')|stimulus_action(searchController, 'inputChanged', 'input')) }}>
             </twig:SylamentSupport:InputWrapper>
         </div>
 
+        <p id="{{ instructionsId }}" class="sy-sr-only">{{ 'global-search.field.instructions'|trans(domain: 'sylament-panels') }}</p>
+
+        <p {{ attrs({
+            id: 'sy-pa-global-search-status',
+            class: 'sy-sr-only',
+            role: 'status',
+            'aria-atomic': 'true',
+            'data-live-ignore': true,
+        }, stimulus_target(searchController, 'status')) }}></p>
+
         {% if results is not null %}
             <div {{ attrs(
-                {class: 'sy-pa-global-search-results-ctn'},
+                {
+                    id: resultsId,
+                    class: 'sy-pa-global-search-results-ctn',
+                    role: 'region',
+                    'aria-label': 'global-search.results_label'|trans(domain: 'sylament-panels'),
+                    'data-message': resultsMessage,
+                },
                 stimulus_target(searchController, 'resultsPanel')|stimulus_action(searchController, 'navigate', 'keydown'),
             ) }}>
                 {% if results.getCategories is empty %}

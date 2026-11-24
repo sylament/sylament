@@ -1,10 +1,15 @@
 global-search:
+    failure_message: 'Search has not completed. Reload the page to try again.'
     field:
+        instructions: 'Press Down arrow to browse results. Use Up and Down arrows to move between results and their actions. Press Escape to close results.'
         label: 'Global search'
         placeholder: 'Search'
+    loading_message: 'Searching...'
     no_results_message: 'No search results found.'
     result:
         detail_label: '{label}:'
+    results_count: '{count, plural, one {# result shown.} other {# results shown.}}'
+    results_label: 'Global search results'
 layout:
     actions:
         open_user_menu:

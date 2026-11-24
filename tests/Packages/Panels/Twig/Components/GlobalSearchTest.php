@@ -19,10 +19,40 @@ it('renders a labelled search field on a controller of its own inside the live r
         ->and($search->filter(Selectors::GLOBAL_SEARCH . ' ' . Selectors::GLOBAL_SEARCH_CONTROLLER))->toHaveCount(1)
         ->and($search->filter('label[for="sy-pa-global-search-input"]')->text())->toBe('Global search')
         ->and([$input->attr('type'), $input->attr('placeholder'), $input->attr('data-sylament--panels--global-search-target'), $input->attr('data-action')])
-        ->toBe(['search', 'Search', 'input', 'keydown.down->sylament--panels--global-search#focusFirstResult'])
+        ->toBe(['search', 'Search', 'input', 'keydown.down->sylament--panels--global-search#focusFirstResult input->sylament--panels--global-search#inputChanged'])
         ->and($search->filter(SupportSelectors::PREFIX_ICON)->text())->toBe('magnifying-glass-20-solid')
         ->and($search->filter(Selectors::GLOBAL_SEARCH_RESULTS))->toHaveCount(0)
         ->and($tester->set('search', '   ')->render()->crawler()->filter(Selectors::GLOBAL_SEARCH_RESULTS))->toHaveCount(0);
+});
+
+it('describes the field with its keyboard instructions and leaves its status region empty, handing the controller the texts it announces', function (): void {
+    $search = $this->createLiveComponent(GlobalSearch::class, ['panelId' => 'search'])->render()->crawler();
+    $input = $search->filter('input' . Selectors::GLOBAL_SEARCH_INPUT);
+    $status = $search->filter(Selectors::GLOBAL_SEARCH_CONTROLLER . ' [role="status"]');
+    $controller = $search->filter(Selectors::GLOBAL_SEARCH_CONTROLLER);
+
+    expect($search)->toContainElement('#' . $input->attr('aria-describedby'), 'Press Down arrow to browse results. Use Up and Down arrows to move between results and their actions. Press Escape to close results.')
+        ->and($input->attr('aria-controls'))->toBeNull()
+        ->and([$status->count(), $status->text(), $status->attr('aria-atomic'), $status->attr('data-live-ignore') !== null, $status->attr('data-sylament--panels--global-search-target')])
+        ->toBe([1, '', 'true', true, 'status'])
+        ->and([$controller->attr('data-sylament--panels--global-search-loading-message-value'), $controller->attr('data-sylament--panels--global-search-failure-message-value')])
+        ->toBe(['Searching...', 'Search has not completed. Reload the page to try again.']);
+});
+
+it('names the results region the field controls and puts the text the status region announces for it on it, for no, one and several results', function (): void {
+    $this->seed(new Article('Moon landing'), new Article('Harvest moon'));
+    $render = fn (string $panelId, string $term): Crawler => $this->createLiveComponent(GlobalSearch::class, ['panelId' => $panelId])->set('search', $term)->render()->crawler();
+    $message = fn (Crawler $search): ?string => $search->filter(Selectors::GLOBAL_SEARCH_RESULTS)->attr('data-message');
+
+    $several = $render('search', 'moon');
+    $results = $several->filter(Selectors::GLOBAL_SEARCH_RESULTS);
+
+    expect($several->filter('input' . Selectors::GLOBAL_SEARCH_INPUT)->attr('aria-controls'))->toBe($results->attr('id'))
+        ->and([$results->attr('role'), $results->attr('aria-label'), $message($several)])->toBe(['region', 'Global search results', '8 results shown.'])
+        ->and($several->filter('.sy-pa-global-search-result'))->toHaveCount(8)
+        ->and($several->filter(Selectors::GLOBAL_SEARCH_CONTROLLER . ' [role="status"]')->text())->toBe('')
+        ->and($message($render('search-custom', 'maps')))->toBe('1 result shown.')
+        ->and($message($render('search', 'Mars')))->toBe('No search results found.');
 });
 
 it('says a search found nothing in the results panel the controller navigates', function (): void {

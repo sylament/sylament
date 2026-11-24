@@ -88,7 +88,7 @@ The port has neither the setter nor the arms: `groupTable()` writes no session k
 ### An empty group header row is not hidden from assistive technology
 
 Filament's group header `<tr>` carries `aria-hidden="true"` when it has nothing to show, meaning no title, no label prefix, no description, no collapse button and no group checkbox, and `fi-ta-group-header-row-with-selection` when it carries a group checkbox ([`CanGroupRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) at `:483-501`), the class the stacked-on-mobile layout lays the row out by ([`table.css`](../../../vendor/filament/tables/resources/css/table.css) at `:58-60`).
-The port's row carries only `sy-ta-row sy-ta-group-header-row`, its id and its `data-sy-group` ([table partial](../../../packages/tables/templates/partials/Table/index.html.twig) at `:718-722`), so a screen reader walks an empty group header as a blank row, and no hook marks a header holding a checkbox.
+The port's row carries only `sy-ta-row sy-ta-group-header-row`, its id and its `data-sy-group` ([table partial](../../../packages/tables/templates/partials/Table/index.html.twig) at `:738-742`), so a screen reader walks an empty group header as a blank row, and no hook marks a header holding a checkbox.
 Next step: compute the header's has-content flag in the partial, add `aria-hidden` from it and the `sy-ta-group-header-row-with-selection` class from the checkbox gate, and assert both in the grouping render test.
 
 ## Semantics

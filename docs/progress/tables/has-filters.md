@@ -82,7 +82,7 @@ Filament's other caller is the `QueryBuilder` filter ([`QueryBuilder.php:83`](..
 ### The indicator chips are not a list
 
 Filament's chip container carries `role="list"` and each chip badge `role="listitem"` ([`HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) at `:77` and `:116`), so a screen reader announces the active filters as a list and counts them.
-The port's `sy-ta-filter-indicators-badges-ctn` and its `Badge` chips carry no role ([table partial](../../../packages/tables/templates/partials/Table/index.html.twig) at `:422-440`).
+The port's `sy-ta-filter-indicators-badges-ctn` and its `Badge` chips carry no role ([table partial](../../../packages/tables/templates/partials/Table/index.html.twig) at `:434-452`).
 Next step: add `role="list"` to the container and pass `role="listitem"` through each `Badge`'s attributes, and assert both in the indicators render test.
 
 ## Semantics

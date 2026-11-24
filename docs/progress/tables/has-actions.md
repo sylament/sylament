@@ -87,7 +87,7 @@ A cap wants one meaning before it ships.
 ### The selection checkboxes do not turn off autocomplete
 
 Filament renders `autocomplete="off"` on the page checkbox, on each group checkbox and on each record checkbox ([`HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) at `:377`, `:405` and `:434`), so a browser that restores form state on a reload or a history navigation cannot re-tick a box the server rendered unticked, or the reverse.
-The port's three checkboxes in the [table partial](../../../packages/tables/templates/partials/Table/index.html.twig) (`:523-527`, `:707-714`, `:784-790`) carry no `autocomplete`; the table controller repaints them from the live store on connect and on every `render:finished`, and whether that repaint undoes a tick a browser restores has not been checked in a browser.
+The port's three checkboxes in the [table partial](../../../packages/tables/templates/partials/Table/index.html.twig) (`:540-544`, `:727-734`, `:804-810`) carry no `autocomplete`; the table controller repaints them from the live store on connect and on every `render:finished`, and whether that repaint undoes a tick a browser restores has not been checked in a browser.
 Next step: add `autocomplete: 'off'` to the three checkboxes' `attrs()` maps and assert it in the selection render test.
 
 ## Semantics

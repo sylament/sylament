@@ -63,7 +63,7 @@ The rows' client halves are `done` on the strength of a browser pass, not a test
 
 The `<input type="text">` holds the tag being typed — Filament's `newTag` — not the field's value, and it is the only text-like control the toolkit ships with no model binding at all.
 Four things make a bound element impossible here and each one alone is decisive: `live_controller` strips a `[]` suffix off a model name, so `data-model="data.tags[]"` binds to `data.tags`; `getValueFromElement()` reads a non-checkbox input as a **scalar**, so any write would collapse the list to one string; a hidden input fires no model event, so a mirror element would never write at all; and `SetValueOntoModelFieldsPlugin` walks `[data-model]` after every render and would stringify the array back onto whatever element carried the name.
-So the controller owns the write — one `component.set(statePath, [...tags], render, debounce)` per change — and the box carries only the field `id` (the `<label for>` target), `list`, `autocomplete="off"`, the placeholder, `disabled` and the extra input attributes.
+So the controller owns the write — one `component.set(statePath, [...tags], render, debounce)` per change — and the box carries only the field `id` (the `<label for>` target), `list`, `autocomplete="off"`, the placeholder, the field's [`aria-describedby`](#the-description-rides-the-text-box-alone-as-the-input-wrapper-is-no-group), `disabled` and the extra input attributes.
 It carries no `name` and no `required` either: it is not the field.
 
 It carries no `aria-invalid` either, which the other text-like controls except [`KeyValue`](key-value.md) do.

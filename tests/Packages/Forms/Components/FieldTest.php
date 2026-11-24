@@ -17,6 +17,7 @@ use Sylament\Schemas\Components\Text;
 use Sylament\Tests\Fixtures\Forms\DefaultNamedField;
 use Sylament\Tests\Fixtures\Forms\FusedGroupForm;
 use Sylament\Tests\Fixtures\Forms\MessageListForm;
+use Sylament\Tests\Fixtures\Forms\RequiredDescribedField;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
@@ -125,6 +126,14 @@ describe('errors', function (): void {
 });
 
 describe('accessibility attributes', function (): void {
+    it('renders a filled required description as a screen-reader span its control is described by after its helper text', function (): void {
+        $render = $this->renderSchemaComponent(RequiredDescribedField::make('name')->helperText('As on the label.'));
+
+        expect($render)
+            ->toContainElement('input[name="name"][aria-describedby="schema.name-helper-text schema.name-required"]')
+            ->toContainElement(Selectors::FIELD_WRAPPER . ' span' . SupportSelectors::SCREEN_READER_ONLY . '[id="schema.name-required"]', 'Pick at least one.');
+    });
+
     it('describes the control each field renders by its helper text', function (Closure $field, string $control, string $id): void {
         $render = $this->renderSchemaComponent($field()->helperText('As on the label.'));
 

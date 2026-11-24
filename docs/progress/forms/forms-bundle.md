@@ -203,6 +203,8 @@ Ours is [`file_upload_controller.ts`](../../../packages/forms/assets/src/control
   The gate is keyed on **state** alone: `uploadedFiles` carries temporary URLs that can regenerate on every render, and keying on those would rebuild the pond continuously.
 - **`disabled()` flows through an option, not a key bust.**
   Filament hashes `isDisabled()` into its `wire:key` so Livewire destroys and rebuilds the whole subtree; `disabledValueChanged()` calls `pond.setOptions({disabled})` instead.
+- **The field's description reaches FilePond's browse input through a value.**
+  FilePond's `oninit` and `accessibilityValueChanged()` write the `accessibility` value's `aria-describedby` and `aria-invalid` onto `.filepond--browser` and the description onto `.filepond--label-action`, where Filament's component observes a hidden `data-field-accessibility` element ([file-upload.md](file-upload.md#the-fields-description-reaches-fileponds-browse-input-through-a-stimulus-value)).
 - **The `<input>` is captured once.**
   `FilePond.create()` detaches the element it replaces, so `this.inputTarget` throws afterwards while `FilePond.destroy()` needs that same element (and restores it, which is what lets a later `connect()` find the target again).
   Everything downstream reads the captured reference.

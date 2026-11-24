@@ -1365,6 +1365,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         $isDeletable = $this->isDeletable();
         $isReorderableWithButtons = $this->isReorderableWithButtons();
         $isDragReorderable = $this->isReorderableWithDragAndDrop() && ($reorderAction?->isVisible() ?? false);
+        $hasMoveActions = $isReorderableWithButtons || $isDragReorderable;
         $hasItemHeaders = $this->hasItemHeaders();
         $labelBetweenItems = $isDefault ? $this->getLabelBetweenItems() : null;
         $tableColumns = $isTable ? array_values($this->getTableColumns() ?? []) : [];
@@ -1388,13 +1389,19 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
             ));
             $itemCloneAction = $cloneAction?->__invoke(['item' => $itemKey]);
             $itemDeleteAction = $deleteAction?->__invoke(['item' => $itemKey]);
-            $itemMoveUpAction = $moveUpAction?->__invoke(['item' => $itemKey])->disabled($isFirst);
-            $itemMoveDownAction = $moveDownAction?->__invoke(['item' => $itemKey])->disabled($isLast);
+            $itemMoveUpAction = $moveUpAction?->__invoke(['item' => $itemKey]);
+            $itemMoveUpAction?->disabled($isFirst || $itemMoveUpAction->isDisabled());
+            $itemMoveDownAction = $moveDownAction?->__invoke(['item' => $itemKey]);
+            $itemMoveDownAction?->disabled($isLast || $itemMoveDownAction->isDisabled());
             $itemAddBetweenAction = ($isAddable && ! $isLast) ? $addBetweenAction?->__invoke(['afterItem' => $itemKey]) : null;
 
-            $rowReorderAction = $isDragReorderable ? $reorderAction : null;
-            $rowMoveUpAction = ($isReorderableWithButtons && $itemMoveUpAction?->isVisible()) ? $itemMoveUpAction : null;
-            $rowMoveDownAction = ($isReorderableWithButtons && $itemMoveDownAction?->isVisible()) ? $itemMoveDownAction : null;
+            $rowMoveUpAction = ($hasMoveActions && $itemMoveUpAction?->isVisible())
+                ? $itemMoveUpAction->extraAttributes($this->getReorderingActionAttributes($itemMoveUpAction, 'up', ! $isReorderableWithButtons), merge: true)
+                : null;
+            $rowMoveDownAction = ($hasMoveActions && $itemMoveDownAction?->isVisible())
+                ? $itemMoveDownAction->extraAttributes($this->getReorderingActionAttributes($itemMoveDownAction, 'down', ! $isReorderableWithButtons), merge: true)
+                : null;
+            $rowReorderAction = $isDragReorderable ? $this->getItemReorderAction($reorderAction, [$rowMoveUpAction, $rowMoveDownAction]) : null;
             $rowCloneAction = ($isCloneable && $itemCloneAction?->isVisible()) ? $itemCloneAction : null;
             $rowDeleteAction = ($isDeletable && $itemDeleteAction?->isVisible()) ? $itemDeleteAction : null;
             $rowAddBetweenAction = ($itemAddBetweenAction?->isVisible() ?? false) ? $itemAddBetweenAction : null;
@@ -1406,6 +1413,8 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
                 'key' => $itemKey,
                 'schema' => $itemSchema,
                 'label' => $label,
+                'reorderingLabel' => $hasMoveActions ? $this->getReorderingLabel($label) : null,
+                'reorderingDescriptionId' => $hasMoveActions ? $this->getReorderingDescriptionId($itemKey) : null,
                 'isFirst' => $isFirst,
                 'isLast' => $isLast,
                 'isCollapsed' => $isCollapsible && $this->isCollapsed($itemSchema),
@@ -1429,7 +1438,8 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         return [
             'itemRows' => $itemRows,
             'addAction' => ($isAddable && $addAction?->isVisible()) ? $addAction : null,
-            'hasController' => $isCollapsible || $isDragReorderable,
+            'hasController' => $isCollapsible || $hasMoveActions,
+            'announcesReordering' => $hasMoveActions,
             'isCollapsible' => $isCollapsible,
             'persistCollapsed' => $isCollapsible && $this->shouldPersistCollapsed(),
             'isDragReorderable' => $isDragReorderable,
@@ -1491,6 +1501,68 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         }
 
         return ['cells' => $cells, 'hiddenComponents' => $hiddenComponents];
+    }
+
+    /**
+     * A move action's reordering hooks, as Filament's: the item's description,
+     * the direction, a visually hidden control's tab stop, and, on a move action
+     * no modifier and no modal reshapes, the mount the repeater controller takes
+     * over to announce the move once it lands.
+     *
+     * @return array<string, mixed>
+     */
+    protected function getReorderingActionAttributes(Action $action, string $direction, bool $isVisuallyHidden): array
+    {
+        $modifier = $direction === 'up' ? $this->modifyMoveUpActionUsing : $this->modifyMoveDownActionUsing;
+
+        return [
+            ...($isVisuallyHidden ? ['tabindex' => '-1', 'data-reorder-hidden' => true] : []),
+            'data-reorder-direction' => $direction,
+            ...(($modifier === null && ! $action->shouldOpenModal()) ? ['data-reorder-action' => $action->getName()] : []),
+            'aria-describedby' => $this->getReorderingDescriptionId($this->getItemArgument($action->getArguments())),
+        ];
+    }
+
+    /**
+     * An item's drag handle, hidden from assistive technology and the tab order
+     * while the item has an enabled move action, as Filament's `updateHandles()`
+     * hides it, unless a `reorderAction()` modifier reshapes the handle.
+     *
+     * @param list<?Action> $moveActions
+     */
+    private function getItemReorderAction(Action $reorderAction, array $moveActions): Action
+    {
+        if ($this->modifyReorderActionUsing !== null) {
+            return $reorderAction;
+        }
+
+        foreach ($moveActions as $moveAction) {
+            if ($moveAction instanceof Action && ! $moveAction->isDisabled()) {
+                return (clone $reorderAction)->extraAttributes(['aria-hidden' => 'true', 'tabindex' => '-1'], merge: true);
+            }
+        }
+
+        return $reorderAction;
+    }
+
+    private function getReorderingDescriptionId(string $itemKey): string
+    {
+        return $this->getId() . '-item-' . md5($itemKey);
+    }
+
+    /**
+     * The name a reordering description and announcement give an item: its
+     * label as plain text, or the generic item name when it has none.
+     */
+    private function getReorderingLabel(string|Markup|null $label): string
+    {
+        if ($label instanceof Markup) {
+            $label = html_entity_decode(strip_tags((string) $label), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
+
+        $label = mb_trim($label ?? '');
+
+        return $label !== '' ? $label : new TranslatableMessage('components.repeater.reordering.item', domain: 'sylament-forms')->trans($this->getTranslator());
     }
 
     /**

@@ -22,14 +22,15 @@ Every workspace ships `scripts/build-js.mjs`, and the seven copies are byte-iden
 
 Five of the seven tables are empty (actions, notifications, panels, schemas, tables). Support bundles `@floating-ui/dom` into its `dropdown` controller and `sortablejs` into its `sortable` controller, with Stimulus external. Forms has two entries, both with Stimulus and UX Live external: `select` bundles `@floating-ui/dom` and `sortablejs` and inlines `utils/select.ts`; `file-upload` bundles `filepond`, its eight plugins and `cropperjs`, so ten banner lines head that file. All twelve libraries are MIT. Every one except `sortablejs` ships its own types, which is why support and forms both declare `@types/sortablejs` as a dev dependency. `sortablejs` is therefore bundled twice, once by support and once by forms, and the root override keeps the two copies on one version.
 
-## Why are `live_host.ts` and `cloak.ts` copied between workspaces?
+## Why are `live_host.ts`, `cloak.ts` and `reorder_announcer.ts` copied between workspaces?
 
 A per-file module that imported another workspace's util would ship a bare `@sylament/<pkg>/…` specifier to the browser, which every consuming app would then have to map in its importmap. Schemas' `exports` map (`"./utils/*.js": "./src/utils/*.ts"`) also points at `src/`, which the split repository export-ignores. So a per-file module copies the util into its own workspace instead:
 
 - `utils/live_host.ts` (resolving the live component that owns an element) lives in schemas and is copied into tables, panels and forms. The first three are byte-identical; forms' copy adds one header comment.
 - `utils/cloak.ts` lives in support and is copied into schemas and forms, byte-identical.
+- `utils/reorder_announcer.ts` (announcing a landed move in a server-ordered list) lives in tables and is copied into forms, byte-identical.
 
-The `exports` map is still used, by bundled entries only: forms' `select` and `file-upload` controllers import `@sylament/schemas/utils/schema_component_method.js` (and `file-upload` also `utils/live_host.js`) over a `workspace:*` dev dependency, and esbuild inlines the TypeScript source into the bundle. That is why forms has both a local `live_host.ts` (for its per-file `key-value` and `tags-input` controllers) and the schemas import (for its bundled `file-upload` controller).
+The `exports` map is still used, by bundled entries only: forms' `select` and `file-upload` controllers import `@sylament/schemas/utils/schema_component_method.js` (and `file-upload` also `utils/live_host.js`) over a `workspace:*` dev dependency, and esbuild inlines the TypeScript source into the bundle. That is why forms has both a local `live_host.ts` (for its per-file `key-value`, `tags-input` and `repeater` controllers) and the schemas import (for its bundled `file-upload` controller).
 
 ## When does a utility move to a shared workspace?
 

@@ -44,6 +44,7 @@ use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Error\RuntimeError;
+use Twig\Markup;
 
 use function Symfony\Component\Translation\t;
 
@@ -399,24 +400,84 @@ describe('the move actions', function (): void {
         'down' => ['moveDown', ['a', 'c', 'b']],
     ]);
 
-    it("disables the first item's up and the last item's down button", function (): void {
+    it("disables the first item's up and the last item's down button, beside a move button its modifier disables", function (): void {
         $crawler = $this->renderSchemaComponent(
-            Repeater::make('lines')->reorderableWithButtons()->components([TextInput::make('name')]),
-            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]],
+            Repeater::make('lines')->reorderableWithButtons()->moveDownAction(static fn (Action $action): Action => $action->disabled(static fn (array $arguments): bool => $arguments['item'] === 'a'))->components([TextInput::make('name')]),
+            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]],
         );
 
-        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[aria-label="Move up"]')->each(static fn (Crawler $button): bool => $button->attr('disabled') !== null))->toBe([true, false])
-            ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[aria-label="Move down"]')->each(static fn (Crawler $button): bool => $button->attr('disabled') !== null))->toBe([false, true]);
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[aria-label="Move up"]')->each(static fn (Crawler $button): bool => $button->attr('disabled') !== null))->toBe([true, false, false])
+            ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[aria-label="Move down"]')->each(static fn (Crawler $button): bool => $button->attr('disabled') !== null))->toBe([true, false, true]);
     });
 
-    it('renders no move buttons unless the repeater is reorderable with buttons', function (Closure $repeater): void {
+    it('renders the move buttons visually hidden and out of the tab order while only a drag reorders', function (Closure $repeater): void {
+        $crawler = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+
+        expect($crawler)->toContainButtons('[data-item-key] .sy-sr-only button', ['Move up', 'Move down', 'Move up', 'Move down'])
+            ->and($crawler->filter('[data-item-key] .sy-sr-only button')->each(static fn (Crawler $button): array => [$button->attr('tabindex'), $button->attr('data-reorder-hidden')]))->toBe(array_fill(0, 4, ['-1', 'true']));
+    })->with([
+        'default' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')])],
+        'simple()' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name'))],
+        'table()' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name')])],
+    ]);
+
+    it('renders no move button, item description or status region when nothing reorders the items', function (Closure $repeater): void {
         $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
 
         expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
-            ->and($crawler->filter('button[aria-label="Move up"], button[aria-label="Move down"]'))->toHaveCount(0);
+            ->and($crawler->filter('button[aria-label="Move up"], button[aria-label="Move down"]'))->toHaveCount(0)
+            ->and($crawler->filter('[data-reorder-description], [role="status"]'))->toHaveCount(0);
     })->with([
-        'without buttons' => [fn (): Repeater => Repeater::make('lines')],
         'not reorderable' => [fn (): Repeater => Repeater::make('lines')->reorderableWithButtons()->reorderable(false)],
+        'neither by buttons nor by drag' => [fn (): Repeater => Repeater::make('lines')->reorderableWithDragAndDrop(false)],
+    ]);
+});
+
+describe('screen-reader reordering', function (): void {
+    it('describes each item by its label, or as an item, with its place, points its move buttons at it, and holds the moved message for an empty status region', function (Closure $repeater): void {
+        $crawler = $this->renderSchemaComponent(
+            $repeater()->reorderableWithButtons()->itemLabel(static fn (string $uuid): string|Markup => $uuid === 'a' ? new Markup('<em>Ada</em> &amp; Grace', 'UTF-8') : ' '),
+            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]],
+        );
+        $descriptions = $crawler->filter('[data-reorder-description]');
+
+        expect($descriptions->each(static fn (Crawler $description): array => [$description->text(), $description->attr('data-reorder-label'), $description->attr('data-reorder-description')]))->toBe([
+            ['Ada & Grace, position 1 of 2', 'Ada & Grace', 'a'],
+            ['Item, position 2 of 2', 'Item', 'b'],
+        ])
+            ->and($crawler->filter('[data-item-key] [data-reorder-direction]')->each(static fn (Crawler $button): array => [
+                $button->attr('aria-label'),
+                $button->attr('data-reorder-direction'),
+                $descriptions->filter(sprintf('[id="%s"]', $button->attr('aria-describedby')))->attr('data-reorder-description'),
+            ]))->toBe([['Move up', 'up', 'a'], ['Move down', 'down', 'a'], ['Move up', 'up', 'b'], ['Move down', 'down', 'b']])
+            ->and($crawler)->toContainElement('[role="status"][aria-live="polite"][aria-atomic="true"][data-live-ignore]', '')
+            ->and($crawler->filter('[data-sylament--forms--repeater-moved-message-value]')->attr('data-sylament--forms--repeater-moved-message-value'))->toBe('__LABEL__ moved to position __POSITION__ of __COUNT__');
+    })->with([
+        'default' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')])],
+        'simple()' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name'))],
+        'table()' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name')])],
+    ]);
+
+    it('takes the drag handle out of reach while its item has an enabled move button, unless a reorderAction() modifier reshapes it', function (Closure $repeater, array $items, array $hidden): void {
+        $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), ['lines' => $items]);
+
+        expect($crawler->filter(SupportSelectors::SORTABLE_HANDLE)->each(static fn (Crawler $handle): array => [$handle->attr('aria-hidden'), $handle->attr('tabindex')]))->toBe($hidden);
+    })->with([
+        'two items' => [fn (): Repeater => Repeater::make('lines'), ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']], [['true', '-1'], ['true', '-1']]],
+        'one item, both its moves disabled' => [fn (): Repeater => Repeater::make('lines'), ['a' => ['name' => 'Ada']], [[null, null]]],
+        'a reorderAction() modifier' => [fn (): Repeater => Repeater::make('lines')->reorderAction(static fn (Action $action): Action => $action->color('primary')), ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']], [[null, null], [null, null]]],
+    ]);
+
+    it('hands the controller only a move button no modifier or modal reshapes', function (Closure $configure, bool $confirmsEveryAction, array $buttons): void {
+        $repeater = $configure(Repeater::make('lines')->reorderableWithButtons()->components([TextInput::make('name')]));
+        $render = fn (): Crawler => $this->renderSchemaComponent($repeater, ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]]);
+        $crawler = $confirmsEveryAction ? Action::configureUsing(static fn (Action $action): Action => $action->requiresConfirmation(), during: $render) : $render();
+
+        expect($crawler->filter(FormsSelectors::repeaterItem('b') . ' [data-reorder-direction]')->each(static fn (Crawler $button): array => [$button->attr('data-reorder-direction'), $button->attr('data-reorder-action'), $button->attr('aria-describedby') !== null]))->toBe($buttons);
+    })->with([
+        'as built' => [fn (Repeater $repeater): Repeater => $repeater, false, [['up', 'moveUp', true], ['down', 'moveDown', true]]],
+        'a moveUpAction() modifier' => [fn (Repeater $repeater): Repeater => $repeater->moveUpAction(static fn (Action $action): Action => $action->color('primary')), false, [['up', null, true], ['down', 'moveDown', true]]],
+        'a confirmation every action requires' => [fn (Repeater $repeater): Repeater => $repeater, true, [['up', null, true], ['down', null, true]]],
     ]);
 });
 

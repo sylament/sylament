@@ -1,0 +1,26 @@
+{#
+    The reordering layer every view of a repeater renders, kept in its own file: `_self` inside a
+    <twig:> block resolves to the embedded component template, which carries none of the outer
+    template's macros.
+#}
+{% macro status(id) %}
+    <span {{ attrs({
+        id: id ~ '-reorder-status',
+        class: 'sy-sr-only',
+        role: 'status',
+        'aria-live': 'polite',
+        'aria-atomic': 'true',
+        'data-live-ignore': true,
+    }, stimulus_target('sylament--forms--repeater', 'reorderStatus')) }}></span>
+{% endmacro status %}
+
+{% macro descriptions(rows) %}
+    {% for row in rows %}
+        <span {{ attrs({
+            id: row.reorderingDescriptionId,
+            class: 'sy-sr-only',
+            'data-reorder-description': row.key,
+            'data-reorder-label': row.reorderingLabel,
+        }, stimulus_target('sylament--forms--repeater', 'reorderDescription')) }}>{{ 'components.repeater.reordering.position'|trans({label: row.reorderingLabel, position: loop.index, count: loop.length}, domain: 'sylament-forms') }}</span>
+    {% endfor %}
+{% endmacro descriptions %}

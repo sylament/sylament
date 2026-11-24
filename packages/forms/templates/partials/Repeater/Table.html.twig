@@ -1,9 +1,13 @@
 {% set repeaterController = 'sylament--forms--repeater' %}
 {% set sortableController = 'sylament--support--sortable' %}
-{% set repeaterStimulus = hasController ? stimulus_controller(repeaterController, {key: component.getKey}) : null %}
+{% set repeaterStimulus = hasController ? stimulus_controller(repeaterController, {
+    key: component.getKey,
+    movedMessage: announcesReordering ? 'components.repeater.reordering.moved'|trans({label: '__LABEL__', position: '__POSITION__', count: '__COUNT__'}, domain: 'sylament-forms') : null,
+}) : null %}
 {% set sortableStimulus = isDragReorderable ? stimulus_controller(sortableController, {
     animationDuration: animationDuration,
 })|stimulus_action(repeaterController, 'reorder', sortableController ~ ':end') : null %}
+{% set moveActionClass = component.isReorderableWithButtons ? null : 'sy-sr-only' %}
 
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
     <div
@@ -15,6 +19,12 @@
                 'aria-describedby': component.getAccessibilityAttributes['aria-describedby'],
             }, repeaterStimulus) }}
     >
+        {% import '@SylamentForms/partials/Repeater/Reordering.html.twig' as reordering %}
+
+        {% if announcesReordering %}
+            {{ reordering.status(component.getId) }}
+        {% endif %}
+
         {% if itemRows is not empty %}
             <table>
                 <thead>
@@ -63,11 +73,11 @@
                                             {% endif %}
 
                                             {% if row.moveUpAction %}
-                                                <div>{{ renderComponent(row.moveUpAction) }}</div>
+                                                <div {{ attrs({class: moveActionClass}) }}>{{ renderComponent(row.moveUpAction) }}</div>
                                             {% endif %}
 
                                             {% if row.moveDownAction %}
-                                                <div>{{ renderComponent(row.moveDownAction) }}</div>
+                                                <div {{ attrs({class: moveActionClass}) }}>{{ renderComponent(row.moveDownAction) }}</div>
                                             {% endif %}
                                         </div>
                                     {% endif %}
@@ -119,6 +129,10 @@
             <div {{ attrs({class: ['sy-fo-table-repeater-add', component.getAddActionAlignmentClass]}) }}>
                 {{ renderComponent(addAction) }}
             </div>
+        {% endif %}
+
+        {% if announcesReordering %}
+            {{ reordering.descriptions(itemRows) }}
         {% endif %}
     </div>
 </twig:SylamentForms:FieldWrapper>

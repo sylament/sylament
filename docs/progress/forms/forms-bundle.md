@@ -6,12 +6,14 @@ ports:
   - vendor/filament/forms/resources/js/components/select.js
   - vendor/filament/support/resources/js/utilities/select.js
   - vendor/filament/forms/resources/js/components/file-upload.js
+  - vendor/filament/forms/resources/js/utilities/reordering.js
 owns:
   - packages/forms/assets/src/controllers/file_upload_controller.ts
   - packages/forms/assets/src/controllers/repeater_controller.ts
   - packages/forms/assets/src/controllers/select_controller.ts
   - packages/forms/assets/src/utils/cloak.ts
   - packages/forms/assets/src/utils/live_host.ts
+  - packages/forms/assets/src/utils/reorder_announcer.ts
   - packages/forms/assets/src/utils/select.ts
   - packages/forms/src/SylamentFormsBundle.php
 ---
@@ -29,11 +31,13 @@ owns:
 | [Bundle registration + `@SylamentForms` view namespace](../../../packages/forms/src/SylamentFormsBundle.php) | [`->hasViews()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [`Components/` loaded as container-built, non-shared services](../../../packages/forms/src/SylamentFormsBundle.php) (`Components/{*,Repeater/*,TextInput/Actions/*}.php`) | — | done | — | [component model](../../internals/php.md#the-component-model) · [semantics](#the-component-glob-reaches-the-affix-actions-so-their-required-setters-run) |
 | [`Validation/*Validator.php` loaded as container services](../../../packages/forms/src/SylamentFormsBundle.php) | — | done | — | [diverges](probes-records.md#unique-and-exists-are-one-dql-probe-behind-a-container-service) |
-| [`utils/cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts), the `sy-cloak` reveal the `repeater` controller calls from `connect()` | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-and-live_hostts) |
-| [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts), `resolveLiveHost()` for the `key-value` and `tags-input` controllers | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-and-live_hostts) |
+| [`utils/cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts), the `sy-cloak` reveal the `repeater` controller calls from `connect()` | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-live_hostts-and-reorder_announcerts) |
+| [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts), `resolveLiveHost()` for the `key-value`, `tags-input` and `repeater` controllers | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-live_hostts-and-reorder_announcerts) |
+| [`utils/reorder_announcer.ts`](../../../packages/forms/assets/src/utils/reorder_announcer.ts), the `ReorderAnnouncer` the `repeater` controller announces a landed move through | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-live_hostts-and-reorder_announcerts) |
 | [Asset registration under `@sylament/forms`](../../../packages/forms/src/SylamentFormsBundle.php) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) — `FilamentAsset::register()` | done | — | [semantics](#each-fields-script-ships-with-its-field-and-the-bundle-registers-the-built-directory-once) |
 | [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) over [`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts) | [`components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
-| [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) — the embedded view's Alpine object | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) |
+| [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) — the embedded view's Alpine object · [`utilities/reordering.js`](../../../vendor/filament/forms/resources/js/utilities/reordering.js) | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) · [diverges](#the-repeater-controller-takes-over-a-plain-move-controls-click-to-announce-the-landed-move) |
+| The `repeater` controller's sorting pause and failed-move recovery | [`utilities/reordering.js`](../../../vendor/filament/forms/resources/js/utilities/reordering.js) — `setSortingDisabled()`, `resynchronize()` | todo | — | [detail](#sorting-stays-live-through-a-repeater-move-and-a-failed-drag-keeps-its-order) |
 | [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) | [`components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
 | `FakerProvider` and its registration | [`packageRegistered()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) + [`FakerProvider.php`](../../../vendor/filament/forms/src/FakerProvider.php) | blocked | the MarkdownEditor and RichEditor fakers | [detail](#the-faker-provider-returns-the-markdown-and-rich-content-fakers) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | — |
@@ -47,6 +51,12 @@ owns:
 
 `packageRegistered()` adds [`FakerProvider`](../../../vendor/filament/forms/src/FakerProvider.php) to every resolved Faker `Generator`.
 Its two methods return `MarkdownFaker` and `RichContentFaker`, which live in the `MarkdownEditor` and `RichEditor` subtrees, and neither field has a port.
+
+### Sorting stays live through a repeater move, and a failed drag keeps its order
+
+Filament's `reordering.js` disables the list's Sortable instance from a button move's start, and from a drag's end, until the move is reconciled, and after a failed drag forces a render to recover the server's order ([`reordering.js:89`](../../../vendor/filament/forms/resources/js/utilities/reordering.js), `:243-247`, `:310-316`, `:411-413`).
+Support's [sortable controller](../support/sortable.md) exposes no pause, so the repeater's items stay draggable while a move's write is in flight, and a failed drag leaves them in the dragged order until the next render, as [the table's](../tables/table.md#sorting-stays-live-through-a-reorder-request-and-a-failed-drag-keeps-its-order) do.
+Next step: the sortable pause and order restore the table's entry names, taken by the repeater controller around a tracked move.
 
 ### The table-select registration waits on the TableSelect field
 
@@ -143,19 +153,20 @@ Its `{value, text}` payload shape is not adopted either: the results never leave
 ### The repeater controller owns the items' collapse state and bridges the drag control to the reorder action
 
 [`repeater_controller.ts`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) is `sylament--forms--repeater`, the port of the client half of Filament's repeater Alpine object ([`Repeater.php`'s embedded view](../../../vendor/filament/forms/src/Components/Repeater.php)).
-It reads two Stimulus values, `key` (the schema component key, the only string ever handed to the host) and `persist` (whether collapse state survives a reload), and one target, `item`.
-The default-mode [Repeater partial](../../../packages/forms/templates/partials/Repeater/index.html.twig) stamps that target, and the collapse actions, on every item `<li>` of a collapsible repeater; the simple and table partials bind the controller for the drag bridge alone.
+It reads three Stimulus values, `key` (the schema component key, the only string ever handed to the host), `persist` (whether collapse state survives a reload) and `movedMessage` (the [move announcement](#the-repeater-controller-takes-over-a-plain-move-controls-click-to-announce-the-landed-move)'s token message), and three targets, `item`, `reorderStatus` and `reorderDescription`.
+The default-mode [Repeater partial](../../../packages/forms/templates/partials/Repeater/index.html.twig) stamps the `item` target, and the collapse actions, on every item `<li>` of a collapsible repeater; the simple and table partials bind the controller for the drag bridge and the move announcement alone.
 These methods carry the behaviour:
 
 - `toggleItemFromHeader`, bound on the item header's `click`, ignores clicks that landed inside `.sy-fo-repeater-item-header-start-actions` or `.sy-fo-repeater-item-header-end-actions`, so the reorder, clone and delete buttons are not also a collapse toggle.
   The [Section controller's `toggleFromHeader()`](../../../packages/support/assets/src/controllers/section_controller.ts) is the precedent.
 - `toggleItemFromButton`, bound on the collapse/expand button pair's `click`, calls `event.stopPropagation()` **by hand** rather than taking the action option: `:stop` needs Stimulus 3.2 and the workspace's peer range is `^3.0`.
-  That is the one comment kept in the file body, for parity with the Section controller, which carries the same line for the same reason.
+  Its comment is kept for parity with the Section controller, which carries the same line for the same reason.
 - `expandItem`, bound on the item's own `expand` event, is the non-bubbling per-ancestor reveal the [schema root dispatches after a validation failure](../schemas/schemas-bundle.md#the-expand-walk-and-the-two-window-events-either-side-of-it).
   `event.currentTarget` is the element carrying the `data-action`, so the item resolves without a detail payload.
 - `collapseAll` / `expandAll`, bound on the two actions-bar buttons, walk `this.itemTargets`.
   Stimulus scopes targets and actions to the nearest controller of the same identifier, so a nested repeater collapses only its own rows.
 - `reorder` is the drag bridge, below.
+- The capture-phase click listener `connect()` adds is the move take-over, in [its own entry](#the-repeater-controller-takes-over-a-plain-move-controls-click-to-announce-the-landed-move).
 
 **The collapse state is an attribute the controller stamps, not a class the server owns.**
 Each item carries `data-collapsed="true"|"false"` from the moment this controller sees it; the server-rendered `sy-collapsed` class is **first paint only** and is read exactly once, as the seed for that stamp.
@@ -174,13 +185,26 @@ Both accessors are the Section controller's `try`/`catch` helpers verbatim, incl
 
 **Reorder goes through the host, not through the DOM.**
 The `<ul>` / `<tbody>` carries `data-action="sylament--support--sortable:end->sylament--forms--repeater#reorder"`, so [support's drag control](../support/sortable.md) hands this controller the new key order in the event's `detail.items`.
-A non-array detail returns silently; otherwise the controller resolves the closest `[data-controller~="live"]` root, throwing "The sylament--forms--repeater controller needs a live component host to reorder." when there is none (the select controller's message shape), and calls `component.action("mountAction", { name: "reorder", arguments: { items }, context: { schemaComponent: this.keyValue } })`, the repeater's own `reorder` action mounted against its schema component.
-`getComponent()` is called at drag time rather than at connect, so there is no `live:connect` race to retry around: a user cannot drag a row before the host has connected, which is why this controller needs no [`resolveLiveHost()`](../../../packages/forms/assets/src/utils/live_host.ts).
+A non-array detail returns silently; otherwise the controller takes the host `connect()` resolved, or resolves the closest `[data-controller~="live"]` root, throwing "The sylament--forms--repeater controller needs a live component host to reorder." when there is none (the select controller's message shape), and calls `component.action("mountAction", { name: "reorder", arguments: { items }, context: { schemaComponent: this.keyValue } })`, the repeater's own `reorder` action mounted against its schema component, tracked by the announcer when the detail names the dragged item and its two indices.
+Every list that drags also announces its moves, so it resolves the host at connect through [`resolveLiveHost()`](../../../packages/forms/assets/src/utils/live_host.ts), which waits out the `live:connect` race, because the announcer listens for the host's errors before any request; a drag that lands before that resolve calls `getComponent()` itself and goes unannounced.
 
-It ships **per-file** (no `BUNDLED_ENTRIES` entry, no new dependency): the built `dist/controllers/repeater_controller.js` keeps `@hotwired/stimulus`, `@symfony/ux-live-component` and `../utils/cloak.js` as verbatim specifiers, the first two resolved by the consuming app's importmap; `@symfony/ux-live-component` is both a dev and a peer dependency of this workspace.
+It ships **per-file** (no `BUNDLED_ENTRIES` entry, no new dependency): the built `dist/controllers/repeater_controller.js` keeps `@hotwired/stimulus`, `@symfony/ux-live-component`, `../utils/cloak.js`, `../utils/live_host.js` and `../utils/reorder_announcer.js` as verbatim specifiers, the first two resolved by the consuming app's importmap; `@symfony/ux-live-component` is both a dev and a peer dependency of this workspace.
 Its `symfony.controllers` entry is `fetch: eager`.
 
 **No test in this repo runs it**: the [`checkbox-list` note](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) applies verbatim, and verification is the reviewer's line-by-line read against the vendor Alpine object plus the demo's browser pass.
+
+### The repeater controller takes over a plain move control's click to announce the landed move
+
+A list rendering the [reordering layer](repeater.md#a-drag-only-list-renders-its-move-buttons-visually-hidden-and-hides-its-handle-behind-them) carries the `movedMessage` value, the catalogue's `components.repeater.reordering.moved` with `label`, `position` and `count` set to `__LABEL__`, `__POSITION__` and `__COUNT__`.
+On `connect()` such a list resolves its host and builds a [`ReorderAnnouncer`](../tables/table.md#a-move-is-announced-once-its-own-request-lands-from-a-token-message) over its `reorderDescription` targets, its `reorderStatus` target and that value, with `restoreFocus`, which the table leaves off; Stimulus scopes both targets to the nearest repeater, so a nested list announces only its own items.
+A capture-phase click listener on the root then takes a click on one of its own move controls that is enabled, carries `data-reorder-action`, and whose own `live#action` wiring still mounts the action that attribute names: it stops the event before UX's action sees it and sends the same `mountAction` call, rebuilt from the control's `data-live-*-param` attributes as Stimulus reads them, through the announcer's `track()`, as `reordering.js` takes over a plain `mountAction(…)` control ([`reordering.js:44-76`](../../../vendor/filament/forms/resources/js/utilities/reordering.js)).
+Filament's script lets the click through and recognises its request in a Livewire message hook; UX has none, so the controller sends the request itself to hold the promise UX resolves once the re-render is morphed in.
+A drag is tracked the same way from the [sortable](../support/sortable.md) `end` detail, its prior order rebuilt with `orderBeforeDrag()`, as `reordering.js` begins one on the drag's `start` (`:78-90`).
+Once the move lands, the moved message is written only when the item's index among the keys both orders share changed (`:318-351`), and focus passes to the moved item's same-direction enabled move control, else its other one, while it is still on the pressed control or the body; a visually hidden control's press passes focus nowhere, as Filament's `data-reorder-hidden` test does (`:280`).
+Filament's hand-on falls back to the item itself, labelled by its description, and to the root for an item gone from the list (`:387-407`); the announcer has neither, and a plain move always leaves its item an enabled control in a list of two or more.
+Filament drops the hand-on as soon as a pointer goes down elsewhere, Tab is pressed or focus moves (`:31-42`); the announcer reads where focus is once the move lands instead.
+While a move waits, the announcer drops a further take-over, as Filament's script refuses it; a control the server left unmarked keeps its own click even then, where Filament's refuses every move control.
+**No test in this repo runs the take-over or the announcement** (`no harness`): the render tests pin the hooks it reads, and the rest is the reviewer's read against `reordering.js` plus the demo's browser pass.
 
 ### The file-upload controller bundles FilePond and is the only lazy controller
 
@@ -220,11 +244,12 @@ The two `void` seam calls carry rejection arms: a failed `reorderUploadedFiles` 
 `FilePond.create()` runs inside `try/finally` so the `#initializing` re-entrance flag cannot stick after a throw, `maxFileSize` is passed only under `hasMaxFileSizeValue` (an absent value is not a zero ceiling), and `resolveLiveHost()`'s rejection surfaces through the error banner instead of an unhandled promise rejection.
 `#detectType` resolves `mimeTypeMap[extension] || detectedType` with `||`, not `??`, so a map entry deliberately set to the empty string falls through to the browser's detected type: that is Filament's operator, and the reason an empty entry is a "let the browser decide" instruction rather than a hard "no type".
 
-### The per-file controllers carry copies of `cloak.ts` and `live_host.ts`
+### The per-file controllers carry copies of `cloak.ts`, `live_host.ts` and `reorder_announcer.ts`
 
 Filament reaches `x-cloak` and `$wire` through Alpine, so it has no file for either.
-The `repeater`, `key-value` and `tags-input` controllers build per-file and unbundled, and the per-file build ships import specifiers verbatim, so an import of `@sylament/schemas/utils/live_host.js` or support's `cloak.ts` would ship to the browser as a bare specifier every consuming app's importmap would have to resolve.
+The `repeater`, `key-value` and `tags-input` controllers build per-file and unbundled, and the per-file build ships import specifiers verbatim, so an import of `@sylament/schemas/utils/live_host.js`, support's `cloak.ts` or tables' `reorder_announcer.ts` would ship to the browser as a bare specifier every consuming app's importmap would have to resolve.
 Forms keeps its own copies instead: [`cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts) byte for byte as [support](../../../packages/support/assets/src/utils/cloak.ts) and schemas carry it, and [`live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) as [schemas'](../../../packages/schemas/assets/src/utils/live_host.ts) plus one comment line; tables and panels carry the same copy without that line.
+The `repeater` controller announces a landed move through [`reorder_announcer.ts`](../../../packages/forms/assets/src/utils/reorder_announcer.ts), byte for byte as [tables'](../../../packages/tables/assets/src/utils/reorder_announcer.ts), which its table controller uses.
 The bundled `file-upload` controller imports schemas' `live_host.js` directly, because esbuild inlines it through that package's `exports` map ([the controller](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller)).
 
 ### Livewire-specific provider responsibilities are dropped, not ported

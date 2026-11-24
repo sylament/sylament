@@ -131,6 +131,10 @@ components:
                 label: 'Actions'
             reorder:
                 label: 'Reorder'
+        reordering:
+            item: 'Item'
+            moved: '{label} moved to position {position} of {count}'
+            position: '{label}, position {position, number} of {count, number}'
     select:
         actions:
             clear:

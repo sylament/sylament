@@ -18580,7 +18580,8 @@ var file_upload_controller_default = class extends Controller {
     removeErrorMessage: String,
     loadErrorMessage: String,
     reorderErrorMessage: String,
-    typeUndetectedMessage: String
+    typeUndetectedMessage: String,
+    accessibility: Object
   };
   #generation = 0;
   #host = null;
@@ -18644,6 +18645,9 @@ var file_upload_controller_default = class extends Controller {
   }
   disabledValueChanged() {
     this.#pond?.setOptions({ disabled: this.disabledValue });
+  }
+  accessibilityValueChanged() {
+    this.#applyAccessibility();
   }
   editorSetDragMode({ params }) {
     this.#editor?.setDragMode(params.mode);
@@ -18778,6 +18782,7 @@ var file_upload_controller_default = class extends Controller {
         onclose: () => this.#closeEditor()
       },
       beforeAddFile: (item) => this.#beforeAddFile(item),
+      oninit: () => this.#applyAccessibility(),
       ...this.hasImageCropAspectRatioValue ? { imageCropAspectRatio: this.imageCropAspectRatioValue } : {},
       ...this.hasImageResizeModeValue ? { imageResizeMode: this.imageResizeModeValue } : {},
       // The resize targets are Type.INT options parsing a numeric string — the maxFileSize precedent.
@@ -18812,6 +18817,22 @@ var file_upload_controller_default = class extends Controller {
       ...this.hasPlaceholderValue ? { labelIdle: this.placeholderValue } : {},
       ...this.hasMaxParallelUploadsValue ? { maxParallelUploads: this.maxParallelUploadsValue } : {}
     };
+  }
+  /** The field's description and invalid state onto the browse input FilePond builds in place of the field's own, and the description onto its Browse action. */
+  #applyAccessibility() {
+    const describedBy = this.#accessibilityAttribute("aria-describedby");
+    const browser = this.element.querySelector(".filepond--browser");
+    setOrRemoveAttribute(browser, "aria-describedby", describedBy);
+    setOrRemoveAttribute(browser, "aria-invalid", this.#accessibilityAttribute("aria-invalid"));
+    setOrRemoveAttribute(
+      this.element.querySelector(".filepond--label-action"),
+      "aria-describedby",
+      describedBy
+    );
+  }
+  #accessibilityAttribute(name) {
+    const value = this.accessibilityValue[name];
+    return typeof value === "string" && value !== "" ? value : null;
   }
   /** The server's `uploadedFiles` payload as FilePond's initial-file list, newest first unless appending. */
   #buildFiles() {
@@ -19335,6 +19356,13 @@ function anchorFor(url, action, label) {
   icon.setAttribute("aria-hidden", "true");
   anchor.append(icon);
   return anchor;
+}
+function setOrRemoveAttribute(element, name, value) {
+  if (value === null) {
+    element?.removeAttribute(name);
+  } else {
+    element?.setAttribute(name, value);
+  }
 }
 function isRecord(value) {
   return typeof value === "object" && value !== null;

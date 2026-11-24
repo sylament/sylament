@@ -3,9 +3,19 @@
 declare(strict_types=1);
 
 use Sylament\Actions\Action;
+use Sylament\Forms\Components\Checkbox;
+use Sylament\Forms\Components\DateTimePicker;
+use Sylament\Forms\Components\KeyValue;
+use Sylament\Forms\Components\Repeater;
+use Sylament\Forms\Components\Repeater\TableColumn;
+use Sylament\Forms\Components\Select;
+use Sylament\Forms\Components\TagsInput;
+use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
+use Sylament\Forms\Components\Toggle;
 use Sylament\Schemas\Components\Text;
 use Sylament\Tests\Fixtures\Forms\DefaultNamedField;
+use Sylament\Tests\Fixtures\Forms\FusedGroupForm;
 use Sylament\Tests\Fixtures\Forms\MessageListForm;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
@@ -83,11 +93,11 @@ describe('wrapper slots', function (): void {
 });
 
 describe('errors', function (): void {
-    it('lists every message a value fails with, in order, and marks its control invalid', function (): void {
+    it('lists every message a value fails with, in order, and marks its control invalid and described by the list', function (): void {
         $tester = $this->createLiveComponent(MessageListForm::class);
 
         expect($tester->render()->crawler())
-            ->toContainElement('input[name="code"][aria-invalid="false"]')
+            ->toContainElement('input[name="code"]:not([aria-invalid]):not([aria-describedby])')
             ->not->toContainElement(Selectors::ERROR_MESSAGE);
 
         $render = $tester->fillForm(['code' => 'ab'])->call('save')->render()->crawler();
@@ -95,9 +105,46 @@ describe('errors', function (): void {
         expect($render->filter(Selectors::ERROR_MESSAGE)->each(static fn ($message): string => $message->text()))
             ->toBe(['This value is too short. It should have 3 characters or more.', 'This value should be of type numeric.'])
             ->and($render)
-            ->toContainElement(SupportSelectors::INPUT_WRAPPER . SupportSelectors::INVALID . ' input[name="code"][aria-invalid="true"]')
-            ->toContainElement(SupportSelectors::INPUT_WRAPPER . ':not(' . SupportSelectors::INVALID . ') input[name="note"][aria-invalid="false"]');
+            ->toContainElement(SupportSelectors::INPUT_WRAPPER . SupportSelectors::INVALID . ' input[name="code"][aria-invalid="true"][aria-describedby="form.code-error"]')
+            ->toContainElement('[id="form.code-error"][data-validation-error]', 'This value is too short. It should have 3 characters or more. This value should be of type numeric.')
+            ->toContainElement(SupportSelectors::INPUT_WRAPPER . ':not(' . SupportSelectors::INVALID . ') input[name="note"]:not([aria-invalid]):not([aria-describedby])');
     });
+
+    it('marks a field in a plain wrapper invalid but describes it by nothing, as its wrapper renders no description', function (): void {
+        $render = $this->createLiveComponent(FusedGroupForm::class)
+            ->fillForm(['first' => 'abc', 'second' => ''])
+            ->call('save')
+            ->render()
+            ->crawler();
+
+        expect($render)
+            ->toContainElement(Selectors::FUSED_GROUP . ' input[name="first"][aria-invalid="true"]:not([aria-describedby])')
+            ->toContainElement(Selectors::FUSED_GROUP . ' input[name="second"][aria-invalid="true"]:not([aria-describedby])')
+            ->not->toContainElement('[id="form.first-error"]');
+    });
+});
+
+describe('accessibility attributes', function (): void {
+    it('describes the control each field renders by its helper text', function (Closure $field, string $control, string $id): void {
+        $render = $this->renderSchemaComponent($field()->helperText('As on the label.'));
+
+        expect($render)
+            ->toContainElement($control . '[aria-describedby="' . $id . '-helper-text"]')
+            ->toContainElement('[id="' . $id . '-helper-text"]', 'As on the label.');
+    })->with([
+        'text input' => [fn (): TextInput => TextInput::make('name'), 'input[name="name"]', 'schema.name'],
+        'textarea' => [fn (): Textarea => Textarea::make('bio'), 'textarea[name="bio"]', 'schema.bio'],
+        'inline checkbox' => [fn (): Checkbox => Checkbox::make('terms'), 'input[name="terms"]', 'schema.terms'],
+        'toggle' => [fn (): Toggle => Toggle::make('notify'), 'input[name="notify"]', 'schema.notify'],
+        'date-time picker' => [fn (): DateTimePicker => DateTimePicker::make('startsAt'), 'input[name="startsAt"]', 'schema.startsAt'],
+        'native select' => [fn (): Select => Select::make('size')->options(['s' => 'Small']), Selectors::NATIVE_SELECT, 'schema.size'],
+        'select JS control' => [fn (): Select => Select::make('size')->native(false)->options(['s' => 'Small']), Selectors::JS_CONTROL, 'schema.size'],
+        'tags input' => [fn (): TagsInput => TagsInput::make('tags'), 'input[id="schema.tags"]', 'schema.tags'],
+        'key-value table' => [fn (): KeyValue => KeyValue::make('meta'), 'table[id="schema.meta"]', 'schema.meta'],
+        'repeater' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')]), '[role="group"][id="schema.lines"]', 'schema.lines'],
+        'simple repeater' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name')), '[role="group"][id="schema.lines"]', 'schema.lines'],
+        'table repeater' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name')]), '[role="group"][id="schema.lines"]', 'schema.lines'],
+    ]);
 });
 
 describe('required marker', function (): void {

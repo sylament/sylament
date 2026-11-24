@@ -64,7 +64,7 @@ It casts its state through schemas' [`OptionStateCast`](../schemas/option-state-
 | [`required` drops when concealed](../../../packages/forms/templates/partials/Select/index.html.twig) — the native branch only; `aria-required` is ungated | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 | `getLabel()` — derived from the relationship name when unset | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — | [detail](#the-relationship-name-does-not-default-the-label) |
 | `getActionSchemaModel()` — the create modal's record without a relationship | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | skipped | — | [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) |
-| `getRequiredDescription()` | [`Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — | [field.md](field.md#the-accessibility-members-are-not-ported) |
+| `getRequiredDescription()` | [`Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — | [field.md](field.md#the-accessibility-members-describe-what-the-wrapper-renders) |
 | `loadingPlaceholder()` / `getLoadingPlaceholder()` and the async wrapper over the JS control | [`Concerns/HasLoadingPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingPlaceholder.php) · [`Select::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — | [detail](#the-js-control-has-no-loading-placeholder) |
 
 ## Details
@@ -296,7 +296,8 @@ Because the order is then part of the value, the controller's re-sync compares a
 Filament gives the field's id to its `button[role="combobox"]`, so the field's `<label for>` focuses the control.
 Ours does the same at runtime: the controller reads `element.id`, removes the attribute from the hidden `<select>` at construction — a tracked attribute change the host's `ExternalMutationTracker` re-applies after every morph — and restores it on disconnect; the engine sets it on the button.
 The server-side contract keeps `id` on the `<select>`, which the render tests assert; the handoff is runtime-only and invisible to PHP.
-The button also mirrors the `<select>`'s `aria-invalid` and `aria-required` — at construction and after every host render — because the hidden `<select>` is `display: none` and out of the accessibility tree, while Filament's own button carries neither; the JS branch renders `aria-required` on the `<select>` for exactly that mirror, where the native branch renders `required`.
+The button also mirrors the `<select>`'s `aria-describedby`, `aria-invalid` and `aria-required` — at construction and after every host render — because the hidden `<select>` is `display: none` and out of the accessibility tree; Filament's engine writes the same attributes onto its button from the accessibility payload its template renders (`select.js` `setAccessibilityAttributes()`).
+The JS branch renders `aria-required` on the `<select>` for exactly that mirror, where the native branch renders `required`, and spreads [`getAccessibilityAttributes()`](field.md#the-accessibility-members-describe-what-the-wrapper-renders) on it as the native branch does.
 
 ### A created option whose identifier is incomplete is refused before it is written
 
@@ -362,7 +363,10 @@ The controller, its values and its CSS are the template's and the stylesheet's t
 - **The JS-branch `<select>` carries no `required`.**
   Filament's JS branch renders no native constraint attribute at all — it renders no `<select>`.
   Ours keeps a hidden one as the carrier of the Stimulus values and the no-JS fallback, and `required` is the one attribute with a native effect on a hidden control: Enter in the open dropdown with no focused option submits through `form.requestSubmit()`, which runs interactive constraint validation, and a hidden `<select required>` sitting on the placeholder is invalid *and* unfocusable — the submit is blocked with a console error and no visible message, where the server-side required message is the contract.
-  The template emits `required` in the native branch only; everything else the hidden `<select>` carries stays, because the engine reads it (`multiple`, `disabled`, `autofocus`, `id`) or a test pins it (`name`, `class`, `aria-invalid`).
+  The template emits `required` in the native branch only; everything else the hidden `<select>` carries stays, because the engine reads it (`multiple`, `disabled`, `autofocus`, `id`), the button mirrors it (`aria-describedby`, `aria-invalid`, `aria-required`) or a test pins it (`name`, `class`).
+- **A user's own `aria-describedby` replaces the field's description on the JS control.**
+  Filament's JS branch joins the description ids and the extra input attributes' own `aria-describedby` into one list for its button.
+  Ours spreads `getAccessibilityAttributes()` on the hidden `<select>` before the extra input attributes, as the native branch does in both, so a user's value wins whole and the button mirrors that.
 
 ### The engine port corrects defects the vendor engine carries
 

@@ -5241,9 +5241,9 @@ var select_controller_default = class extends Controller {
     }
     this.#mirrorAria(select);
   };
-  /** The hidden `<select>` is what the server marks invalid or required; the combobox button is what the user operates. */
+  /** The hidden `<select>` is what the server marks invalid, required or described; the combobox button is what the user operates. */
   #mirrorAria(select) {
-    for (const name of ["aria-invalid", "aria-required"]) {
+    for (const name of ["aria-describedby", "aria-invalid", "aria-required"]) {
       const value = this.element.getAttribute(name);
       if (value === null) {
         select.selectButton.removeAttribute(name);

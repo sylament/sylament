@@ -72,7 +72,7 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) · [diverges](#the-user-facing-text-is-catalogue-messages) |
+| [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) · [diverges](#the-user-facing-text-is-catalogue-messages) · [diverges](#the-fields-description-reaches-fileponds-browse-input-through-a-stimulus-value) |
 | [`getExtraTemplateData()`](../../../packages/forms/src/Components/FileUpload.php) | the `toEmbeddedHtml()` preamble | done | — | [diverges](#the-three-maps-are-object-cast-so-an-empty-one-serialises-as-) |
 | [`avatar()` / `isAvatar()`](../../../packages/forms/src/Components/FileUpload.php) | [`avatar()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`image()`](../../../packages/forms/src/Components/FileUpload.php) | [`image()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
@@ -208,6 +208,13 @@ The worker path is taken only when a resize or a filter is configured — a crop
 This is upstream's shape, not a Sylament choice, and it is recorded beside the field's other platform requirements because the alternative is not shipping the transform at all.
 
 ## Divergences
+
+### The field's description reaches FilePond's browse input through a Stimulus value
+
+FilePond replaces the field's `<input type="file">` with a browse input of its own, so the attributes a template puts on the field's input never reach the control a user operates.
+Filament renders `aria-describedby` and `aria-invalid` from `getAccessibilityAttributes()`, its extra input attributes winning, on a hidden `data-field-accessibility` element beside the component, which `field-accessibility.js` watches with a `MutationObserver` and copies onto `.filepond--browser`, and the description onto the `.filepond--label-action` Browse link (`FileUpload.php:911-926`, `file-upload.js:243-286`).
+The port hands the same pair, the extra input attributes winning likewise, to the controller as its `accessibility` value on the morphed root, and the controller writes it onto the same two elements in FilePond's `oninit` and on every `accessibilityValueChanged()`, as `disabled` reaches the pond through its value ([semantics](#the-dom-contract-is-the-controllers-only-input)).
+Filament's `data-preserve-filepond-description` arm prepends a description FilePond set on its browse input; FilePond sets none, so the port has nothing to keep.
 
 ### Per-file constraints run at upload time, collection constraints at save
 

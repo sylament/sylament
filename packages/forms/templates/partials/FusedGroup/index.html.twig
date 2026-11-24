@@ -1,5 +1,6 @@
 {% set groupId = component.getId %}
 {% set hasErrors = component.getErrorMessages is not empty %}
+{% set descriptionIds = [component.getHelperTextId, (groupId is not empty and hasErrors) ? groupId ~ '-error' : null]|filter(id => id is not empty) %}
 
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
     <div
@@ -8,6 +9,7 @@
                 id: groupId,
                 role: 'group',
                 'aria-labelledby': (groupId is not empty and component.getLabel is not null) ? groupId ~ '-label' : null,
+                'aria-describedby': descriptionIds is not empty ? descriptionIds|join(' ') : null,
                 'aria-invalid': hasErrors ? true : null,
             }) }}
     >{{ renderComponent(component.getChildSchema()) }}</div>

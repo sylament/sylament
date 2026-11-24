@@ -20,7 +20,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction and rendering: the unbound text box, the chip list, the delete button and the live region | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#the-text-box-is-scratch-state-and-carries-no-data-model) · [semantics](#the-chip-list-is-client-owned-after-the-first-paint) · [semantics](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) · [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [diverges](#an-empty-list-keeps-the-container-and-drops-its-chrome) · [diverges](#a-non-string-tag-is-read-and-rewritten-as-a-string) |
+| Construction and rendering: the unbound text box, the chip list, the delete button and the live region | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#the-text-box-is-scratch-state-and-carries-no-data-model) · [semantics](#the-chip-list-is-client-owned-after-the-first-paint) · [semantics](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) · [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [diverges](#an-empty-list-keeps-the-container-and-drops-its-chrome) · [diverges](#a-non-string-tag-is-read-and-rewritten-as-a-string) · [diverges](#the-description-rides-the-text-box-alone-as-the-input-wrapper-is-no-group) |
 | [`sylament--forms--tags-input`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts), the client-owned chip list | [`resources/js/components/tags-input.js`](../../../vendor/filament/forms/resources/js/components/tags-input.js) | done | — | [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [semantics](#every-controller-action-no-ops-while-the-input-is-disabled) · [semantics](#the-binding-modifiers-reach-the-controller-as-a-string-and-only-two-of-them-are-read) |
 | `setUp()`: `default([])`, the `array` rule, the hydration hook, the dehydration closure, the placeholder and the 100 ms reorder animation | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | in progress | — | [detail](#a-non-array-raw-state-passes-validation) · [semantics](#an-emptied-separator-field-dehydrates-to-an-empty-string) · [semantics](#the-chips-are-cloned-from-a-server-rendered-template-and-the-tag-parameter-is-not-called-tag) · [semantics](#nullwhenblank-is-inert-on-this-field-as-on-every-array-valued-leaf) |
 | `hydrateTags()`: the non-array state, the `explode()` and the single-blank collapse | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#hydratetags-runs-off-afterstatehydrated-so-only-a-fill-explodes-the-string) · [diverges](#three-lines-are-retyped-for-strict-types) |
@@ -137,6 +137,12 @@ So `shouldNullBranch()` never runs and an emptied field writes `[]` into its col
 A column that must go `null` when the list empties takes a `dehydrateStateUsing()` on the field, and the same holds for [`KeyValue`](key-value.md) and any other field whose state is an array it owns whole.
 
 ## Divergences
+
+### The description rides the text box alone, as the input wrapper is no group
+
+Filament spreads the field's `aria-describedby` from `getAccessibilityAttributes()` on the text box and on the input wrapper around it, which it makes a `role="group"` named by the field's label (`TagsInput.php:250-288`).
+The port's [`InputWrapper`](../support/input-wrapper.md) carries no role and no name, so the description rides the text box alone, the element the field's `<label for>` already names, and a screen reader reads the helper text and the error list when it focuses the box.
+It reaches the wrapper too once the wrapper takes Filament's `role="group"` and label.
 
 ### The Alpine data object becomes a Stimulus controller over a cloned Twig chip
 

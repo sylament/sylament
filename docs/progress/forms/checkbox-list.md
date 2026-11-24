@@ -50,7 +50,7 @@ The template renders every option and every target server side, and [`checkbox_l
 | [`CanFixIndistinctState`](../../../packages/forms/src/Components/Concerns/CanFixIndistinctState.php) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [can-fix-indistinct-state.md](can-fix-indistinct-state.md) |
 | [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [can-disable-options-when-selected-in-sibling-repeater-items.md](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 | `getPublishedViewOverrideCheckPath()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
-| `getRequiredDescription()` | [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | todo | — | [field.md](field.md#the-accessibility-members-are-not-ported) |
+| `getRequiredDescription()` | [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | todo | — | [field.md](field.md#the-accessibility-members-describe-what-the-wrapper-renders) |
 
 ## Semantics
 

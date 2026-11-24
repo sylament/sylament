@@ -75,7 +75,7 @@ Change one and you must change its template too.
 
 Filament emits only `wire:model` on the input and lets Livewire set the checked property client-side once it boots.
 The port renders `checked` from `getState()`, so a server-rendered edit page shows the stored value before any JavaScript runs.
-This is the same class of addition as the `aria-invalid` attribute every field emits — server-side truth for a control whose Filament original leaves it to the client.
+Filament renders the input's `aria-invalid` server-side too, through `getAccessibilityAttributes()`, so `checked` is the one state of the input the port moves off the client.
 
 The input carries **no `value` attribute**, and that absence is load-bearing rather than an omission: `live_controller` binds a valueless checkbox as `element.checked`, a real boolean, and binds one carrying `value` as that string.
 

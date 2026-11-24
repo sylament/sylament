@@ -57,10 +57,10 @@ describe('errors', function (): void {
     it('marks its control invalid while it has an error, and valid otherwise', function (): void {
         $tester = $this->createLiveComponent(TextareaForm::class);
 
-        expect($tester->render()->crawler())->toContainElement('textarea[name="notes"][aria-invalid="false"]')
+        expect($tester->render()->crawler())->toContainElement('textarea[name="notes"]:not([aria-invalid])')
             ->and($tester->call('save')->render()->crawler())
             ->toContainElement('textarea[name="notes"][aria-invalid="true"]')
-            ->toContainElement('textarea[name="plain"][aria-invalid="false"]');
+            ->toContainElement('textarea[name="plain"]:not([aria-invalid])');
     });
 });
 

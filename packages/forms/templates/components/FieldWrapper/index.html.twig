@@ -47,6 +47,7 @@
     {% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
     {% set hasLabelAffix = labelPrefix is not empty or labelSuffix is not empty %}
     {% set hasErrors = field.getErrorMessages is not empty %}
+    {% set requiredDescription = field.getRequiredDescription ?? null %}
 
     <div
             {{ attrs({
@@ -124,7 +125,7 @@
                 {% if hasErrors %}
                     {{ renderComponent(aboveErrorMessageSchema) }}
 
-                    <ul data-validation-error class="sy-fo-field-error-list">
+                    <ul {{ attrs({id: field.getId is not empty ? field.getId ~ '-error' : null}) }} data-validation-error class="sy-fo-field-error-list">
                         {% for message in field.getErrorMessages %}
                             <li class="sy-fo-field-error-message">{{ message }}</li>
                         {% endfor %}
@@ -133,6 +134,10 @@
                     {{ renderComponent(belowErrorMessageSchema) }}
                 {% endif %}
             </div>
+        {% endif %}
+
+        {% if requiredDescription is not empty %}
+            <span id="{{ field.getId }}-required" class="sy-sr-only">{{ requiredDescription }}</span>
         {% endif %}
     </div>
 {% endif %}

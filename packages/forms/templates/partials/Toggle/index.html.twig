@@ -16,10 +16,9 @@
             name: component.getName,
             'data-model': component.getDataModel,
             checked: component.getState,
-            'aria-invalid': component.getErrorMessages is not empty,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
-        }, component.getExtraInputAttributes) }}>
+        }, component.getAccessibilityAttributes, component.getExtraInputAttributes) }}>
 
         <span {{ attrs({
             class: ['sy-fo-toggle-track', onColorAttrs.class],

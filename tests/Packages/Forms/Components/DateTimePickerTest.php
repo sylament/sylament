@@ -38,7 +38,7 @@ describe('rendering', function (): void {
 
         expect($tester->render()->crawler())
             ->toContainElement('input[name="immutableAt"][aria-invalid="true"]')
-            ->toContainElement('input[name="mutableAt"][aria-invalid="false"]');
+            ->toContainElement('input[name="mutableAt"]:not([aria-invalid])');
     });
 });
 

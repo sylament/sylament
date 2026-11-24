@@ -49,11 +49,10 @@
             step: component.getStep,
             list: datalistOptions ? component.getId ~ '-list' : null,
             required: component.isMarkedAsRequired and not component.isConcealed,
-            'aria-invalid': component.getErrorMessages is not empty,
             readonly: component.isReadOnly,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
-        }, component.getExtraInputAttributes, hasController ? stimulus_target(controller, 'input') : null) }}>
+        }, component.getAccessibilityAttributes, component.getExtraInputAttributes, hasController ? stimulus_target(controller, 'input') : null) }}>
 
         {% if isCopyable %}
             <span {{ attrs({

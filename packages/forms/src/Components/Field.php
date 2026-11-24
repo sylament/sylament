@@ -130,6 +130,55 @@ abstract class Field extends Component implements HasValidationConstraints
         return $this->getLiveComponentOrNull()?->getErrorsForSchemaStatePath($this->getStatePath()) ?? [];
     }
 
+    public function hasValidationError(): bool
+    {
+        return $this->getErrorMessages() !== [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getDescriptionIds(): array
+    {
+        if ($this->getContainer()->getFieldWrapperView() === FusedGroup::PLAIN_FIELD_WRAPPER_VIEW) {
+            return [];
+        }
+
+        $ids = [];
+
+        if (filled($helperTextId = $this->getHelperTextId())) {
+            $ids[] = $helperTextId;
+        }
+
+        if ($this->hasValidationError()) {
+            $ids[] = $this->getId() . '-error';
+        }
+
+        if (filled($this->getRequiredDescription())) {
+            $ids[] = $this->getId() . '-required';
+        }
+
+        return $ids;
+    }
+
+    public function getRequiredDescription(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * @return array{'aria-describedby': ?string, 'aria-invalid': ?string}
+     */
+    public function getAccessibilityAttributes(): array
+    {
+        $descriptionIds = $this->getDescriptionIds();
+
+        return [
+            'aria-describedby' => $descriptionIds !== [] ? implode(' ', $descriptionIds) : null,
+            'aria-invalid' => $this->hasValidationError() ? 'true' : null,
+        ];
+    }
+
     /**
      * @return array<StateCast>
      */

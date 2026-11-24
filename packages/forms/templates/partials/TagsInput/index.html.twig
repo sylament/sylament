@@ -54,6 +54,7 @@
             list: component.getId ~ '-suggestions',
             autocomplete: 'off',
             placeholder: component.getPlaceholder ?: false,
+            'aria-describedby': component.getAccessibilityAttributes['aria-describedby'],
             disabled: isDisabled,
             autofocus: component.isAutofocused,
         }, component.getExtraInputAttributes, stimulus_target(controller, 'input')

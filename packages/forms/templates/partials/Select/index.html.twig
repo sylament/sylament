@@ -66,10 +66,9 @@
             multiple: component.isMultiple,
             required: isNative ? (component.isMarkedAsRequired and not component.isConcealed) : null,
             'aria-required': isNative or not component.isMarkedAsRequired ? null : true,
-            'aria-invalid': component.getErrorMessages is not empty,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
-        }, component.getExtraInputAttributes, controllerAttributes) }}>
+        }, component.getAccessibilityAttributes, component.getExtraInputAttributes, controllerAttributes) }}>
             {% if component.canSelectPlaceholder %}
                 <option value="">{{ component.isDisabled ? '' : component.getPlaceholder }}</option>
             {% endif %}

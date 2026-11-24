@@ -33,7 +33,7 @@ The seam that switches the children off is schemas' [`Schema::fieldWrapperView()
 | [`configureChildSchema()` — inline + embedded + small actions on the six inline slots](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`isRequired()` — any default-slot child field is required-marked](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::isRequired()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`getErrorMessages()` — the first path-bearing child field carrying any](../../../packages/forms/src/Components/FusedGroup.php) | [the collection loop in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [diverges](#the-error-collection-keeps-the-first-failing-field-and-nothing-else) |
-| [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [semantics](#the-plain-branch-drops-the-label-affixes-so-an-inline-checkbox-fuses-to-nothing) · [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#extraattributes-lands-on-the-field-wrapper-not-on-the-group-root) · [diverges](#the-group-root-carries-no-aria-describedby) · [semantics](#a-keyless-group-emits-no-label-id-and-no-aria-labelledby) |
+| [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [semantics](#the-plain-branch-drops-the-label-affixes-so-an-inline-checkbox-fuses-to-nothing) · [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#extraattributes-lands-on-the-field-wrapper-not-on-the-group-root) · [diverges](#the-group-root-carries-aria-invalid-while-a-child-field-has-an-error) · [semantics](#a-keyless-group-emits-no-label-id-and-no-aria-labelledby) |
 | [`fused-group.css` — the ring, the dividers and the corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [semantics](#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`Schema::fieldWrapperView()` (the seam) + `PLAIN_FIELD_WRAPPER_VIEW`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#only-the-plain-wrapper-view-is-honored) |
 | [the one-column group's stacked dividers](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`ComponentAttributeBag::grid()`'s `fi-grid-cols` gate](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | todo | — | [detail](#a-one-column-fused-group-renders-the-side-by-side-dividers) |
@@ -46,7 +46,7 @@ The seam that switches the children off is schemas' [`Schema::fieldWrapperView()
 ### The Component-tier `HasFieldWrapper` twin is not ported
 
 Filament carries the same trait twice: on the container (`Concerns\`), where a schema declares the view its fields use, and on the component (`Components\Concerns\`), whose `getFieldWrapperView()` resolves own → container → the framework default.
-Only the container tier ships here, because that is the tier `FusedGroup` writes to and the only one anything reads: our wrapper asks `field.getContainer().getFieldWrapperView()` directly, so a per-**component** override has no consumer.
+Only the container tier ships here, because that is the tier `FusedGroup` writes to and the only one anything reads: our wrapper, `Field::getDescriptionIds()` and `getHelperTextId()` ask `getContainer().getFieldWrapperView()` directly, so a per-**component** override has no consumer.
 Porting the twin is a small addition once one exists — the resolution order is the whole of it.
 
 ### A one-column fused group renders the side-by-side dividers
@@ -82,7 +82,7 @@ Nothing had to be re-selected, which is the only reason the stylesheet could be 
 ### A keyless group emits no label id and no `aria-labelledby`
 
 The group root sets `aria-labelledby` to `<id>-label` only when the group has an id and a label, and `FieldWrapper` gives its heading label an id only when `field.getId is not empty`.
-A group without a key therefore emits neither `id="-label"` nor an `aria-labelledby` pointing at it, as Filament guards both on `filled($groupId)` and `filled($id)`.
+A group without a key therefore emits neither `id="-label"` nor an `aria-labelledby` pointing at it, as Filament guards both on `filled($groupId)` and `filled($id)`, and for the same reason its error list carries no `-error` id and its `aria-describedby` names no error.
 
 ## Divergences
 
@@ -115,12 +115,12 @@ Ours hands both bags to `FieldWrapper`, which merges them onto the outer `.sy-fo
 It falls out of [rendering through `FieldWrapper`](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) rather than being chosen: the wrapper reads every attribute source off the `field` it is handed, and a component-tier bag it did not consume would simply be dropped.
 Splitting them means passing the group's own bag through the template's `attrs()` call on the group root and teaching `FieldWrapper` to skip `getExtraAttributes` for a plain-view container — a divergence from our own one-wrapper rule, so it waits for a caller that needs it.
 
-### The group root carries no `aria-describedby`
+### The group root carries `aria-invalid` while a child field has an error
 
-Filament points the group at `{$groupId}-error` and puts that id on the error element it renders itself.
-Ours renders the error list through `FieldWrapper`, whose `<ul data-validation-error>` carries no id — no field template emits one — so a `aria-describedby` here would reference nothing at all, which is worse than its absence.
-`aria-invalid` is emitted, and the group's label is still wired through `aria-labelledby`.
-Give the wrapper's error list an id and this becomes a two-line addition on both sides.
+Filament's group root carries `id`, `role`, `aria-labelledby` and an `aria-describedby` naming its helper text and `{$groupId}-error`, and no `aria-invalid`: the invalid state sits on the child controls alone.
+Ours carries the same `aria-describedby`, the error id landing on the list `FieldWrapper` renders, and adds `aria-invalid="true"` while [`getErrorMessages()`](#the-error-collection-keeps-the-first-failing-field-and-nothing-else) holds a message, marking the group itself invalid where Filament marks only the control that failed.
+The child controls carry their own `aria-invalid` as well, and no `aria-describedby`, since their plain wrappers render no description.
+It reverses by dropping the attribute from the [partial](../../../packages/forms/templates/partials/FusedGroup/index.html.twig).
 
 ### Only the plain wrapper view is honored
 

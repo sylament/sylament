@@ -32,6 +32,7 @@
                         class: 'sy-fo-key-value-table',
                         id: component.getId,
                         'aria-labelledby': component.getLabel is not null ? component.getId ~ '-label' : null,
+                        'aria-describedby': component.getAccessibilityAttributes['aria-describedby'],
                     }) }}
             >
                 <thead>

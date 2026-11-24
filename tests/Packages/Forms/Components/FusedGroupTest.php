@@ -47,6 +47,14 @@ describe('render', function (): void {
             ->toContainElement(Selectors::FUSED_GROUP . '[role="group"][id="schema.contact"]:not([aria-labelledby])');
     });
 
+    it('describes the group by its helper text', function (): void {
+        $render = $this->renderSchemaComponent(FusedGroup::make([TextInput::make('first')])->key('contact')->helperText('Both, please.'));
+
+        expect($render)
+            ->toContainElement(Selectors::FUSED_GROUP . '[role="group"][aria-describedby="schema.contact-helper-text"]')
+            ->toContainElement('[id="schema.contact-helper-text"]', 'Both, please.');
+    });
+
     it('puts its extra attributes on its field wrapper, not on the group', function (): void {
         expect($this->renderSchemaComponent(FusedGroup::make([TextInput::make('first')])
             ->extraAttributes(['data-tone' => 'group'])
@@ -154,11 +162,11 @@ describe('required', function (): void {
 });
 
 describe('errors', function (): void {
-    it('lists every message of the first field that failed and none of the next, marking the group invalid with nothing describing it', function (): void {
+    it('lists every message of the first field that failed and none of the next, marking the group invalid and described by the list', function (): void {
         $tester = $this->createLiveComponent(FusedGroupForm::class);
 
         expect($tester->render()->crawler())
-            ->toContainElement(Selectors::FUSED_GROUP . '[role="group"]:not([aria-invalid])')
+            ->toContainElement(Selectors::FUSED_GROUP . '[role="group"]:not([aria-invalid]):not([aria-describedby])')
             ->not->toContainElement(Selectors::ERROR_MESSAGE);
 
         $tester->fillForm(['first' => 'abc', 'second' => ''])->call('save')->assertHasFormErrors(['first', 'second']);
@@ -166,7 +174,8 @@ describe('errors', function (): void {
 
         expect($render->filter(Selectors::ERROR_MESSAGE)->each(static fn (Crawler $message): string => $message->text()))
             ->toBe(['This value is too short. It should have 5 characters or more.', 'This value is not valid.'])
-            ->and($render)->toContainElement(Selectors::FUSED_GROUP . '[role="group"][aria-invalid="true"]:not([aria-describedby])')
+            ->and($render)->toContainElement(Selectors::FUSED_GROUP . '[role="group"][aria-invalid="true"][aria-describedby="form.contact-error"]')
+            ->toContainElement('[id="form.contact-error"][data-validation-error]', 'This value is too short. It should have 5 characters or more. This value is not valid.')
             ->and($tester->fillForm(['first' => '123456'])->call('save')->render()->crawler()->filter(Selectors::ERROR_MESSAGE)->each(static fn (Crawler $message): string => $message->text()))
             ->toBe(['This value should not be blank.']);
     });

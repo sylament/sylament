@@ -22,7 +22,7 @@ owns:
 # Field (forms)
 
 `Sylament\Forms\Components\Field` is the abstract base every user-instantiable form field extends, on top of the schemas [`Component`](../schemas/component.md).
-It adds field identity (name and state-path seeding), the humanized-label fallback, the field-wrapper slots and rendering, the error-message read and the enum state cast, and composes the field concerns its Surface rows list.
+It adds field identity (name and state-path seeding), the humanized-label fallback, the field-wrapper slots and rendering, the error-message read, the accessibility members and the enum state cast, and composes the field concerns its Surface rows list.
 [`CanBeValidated`](can-be-validated.md) and [`HasEnum`](has-enum.md) keep files of their own: the first is the field half of a vertical spanning three packages, and the second is consumed across the option fields.
 The schemas-level `HasName`, `HasLabel` and `HasState` it inherits are tracked in schemas, and so is [`CanBeMarkedAsRequired`](../schemas/can-be-marked-as-required.md), which the port keeps in schemas so `Fieldset` can reach it.
 The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudited-table-says-so) because every member of the vendor class and of the concerns it folds has a row.
@@ -52,7 +52,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) · [diverges](#gethintactions-returns-a-list-not-a-gapped-array) · [diverges](#hint-and-helper-text-are-judged-by-their-translated-text) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 | [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php), no Filament concern of its own | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
-| `hasValidationError()`, `getDescriptionIds()`, `getRequiredDescription()` and `getAccessibilityAttributes()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#the-accessibility-members-are-not-ported) |
+| [`hasValidationError()`, `getDescriptionIds()`, `getRequiredDescription()` and `getAccessibilityAttributes()`](../../../packages/forms/src/Components/Field.php), with the wrapper's `{id}-error` and `{id}-required` ids | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#the-accessibility-members-describe-what-the-wrapper-renders) |
 | [`data-field-wrapper` on the wrapper root](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) | [`field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/field-wrapper.blade.php) · [`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) | done | — | [semantics](#data-field-wrapper-is-the-scroll-target-of-a-validation-error) |
 
 ## Details
@@ -62,12 +62,6 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 Filament's `extraFieldWrapperAttributes()` returns early under `merge: true` when the array it is given is strictly equal to one already registered ([`HasExtraFieldWrapperAttributes.php:25`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php)), so an identical array merged twice renders once.
 The port's setter appends every merged registration ([`HasExtraFieldWrapperAttributes.php:20`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php)), so a repeated array's class tokens appear twice in the wrapper's `class`, the same gap support's trait carries ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-array-twice-registers-it-twice)).
 **Next step:** return early when `is_array($attributes)` and `in_array($attributes, $this->extraFieldWrapperAttributes, true)`, and pin a repeated-array merge.
-
-### The accessibility members are not ported
-
-Filament's `Field` answers `hasValidationError()` for its own path and, for a field with nested recursive rules, its children's; `getDescriptionIds()` lists the helper text's, the error's and the required description's ids; `getRequiredDescription()` is `null` unless a subclass overrides it; and `getAccessibilityAttributes()` turns them into `aria-describedby` and `aria-invalid`, which every control spreads.
-The port has none of the four: each control renders `aria-invalid` from `getErrorMessages()` itself, and no field renders `aria-describedby` or a required description.
-`CheckboxList`, `Select` and `ToggleButtons` override `getRequiredDescription()` with their `*.required_description` texts, which ship nowhere until this lands.
 
 ### `inlineLabelVerticalAlignment` waits on schemas' HasInlineLabel
 
@@ -103,6 +97,19 @@ So a custom `Filter::make(…)->schema([Select::make(…)->boolean()])` that dec
 Both wrapper branches carry `data-field-wrapper` on their root, as Filament's two wrapper views do.
 Schemas' root controller scrolls the nearest `[data-field-wrapper]` of the first rendered validation error into view ([`schema_controller.ts`](../../../packages/schemas/assets/src/controllers/schema_controller.ts)), so the attribute is load-bearing although nothing in forms reads it.
 
+### The accessibility members describe what the wrapper renders
+
+`hasValidationError()` answers whether [`getErrorMessages()`](#error-display-shows-every-message-for-the-path) holds any message, so the invalid state and the error list are one read.
+Filament's adds a `"{$statePath}.*"` lookup for a field with nested recursive rules; the port's nested constraints [land on the field's own path](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path), so the own-path read already holds their messages.
+`getDescriptionIds()` lists, in Filament's order, the helper text's id ([`getHelperTextId()`](../../../packages/forms/src/Components/Concerns/HasHelperText.php), the `{id}-helper-text` id `helperText()` puts on its below-content schema while that schema is still the helper text's, renders and the field has an id), `{id}-error` while the field has an error, and `{id}-required` while `getRequiredDescription()` is filled; a field in a plain wrapper lists none, because that wrapper renders none of the three.
+The plain test reads the container's `getFieldWrapperView()`, as the wrapper does, since the component-tier getter is [unported](fused-group.md#the-component-tier-hasfieldwrapper-twin-is-not-ported).
+`getAccessibilityAttributes()` turns them into `aria-describedby` and an `aria-invalid` of `"true"` or `null`, so a valid control carries no `aria-invalid` at all; the ids are joined unescaped, because `attrs()` escapes on output, where Filament runs `e()` over them before merging them raw.
+`getRequiredDescription()` is `null` on `Field`, and the [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) renders a filled one as a `sy-sr-only` `<span id="{id}-required">` at the end of its root, in the full branch only; it reads the getter with `??`, since a [`FusedGroup`](fused-group.md) it also renders is no `Field`, the case Filament's wrapper guards with `instanceof Field`.
+
+Each control spreads the attributes where Filament spreads them, before its extra input attributes where it has them, so a user's own value wins: the whole pair on `TextInput`'s, `Textarea`'s, `Checkbox`'s, `Toggle`'s, `DateTimePicker`'s and `Select`'s control (the JS branch's hidden `<select>`, which the combobox button [mirrors](select.md#the-hidden-select-lends-its-id-to-the-combobox-button)), `aria-describedby` alone on `TagsInput`'s text box, `KeyValue`'s table and the root of each `Repeater` layout, and both on `FileUpload`'s [browse input](file-upload.md#the-fields-description-reaches-fileponds-browse-input-through-a-stimulus-value).
+`TagsInput` and `KeyValue` put it [on the box](tags-input.md#the-description-rides-the-text-box-alone-as-the-input-wrapper-is-no-group) and [on the table](key-value.md#the-description-names-the-table-as-the-input-wrapper-is-no-group) rather than on the input wrapper Filament also gives it.
+`Radio`, `CheckboxList` and `ToggleButtons` spread neither and render `aria-invalid` from `getErrorMessages()` themselves, as [radio.md](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid) records.
+
 ## Divergences
 
 ### The label carries an inline-control modifier class
@@ -136,12 +143,12 @@ The template still loops rather than picking a first message, because a filled v
 `showAllValidationMessages()` / `allowHtmlValidationMessages()` are [skipped](can-be-validated.md) accordingly: the flags exist to opt *into* what this port always does, and into raw HTML the port has no shape for.
 It reverses only if a first-message-only default is wanted, which would make the flag meaningful again.
 
-The same list drives the control's invalid state: the controls render `aria-invalid` from `component.getErrorMessages is not empty`, and the text-like ones pass the inverse to the input wrapper's `valid` prop, whose `sy-invalid` class swaps the ring to the danger token.
+The same list drives the control's invalid state: the controls spread [`getAccessibilityAttributes()`](#the-accessibility-members-describe-what-the-wrapper-renders), whose `aria-invalid` is `"true"` while the list holds a message, and the text-like ones pass the inverse to the input wrapper's `valid` prop, whose `sy-invalid` class swaps the ring to the danger token.
 The attribute is on the control for accessibility rather than for styling, since the ring sits on [the input wrapper](#the-wrapper-owns-the-chrome-and-the-control-is-transparent).
-Filament's fields emit `aria-invalid` too, through `getAccessibilityAttributes()` (`vendor/filament/forms/src/Components/Field.php:328-335`), which the controls spread, beside the `fi-invalid` class they toggle statically or through an Alpine binding (`:656`, `:667`); the port's per-control attribute mirrors it without that method ([detail](#the-accessibility-members-are-not-ported)).
-It renders with a *value* rather than as a bare attribute because [`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a false one.
+Filament's fields emit it through the same method (`vendor/filament/forms/src/Components/Field.php:328-335`), beside the `fi-invalid` class they toggle statically or through an Alpine binding (`:656`, `:667`).
 [`TagsInput`](tags-input.md#the-text-box-is-scratch-state-and-carries-no-data-model) and [`KeyValue`](key-value.md#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) are the text-like controls that render none, for one reason: neither has a control that *is* the field's value.
 The tags input's box holds the tag being typed rather than the state, and the key-value field has no single control at all, each cell binding one half of one row, so in both the invalid state rides the input wrapper's `sy-invalid` and the field wrapper's messages alone, which is also where Filament leaves it.
+The list is always a `<ul>` carrying `{id}-error` while the field has an id, where Filament puts that id on whichever of a `<ul>`, a `<p>` or a `<div>` it renders, so a control's `aria-describedby` names every message.
 
 The list's two classes drop Filament's `-wrp-` segment, `.sy-fo-field-error-list` / `.sy-fo-field-error-message` for `fi-fo-field-wrp-error-list` / `fi-fo-field-wrp-error-message`, which is a [recorded rename](../renames.md#the-error-list-classes-drop-the-wrapper-segment-filament-renders-nowhere) rather than the systematic `fi-` to `sy-` swap.
 

@@ -27,7 +27,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [The table shell](../../../packages/forms/templates/partials/KeyValue/index.html.twig): the column matrix, the two cell inputs, the chrome cells | [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-rows-are-server-owned-and-the-three-actions-are-real) · [semantics](#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) |
+| [The table shell](../../../packages/forms/templates/partials/KeyValue/index.html.twig): the column matrix, the two cell inputs, the chrome cells | [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-rows-are-server-owned-and-the-three-actions-are-real) · [semantics](#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) · [diverges](#the-description-names-the-table-as-the-input-wrapper-is-no-group) |
 | `default([])` and [`getDefaultStateCasts()`](../../../packages/forms/src/Components/KeyValue.php) | [`KeyValue::getDefaultStateCasts()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | — |
 | [`KeyValueStateCast`](../../../packages/schemas/src/State/Casts/KeyValueStateCast.php): rows to map, `''` keys dropped, last duplicate wins | [`StateCasts/KeyValueStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php) | done | — | [semantics](#the-cast-sniffs-the-first-element-so-a-map-of-maps-is-not-a-row-list) · [diverges](#the-cast-fails-fast-on-a-state-it-cannot-read) |
 | [`getAddAction()`](../../../packages/forms/src/Components/KeyValue.php) with `addAction()`, `getAddActionName()`, `addActionLabel()`, `getAddActionLabel()`, `addable()`, `isAddable()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [semantics](#a-structural-action-fires-the-fields-afterstateupdated-hooks-itself) · [diverges](#a-disabled-field-has-no-structural-actions-at-all) |
@@ -110,6 +110,12 @@ The add, delete and reorder action labels and the key and value column labels re
 The two placeholder setters take a message as the label setters do, and have no default.
 
 ## Divergences
+
+### The description names the table, as the input wrapper is no group
+
+Filament spreads the field's `aria-describedby` from `getAccessibilityAttributes()` on the input wrapper around the table, which it makes a `role="group"` labelled by the field's label (`KeyValue.php:395-401`), and gives the `<table>` the field's id and the same label.
+The port's [`InputWrapper`](../support/input-wrapper.md) carries no role and no name, so the description goes on the `<table>`, the element the field's id and label already name, and a screen reader reads the helper text and the error list when it enters the table.
+It moves onto the wrapper once the wrapper takes Filament's `role="group"` and label.
 
 ### The rows are server-owned and the three actions are real
 

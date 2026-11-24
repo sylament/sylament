@@ -52,10 +52,20 @@ describe('render', function (): void {
             'loadErrorMessage' => 'The file could not be loaded.',
             'reorderErrorMessage' => 'The files could not be reordered.',
             'typeUndetectedMessage' => 'The type of __NAME__ could not be detected.',
+            'accessibility' => ['aria-describedby' => null, 'aria-invalid' => null],
         ])
             ->and($crawler)->toContainElement('[id="' . $crawler->filter(Selectors::fileUpload('data.document') . '[role="group"]')->attr('aria-labelledby') . '"]', 'Document')
             ->and($crawler)->toContainElement(Selectors::FILE_UPLOAD_POND . '[data-live-ignore] input[type="file"]:not([multiple])')
             ->and($crawler)->toContainElement(Selectors::FILE_UPLOAD . ' [role="alert"][hidden]');
+    });
+
+    it("hands the controller the description and invalid state FilePond's browse input takes, its own input attributes winning", function (): void {
+        $described = $this->renderSchemaComponent(FileUpload::make('document')->helperText('A PDF, please.'));
+        $overridden = $this->renderSchemaComponent(FileUpload::make('document')->helperText('A PDF, please.')->extraInputAttributes(['aria-describedby' => 'terms', 'aria-invalid' => 'true']));
+
+        expect(FileUploadFixtures::values($described, 'data.document')['accessibility'])->toBe(['aria-describedby' => 'schema.document-helper-text', 'aria-invalid' => null])
+            ->and($described)->toContainElement('[id="schema.document-helper-text"]', 'A PDF, please.')
+            ->and(FileUploadFixtures::values($overridden, 'data.document')['accessibility'])->toBe(['aria-describedby' => 'terms', 'aria-invalid' => 'true']);
     });
 
     it('renders its three maps as JSON objects even when empty, the accepted types as a list and the size ceiling as a number', function (): void {

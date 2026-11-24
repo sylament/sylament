@@ -36,7 +36,7 @@ describe('rendering', function (): void {
     it('marks its input invalid once the form refuses it', function (): void {
         $tester = $this->createLiveComponent(BoolFieldsForm::class);
 
-        expect($tester->render()->crawler())->toContainElement('input[name="terms"][aria-invalid="false"]')
+        expect($tester->render()->crawler())->toContainElement('input[name="terms"]:not([aria-invalid])')
             ->and($tester->call('save')->assertHasFormErrors(['terms'])->render()->crawler())->toContainElement('input[name="terms"][aria-invalid="true"]');
     });
 

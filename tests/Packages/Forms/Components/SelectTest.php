@@ -97,7 +97,7 @@ describe('native render', function (): void {
     it('marks the select invalid once the field has an error', function (): void {
         $tester = $this->createLiveComponent(SelectForm::class)->fillForm(['single' => '9']);
 
-        expect($tester->render()->crawler()->filter('select[name="single"]')->attr('aria-invalid'))->toBe('false')
+        expect($tester->render()->crawler()->filter('select[name="single"]')->attr('aria-invalid'))->toBeNull()
             ->and($tester->call('save')->render()->crawler()->filter('select[name="single"]')->attr('aria-invalid'))->toBe('true');
     });
 

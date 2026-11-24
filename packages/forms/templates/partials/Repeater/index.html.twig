@@ -20,6 +20,7 @@
                 id: component.getId,
                 role: 'group',
                 'aria-labelledby': component.getId ~ '-label',
+                'aria-describedby': component.getAccessibilityAttributes['aria-describedby'],
             }, repeaterStimulus) }}
     >
         {% if collapseAllAction or expandAllAction %}

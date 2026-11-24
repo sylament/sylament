@@ -36,6 +36,7 @@ It extends [`BulkAction`](bulk-action.md), so it arrives with `bulk()` and `acce
 | [`getDefaultName()`](../../../packages/actions/src/DeleteBulkAction.php) (`'delete'`) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | — |
 | [`setUp()` chrome](../../../packages/actions/src/DeleteBulkAction.php) — label, modal heading, submit label, success title, colour, icon, confirmation, deselect | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) |
 | [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) · [can-notify.md](can-notify.md#the-failure-notification-carries-four-injections-of-filaments-nine) |
+| Locale-formatted counts in the partial-failure title | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`Number::format()`) | todo | — | [detail](#the-partial-failure-title-prints-its-counts-as-raw-digits) |
 | [The `action()` body — remove each, one `flush()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [semantics](#both-arms-swallow-and-report-the-same-failure) · [diverges](#the-bulk-delete-is-atomic-where-filaments-is-per-record) · [semantics](#the-delete-bodies-resolve-their-manager-through-the-registry-alone) |
 | [`deleteSelectedRecordsByKey()`](../../../packages/actions/src/DeleteBulkAction.php) — the `fetchSelectedRecords(false)` arm and its override point | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`getSelectedRecordsQuery()->delete()`) | done | — | [diverges](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) · [chunk rule](../schemas/record-key-contract.md#the-chunk-rule) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
@@ -45,6 +46,12 @@ It extends [`BulkAction`](bulk-action.md), so it arrives with `bulk()` and `acce
 | `hidden()` for the trashed filter | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | skipped | — | [diverges](#there-is-no-soft-delete-arm-to-hide-behind) |
 
 ## Details
+
+### The partial-failure title prints its counts as raw digits
+
+Filament formats both counts of the partial-failure title with `Number::format()` ([`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) at `:41-44`), so `5000` reads `5,000` in English and in each locale's own grouping elsewhere.
+The port passes `count` and `total` as strings into `delete.multiple.notifications.deleted_partial.title` ([`DeleteBulkAction.php`](../../../packages/actions/src/DeleteBulkAction.php)), so they print unformatted, while the none title formats its count as an ICU number; the port-added partial titles of [`DetachBulkAction`](detach-action.md) and [`DissociateBulkAction`](dissociate-action.md) share the shape.
+**Next step:** pass both counts as integers typed `{count, number}` and `{total, number}` in the three partial messages, and pin one grouped count.
 
 ### The swallowed exception has nowhere to go yet
 

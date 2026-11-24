@@ -54,7 +54,7 @@ Its two methods return `MarkdownFaker` and `RichContentFaker`, which live in the
 
 ### The browse input FilePond builds is not labelled by the field
 
-Filament's `file-upload.js` reads the field input's `aria-labelledby` before `FilePond.create()` replaces it, and once FilePond has built its browse input it copies that value onto `.filepond--browser` ([`file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) at `:188-189`, `:248-256`), so the input is named by the field's label.
+Filament's `file-upload.js` reads the field input's `aria-labelledby` before `FilePond.create()` replaces it, and once FilePond has built its browse input it copies that value onto `.filepond--browser` ([`file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) at `:190`, `:248-256`), so the input is named by the field's label.
 The port's template renders `aria-labelledby` on the field's input ([FileUpload partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig)), and the controller's `#applyAccessibility()` writes only `aria-describedby` and `aria-invalid` onto `.filepond--browser` ([controller](../../../packages/forms/assets/src/controllers/file_upload_controller.ts)), so a screen reader names the browse input by FilePond's drop label instead of the field's.
 
 **Next step:** read the field input's `aria-labelledby` before FilePond is created and set it on `.filepond--browser` in `#applyAccessibility()`, beside the two attributes it already writes.

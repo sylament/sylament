@@ -96,8 +96,15 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | [`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css) — the field and editor-dialog skin | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) · [diverges](#filepond--label-action-takes-the-link-colour-policy-not-vendors-hardcoded-shade) · [diverges](#the-download-and-open-action-anchors-are-the-ports-own) · [diverges](#the-dark-backdrop-arm-sits-in-an-variant-dark-block) |
 | `filepond.generated.css` — FilePond's sheets, scoped by the build | — | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 | `cropper.generated.css` — Cropper.js's sheet, scoped by the build | — | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
+| FilePond's interface text in the request's locale | [`file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) (`locales[locale]`) | todo | — | [detail](#filepond-speaks-english-in-every-locale) |
 
 ## Details
+
+### FilePond speaks English in every locale
+
+Filament spreads FilePond's locale file for the application's locale, falling back to English, into `FilePond.create()` ([`file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) at `:193`), so FilePond's own labels, progress and error texts follow the locale.
+The port configures no FilePond locale ([controller](../../../packages/forms/assets/src/controllers/file_upload_controller.ts)), so FilePond's built-in interface stays English unless a placeholder replaces its idle label.
+**Next step:** bundle FilePond's locale files with the controller and pass the one for the request's locale, falling back to English, as Filament's `locales[locale] ?? locales['en']` does.
 
 ### A disabled field still stores its uploads at dehydration
 

@@ -29,9 +29,16 @@ The page chrome the page's own component renders is [custom-pages.md](custom-pag
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | — | [detail](#the-document-carries-the-shell-and-none-of-the-panels-appearance-settings) · [diverges](#the-document-calls-importmap-unguarded) |
 | The document's theme head script | `base.blade.php`'s dark-mode script | done | — | [semantics](#the-head-script-is-the-one-inline-script-in-the-port-and-agrees-with-the-theme-controller) |
 | The document's notifications outlet | `@livewire(Notifications::class)` in `base.blade.php` | done | — | [semantics](#the-notifications-outlet-is-the-documents-and-the-actions-outlet-is-not) |
+| The document's `lang` from the request's locale and `dir` from `layout.direction` | [`base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php)'s `<html lang dir>` | todo | — | [detail](#the-document-is-always-english-and-left-to-right) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
+
+### The document is always English and left to right
+
+Filament's layout renders `<html lang>` from the application's locale and `dir` from the `filament-panels::layout.direction` message ([`base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) at `:18-19`), so a right-to-left locale flips the panel.
+The port's [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) renders `<html lang="en">` and no `dir` whatever the request's locale, and the panels catalogue has no `layout.direction` key.
+**Next step:** render `lang` from the request's locale and `dir` from a `layout.direction` message, as Filament's layout does.
 
 ### The document carries the shell and none of the panel's appearance settings
 

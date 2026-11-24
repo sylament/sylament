@@ -45,11 +45,18 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 | [`sy-cloak` while persisting](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`x-cloak` on the nav](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#cloaking-is-limited-to-persisttab-so-no-js-still-shows-a-tab) |
 | [`tabs.css`](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
 | `aria-label` on the overflow "more" button and the active overflow trigger | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-active-overflow-trigger-names-itself-with-a-port-added-message) |
+| The overflow dropdown's placement flipped for a right-to-left direction | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | todo | — | [detail](#the-overflow-dropdown-opens-towards-the-start-in-every-direction) |
 | `startRenderHooks()` / `endRenderHooks()` / `getStartRenderHooks()` / `getEndRenderHooks()` / `getRenderHookScopes()` | [`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | blocked | a render-hook registry | [detail](#the-render-hook-trio-waits-on-the-render-hook-design) |
 | `HasExtraAlpineAttributes` | [`Concerns/HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) · [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `getTabVisibilityJs()` (`hiddenJs`/`visibleJs` per tab) | [the closure in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) |
 
 ## Details
+
+### The overflow dropdown opens towards the start in every direction
+
+Filament places the overflow panel `bottom-start` when `filament-panels::layout.direction` reads `ltr` and `bottom-end` otherwise ([`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) at `:540`).
+The port's [Tabs partial](../../../packages/schemas/templates/partials/Tabs/index.html.twig) passes `placement="bottom-start"` in every direction, and schemas has no direction source.
+**Next step:** flip the placement on a right-to-left direction, read as Filament reads it from `layout.direction`, re-homed into `sylament-schemas` as [`catalogues.md`](../../../.claude/rules/catalogues.md) requires of a key Filament reaches upward for.
 
 ### The render-hook trio waits on the render-hook design
 

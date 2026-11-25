@@ -50,7 +50,7 @@ A blank element comes back from the element cast as `null`, which is the filter 
 
 Filament builds its element cast with `app(EnumStateCast::class, ['enum' => $enum])` (`EnumArrayStateCast.php:19`), so an application that rebinds `EnumStateCast` in Laravel's container changes the array cast's elements too.
 The port calls `new EnumStateCast($enum)`: the enum class is a runtime argument Symfony's container cannot pass to a service, and reaching the container from a value object is the service locator the port's first principle refuses.
-An application that wants other element behaviour subclasses `EnumArrayStateCast` and sets its own `$enumStateCast`.
+The fields build the array cast with `new` too ([`Select::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Select.php), `CheckboxList`'s and `ToggleButtons`'), where Filament resolves it with `app()`, so an application that wants other element behaviour subclasses `EnumArrayStateCast`, sets its own `$enumStateCast`, and reaches a field only by overriding that field's `getEnumDefaultStateCast()`; a `stateCast()` runs after the default casts and cannot replace it.
 
 ### The JSON-string arm is not ported
 

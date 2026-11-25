@@ -53,7 +53,7 @@ The port's [Document template](../../../packages/panels/templates/partials/Docum
 The shell is an `{% if %}` over two literal `<twig:>` tags: `SylamentPanels:SimpleLayout` when the page's [`getLayout()`](custom-pages.md#a-third-shell-layout-is-a-document-override-not-a-getlayout-value) named it, `SylamentPanels:Layout` otherwise, both handed the `maxContentWidthClass` the controller [resolved for this request](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller).
 The `component()` function is not used for the shell because a function call cannot take a `<twig:block>`, which is how the page reaches it.
 
-Filament's `base.blade.php` also carries what the unported panel traits configure: the `dir` attribute, the CSRF meta tag, the favicon, the theme and font links, the sidebar-width and font custom properties, the dark-mode configuration arms, the `fi-panel-<id>` body class, the render hooks and broadcasting.
+Filament's `base.blade.php` also carries what the unported panel traits configure: the CSRF meta tag, the favicon, the theme and font links, the sidebar-width and font custom properties, the dark-mode configuration arms, the `fi-panel-<id>` body class, the render hooks and broadcasting.
 Each lands with the `Panel/Concerns` trait that configures it.
 
 ## Semantics

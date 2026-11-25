@@ -31,7 +31,7 @@ The markup of Filament's `generate_loading_indicator_html()` is ported as the [l
 | [`except()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | [`plural()`](../../../packages/support/src/helpers.php) | [`Str::plural()`](../../../vendor/laravel/framework/src/Illuminate/Support/Str.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | [`markup()` function, `filled` and `markup` tests](../../../packages/support/src/Twig/Extension/MarkupExtension.php) | — (Sylament addition, the Twig face of `filled()` and `Twig\Markup`) | done | — | — |
-| [`plain_text` filter](../../../packages/support/src/Twig/Extension/MarkupExtension.php) | the `html_entity_decode(strip_tags($label->toHtml()), ENT_QUOTES \| ENT_HTML5, 'UTF-8')` Filament inlines for an `Htmlable` ([`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php)) | done | — | [semantics](#plain_text-reads-a-markup-as-the-text-filaments-decode-gives-and-leaves-a-string-alone) |
+| [`plain_text` filter](../../../packages/support/src/Twig/Extension/MarkupExtension.php) | the `html_entity_decode(strip_tags($tabLabel->toHtml()), ENT_QUOTES \| ENT_HTML5, 'UTF-8')` Filament inlines for an `Htmlable` ([`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php)) | done | — | [semantics](#plain_text-reads-a-markup-as-the-text-filaments-decode-gives-and-leaves-a-string-alone) |
 | `generate_icon_html()`, on [`IconExtension`](../../../packages/support/src/Twig/Extension/IconExtension.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#generate_icon_html-moved-to-the-twig-extension) · [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
 | `get_component_color_classes()`, as [`colorAttributes()`](../../../packages/support/src/Twig/Extension/ColorExtension.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#get_component_color_classes-is-the-string-arm-of-colorattributes) |
 | `format_money()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | skipped | — | [Number::currency()](#format_money-and-format_number-are-deprecated-so-they-are-skipped) |
@@ -62,8 +62,8 @@ Twig has no slot object with that method, so the port needs its own emptiness te
 ### `plain_text` reads a `Markup` as the text Filament's decode gives, and leaves a string alone
 
 A `Markup` becomes `html_entity_decode(strip_tags(…), ENT_QUOTES | ENT_HTML5)` in its own charset, a plain string comes back unchanged, and the result is never `Markup`, so the sink escapes it once: `Markup('<b>Tom</b> &amp; &lt;i&gt;Jerry')` reads `Tom & <i>Jerry` and renders as that text.
-A string is left alone because it is text already, so an `&amp;` in it is what its author wrote; Filament decodes only an `Htmlable` too.
-Templates reach for it wherever a `Markup` becomes a message argument or an accessible name; a PHP site inlines the same expression, as [`Repeater`](../../../packages/forms/src/Components/Repeater.php) does for an item label.
+A string is left alone because it is text already, so an `&amp;` in it is what its author wrote, as Filament's tabs decode only an `Htmlable` (`Tabs.php:497`).
+Templates reach for it wherever a `Markup` becomes a message argument, or an accessible name Filament decodes or escapes with `doubleEncode: false`; where Filament only strips tags (ToggleButtons' hidden labels, the table's `aria-label`) the template keeps `striptags`, and a PHP site inlines the same expression, as [`Repeater`](../../../packages/forms/src/Components/Repeater.php) does for an item label.
 
 ## Divergences
 

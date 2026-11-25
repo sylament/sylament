@@ -59,7 +59,7 @@ A macro that needs a service goes onto the service or Twig extension owning the 
 
 ### Symfony's `kebab()` and `title()` differ from Laravel's on acronyms, a leading separator and hyphens
 
-Every label the port generates from a name goes through Symfony String: `kebab()` where Filament calls `Str::kebab()`, `title()` where it calls `ucfirst()`, and `title(allWords: true)` where it calls `ucwords()`.
+Every label the port generates from a name where Filament does goes through Symfony String: `kebab()` where Filament calls `Str::kebab()`, `title()` where it calls `ucfirst()`, and `title(allWords: true)` where it calls `ucwords()`.
 `title()` keeps its default `allWords: false` at every `ucfirst()` site, so it capitalises the first letter only, and `releasedAt` reads "Released at" in both.
 The two libraries differ in three places:
 - `kebab()` keeps a run of capitals as one word where Laravel splits each: `URL` reads "Url" here and "U r l" in Filament, `userID` "User id" and "User i d", `HTMLParser` "Html parser" and "H t m l parser".

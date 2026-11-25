@@ -33,7 +33,7 @@ Both read the relationship off the **table**, and both let the reader's refusals
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DissociateBulkAction.php) (`'dissociate'`) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | — |
 | [`setUp()` chrome](../../../packages/actions/src/DissociateBulkAction.php) — label, modal heading, submit label, success title, colour, both icons, confirmation, deselect | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | [diverges](#the-texts-are-catalogue-messages-under-filaments-keys) · [diverges](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) |
-| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of) |
+| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of) · [delete-action.md](delete-action.md#the-partial-failure-title-prints-its-counts-as-raw-digits) |
 | [The fetching arm — `detach()` per record, one `flush()`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`$records->each(…)`) | done | — | [diverges](#the-fetching-arm-is-atomic-where-filaments-is-per-record) |
 | [`dissociateSelectedRecordsByKey()`](../../../packages/actions/src/DissociateBulkAction.php) — the `fetchSelectedRecords(false)` arm | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`getSelectedRecordsQuery()->update([…=> null])`) | done | — | [diverges](#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns) |
 | [The refusals as a pre-flight](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [semantics](#dissociatebulkaction-refuses-before-either-arm-writes) · [diverges](../schemas/association-reader.md#dissociating-is-refused-where-the-mapping-forbids-it) |
@@ -72,7 +72,7 @@ The whole inverse family is therefore not ported.
 
 Both classes follow [create-action.md](create-action.md#the-texts-are-catalogue-messages-under-filaments-keys)'s shape, the bulk one under `dissociate.multiple.…`.
 The counting failure titles beside them, `dissociate.multiple.notifications.dissociated_partial.title` and `dissociate.multiple.notifications.dissociated_none.title`, have no Filament key; they are [an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
-The none title is an ICU plural over the count and prints it as a locale-grouped ICU number, while the partial title's counts stay digit strings that get no grouping ([i18n.md](../../internals/i18n.md#plural-and-the-other-english-shapes-stay-english)).
+The none title is an ICU plural over the count and prints it as a locale-grouped ICU number, while the partial title's counts stay digit strings that get no grouping ([delete-action.md](delete-action.md#the-partial-failure-title-prints-its-counts-as-raw-digits)).
 
 ### The fetching arm is atomic where Filament's is per-record
 

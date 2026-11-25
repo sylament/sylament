@@ -42,7 +42,7 @@ A manager is never routed to: the page that owns the record embeds it through sc
 | `content()` — the manager's own tabs + `EmbeddedTable` | `content()` | blocked | `EmbeddedTable` | [diverges](#the-manager-renders-a-template-not-a-content-schema) |
 | `getRenderHookScopes()` / `HasRenderHookScopes`, `render()` / `getViewData()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | blocked | render hooks | — |
 | `$isBadgeLazyLoaded` / `isBadgeLazyLoaded()`, and the deprecated `$isBadgeDeferred` / `isBadgeDeferred()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | skipped | — | [diverges](#deferred-tab-badges-do-not-port) |
-| `CanBeLazyLoaded` — `lazyLoaded()` / `isLazyLoaded()`, and the deprecated `CanBeLazy` | [`support/src/Concerns/CanBeLazyLoaded.php`](../../../vendor/filament/support/src/Concerns/CanBeLazyLoaded.php) | skipped | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
+| `CanBeLazyLoaded` — `$isLazyLoaded` / `isLazyLoaded()`, the deprecated `$isLazy` / `isLazy()` and the deprecated `CanBeLazy` wrapper | [`support/src/Concerns/CanBeLazyLoaded.php`](../../../vendor/filament/support/src/Concerns/CanBeLazyLoaded.php) | skipped | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
 | The `@deprecated` label statics and getters, `$inverseRelationship` / `getInverseRelationshipName()`, and their `makeTable()` `when()` arms | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | skipped | — | [diverges](#the-deprecated-label-statics-do-not-port) |
 
 ## Details

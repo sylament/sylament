@@ -74,9 +74,8 @@ Next step: render the same `aria-label` on a standalone copy item, from the form
 
 ### Dates and relative times read in English only
 
-Filament prints the date family through Carbon's `translatedFormat()` and `since()` through `diffForHumans()` ([`CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) at `:76`, `:134`), so month and day names and the relative-time words follow the application's locale.
-The port prints through `DateTimeImmutable::format()` and [`diff_for_humans()`](../support/helpers.md), so both stay English in every locale; a `Range` summarizer's date range ([summarizer.md](summarizer.md)) and a date group's title ([grouping.md](grouping.md)) share the gap.
-**Next step:** choose the formatting engine, Carbon behind the formatting seam or `IntlDateFormatter` behind a converter from `date()` letters, and replace `format()` and `diff_for_humans()` with it.
+The date family and `since()` print English month, day and relative-time words in every locale, where Filament's follow the application's (`CanFormatState.php:76`, `:134`; the comparison is [the divergence](#the-date-family-formats-through-datetimeimmutable-so-only-english-reads-right)), and a `Range` summarizer's date range ([summarizer.md](summarizer.md)) and a date group's title ([grouping.md](grouping.md)) share the gap.
+**Next step:** choose the formatting engine, `IntlDateFormatter` behind a converter from `date()` letters, or Carbon behind the formatting seam, which reverses the divergence's "Carbon is not adopted" and needs a dependency grant, and replace `format()` and `diff_for_humans()` with it.
 
 ### The `iso*` family waits on locale-aware formatting, and only on that
 

@@ -59,7 +59,7 @@ The table seeds itself with a **closure** returning it, so the owner is resolved
 
 `getHumanizedRelationshipName()` — the relationship name kebab-cased, dashes spaced, title-cased word by word — is a `protected static` of its own, where Filament writes the chain once, inline in its static `getRelationshipTitle()`, and reaches it from `RelationManager::getTitle()` and `ManageRelatedRecords::getNavigationLabel()` through that method.
 Here `getRelationshipTitle()` is an instance method, so the two static callers cannot reach it: `getRelationshipTitle()`, [`RelationManager::getTitle()`](relation-manager.md) and [`ManageRelatedRecords::getNavigationLabel()`](manage-related-records.md) each read the named helper.
-Naming it once is what keeps a tab label and a band label from drifting apart; the expression itself is Filament's exactly, [pluralizing nothing](relation-manager.md#the-title-fallback-humanizes-the-relationship-name-without-pluralizing-it).
+Naming it once is what keeps a tab label and a band label from drifting apart; the expression takes Filament's steps, its casing differing only on an acronym and a hyphen ([translations.md](../translations.md#symfonys-kebab-and-title-differ-from-laravels-on-acronyms-a-leading-separator-and-hyphens)), [pluralizing nothing](relation-manager.md#the-title-fallback-humanizes-the-relationship-name-without-pluralizing-it).
 
 ### The related arms delegate, and the no-related arm is the identity
 

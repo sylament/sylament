@@ -41,6 +41,24 @@ trait InteractsWithDatabase
     }
 
     /**
+     * The manager the kernel's registry answers for `$class`: the first whose mapping
+     * claims it.
+     *
+     * @param class-string $class
+     */
+    protected function entityManagerFor(string $class): EntityManagerInterface
+    {
+        $entityManager = $this->doctrine()->getManagerForClass($class)
+            ?? throw new LogicException(sprintf('No manager of the kernel maps [%s].', $class));
+
+        if (!$entityManager instanceof EntityManagerInterface) {
+            throw new LogicException(sprintf('The manager that maps [%s] is not an ORM entity manager.', $class));
+        }
+
+        return $entityManager;
+    }
+
+    /**
      * A manager over the world's mapping pinned to `$platform`, whatever the run names,
      * for a premise that compares platforms. SQLite answers one on an in-memory database
      * of its own, carrying the schema and enforcing foreign keys; MySQL and PostgreSQL
@@ -83,27 +101,37 @@ trait InteractsWithDatabase
     }
 
     /**
-     * Persists and flushes the records, then clears the identity map, so the next read
-     * goes to the database, and empties the collected statements, so only the statements
-     * under test count.
+     * Persists each record through the manager that maps its class, flushes the default
+     * manager and each manager it persisted through, then clears their identity maps, so
+     * the next read goes to the database, and empties the collected statements, so only
+     * the statements under test count.
      */
     protected function seed(object ...$entities): void
     {
-        $entityManager = $this->entityManager();
+        $default = $this->entityManager();
+        $entityManagers = [spl_object_id($default) => $default];
 
         foreach ($entities as $entity) {
+            $entityManager = $this->entityManagerFor($entity::class);
             $entityManager->persist($entity);
+            $entityManagers[spl_object_id($entityManager)] = $entityManager;
         }
 
-        $entityManager->flush();
-        $entityManager->clear();
+        foreach ($entityManagers as $entityManager) {
+            $entityManager->flush();
+        }
+
+        foreach ($entityManagers as $entityManager) {
+            $entityManager->clear();
+        }
 
         $this->debugDataHolder()->reset();
     }
 
     /**
-     * Reads the record's row again by its identifier, through the current manager, in
-     * one statement, overwriting whatever instance of it that manager already holds.
+     * Reads the record's row again by its identifier, through the current kernel's manager
+     * that maps its class, in one statement, overwriting whatever instance of it that
+     * manager already holds.
      *
      * @template T of object
      *
@@ -113,7 +141,7 @@ trait InteractsWithDatabase
      */
     protected function reload(object $entity): object
     {
-        $entityManager = $this->entityManager();
+        $entityManager = $this->entityManagerFor($entity::class);
         $metadata = $entityManager->getClassMetadata($entity::class);
         $identifier = $metadata->getIdentifierValues($entity);
 
@@ -186,7 +214,7 @@ trait InteractsWithDatabase
         $middlewares = $this->entityManager()->getConnection()->getConfiguration()->getMiddlewares();
 
         if (!array_any($middlewares, static fn (Middleware $middleware): bool => $middleware instanceof DebugMiddleware)) {
-            throw new LogicException('The default connection is not profiled: turn doctrine.dbal.profiling on in config/packages/doctrine.php.');
+            throw new LogicException('The default connection is not profiled: turn profiling on for the default connection in config/packages/doctrine.php.');
         }
 
         $holder = static::getContainer()->get('doctrine.debug_data_holder');

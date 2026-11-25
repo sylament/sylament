@@ -37,7 +37,7 @@ With the variable unset or empty, the suite runs on SQLite. The URL must name a 
 ## 4. Keep server runs serial
 
 - A run in one process has one database, `<base>_<run>`, where `<run>` is `SYLAMENT_TEST_RUN` or `default`, and each parallel worker its own, `<base>_<run>-<TEST_TOKEN>`, so `SYLAMENT_TEST_RUN` keeps two runs' databases apart; the run lock guards one checkout only, so a server run from a worktree beside one from the main checkout also needs its own `SYLAMENT_TEST_RUN`, or each drops the other's databases.
-- It separates databases, not connections: `ServerDatabase` keeps a server connection and a housekeeping connection open for the life of each process, beside the connections the tests hold. A worker holds two or three, so `composer test:pest`'s cap of 8 workers keeps a run near 21.
+- It separates databases, not connections: `ServerDatabase` keeps a server connection and a housekeeping connection open for the life of each process, beside the connections the tests hold. A worker holds two or three, four while a test uses the `secondary` connection, so `composer test:pest`'s cap of 8 workers keeps a run near 21, at most 32.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 
 ## 5. Clean up run databases

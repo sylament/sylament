@@ -32,8 +32,9 @@ use Symfony\Component\Filesystem\Filesystem;
 final class TestDatabase
 {
     /**
-     * The environment variable the kernel's `default` connection reads its URL from
-     * at runtime, so a compiled container never freezes a run's or a server's URL.
+     * The environment variable the kernel's `default` and `secondary` connections read
+     * their URL from at runtime, so a compiled container never freezes a run's or a
+     * server's URL.
      */
     public const string URL_VARIABLE = 'SYLAMENT_TEST_CONNECTION_URL';
 
@@ -46,6 +47,8 @@ final class TestDatabase
     private static bool $templateBuilt = false;
 
     private static ?ArrayAdapter $metadataCache = null;
+
+    private static ?ArrayAdapter $secondaryMetadataCache = null;
 
     /**
      * The connections the kernel opened during the current test.
@@ -136,12 +139,22 @@ final class TestDatabase
     }
 
     /**
-     * The metadata cache every manager of the process shares: fresh every run, warm
-     * within it.
+     * The `default` manager's metadata cache, shared by every container of the
+     * process: fresh every run, warm within it.
      */
     public static function metadataCache(): ArrayAdapter
     {
         return self::$metadataCache ??= new ArrayAdapter();
+    }
+
+    /**
+     * The `secondary` manager's metadata cache, kept apart from {@see metadataCache()}
+     * because Doctrine reads a class's metadata from the cache, keyed by its name alone,
+     * before it asks the mapping.
+     */
+    public static function secondaryMetadataCache(): ArrayAdapter
+    {
+        return self::$secondaryMetadataCache ??= new ArrayAdapter();
     }
 
     private static function prepareSqlite(ManagerRegistry $registry): void

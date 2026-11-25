@@ -14,11 +14,22 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service_c
 return static function (ContainerConfigurator $container): void {
     $container->extension('doctrine', [
         'dbal' => [
-            'url' => '%env(' . TestDatabase::URL_VARIABLE . ')%',
-            'logging' => false,
-            'profiling' => true,
+            'default_connection' => 'default',
+            'connections' => [
+                'default' => [
+                    'url' => '%env(' . TestDatabase::URL_VARIABLE . ')%',
+                    'logging' => false,
+                    'profiling' => true,
+                ],
+                'secondary' => [
+                    'url' => '%env(' . TestDatabase::URL_VARIABLE . ')%',
+                    'logging' => false,
+                    'profiling' => true,
+                ],
+            ],
         ],
         'orm' => [
+            'default_entity_manager' => 'default',
             'entity_managers' => [
                 'default' => [
                     'mappings' => [
@@ -37,6 +48,21 @@ return static function (ContainerConfigurator $container): void {
                     ],
                     'use_schema_editor_api' => true,
                 ],
+                'secondary' => [
+                    'connection' => 'secondary',
+                    'mappings' => [
+                        'SecondaryFixtures' => [
+                            'type' => 'attribute',
+                            'dir' => '%kernel.project_dir%/src/SecondaryEntity',
+                            'prefix' => 'Sylament\\Tests\\Fixtures\\SecondaryEntity',
+                        ],
+                    ],
+                    'metadata_cache_driver' => [
+                        'type' => 'service',
+                        'id' => 'sylament_tests.secondary_metadata_cache',
+                    ],
+                    'use_schema_editor_api' => true,
+                ],
             ],
         ],
     ]);
@@ -47,6 +73,10 @@ return static function (ContainerConfigurator $container): void {
     // it holds, which would empty the process-wide cache.
     $services->set('sylament_tests.metadata_cache', ArrayAdapter::class)
         ->factory(TestDatabase::metadataCache(...))
+        ->share(false);
+
+    $services->set('sylament_tests.secondary_metadata_cache', ArrayAdapter::class)
+        ->factory(TestDatabase::secondaryMetadataCache(...))
         ->share(false);
 
     // DBAL wraps the driver in the order of the list, which DoctrineBundle sorts by

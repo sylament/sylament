@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Doctrine\Persistence\Mapping\MappingException;
 use Sylament\Tests\Fixtures\Entity\Tally;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Infrastructure\Doctrine\TestDatabase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
@@ -37,4 +39,14 @@ it('rolls back a transaction the previous test left open', function (): void {
     TestDatabase::testStarted();
 
     expect($this->entityManager()->getRepository(Tally::class)->count())->toBe(0);
+});
+
+it('serves an entity only the secondary manager maps on its own connection, starting empty', function (): void {
+    $this->seed($observatory = new Observatory('Kitt Peak'));
+
+    expect($this->entityManagerFor(Observatory::class))->not->toBe($this->entityManager())
+        ->and($this->entityManagerFor(Observatory::class)->getConnection())->not->toBe($this->entityManager()->getConnection())
+        ->and(fn (): mixed => $this->entityManager()->getClassMetadata(Observatory::class))->toThrow(MappingException::class)
+        ->and($observatory->id)->toBe(1)
+        ->and($this->reload($observatory)->name)->toBe('Kitt Peak');
 });

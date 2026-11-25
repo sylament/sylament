@@ -42,4 +42,6 @@ Ports [`filament/filament`](../../../vendor/filament/filament), the package Fila
 | --- | --- | --- | --- |
 | [`Resources/Pages/ManageRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRecords.php) | todo | — | — |
 | [`Resources/Pages/ViewRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/ViewRecord.php) | todo | — | — |
+| [`View/PanelsRenderHook.php`](../../../vendor/filament/filament/src/View/PanelsRenderHook.php) | todo | — | — |
+| [`Contracts/Plugin.php`](../../../vendor/filament/filament/src/Contracts/Plugin.php) | todo | — | — |
 | _rest not audited yet_ | — | — | — |

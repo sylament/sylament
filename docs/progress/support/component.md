@@ -45,7 +45,9 @@ Three consequences follow:
   Filament falls back to `app()->make()` for any unbound class; Symfony's container cannot, so only types the container `has()` resolve.
   Anything else falls to the parameter's default, to `null` when it is optional or nullable, and otherwise throws instead of being silently constructed.
 - **A `new`-built component resolves no services into closures.**
-  `getInvoker()` falls back to an `Invoker` holding an empty container when the setter never ran, so `fn (MailerInterface $mailer) => …` resolves through `make()` on a registered component and not on one constructed with `new`.
+  `getInvoker()` falls back to an `Invoker` holding an empty container when the setter never ran, so a closure parameter typed as a **public** service resolves through `make()` on a registered component and not on one constructed with `new`.
+  The `Invoker` asks `service_container->has()`, which sees public services only: an application's own service marked `public: true` resolves (`fn (ReportBuilder $reports) => …`), while the framework's private aliases (`MailerInterface`, `EntityManagerInterface`, `TranslatorInterface`, `UrlGeneratorInterface`, `Security`) do not and fall to the parameter's default, `null` or the exception above.
+  What every closure reaches without being a public service is the named and typed injections its component supplies (`$state`, `$record`, `Section $component`), which are resolved before the container is asked.
   It extends the rule that a subclass needing DI must be a registered service, and it is what lets a Unit test evaluate closures with no kernel.
   The gap is closable by handing the resolver an `Invoker` for its `new $class()` branch, if a real case appears.
 

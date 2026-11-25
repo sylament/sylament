@@ -12,7 +12,7 @@ owns:
 The installed Filament ships no such trait: its [`Component::isConcealed()`](../../../vendor/filament/schemas/src/Components/Component.php) is deprecated and answers `false`.
 
 Its consumers are the controls that render **native** constraint attributes: a `required` input inside an inactive Tab or a collapsed Section is `display`-hidden, and the browser refuses to submit the form around it with no visible error ("An invalid form control … is not focusable").
-Forms' gated templates read `isConcealed()` and drop those attributes; see [text-input.md](../forms/text-input.md), [textarea.md](../forms/textarea.md), [checkbox.md](../forms/checkbox.md), [date-time-picker.md](../forms/date-time-picker.md) and [select.md](../forms/select.md).
+Forms' gated templates read `isConcealed()` and drop those attributes; see [text-input.md](../forms/text-input.md), [textarea.md](../forms/textarea.md), [checkbox.md](../forms/checkbox.md), [date-time-picker.md](../forms/date-time-picker.md), [select.md](../forms/select.md), [radio.md](../forms/radio.md) and [toggle-buttons.md](../forms/toggle-buttons.md).
 Server-side validation is untouched.
 
 ## Surface

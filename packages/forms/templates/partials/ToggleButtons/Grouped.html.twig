@@ -3,6 +3,7 @@
 {% set isMultiple = component.isMultiple %}
 {% set areButtonLabelsHidden = component.areButtonLabelsHidden %}
 {% set isSingleRequired = not isMultiple and component.isRequired %}
+{% set isNativelyRequired = not isMultiple and component.isMarkedAsRequired and not component.isConcealed %}
 {% set accessibilityAttributes = component.getAccessibilityAttributes %}
 
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
@@ -34,6 +35,7 @@
                 checked: stateKeys has some (key => key is same as (value ~ '')),
                 'data-model': component.getDataModel,
                 disabled: isOptionDisabled,
+                required: isNativelyRequired and not isOptionDisabled,
                 autofocus: not isMultiple and loop.first and component.isAutofocused,
             }, accessibilityAttributes, component.getExtraInputAttributes) }}>
 

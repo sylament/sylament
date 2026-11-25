@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Forms\Components\Radio;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Components\Group;
+use Sylament\Schemas\Components\Section;
 use Sylament\Tests\Fixtures\Forms\RadioForm;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
@@ -194,12 +195,21 @@ describe('required', function (): void {
             ->and($this->renderSchemaComponent($radio()->disabled()))->toContainElement(Selectors::RADIO_GROUP . ':not([aria-required])');
     });
 
-    it('accepts either answer of a required boolean radio, No included, refuses only no answer, and renders no required attribute', function (): void {
+    it('marks each enabled radio of a required field required, none of a disabled field, and none a collapsible section may conceal', function (): void {
+        $radio = static fn (): Radio => Radio::make('plan')->options(['basic' => 'Basic', 'pro' => 'Pro'])->disableOptionWhen(static fn (string $value): bool => $value === 'pro')->required();
+        $required = static fn (Crawler $render): array => $render->filter(Selectors::RADIO)->each(static fn (Crawler $input): ?string => $input->attr('required'));
+
+        expect($required($this->renderSchemaComponent($radio())))->toBe(['', null])
+            ->and($required($this->renderSchemaComponent($radio()->disabled())))->toBe([null, null])
+            ->and($required($this->renderSchemaComponent(Section::make('Plan')->collapsible()->components([$radio()]))))->toBe([null, null]);
+    });
+
+    it('accepts either answer of a required boolean radio, No included, refuses only no answer, and marks both radios required', function (): void {
         $tester = $this->createLiveComponent(RadioForm::class);
         $inputs = $tester->render()->crawler()->filter('[aria-labelledby="form.subscribed-label"] ' . Selectors::RADIO);
 
         expect($inputs)->toHaveCount(2)
-            ->and($inputs->each(static fn (Crawler $input): ?string => $input->attr('required')))->toBe([null, null]);
+            ->and($inputs->each(static fn (Crawler $input): ?string => $input->attr('required')))->toBe(['', '']);
 
         foreach ([0, '0', '1'] as $answer) {
             $tester->fillForm(['subscribed' => $answer])->call('save')->assertHasNoFormErrors(['subscribed']);

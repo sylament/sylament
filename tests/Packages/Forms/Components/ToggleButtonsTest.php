@@ -10,6 +10,7 @@ use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Sylament\Schemas\Components\Section;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Length;
 use Twig\Markup;
@@ -60,17 +61,19 @@ describe('rendering', function (): void {
             ->and($tester->fillForm(['confirmed' => null])->render()->crawler()->filter('input[data-model$="data.confirmed"]:not([checked])'))->toHaveCount(2);
     });
 
-    it('marks every option input invalid once the field has an error, and the group of a single, required field, in both trees', function (): void {
+    it('marks every option input invalid once the field has an error, and the group of a single, required field only, in both trees', function (): void {
         $tester = $this->createLiveComponent(BoolFieldsForm::class);
         $before = $tester->render()->crawler();
 
         expect($before->filter('input[data-model$="data.channels"]:not([aria-invalid]), input[data-model$="data.size"]:not([aria-invalid])'))->toHaveCount(4)
             ->and($before->filter('[aria-labelledby$="-label"][aria-invalid]'))->toHaveCount(0);
 
-        $render = $tester->fillForm(['confirmed' => 'x', 'groupedCode' => 'x'])->call('save')->assertHasFormErrors(['channels', 'size', 'confirmed', 'groupedCode'])->render()->crawler();
+        $render = $tester->fillForm(['confirmed' => 'x', 'groupedCode' => 'x'])->call('save')->assertHasFormErrors(['channels', 'size', 'groupedChannels', 'confirmed', 'groupedCode'])->render()->crawler();
 
         expect($render->filter('input[data-model$="data.channels"][aria-invalid="true"]'))->toHaveCount(2)
             ->and($render->filter('input[data-model$="data.size"][aria-invalid="true"]'))->toHaveCount(2)
+            ->and($render->filter('input[data-model$="data.groupedChannels"][aria-invalid="true"]'))->toHaveCount(2)
+            ->and($render->filter('[role="group"][aria-labelledby="form.groupedChannels-label"]:not([aria-invalid])'))->toHaveCount(1)
             ->and($render->filter('input[data-model$="data.confirmed"][aria-invalid="true"]'))->toHaveCount(2)
             ->and($render->filter('[role="radiogroup"][aria-labelledby="form.confirmed-label"]:not([aria-invalid])'))->toHaveCount(1)
             ->and($render->filter('input[data-model$="data.groupedCode"][aria-invalid="true"]'))->toHaveCount(2)
@@ -91,6 +94,16 @@ describe('rendering', function (): void {
             ->and($single->filter('input[type="radio"]' . $described))->toHaveCount(2)
             ->and($this->renderSchemaComponent($field()->multiple()))->toContainElement('[role="group"]' . $described . ':not([aria-required])')
             ->and($this->renderSchemaComponent($field()->disabled()))->toContainElement('[role="radiogroup"][aria-describedby="schema.level-helper-text"]:not([aria-required])');
+    })->with('variants');
+
+    it('marks each enabled input of a single, required field required, none of a multiple or a disabled field, and none a collapsible section may conceal', function (bool $grouped): void {
+        $field = static fn (): ToggleButtons => ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->disableOptionWhen(static fn (string $value): bool => $value === 'high')->required()->grouped($grouped);
+        $required = static fn (Crawler $render): array => $render->filter('input[value="low"], input[value="high"]')->each(static fn (Crawler $input): ?string => $input->attr('required'));
+
+        expect($required($this->renderSchemaComponent($field())))->toBe(['', null])
+            ->and($required($this->renderSchemaComponent($field()->multiple())))->toBe([null, null])
+            ->and($required($this->renderSchemaComponent($field()->disabled())))->toBe([null, null])
+            ->and($required($this->renderSchemaComponent(Section::make('Level')->collapsible()->components([$field()]))))->toBe([null, null]);
     })->with('variants');
 
     it("marks a refused option disabled on its input and its label's class, not by a label attribute, and every option of a disabled field", function (bool $grouped): void {

@@ -216,8 +216,9 @@ It is revisited by routing `extraAttributes()` onto the input wrapper, where Fil
 
 ### The native `required` attribute follows `isMarkedAsRequired()`, not Filament's `isRequired()`
 
-Filament emits a control's native `required` attribute from `isRequired()` in `TextInput`, `Textarea`, `Checkbox`, `Select` and `DateTimePicker`, and only the field wrapper's asterisk reads `isMarkedAsRequired()`.
+Filament emits a control's native `required` attribute from `isRequired()` in `TextInput`, `Textarea`, `Checkbox`, `Select`, `DateTimePicker`, `Radio` and a single-choice `ToggleButtons`, and only the field wrapper's asterisk reads `isMarkedAsRequired()`.
 The port's `TextInput`, `Textarea`, `Checkbox`, `DateTimePicker` and native `Select` templates emit `required` from `component.isMarkedAsRequired and not component.isConcealed`, so one getter drives both the asterisk and the attribute.
+`Radio` and a single-choice `ToggleButtons`, in both trees, emit it from the same expression on each input whose field and option are enabled, as Filament's `(! $isDisabled) && (! $this->isOptionDisabled($value, $label))` gates it (`Radio.php:92`, `ToggleButtons.php:195`, `:326`), so the browser asks for one checked radio in the group.
 The two agree unless `markAsRequired()` is called explicitly: `markAsRequired()` on a field with no required constraint blocks submission in the browser while the server validates nothing, and `markAsRequired(false)` on a required field drops the attribute Filament keeps.
 The attribute does work inside a mounted action's modal, which renders as a real `<form>` ([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)): the browser fires `submit` only after native constraint validation passes, so an empty field carrying `required` stops the request on the client.
 No reason for following the marker is recorded; emitting the attribute from `isRequired()` would restore Filament's split.

@@ -2,6 +2,7 @@
 {% set stateKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set isInline = component.isInline %}
 {% set accessibilityAttributes = component.getAccessibilityAttributes %}
+{% set isNativelyRequired = component.isMarkedAsRequired and not component.isConcealed %}
 
 {% set gridAttributes = isInline
     ? null
@@ -17,6 +18,8 @@
             }, accessibilityAttributes, gridAttributes) }}
     >
         {% for value, label in component.getOptions %}
+            {% set isOptionDisabled = component.isDisabled or component.isOptionDisabled(value, label) %}
+
             <label class="sy-fo-radio-label">
                 <input {{ attrs({
                     type: 'radio',
@@ -26,7 +29,8 @@
                     value: value,
                     checked: stateKeys has some (key => key is same as (value ~ '')),
                     'data-model': component.getDataModel,
-                    disabled: component.isDisabled or component.isOptionDisabled(value, label),
+                    disabled: isOptionDisabled,
+                    required: isNativelyRequired and not isOptionDisabled,
                     autofocus: loop.first and component.isAutofocused,
                 }, accessibilityAttributes, component.getExtraInputAttributes) }}>
 

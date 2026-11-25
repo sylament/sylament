@@ -20,6 +20,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditHookedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditInvoiceLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditLoggedHerb;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditObservatory;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditOrderLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditRetitledHerb;
@@ -27,6 +28,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditSheetedBinder;
 use Sylament\Tests\Fixtures\Panels\Resources\VariantHerbResource;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('renders the edit page filled with the record', function (): void {
@@ -175,6 +177,16 @@ describe('a save', function (): void {
             'afterSave',
         ])
             ->and($this->reload($herb))->toBeRecord(name: 'Basil', latinName: 'Herba Basil');
+    });
+
+    it('saves a record through the manager its class is mapped by', function (): void {
+        $this->seed($observatory = new Observatory('Kitt Peak'));
+
+        $this->createLiveComponent(EditObservatory::class, ['record' => $observatory->id, 'panelId' => 'secondary-manager'])
+            ->fillForm(['name' => 'Mauna Kea'])
+            ->call('save');
+
+        expect($this->reload($observatory)->name)->toBe('Mauna Kea');
     });
 
     it('refuses by name a path its save mutator adds that no field maps, and writes nothing', function (): void {

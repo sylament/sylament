@@ -15,13 +15,17 @@ use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditAllotment;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditGarden;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditObservatory;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditTerrace;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\SeedlingsRelationManager;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\SproutsRelationManager;
 use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\TaggedPlantsRelationManager;
+use Sylament\Tests\Fixtures\Panels\Resources\RelationManagers\TelescopesRelationManager;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
+use Sylament\Tests\Fixtures\SecondaryEntity\Telescope;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 use Symfony\Component\DomCrawler\Crawler;
@@ -117,6 +121,15 @@ describe('as a live component', function (): void {
         expect(fn () => $this->createLiveComponent(SeedlingsRelationManager::class, ['ownerRecord' => (string) $this->garden->id])->render())
             ->toThrow(LogicException::class, 'carries no page class');
     });
+});
+
+it('lists the related records of an owner another manager maps', function (): void {
+    $observatory = new Observatory('Kitt Peak');
+    $observatory->addTelescope($telescope = new Telescope('Hale'));
+    $this->seed($observatory);
+
+    expect($this->createLiveComponent(TelescopesRelationManager::class, ['ownerRecord' => (string) $observatory->id, 'pageClass' => EditObservatory::class])->render()->crawler())
+        ->toContainElement(TablesSelectors::row((string) $telescope->id), 'Hale');
 });
 
 describe('its actions', function (): void {

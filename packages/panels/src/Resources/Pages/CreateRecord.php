@@ -17,7 +17,6 @@ use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Translation\TranslatableMessage;
-use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Twig\Markup;
@@ -43,21 +42,9 @@ abstract class CreateRecord extends Page
      */
     protected ?object $record = null;
 
-    private ?EntityManagerInterface $entityManager = null;
-
-    #[Required]
-    public function setRecordPersistence(EntityManagerInterface $entityManager): void
+    protected function getEntityManager(): EntityManagerInterface
     {
-        $this->entityManager = $entityManager;
-    }
-
-    /**
-     * @throws LogicException when the page was built outside the container
-     */
-    private function requireEntityManager(): EntityManagerInterface
-    {
-        return $this->entityManager
-            ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
+        return $this->getResourceInstance()->getEntityManager();
     }
 
     /**
@@ -270,7 +257,7 @@ abstract class CreateRecord extends Page
             $resource->attachRecordToParent($record, $parentRecord);
         }
 
-        $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->requireEntityManager()));
+        $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->getEntityManager()));
 
         $binding = $schema->getRecord() ?? $schema->getRecordClass();
         $mapped = false;
@@ -298,7 +285,7 @@ abstract class CreateRecord extends Page
      */
     private function handRecordBackToParent(object $record, object $parentRecord): void
     {
-        $reader = $this->getSchema('form')->getAssociationReader()->withEntityManager($this->requireEntityManager());
+        $reader = $this->getSchema('form')->getAssociationReader()->withEntityManager($this->getEntityManager());
         $relationship = new Relationship($parentRecord, $this->getResourceInstance()->getParentRelationshipName());
 
         if ($reader->describeRelationship($relationship)->isManyToMany) {
@@ -350,7 +337,7 @@ abstract class CreateRecord extends Page
      */
     protected function handleRecordCreation(object $record): object
     {
-        $entityManager = $this->requireEntityManager();
+        $entityManager = $this->getEntityManager();
 
         $parentRecord = $this->getParentRecord();
 

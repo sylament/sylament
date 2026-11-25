@@ -36,7 +36,7 @@ Its global search is [global-search.md](global-search.md), its parent nesting an
 | [`$recordTitleAttribute` / `getRecordTitleAttribute()` / `hasRecordTitle()` / `getRecordTitle()`](../../../packages/panels/src/Resources/Resource.php) | [`HasLabels.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasLabels.php) | done | — | [diverges](#getrecordtitle-returns-a-plain-string) |
 | [`$slug` / `getSlug()`](../../../packages/panels/src/Resources/Resource.php) | [`HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) | done | — | [diverges](#the-slug-has-no-namespace-path-arm) · [diverges](#nothing-is-memoised-in-a-static) |
 | [`getPages()` / `hasPage()`](../../../packages/panels/src/Resources/Resource.php) | [`HasPages.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasPages.php) | done | — | [diverges](#resource-keeps-its-ported-concerns-in-one-class-body) |
-| [`getRecordQuery()`](../../../packages/panels/src/Resources/Resource.php) | `Resource.php` `getEloquentQuery()` | done | — | [renames.md](../renames.md#renames) · [diverges](#a-record-is-resolved-through-the-resources-own-query) |
+| [`getRecordQuery()`](../../../packages/panels/src/Resources/Resource.php) | `Resource.php` `getEloquentQuery()` | done | — | [renames.md](../renames.md#renames) · [diverges](#a-record-is-resolved-through-the-resources-own-query) · [semantics](#the-entity-manager-is-the-one-that-maps-the-record-class) |
 | `getRecordRouteBindingEloquentQuery()` | [`HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) | skipped | — | [renames.md](../renames.md#renames) |
 | [`resolveRecordRouteBinding()`](../../../packages/panels/src/Resources/Resource.php) | [`HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) | done | — | [diverges](#a-record-is-resolved-through-the-resources-own-query) · [semantics](#the-modifier-may-answer-with-a-different-query-and-refuses-anything-else) |
 | [`$recordRouteKeyName` / `getRecordRouteKeyName()` / `getRecordRouteKey()`](../../../packages/panels/src/Resources/Resource.php) | [`HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) | done | — | [diverges](#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it) |
@@ -94,6 +94,14 @@ A closure returning anything else throws a `LogicException` naming the resource 
 The decode keys against the **declared** `getRecordClass()`, never the builder's root entity, so a modifier that re-roots the query still decodes against the class the resource speaks for.
 Filament's only caller of the parameter is the parent scope, and here it is [the page's parent scope](nested-resources.md#one-scope-serves-the-route-key-and-the-unchecksummed-action-key) too, which answers the resource's own record query narrowed to the parent.
 
+### The entity manager is the one that maps the record class
+
+`getEntityManager()` is public and asks the registry for the manager that maps `getRecordClass()` on every call, through [`RecordManager`](../schemas/association-reader.md#the-lookup-answers-the-manager-that-maps-a-class-or-none), and stores none, so no caller holds a manager Doctrine has since reset.
+`getRecordQuery()`, the route-key reads and the create and edit pages all go through it, so a resource over a class only a second manager maps lists, opens, creates and saves through that manager, where the container's default manager would refuse the class.
+It stays overridable for a class several managers map, where the registry's first match is not the one the resource wants, and a resource that overrides it reaches its create page and that page's form reader as well.
+A `$recordClass` that is an interface resolved through `resolve_target_entities` is no longer found: that listener belonged to the default manager, which the lookup no longer asks, so the registry answers no manager and the resource throws.
+Nothing visible changes for an application with one manager, so the showcase gets no card.
+
 ## Divergences
 
 ### `Resource` is a service, not a static class-string registry
@@ -103,7 +111,7 @@ Symfony has no such global, so a static method cannot reach a dependency at all.
 If `form()` and `table()` stayed static they could hold no dependency, and neither could any aggregator class they delegate to, which would leave a per-field or per-column leaf class as the only place a dependency can live.
 
 So `Resource` is a service, autoconfigured with the `sylament.panels.resource` tag, and `form()`, `infolist()`, `table()` and every other hook are instance methods.
-The services it needs — the entity manager, the URL generator, `CurrentPanel`, `PanelRegistry`, schemas' `PropertyAccessor` and `AssociationReader`, and `ResourceRegistry` — arrive through one `#[Required] setResourceServices()` setter, so a subclass declaring its own constructor dependencies never repeats them.
+The services it needs — Doctrine's `ManagerRegistry`, the URL generator, `CurrentPanel`, `PanelRegistry`, schemas' `PropertyAccessor` and `AssociationReader`, and `ResourceRegistry` — arrive through one `#[Required] setResourceServices()` setter, so a subclass declaring its own constructor dependencies never repeats them.
 
 The user-facing API stays a class-string: `protected static string $resource = ArticleResource::class;` on a page, `->resources([ArticleResource::class])` on a panel.
 `ResourceRegistry::get()` turns that class-string into the container-built instance through a class-keyed `ServiceLocator`, as `createForm(OrderType::class)` resolves a form type through Symfony Form's registry.

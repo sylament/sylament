@@ -29,7 +29,7 @@ Each but the test tooling is left undeclared because a package the importer alre
 - **`twig/twig`** in six packages: `sylament/support` requires it.
 - **`symfony/type-info`** in `schemas` (`State\RecordTypeReader`): `symfony/property-info` requires it.
 - **`doctrine/dbal`** in `actions`, `tables`: `sylament/schemas`, which both require, requires `^4.6`.
-- **`doctrine/persistence`** in `actions`, `schemas`, `tables`: `doctrine/orm` requires it.
+- **`doctrine/persistence`** in `actions`, `panels`, `schemas`, `tables`: `doctrine/orm` requires it.
 - **`doctrine/collections`** in `actions`, `tables`: `doctrine/orm` requires it; declare it first if the ORM ever leaves `actions`, whose `RecordReplicator` instantiates `ArrayCollection` where `tables` only tests `instanceof`.
 - **`symfony/polyfill-php86`** (the global `SortDirection` enum) in `schemas`, `tables`: `doctrine/orm` requires it.
 - **`psr/container`** in `support`, `panels`: `symfony/service-contracts`, which `support` requires, requires it.

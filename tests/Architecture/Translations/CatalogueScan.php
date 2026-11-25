@@ -36,12 +36,15 @@ use Symfony\Component\Validator\Validation;
 
 /**
  * Compares the keys a package's code uses with the catalogues that hold them: a key the code names and the catalogue
- * lacks renders raw, a key nothing names is dead weight, and a domain the package may not name renders raw once the
- * split publishes the package alone.
+ * lacks renders raw, a key nothing names is dead weight, a domain the package may not name renders raw once the
+ * split publishes the package alone, and a key outside the catalogue's shape breaks the one transform a Filament locale
+ * imports through.
  */
 final class CatalogueScan
 {
     private const string VALIDATORS = 'validators';
+
+    private const string KEY_SHAPE = '/^[a-z0-9_]+(?:\.[a-z0-9_]+)*$/';
 
     /**
      * @var array<string, MessageCatalogue> the extraction of each package directory, since the unused arm reads every
@@ -51,7 +54,8 @@ final class CatalogueScan
 
     /**
      * @return list<string> one sorted line per problem: `missing <domain>: <key>`, `unused <domain>: <key>`,
-     *                      `forbidden <domain>: <key>`, or `misplaced <domain>: <catalogue file>`
+     *                      `forbidden <domain>: <key>`, `malformed <domain>: <key>`, or
+     *                      `misplaced <domain>: <catalogue file>`
      */
     public static function problems(ExtractorInterface $extractor, string $package, string $packagesDirectory = Packages::DIRECTORY): array
     {
@@ -89,6 +93,12 @@ final class CatalogueScan
 
         foreach (array_diff($catalogues[$own] ?? [], $ownUsed) as $key) {
             $problems[] = sprintf('unused %s: %s', $own, $key);
+        }
+
+        foreach ($catalogues[$own] ?? [] as $key) {
+            if (preg_match(self::KEY_SHAPE, $key) !== 1) {
+                $problems[] = sprintf('malformed %s: %s', $own, $key);
+            }
         }
 
         $validatorIds = [...array_map(strval(...), array_keys($used->all(self::VALIDATORS))), ...self::validatorMessages($packagesDirectory . '/' . $package . '/src')];

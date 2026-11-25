@@ -14,13 +14,13 @@ use Symfony\Component\Console\Tester\CommandTester;
 it('reports a key the code uses and the catalogue lacks', function (): void {
     $directory = PlantedPackages::plant([
         'support/src/Greeting.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('greeting.label', [], 'sylament');\n\$b = new TranslatableMessage('held.label', [], 'sylament');\n",
-        'support/templates/components/Greeting/index.html.twig' => "{{ 'components/greeting.heading'|trans(domain: 'sylament') }}",
+        'support/templates/components/Greeting/index.html.twig' => "{{ 'components.greeting.heading'|trans(domain: 'sylament') }}",
         'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['held.label']),
     ]);
 
     try {
         expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'support', $directory))->toBe([
-            'missing sylament: components/greeting.heading',
+            'missing sylament: components.greeting.heading',
             'missing sylament: greeting.label',
         ]);
     } finally {
@@ -42,18 +42,35 @@ it('reports a catalogue key nothing uses', function (): void {
     }
 });
 
+it('reports a catalogue key outside the key shape', function (): void {
+    $directory = PlantedPackages::plant([
+        'support/templates/components/Greeting/index.html.twig' => "{{ 'components/greeting.label'|trans(domain: 'sylament') }}{{ 'global-search.label'|trans(domain: 'sylament') }}{{ 'Greeting.label'|trans(domain: 'sylament') }}{{ 'components.greeting.held_label'|trans(domain: 'sylament') }}",
+        'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['components/greeting.label', 'global-search.label', 'Greeting.label', 'components.greeting.held_label']),
+    ]);
+
+    try {
+        expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'support', $directory))->toBe([
+            'malformed sylament: Greeting.label',
+            'malformed sylament: components/greeting.label',
+            'malformed sylament: global-search.label',
+        ]);
+    } finally {
+        PlantedPackages::remove($directory);
+    }
+});
+
 it('reports a domain the package may not name', function (): void {
     $directory = PlantedPackages::plant([
-        'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['components/copyable.messages.copied']),
-        'tables/src/Column.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('components/copyable.messages.copied', [], 'sylament');\n\$b = new TranslatableMessage('resources/pages/list-records.title', [], 'sylament-panels');\n",
+        'support/translations/sylament+intl-icu.en.yaml' => PlantedPackages::catalogue(['components.copyable.messages.copied']),
+        'tables/src/Column.php' => "<?php\nuse Symfony\\Component\\Translation\\TranslatableMessage;\n\$a = new TranslatableMessage('components.copyable.messages.copied', [], 'sylament');\n\$b = new TranslatableMessage('resources.pages.list_records.title', [], 'sylament-panels');\n",
         'tables/templates/partials/Table/index.html.twig' => "{{ 'table.empty.heading'|trans }}",
-        'panels/translations/sylament-panels+intl-icu.en.yaml' => PlantedPackages::catalogue(['resources/pages/list-records.title']),
+        'panels/translations/sylament-panels+intl-icu.en.yaml' => PlantedPackages::catalogue(['resources.pages.list_records.title']),
     ], requires: ['tables' => ['support']]);
 
     try {
         expect(CatalogueScan::problems($this::getContainer()->get('translation.extractor'), 'tables', $directory))->toBe([
             'forbidden messages: table.empty.heading',
-            'forbidden sylament-panels: resources/pages/list-records.title',
+            'forbidden sylament-panels: resources.pages.list_records.title',
         ]);
     } finally {
         PlantedPackages::remove($directory);
@@ -192,5 +209,5 @@ it('parses every shipped catalogue', function (): void {
 it("matches each package's catalogues to the keys its code uses", function (string $package): void {
     $problems = CatalogueScan::problems($this::getContainer()->get('translation.extractor'), $package);
 
-    expect($problems)->toBe([], "The {$package} catalogues differ from the keys its code uses: add a missing key to the catalogue holding its domain, drop an unused one, and name only a domain the package may (.claude/rules/catalogues.md; what the scan reads: docs/internals/i18n.md):\n" . implode("\n", $problems));
+    expect($problems)->toBe([], "The {$package} catalogues differ from the keys its code uses: add a missing key to the catalogue holding its domain, drop an unused one, write each key in the catalogue's shape, and name only a domain the package may (.claude/rules/catalogues.md; what the scan reads: docs/internals/i18n.md):\n" . implode("\n", $problems));
 })->with(Packages::names());

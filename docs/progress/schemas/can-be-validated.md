@@ -131,7 +131,7 @@ The flag is the schema's own, with no parent walk: the record check runs on the 
 `Schema::configureUsing()` reaches every schema as a default — it runs inside `make()` — which a page's `form()` or an action's schema resolver then overrides.
 One reach is recorded rather than closed: the edit page's `EditAction` modal wraps the form in a fresh schema ([`EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php)), so a flag set in `Resource::form()` does not reach it there — which matters only for the new records an edit creates.
 
-Filament has no automatic key rules, so the name is the toolkit's; it follows Filament's `bool | Closure $condition = true` switches (`deferLoading()`, `persistTab()`), and [translations.md](../translations.md) carries the row.
+Filament has no automatic key rules, so the name is the toolkit's; it follows Filament's `bool | Closure $condition = true` switches (`lazyLoaded()`, `persistTab()`), and [translations.md](../translations.md) carries the row.
 Pinned: the closure flag handed the bound record, `configureUsing()`'s reach, and, switched off, a taken key reaching the flush and a blank mapped one not refused, with no statement either way, while a changed key is still refused and put back and the record's own constraints still answer.
 
 ## Divergences

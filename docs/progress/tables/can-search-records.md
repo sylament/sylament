@@ -85,7 +85,7 @@ Filament's `searchOnBlur()` swaps the input's binding to `wire:model.live.blur`,
 [`SearchField`](../../../packages/tables/templates/components/SearchField/index.html.twig) renders `on(change)|<model>` instead, because ux-live-component's `on()` modifier accepts only `input` or `change` and throws on anything else (`live_controller.js`, the `modelDirective.modifiers` switch).
 `change` fires when a changed value leaves the field, or on Enter, so blurring an untouched input commits nothing where Livewire would commit it.
 The setter and its getter keep Filament's shape (`searchOnBlur()` / `isSearchOnBlur()`), and the intent the name states, do not search while I type, is served exactly.
-Schemas makes the same translation for `lazy()` ([has-state-binding-modifiers.md](../schemas/has-state-binding-modifiers.md#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string)), for the same reason.
+Schemas makes the same translation for `live(onBlur: true)` ([has-state-binding-modifiers.md](../schemas/has-state-binding-modifiers.md#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string)), for the same reason.
 
 ### The search field is a root `<label>` around its input, with `model` for `wireModel` and an optional `value`
 

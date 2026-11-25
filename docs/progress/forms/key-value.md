@@ -86,7 +86,7 @@ Registering the pad through `afterStateHydrated()` means a consumer who calls th
 
 ### Every cell binds by row index, and a disabled cell keeps its binding
 
-Each input's `data-model` is built by [`getDataModel($statePath)`](../schemas/has-state-binding-modifiers.md#the-optional-state-path-is-a-sylament-addition) over `<the field's path>.<index>.<key|value>`, so the two cells of a row inherit the field's own `live()` / `lazy()` / `debounce()` modifiers rather than declaring their own.
+Each input's `data-model` is built by [`getDataModel($statePath)`](../schemas/has-state-binding-modifiers.md#the-optional-state-path-is-a-sylament-addition) over `<the field's path>.<index>.<key|value>`, so the two cells of a row inherit the field's own `live()` / `live(onBlur: true)` / `debounce()` modifiers rather than declaring their own.
 A cell disabled by `editableKeys(false)`, `editableValues(false)` or `disabled()` **keeps** that attribute: the browser fires no event on a disabled input, so nothing is written, while UX Live's `SetValueOntoModelFieldsPlugin` still repaints it from the store after a morph, and dropping the binding would leave a stale value on screen after every re-render.
 
 ### A trigger argument is re-validated against the rows the server rendered

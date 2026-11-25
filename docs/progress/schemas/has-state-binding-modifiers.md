@@ -49,7 +49,7 @@ This is the Livewire → UX LiveComponent idiom translation, and it is stable: t
 ### The optional state path is a Sylament addition
 
 `getDataModel()` takes an optional `?string $statePath`: `null`, which is how most shipped templates call it and the only shape Filament's `applyStateBindingModifiers()` has, builds the directive over the component's own path, while a string builds the same `norender|` / `on(change)|` / `debounce(N)|` directive over the path the caller names.
-It exists because a component can render more than one bound input: [`KeyValue`](../forms/key-value.md) binds a key and a value cell per row at `<own path>.<index>.key` / `.value`, and those cells must inherit the field's own `live()` / `lazy()` / `debounce()` rather than re-deriving them.
+It exists because a component can render more than one bound input: [`KeyValue`](../forms/key-value.md) binds a key and a value cell per row at `<own path>.<index>.key` / `.value`, and those cells must inherit the field's own `live()` / `live(onBlur: true)` / `debounce()` rather than re-deriving them.
 Filament needs no counterpart: its `KeyValue` rows are Alpine-owned and never carry a binding of their own.
 
 ### The trait carries the component flavor while `Schema` overrides the getters

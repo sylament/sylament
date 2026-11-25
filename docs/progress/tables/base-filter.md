@@ -119,7 +119,7 @@ The base/apply split survives as ordering only.
 
 ### The `schema()` aliases are not ported
 
-Filament's `HasForm` declares `form()`, `getFormSchema()`, `hasForm()` and `getForm()`, and keeps `schema()`, `getSchemaComponents()`, `hasSchema()` and `getSchema()` beside them as one-line delegates marked `@deprecated`, with `Concerns\HasSchema` itself a deprecated trait that only composes `HasForm` (v5.12.0, `@deprecated Use \`form()\` instead.`).
+Filament's `HasForm` declares `form()`, `getFormSchema()`, `hasForm()` and `getForm()`, and keeps `schema()`, `getSchemaComponents()`, `hasSchema()` and `getSchema()` beside them as one-line delegates marked `@deprecated`, with `Concerns\HasSchema` itself a deprecated trait that only composes `HasForm` (v5.12.0 marks the trait "Use `HasForm` instead" and `schema()` "Use `form()` instead").
 Its [custom-filter guide](../../../vendor/filament/tables/docs/03-filters/05-custom.md) writes `->form([...])`.
 A deprecated Filament member [is not ported](../renames.md#a-deprecated-filament-member-is-not-ported), so the port ships Filament's names and the [renames table](../renames.md#renames) carries the row for the deprecated four.
 The property that holds the declaration is `$formSchema`, as Filament's.

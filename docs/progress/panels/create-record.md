@@ -148,7 +148,7 @@ The two form actions' labels are handed to `Action::label()` as messages, which 
 Filament's page declares `public ?Model $record`; ours declares `protected ?object $record`, a plain property rather than a `LiveProp`, set by `create()` and read by `getRedirectUrl()` in the same request, which ends with the redirect.
 The only `LiveProp` of the page's own is the writable `$data` bag every field binds into.
 `getEntityManager()` is the persistence hop Filament does not need, because an Eloquent model saves itself.
-It answers the page's resource's [`getEntityManager()`](resource.md#the-entity-manager-is-the-one-that-maps-the-record-class), the manager that maps the record class, so the page holds no manager and no setter of its own, and a page built outside the container fails on the resource's missing services instead.
+It answers the page's resource's [`getEntityManager()`](resource.md#the-entity-manager-is-the-one-that-maps-the-record-class), the manager that maps the record class, so the page holds no manager and no setter of its own, and a page built outside the container refuses in `getResourceRegistry()`, which throws because it holds no resource registry.
 A resource that overrides its `getEntityManager()` therefore changes where the page writes, and the form's reader is rebound to it.
 `EditRecord` declares the same method rather than sharing a trait, as Filament keeps its record handlers per page.
 

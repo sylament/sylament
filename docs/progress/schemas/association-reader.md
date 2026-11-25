@@ -11,10 +11,10 @@ owns:
 
 [`Sylament\Schemas\State\AssociationReader`](../../../packages/schemas/src/State/AssociationReader.php) and the [`AssociationTarget`](../../../packages/schemas/src/State/AssociationTarget.php) value object it returns — a Sylament invention with **no Filament counterpart**, and the reason there is none is structural.
 Filament asks an Eloquent model for a relationship by calling it: `$record->{$name}()` hands back a `Relation` object that already knows its related model, its cardinality, and how to save itself, so a component reads and writes a relationship through the model instance it was given.
-Doctrine has no such object — an association is *mapping metadata*, read from the `EntityManager`, and writing it is the unit of work's job at flush time.
-This class is that translation, and it is the **only** seam through which `schemas` touches an `EntityManager`, so a relation-aware component asks it rather than growing its own `EntityManager` dependency and its own metadata reads.
+Doctrine has no such object — an association is *mapping metadata*, read from the `EntityManager` that maps the class, and writing it is the unit of work's job at flush time.
+This class is that translation, and it is the **only** seam through which `schemas` touches an `EntityManager` — the one the registry answers for [each class it reads](#an-unpinned-reader-asks-the-registry-for-the-manager-of-each-class-it-reads), or the one it is pinned to — so a relation-aware component asks it rather than growing its own `EntityManager` dependency and its own metadata reads.
 The relationship arm (scoping, listing and writing one owner's collection) is in [relationship.md](relationship.md).
-The seam is also what keeps Doctrine optional at runtime: an application with no `EntityManager` gets a reader that reports [no association anywhere](#a-null-target-means-no-doctrine-answer-not-no-such-property) rather than a container that cannot compile.
+The seam is also what keeps Doctrine optional at runtime: an application with no Doctrine `ManagerRegistry` gets a reader that reports [no association anywhere](#a-null-target-means-no-doctrine-answer-not-no-such-property) rather than a container that cannot compile.
 
 A record key of any width travels through all of it.
 The reader mints, finds and decodes one through [`RecordKey`](record-key.md) and narrows every query through `IdentifierConstraint`, so an entity keyed by two scalar fields, by an association plus a scalar, by two associations or by an association alone is a relation **target** wherever a single-`id` entity is — and [the reader owns no copy of the codec's rules](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route).
@@ -24,8 +24,8 @@ It is a relation **owner** there too: both relationship queries narrow to an own
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`__construct(?EntityManagerInterface, ?PropertyAccessor)`](../../../packages/schemas/src/State/AssociationReader.php) + [`hasEntityManager()`](../../../packages/schemas/src/State/AssociationReader.php) — the optional-Doctrine seam, and the accessor the writes go through | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
-| [`withEntityManager(EntityManagerInterface $entityManager)`](../../../packages/schemas/src/State/AssociationReader.php) — this reader bound to another entity manager | — | done | — | [semantics](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) |
+| [`__construct(?ManagerRegistry, ?PropertyAccessor)`](../../../packages/schemas/src/State/AssociationReader.php) + [`hasEntityManager()`](../../../packages/schemas/src/State/AssociationReader.php) — the optional-Doctrine seam, the registry each class's manager is asked of, and the accessor the writes go through | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) · [semantics](#an-unpinned-reader-asks-the-registry-for-the-manager-of-each-class-it-reads) |
+| [`withEntityManager(EntityManagerInterface $entityManager)`](../../../packages/schemas/src/State/AssociationReader.php) — this reader pinned to one entity manager | — | done | — | [semantics](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) |
 | [`describe(string $class, string $property)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at one property, or null | — | done | — | [semantics](#a-null-target-means-no-doctrine-answer-not-no-such-property) |
 | Transient / anonymous-class guarding inside `describe()` | — | done | — | [semantics](#istransient-answers-false-for-an-anonymous-class-so-it-is-not-the-whole-guard) |
 | [`getReference(string $class, int\|string $id)`](../../../packages/schemas/src/State/AssociationReader.php) — the record a key names, decoded before anything is looked up | — | done | — | [semantics](#getreference-decodes-first-and-then-picks-its-route) · [diverges](#getreference-throws-where-doctrine-returns-null) |
@@ -38,13 +38,13 @@ It is a relation **owner** there too: both relationship queries narrow to an own
 | [`findBlankAssignedIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) (`@internal`) — the blank-key rule's candidate fields | — | done | — | [semantics](#a-new-records-blank-key-fields-are-the-record-checks-candidates) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | — | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`remove(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — delete an orphan through the unit of work | — | done | — | [semantics](#remove-is-here-so-orphan-deletion-does-not-grow-a-second-seam) |
-| [`persist(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) + [`flush()`](../../../packages/schemas/src/State/AssociationReader.php) — write a newly created related record | — | done | — | [semantics](#persist-and-flush-are-the-write-half-of-the-same-seam) |
+| [`persist(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) + [`flush(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — write a newly created related record | — | done | — | [semantics](#persist-and-flush-are-the-write-half-of-the-same-seam) · [semantics](#flush-names-the-entity-whose-manager-it-flushes) |
 | [`AssociationTarget::$targetClass` / `$isToMany`](../../../packages/schemas/src/State/AssociationTarget.php) — what to load and in what shape | — | done | — | — |
 | [`AssociationTarget::$isOwningSide`](../../../packages/schemas/src/State/AssociationTarget.php) — whether writing this side writes the database | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | — | done | — | [semantics](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
 | [`AssociationTarget::$isManyToMany` / `$mappedBy` / `$inversedBy` / `$isNullable` / `$orderBy`](../../../packages/schemas/src/State/AssociationTarget.php) — what a relationship writer reads | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [`RecordManager::of()` / `find()`](../../../packages/schemas/src/State/RecordManager.php) — the ORM entity manager a `ManagerRegistry` answers for a class, thrown or null | — | done | — | [semantics](#the-lookup-answers-the-manager-that-maps-a-class-or-none) |
-| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader`, its class alias and a null-on-invalid `EntityManagerInterface` | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
+| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader`, its class alias and a null-on-invalid `ManagerRegistry` | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
 | [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — the `#[Required]` setter every consumer tier reaches the reader through | — | done | — | [semantics](#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
 | Composite records as relation **targets**, at any identifier width | — | done | — | [semantics](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route) |
 | Through-relations, morphs, pivot data | — | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
@@ -60,23 +60,39 @@ It looks the manager up on every call and stores nothing, so no caller holds a m
 
 ### The entity manager is optional, and the two halves answer differently
 
-The constructor takes `?EntityManagerInterface` and the bundle wires it with `service(EntityManagerInterface::class)->nullOnInvalid()`, so `schemas` compiles in an application with no Doctrine at all — the same shape as support's [AssetMapper guard](../support/support-bundle.md), and the reason `doctrine/orm` being a hard `require` of the package is not a hard requirement of the *runtime*.
-Without a manager the class splits in two:
+The constructor takes `?ManagerRegistry` and the bundle wires it with `service(ManagerRegistry::class)->nullOnInvalid()`, so `schemas` compiles in an application with no Doctrine at all — the same shape as support's [AssetMapper guard](../support/support-bundle.md), and the reason `doctrine/orm` being a hard `require` of the package is not a hard requirement of the *runtime*.
+A reader that reaches no manager — no registry, and no manager pinned — splits in two:
 
 - **`describe()` answers null**, because "is this property an association?" has a meaningful negative answer — no Doctrine means no associations, and a caller keeps whatever non-association behaviour it already had.
 - **Every operation throws a `LogicException`**, because `getReference()`, `getRecordKey()`, `createOptionQuery()`, `remove()` and the rest have no meaningful negative answer: a caller reaching them has already decided it is handling a relationship, so a silent null would corrupt state instead of failing.
   One message covers them all, and it names both causes (a reader built outside the container, or no `EntityManagerInterface` service) and the two ways out — register `doctrine/doctrine-bundle`, or bind the record by hand after `getData()`.
 
 `hasEntityManager()` exists so a caller can branch **before** it commits to the relationship path, rather than catching the exception the operations throw.
+It answers whether the reader reaches any manager, pinned or through a registry, not whether a manager maps the class a caller has in mind; [the per-class entry](#an-unpinned-reader-asks-the-registry-for-the-manager-of-each-class-it-reads) says what each method answers for a class none maps.
 
 The record check's three members take the `describe()` side rather than the operations': without a manager, `revertIdentifierChanges()`, `findTakenIdentifiers()` and `findBlankAssignedIdentifiers()` answer no refusal.
 They run inside every `getData()` a validator reaches, and a host with no Doctrine has no identity map for a key to move in or be held by — so a reader built with `new`, which is what a schema built outside the container holds, guards nothing.
 The changed-key and taken-key test files pin it, *guards nothing without an entity manager*.
 
+### An unpinned reader asks the registry for the manager of each class it reads
+
+The reader holds no manager of its own: every call asks [`RecordManager`](#the-lookup-answers-the-manager-that-maps-a-class-or-none) for the manager that maps the class it concerns, so an entity only another of the registry's managers maps is described, queried, keyed and written as one the default manager maps is.
+The class a call concerns is the class it is passed (`describe()`, `createOptionQuery()`, `getReference()`), the relationship's owner or target (`describeRelationship()`, the relationship queries, `attach()`, `detach()` and the accept checks), which one manager maps since a Doctrine association never spans two, or the entity's own class (the key and identifier methods, `persist()`, `remove()` and [`flush()`](#flush-names-the-entity-whose-manager-it-flushes)); the record check's walk asks once for each class it meets.
+
+Each method keeps the answer it gives a class no manager maps.
+`describe()` and the record check's three members take the lookup's `null`, and answer no association and no refusal, as they do on a reader with no manager.
+Every other method throws a `LogicException` naming the class: the lookup's *No Doctrine manager handles App\Dto\Report.*, or, where a relationship's owner is the class, the reader's own *[App\Dto\Report] is not a managed entity, so it cannot own a relationship.*
+Nothing falls back to the default manager: a class no manager maps has no manager to read it through, and a class another manager maps would be read through the wrong one.
+
+A reader pinned with [`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) asks no registry and uses its pin for every class, which is how a write seam reads through the manager it flushes through.
+Like the lookup, the reader stores no manager it was answered, so a manager Doctrine has reset is never held across calls.
+
+Pinned: on the container's reader, a class only the second manager maps is described, and its option and relationship queries are built, and it is persisted and flushed, on that manager; a pinned reader keeps its pin for it; and a class no manager maps is described as no association and refused by name.
+
 ### `withEntityManager()` is a clone, so a subclassed reader survives the rebind
 
-`withEntityManager(EntityManagerInterface $entityManager): static` answers this reader bound to another manager.
-It is a clone — `clone($this, ['entityManager' => $entityManager])`, PHP 8.5's clone-with, which reassigns the `private readonly` manager from inside the class, on a subclass's instance too — so the copy keeps the reader's class, its property accessor by identity and anything a subclass carries, and the reader it was called on keeps the manager it had.
+`withEntityManager(EntityManagerInterface $entityManager): static` answers this reader pinned to one manager, which it then uses for every class.
+It is a clone — `clone($this, ['entityManager' => $entityManager])`, PHP 8.5's clone-with, which assigns the private pinned manager from inside the class, on a subclass's instance too — so the copy keeps the reader's class, its registry and property accessor by identity and anything a subclass carries, and the reader it was called on keeps the pin it had, or none.
 It answers a new instance every time, the house's `with*` shape ([`Paginator::withRecords()`](../support/pagination.md)).
 `new static(...)` was the alternative and is wrong: it breaks a subclass whose constructor takes arguments of its own, and drops whatever state one holds.
 
@@ -95,8 +111,8 @@ It exists for the write seams that read through the manager they flush through, 
 Built with `new`, each would drop a subclassed `sylament_schemas.association_reader` service — the service an application may decorate — and the container's property accessor with it.
 [`AssociationReaderConstructionTest`](../../../tests/Architecture/AssociationReaderConstructionTest.php) keeps it so: in `packages/*/src` only `CanAccessAssociations`' manager-less fallback constructs a reader.
 
-A reader taking its manager per call instead — or resolving one from a `ManagerRegistry` per class — is deferred indefinitely.
-The record check runs inside `getData()`, through `InteractsWithSchemas::validateSchemaRecord()`, and only the caller knows which manager it will flush through, so a per-call manager would have to change that host contract; and a registry answers the first manager whose mapping knows a class, so it cannot pick a second manager over the same mapping — the shape a table whose `query()` runs on another manager has ([below](#what-the-taken-key-probe-cannot-see)).
+The pin stays beside the [per-class lookup](#an-unpinned-reader-asks-the-registry-for-the-manager-of-each-class-it-reads) because a registry answers the first manager whose mapping knows a class, so it cannot pick a second manager over the same mapping — the shape a table whose `query()` runs on another manager has ([below](#what-the-taken-key-probe-cannot-see)) — and only the caller knows which manager it will flush through.
+A reader taking its manager per call instead would have to change the host contract the record check runs under, inside `getData()`, through `InteractsWithSchemas::validateSchemaRecord()`.
 
 Pinned: a copy of the reader's own class bound to the manager, a subclass and its own constructor argument kept, the reader it came from left unbound, and the bound manager used for real while the original keeps its own.
 
@@ -365,7 +381,12 @@ So the pair is `persist()` then `flush()` then `getRecordKey()`, and `persist()`
 
 Where the identifier is **assigned** rather than generated, that order has one more step in front of it: [`hasIncompleteAssignedIdentifier()`](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask) runs before `persist()`, because a record with half a key flushes successfully and only fails when something tries to name it.
 
-`flush()` takes no entity because ORM 3's `EntityManager::flush(): void` takes none either — the single-entity flush ORM 2 offered is gone, so the reader has no narrower boundary to expose even if a caller wanted one.
+### `flush()` names the entity whose manager it flushes
+
+`flush(object $entity)` takes the entity because an unpinned reader has no other class to [resolve its manager by](#an-unpinned-reader-asks-the-registry-for-the-manager-of-each-class-it-reads).
+It flushes the unit of work of the manager the entity's class resolves to, whether or not that manager holds the entity: ORM 3's `EntityManager::flush(): void` takes no entity, the single-entity flush ORM 2 offered being gone, so the argument picks the manager and never narrows the write.
+A pinned reader flushes its pin, and a class no manager maps throws naming it, as `persist()` does.
+Its callers are `Select`'s `createOptionUsing()` and `updateOptionUsing()` closures, each passing the record it wrote.
 
 ### The owning-side and orphan-removal flags are what a writer needs, not trivia
 

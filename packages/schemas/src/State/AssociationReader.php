@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping\JoinColumnMapping;
 use Doctrine\ORM\Mapping\OwningSideMapping;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use ReflectionClass;
 use SortDirection;
@@ -32,21 +33,28 @@ class AssociationReader
 
     private const string BLANK_IDENTIFIER = 'This value should not be blank.';
 
+    private ?EntityManagerInterface $entityManager = null;
+
     public function __construct(
-        private readonly ?EntityManagerInterface $entityManager = null,
+        private readonly ?ManagerRegistry $managerRegistry = null,
         private ?PropertyAccessor $propertyAccessor = null,
     ) {
     }
 
+    /**
+     * Whether the reader reaches any manager: the one it is bound to, or a
+     * registry it asks for the manager of each class.
+     */
     public function hasEntityManager(): bool
     {
-        return $this->entityManager instanceof EntityManagerInterface;
+        return $this->entityManager instanceof EntityManagerInterface || $this->managerRegistry instanceof ManagerRegistry;
     }
 
     /**
-     * This reader bound to another entity manager: a clone, so its class, its
-     * property accessor and anything a subclass carries come along. A subclass
-     * that delegates to another reader rebinds that one too, by overriding this.
+     * This reader bound to one entity manager, which it then uses for every
+     * class: a clone, so its class, its property accessor and anything a
+     * subclass carries come along. A subclass that delegates to another reader
+     * rebinds that one too, by overriding this.
      */
     public function withEntityManager(EntityManagerInterface $entityManager): static
     {
@@ -54,15 +62,17 @@ class AssociationReader
     }
 
     /**
-     * What the entity mapping declares at a property, or null when there is no
-     * entity manager, the class is not a managed entity, or the property is not
-     * an association — so a caller keeps its non-association behaviour.
+     * What the entity mapping declares at a property, or null when no manager
+     * maps the class, or the property is not an association — so a caller keeps
+     * its non-association behaviour.
      *
      * @param class-string $class
      */
     public function describe(string $class, string $property): ?AssociationTarget
     {
-        if (!$this->entityManager instanceof EntityManagerInterface || $this->entityManager->getMetadataFactory()->isTransient($class)) {
+        $entityManager = $this->findEntityManager($class);
+
+        if (!$entityManager instanceof EntityManagerInterface || $entityManager->getMetadataFactory()->isTransient($class)) {
             return null;
         }
 
@@ -70,7 +80,7 @@ class AssociationReader
             return null;
         }
 
-        $metadata = $this->entityManager->getClassMetadata($class);
+        $metadata = $entityManager->getClassMetadata($class);
 
         if (! $metadata->hasAssociation($property)) {
             return null;
@@ -349,7 +359,7 @@ class AssociationReader
      */
     public function getRecordKey(object $entity): string
     {
-        return RecordKey::of($this->requireEntityManager(), $entity);
+        return RecordKey::of($this->requireEntityManager($entity::class), $entity);
     }
 
     /**
@@ -359,7 +369,7 @@ class AssociationReader
      */
     public function findRecordKey(object $entity): ?string
     {
-        return RecordKey::find($this->requireEntityManager(), $entity);
+        return RecordKey::find($this->requireEntityManager($entity::class), $entity);
     }
 
     /**
@@ -371,13 +381,14 @@ class AssociationReader
      */
     public function hasIncompleteAssignedIdentifier(object $entity): bool
     {
-        $metadata = $this->requireEntityManager()->getClassMetadata($entity::class);
+        $entityManager = $this->requireEntityManager($entity::class);
+        $metadata = $entityManager->getClassMetadata($entity::class);
 
         if ($this->isSingleScalarIdentifier($metadata)) {
             return false;
         }
 
-        return $this->isMissingAssignedIdentifierComponent($entity);
+        return $this->isMissingAssignedIdentifierComponent($entityManager, $entity);
     }
 
     /**
@@ -392,7 +403,7 @@ class AssociationReader
      */
     public function hasBlankAssignedIdentifier(object $record): bool
     {
-        $entityManager = $this->requireEntityManager();
+        $entityManager = $this->requireEntityManager($record::class);
         $metadata = $entityManager->getClassMetadata($record::class);
 
         if (! $metadata->isIdentifierNatural() || $this->isSingleScalarIdentifier($metadata) || RecordKey::find($entityManager, $record) !== null) {
@@ -400,7 +411,7 @@ class AssociationReader
         }
 
         return array_any($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field) && blank($metadata->getFieldValue($record, $field)))
-            || ! $this->awaitsGeneratedIdentifier($record);
+            || ! $this->awaitsGeneratedIdentifier($entityManager, $record);
     }
 
     /**
@@ -420,14 +431,14 @@ class AssociationReader
     {
         $refusals = [];
 
-        foreach ($this->walkLoadedRecords($record) as [$path, $current, $metadata]) {
-            $unitOfWork = $this->requireEntityManager()->getUnitOfWork();
+        foreach ($this->walkLoadedRecords($record) as [$path, $current, $metadata, , $entityManager]) {
+            $unitOfWork = $entityManager->getUnitOfWork();
 
             if (! $unitOfWork->isInIdentityMap($current) || $unitOfWork->isScheduledForInsert($current) || $unitOfWork->isScheduledForDelete($current)) {
                 continue;
             }
 
-            foreach ($this->revertIdentifierChange($current, $metadata) as $field) {
+            foreach ($this->revertIdentifierChange($entityManager, $current, $metadata) as $field) {
                 $refusals[$this->joinPropertyPath($path, $field)] = self::CHANGED_IDENTIFIER;
             }
         }
@@ -455,14 +466,14 @@ class AssociationReader
         $claimed = [];
         $refusals = [];
 
-        foreach ($this->walkLoadedRecords($record, cascadePersistOnly: true) as [$path, $current, $metadata, $backReference]) {
-            $unitOfWork = $this->requireEntityManager()->getUnitOfWork();
+        foreach ($this->walkLoadedRecords($record, cascadePersistOnly: true) as [$path, $current, $metadata, $backReference, $entityManager]) {
+            $unitOfWork = $entityManager->getUnitOfWork();
 
             if (! $metadata->isIdentifierNatural() || ($unitOfWork->isInIdentityMap($current) && ! $unitOfWork->isScheduledForInsert($current))) {
                 continue;
             }
 
-            if ($this->isIdentifierTaken($current, $metadata, $claimed)) {
+            if ($this->isIdentifierTaken($entityManager, $current, $metadata, $claimed)) {
                 foreach ($this->getTakenIdentifierFields($metadata, $backReference) as $field) {
                     $refusals[$this->joinPropertyPath($path, $field)] = self::TAKEN_IDENTIFIER;
                 }
@@ -488,23 +499,25 @@ class AssociationReader
      */
     public function findBlankAssignedIdentifiers(object $record): array
     {
-        if (! $this->entityManager instanceof EntityManagerInterface) {
+        $entityManager = $this->findEntityManager($record::class);
+
+        if (! $entityManager instanceof EntityManagerInterface) {
             return [];
         }
 
-        $metadata = $this->findEntityMetadata($this->entityManager, $record::class);
+        $metadata = $this->findEntityMetadata($entityManager, $record::class);
 
         if (! $metadata instanceof ClassMetadata || ! $metadata->isIdentifierNatural() || $this->isSingleScalarIdentifier($metadata)) {
             return [];
         }
 
-        $unitOfWork = $this->entityManager->getUnitOfWork();
+        $unitOfWork = $entityManager->getUnitOfWork();
 
         if ($unitOfWork->isInIdentityMap($record) && ! $unitOfWork->isScheduledForInsert($record)) {
             return [];
         }
 
-        return array_fill_keys($this->findBlankIdentifierPaths($record, $metadata, ''), self::BLANK_IDENTIFIER);
+        return array_fill_keys($this->findBlankIdentifierPaths($entityManager, $record, $metadata, ''), self::BLANK_IDENTIFIER);
     }
 
     /**
@@ -512,22 +525,27 @@ class AssociationReader
      */
     public function createOptionQuery(string $targetClass, string $alias = 'record'): QueryBuilder
     {
-        return $this->requireEntityManager()->createQueryBuilder()->select($alias)->from($targetClass, $alias);
+        return $this->requireEntityManager($targetClass)->createQueryBuilder()->select($alias)->from($targetClass, $alias);
     }
 
     public function remove(object $entity): void
     {
-        $this->requireEntityManager()->remove($entity);
+        $this->requireEntityManager($entity::class)->remove($entity);
     }
 
     public function persist(object $entity): void
     {
-        $this->requireEntityManager()->persist($entity);
+        $this->requireEntityManager($entity::class)->persist($entity);
     }
 
-    public function flush(): void
+    /**
+     * Flush the unit of work of the manager the entity's class resolves to, or
+     * of the manager this reader is bound to — every change it holds, not the
+     * entity's alone.
+     */
+    public function flush(object $entity): void
     {
-        $this->requireEntityManager()->flush();
+        $this->requireEntityManager($entity::class)->flush();
     }
 
     /**
@@ -537,15 +555,11 @@ class AssociationReader
      * collection, the field that points back at the record it was reached
      * through. An uninitialized proxy or collection is left unloaded.
      *
-     * @return iterable<array{string, object, ClassMetadata<object>, string|null}>
+     * @return iterable<array{string, object, ClassMetadata<object>, string|null, EntityManagerInterface}>
      */
     private function walkLoadedRecords(object $record, bool $cascadePersistOnly = false): iterable
     {
-        if (! $this->entityManager instanceof EntityManagerInterface) {
-            return;
-        }
-
-        $entityManager = $this->entityManager;
+        $entityManagerByClass = [];
         $metadataByClass = [];
         $visited = [];
         $queue = [['', $record, null]];
@@ -559,13 +573,19 @@ class AssociationReader
 
             $visited[spl_object_id($current)] = true;
 
+            $entityManager = $entityManagerByClass[$current::class] ??= $this->findEntityManager($current::class);
+
+            if (! $entityManager instanceof EntityManagerInterface) {
+                continue;
+            }
+
             $metadata = $metadataByClass[$current::class] ??= $this->findEntityMetadata($entityManager, $current::class);
 
             if (! $metadata instanceof ClassMetadata || $entityManager->isUninitializedObject($current)) {
                 continue;
             }
 
-            yield [$path, $current, $metadata, $backReference];
+            yield [$path, $current, $metadata, $backReference, $entityManager];
 
             foreach ($metadata->associationMappings as $name => $mapping) {
                 if ($cascadePersistOnly && ! $mapping->isCascadePersist()) {
@@ -622,9 +642,8 @@ class AssociationReader
      * @param ClassMetadata<object> $metadata
      * @param array<string, true>   $claimed
      */
-    private function isIdentifierTaken(object $record, ClassMetadata $metadata, array &$claimed): bool
+    private function isIdentifierTaken(EntityManagerInterface $entityManager, object $record, ClassMetadata $metadata, array &$claimed): bool
     {
-        $entityManager = $this->requireEntityManager();
         $connection = $entityManager->getConnection();
         $platform = $connection->getDatabasePlatform();
         $typeProvider = $connection->getConfiguration()->getTypeProvider();
@@ -722,9 +741,8 @@ class AssociationReader
      *
      * @return list<string>
      */
-    private function revertIdentifierChange(object $record, ClassMetadata $metadata): array
+    private function revertIdentifierChange(EntityManagerInterface $entityManager, object $record, ClassMetadata $metadata): array
     {
-        $entityManager = $this->requireEntityManager();
         $unitOfWork = $entityManager->getUnitOfWork();
         $identifier = $unitOfWork->getEntityIdentifier($record);
         $changed = [];
@@ -813,7 +831,7 @@ class AssociationReader
      */
     private function findReference(string $class, string $key): ?object
     {
-        $entityManager = $this->requireEntityManager();
+        $entityManager = $this->requireEntityManager($class);
         $identifier = RecordKey::toIdentifier($entityManager, $class, $key);
 
         if ($identifier === null) {
@@ -839,9 +857,8 @@ class AssociationReader
      * Whether an identifier association, at any depth, points at a record
      * whose generated identifier is still unset.
      */
-    private function awaitsGeneratedIdentifier(object $record): bool
+    private function awaitsGeneratedIdentifier(EntityManagerInterface $entityManager, object $record): bool
     {
-        $entityManager = $this->requireEntityManager();
         $metadata = $entityManager->getClassMetadata($record::class);
 
         foreach ($metadata->identifier as $field) {
@@ -853,7 +870,7 @@ class AssociationReader
 
             $targetMetadata = $entityManager->getClassMetadata($metadata->getAssociationTargetClass($field));
 
-            if ($targetMetadata->usesIdGenerator() ? $targetMetadata->getIdentifierValues($target) === [] : $this->awaitsGeneratedIdentifier($target)) {
+            if ($targetMetadata->usesIdGenerator() ? $targetMetadata->getIdentifierValues($target) === [] : $this->awaitsGeneratedIdentifier($entityManager, $target)) {
                 return true;
             }
         }
@@ -872,7 +889,7 @@ class AssociationReader
      *
      * @return list<string>
      */
-    private function findBlankIdentifierPaths(object $record, ClassMetadata $metadata, string $path): array
+    private function findBlankIdentifierPaths(EntityManagerInterface $entityManager, object $record, ClassMetadata $metadata, string $path): array
     {
         $scalars = [];
         $associations = [];
@@ -895,13 +912,13 @@ class AssociationReader
                 continue;
             }
 
-            $targetMetadata = $this->requireEntityManager()->getClassMetadata($value::class);
+            $targetMetadata = $entityManager->getClassMetadata($value::class);
 
             if ($targetMetadata->usesIdGenerator()) {
                 continue;
             }
 
-            $targetPaths = $this->findBlankIdentifierPaths($value, $targetMetadata, $fieldPath);
+            $targetPaths = $this->findBlankIdentifierPaths($entityManager, $value, $targetMetadata, $fieldPath);
 
             if ($targetPaths !== []) {
                 $associations = [...$associations, ...$targetPaths, $fieldPath];
@@ -918,9 +935,9 @@ class AssociationReader
      * and so is one the class assigns from a prePersist callback or a mapped
      * entity listener; none of the three is missing.
      */
-    private function isMissingAssignedIdentifierComponent(object $entity): bool
+    private function isMissingAssignedIdentifierComponent(EntityManagerInterface $entityManager, object $entity): bool
     {
-        $metadata = $this->requireEntityManager()->getClassMetadata($entity::class);
+        $metadata = $entityManager->getClassMetadata($entity::class);
 
         if ($metadata->usesIdGenerator() || $metadata->hasLifecycleCallbacks(Events::prePersist) || isset($metadata->entityListeners[Events::prePersist])) {
             return false;
@@ -930,7 +947,7 @@ class AssociationReader
             $value = $metadata->getFieldValue($entity, $field);
 
             if ($metadata->hasAssociation($field)) {
-                if (! is_object($value) || $this->isMissingAssignedIdentifierComponent($value)) {
+                if (! is_object($value) || $this->isMissingAssignedIdentifierComponent($entityManager, $value)) {
                     return true;
                 }
 
@@ -977,7 +994,9 @@ class AssociationReader
 
     private function hasCompositeOwner(Relationship $relationship): bool
     {
-        return $this->requireEntityManager()->getClassMetadata($this->getEntityClass($relationship->owner))->isIdentifierComposite;
+        $ownerClass = $this->getEntityClass($relationship->owner);
+
+        return $this->requireEntityManager($ownerClass)->getClassMetadata($ownerClass)->isIdentifierComposite;
     }
 
     /**
@@ -1006,7 +1025,7 @@ class AssociationReader
      */
     private function getOwnerIdentifierField(string $ownerClass): string
     {
-        return $this->requireEntityManager()->getClassMetadata($ownerClass)->identifier[0];
+        return $this->requireEntityManager($ownerClass)->getClassMetadata($ownerClass)->identifier[0];
     }
 
     /**
@@ -1014,7 +1033,7 @@ class AssociationReader
      */
     private function isIdentifierField(string $class, string $field): bool
     {
-        return in_array($field, $this->requireEntityManager()->getClassMetadata($class)->identifier, true);
+        return in_array($field, $this->requireEntityManager($class)->getClassMetadata($class)->identifier, true);
     }
 
     /**
@@ -1031,11 +1050,13 @@ class AssociationReader
     {
         $mappedBy = $this->getMappedBy($relationship, $target);
 
-        if (! $this->isIdentifierField($target->targetClass, $mappedBy) || ! $this->requireEntityManager()->contains($related)) {
+        $entityManager = $this->requireEntityManager($target->targetClass);
+
+        if (! $this->isIdentifierField($target->targetClass, $mappedBy) || ! $entityManager->contains($related)) {
             return;
         }
 
-        $current = $this->requireEntityManager()->getClassMetadata($target->targetClass)->getFieldValue($related, $mappedBy);
+        $current = $entityManager->getClassMetadata($target->targetClass)->getFieldValue($related, $mappedBy);
 
         if (is_object($current) && $current !== $relationship->owner) {
             throw $this->refuseRekeyingAssociate($relationship, $target->targetClass, $mappedBy);
@@ -1079,8 +1100,8 @@ class AssociationReader
             return $query;
         }
 
-        $entityManager = $this->requireEntityManager();
         $ownerClass = $this->getEntityClass($relationship->owner);
+        $entityManager = $this->requireEntityManager($ownerClass);
 
         $this->getRecordKey($relationship->owner);
 
@@ -1094,26 +1115,65 @@ class AssociationReader
 
     /**
      * The mapped class behind an object — a Doctrine proxy answers its entity's
-     * name, not its own — or a refusal naming the object when it is not managed.
+     * name, not its own — or a refusal naming the object when no manager maps it.
      *
      * @return class-string
      *
-     * @throws LogicException when the object's class is not a mapped entity
+     * @throws LogicException when the reader reaches no manager, or the object's class is not a mapped entity
      */
     private function getEntityClass(object $entity): string
     {
-        $entityManager = $this->requireEntityManager();
+        if (! $this->hasEntityManager()) {
+            throw $this->refuseWithoutEntityManager();
+        }
 
-        if ($entityManager->getMetadataFactory()->isTransient($entity::class)) {
+        $entityManager = $this->findEntityManager($entity::class);
+
+        if (! $entityManager instanceof EntityManagerInterface || $entityManager->getMetadataFactory()->isTransient($entity::class)) {
             throw new LogicException(sprintf('[%s] is not a managed entity, so it cannot own a relationship.', $entity::class));
         }
 
         return $entityManager->getClassMetadata($entity::class)->getName();
     }
 
-    private function requireEntityManager(): EntityManagerInterface
+    /**
+     * The manager the reader is bound to, else the one the registry answers for
+     * the class, else null.
+     *
+     * @param class-string $class
+     */
+    private function findEntityManager(string $class): ?EntityManagerInterface
     {
-        return $this->entityManager ?? throw new LogicException(
+        if ($this->entityManager instanceof EntityManagerInterface) {
+            return $this->entityManager;
+        }
+
+        return $this->managerRegistry instanceof ManagerRegistry ? RecordManager::find($this->managerRegistry, $class) : null;
+    }
+
+    /**
+     * {@see findEntityManager()}, refusing where it answers null.
+     *
+     * @param class-string $class
+     *
+     * @throws LogicException when the reader reaches no manager, or no manager maps the class
+     */
+    private function requireEntityManager(string $class): EntityManagerInterface
+    {
+        if ($this->entityManager instanceof EntityManagerInterface) {
+            return $this->entityManager;
+        }
+
+        if (! $this->managerRegistry instanceof ManagerRegistry) {
+            throw $this->refuseWithoutEntityManager();
+        }
+
+        return RecordManager::of($this->managerRegistry, $class);
+    }
+
+    private function refuseWithoutEntityManager(): LogicException
+    {
+        return new LogicException(
             'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no EntityManagerInterface service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().',
         );
     }

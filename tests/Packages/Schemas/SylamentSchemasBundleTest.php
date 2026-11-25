@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Schemas\Colors\Components\IconComponent;
 use Sylament\Schemas\Colors\Components\TextComponent;
 use Sylament\Schemas\Components\Section;
@@ -62,15 +62,15 @@ it('registers its property accessor, record type reader and association reader u
         ->and($container->get('sylament_schemas.association_reader'))->toBe($container->get(AssociationReader::class));
 });
 
-it("wires its association reader's entity manager null-on-invalid", function (): void {
+it("wires its association reader's manager registry null-on-invalid", function (): void {
     $container = new ContainerBuilder(new ParameterBag(['kernel.environment' => 'test']));
     new SylamentSchemasBundle()->getContainerExtension()?->load([], $container);
 
-    $manager = $container->getDefinition('sylament_schemas.association_reader')->getArgument(0);
+    $registry = $container->getDefinition('sylament_schemas.association_reader')->getArgument(0);
 
-    expect($manager)->toBeInstanceOf(Reference::class)
-        ->and((string) $manager)->toBe(EntityManagerInterface::class)
-        ->and($manager->getInvalidBehavior())->toBe(ContainerInterface::NULL_ON_INVALID_REFERENCE);
+    expect($registry)->toBeInstanceOf(Reference::class)
+        ->and((string) $registry)->toBe(ManagerRegistry::class)
+        ->and($registry->getInvalidBehavior())->toBe(ContainerInterface::NULL_ON_INVALID_REFERENCE);
 });
 
 it('serves its built controllers and the utilities forms imports through AssetMapper as @sylament/schemas', function (): void {

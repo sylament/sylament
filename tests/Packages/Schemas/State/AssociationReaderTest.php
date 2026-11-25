@@ -54,6 +54,8 @@ use Sylament\Tests\Fixtures\Entity\WharfCrane;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\Cipher;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\WithdrawnNoteFilter;
 use Sylament\Tests\Fixtures\Schemas\Record\UnmappedHostPathRedirect;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
+use Sylament\Tests\Fixtures\SecondaryEntity\Telescope;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Uid\Uuid;
@@ -79,7 +81,7 @@ describe('without an entity manager', function (): void {
             ->and(fn (): object => $reader->createOptionQuery(Product::class))->toThrow(LogicException::class, $message)
             ->and(fn () => $reader->remove($product))->toThrow(LogicException::class, $message)
             ->and(fn () => $reader->persist($product))->toThrow(LogicException::class, $message)
-            ->and(fn () => $reader->flush())->toThrow(LogicException::class, $message);
+            ->and(fn () => $reader->flush($product))->toThrow(LogicException::class, $message);
     });
 
     it("guards nothing in the record check, where the container's reader refuses", function (): void {
@@ -620,7 +622,7 @@ describe('remove(), persist() and flush()', function (): void {
         $product = new Product('Lamp');
         $reader->persist($product);
         $persisted = $this->statementsRun();
-        $reader->flush();
+        $reader->flush($product);
 
         expect($persisted)->toBe([])
             ->and($this->statementsRun())->toContain('"COMMIT"')
@@ -632,10 +634,10 @@ describe('remove(), persist() and flush()', function (): void {
 
         $em = $this->entityManager();
         $reader = $this::getContainer()->get(AssociationReader::class);
-        $reader->remove($em->find(Product::class, 1));
+        $reader->remove($product = $em->find(Product::class, 1));
 
         $removed = count($this->statementsRun());
-        $reader->flush();
+        $reader->flush($product);
         $em->clear();
 
         expect($removed)->toBe(1)
@@ -1012,4 +1014,37 @@ describe('an owner keyed by a converting type', function (): void {
         'a uuid' => [fn (): array => [new Greenhouse(Uuid::v7()), new Greenhouse(Uuid::v7())]],
         'an identity derived from a uuid' => [fn (): array => [new GreenhouseVent(new Greenhouse(Uuid::v7())), new GreenhouseVent(new Greenhouse(Uuid::v7()))]],
     ]);
+});
+
+describe('a class another manager maps', function (): void {
+    it('describes the association and builds its queries on the manager that maps the class', function (): void {
+        $this->seed($observatory = new Observatory('Kitt Peak'));
+        $reader = $this::getContainer()->get(AssociationReader::class);
+        $manager = $this->entityManagerFor(Observatory::class);
+
+        expect($reader->describe(Telescope::class, 'observatory'))->toBeInstanceOf(AssociationTarget::class)
+            ->and($reader->createOptionQuery(Observatory::class)->getEntityManager())->toBe($manager)
+            ->and($reader->createRelationshipQuery(new Relationship($observatory, 'telescopes'))->getEntityManager())->toBe($manager);
+    });
+
+    it('persists and flushes an entity through the manager that maps its class', function (): void {
+        $reader = $this::getContainer()->get(AssociationReader::class);
+        $reader->persist($observatory = new Observatory('Mauna Kea'));
+        $reader->flush($observatory);
+
+        expect($this->reload($observatory)->name)->toBe('Mauna Kea');
+    });
+
+    it('keeps a pinned manager for a class another manager maps', function (): void {
+        $pinned = $this::getContainer()->get(AssociationReader::class)->withEntityManager($this->entityManager());
+
+        expect($pinned->createOptionQuery(Observatory::class)->getEntityManager())->toBe($this->entityManager());
+    });
+
+    it('still describes no association on a class no manager maps, and refuses to query it by name', function (): void {
+        $reader = $this::getContainer()->get(AssociationReader::class);
+
+        expect($reader->describe(stdClass::class, 'anything'))->toBeNull()
+            ->and(fn (): mixed => $reader->createOptionQuery(stdClass::class))->toThrow(LogicException::class, 'No Doctrine manager handles stdClass.');
+    });
 });

@@ -41,8 +41,8 @@ A manager is never routed to: the page that owns the record embeds it through sc
 | `getDefaultActionAuthorizationResponse()` / `getDefaultActionIndividualRecordAuthorizationResponseResolver()` / `CanAuthorizeAccess::hydrateCanAuthorizeAccess()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php) | blocked | authorization | [detail](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
 | `content()` — the manager's own tabs + `EmbeddedTable` | `content()` | blocked | `EmbeddedTable` | [diverges](#the-manager-renders-a-template-not-a-content-schema) |
 | `getRenderHookScopes()` / `HasRenderHookScopes`, `render()` / `getViewData()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | blocked | render hooks | — |
-| `$isBadgeDeferred` / `isBadgeDeferred()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | skipped | — | [diverges](#deferred-tab-badges-do-not-port) |
-| `CanBeLazy` — `lazy()` / `isLazy()` | [`support/src/Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | skipped | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
+| `$isBadgeLazyLoaded` / `isBadgeLazyLoaded()`, and the deprecated `$isBadgeDeferred` / `isBadgeDeferred()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | skipped | — | [diverges](#deferred-tab-badges-do-not-port) |
+| `CanBeLazyLoaded` — `lazyLoaded()` / `isLazyLoaded()`, and the deprecated `CanBeLazy` | [`support/src/Concerns/CanBeLazyLoaded.php`](../../../vendor/filament/support/src/Concerns/CanBeLazyLoaded.php) | skipped | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
 | The `@deprecated` label statics and getters, `$inverseRelationship` / `getInverseRelationshipName()`, and their `makeTable()` `when()` arms | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) | skipped | — | [diverges](#the-deprecated-label-statics-do-not-port) |
 
 ## Details
@@ -134,7 +134,7 @@ It is also Filament's own shape: `#[Locked] Model $ownerRecord` carries no scope
 
 ### Deferred tab badges do not port
 
-`$isBadgeDeferred` and `isBadgeDeferred()` are not ported, so `getTabComponent()` reads the badge eagerly.
+`$isBadgeLazyLoaded` and `isBadgeLazyLoaded()`, and the deprecated `$isBadgeDeferred` and `isBadgeDeferred()` they fall back to, are not ported, so `getTabComponent()` reads the badge eagerly.
 Our [`Tabs`](../schemas/tabs.md) computes `isDeferred` as `not isServerDriven and …`, and a manager's tab bar is server-driven by construction, so a deferred badge is structurally unreachable there.
 The consequence is an invariant on the consumer: the badge statics run on **every** live request of the owning page, so keep them O(1).
 

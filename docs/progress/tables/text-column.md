@@ -60,10 +60,17 @@ Everything [`Column`](column.md) carries, from the name and the record binding t
 | [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | [diverges](#a-lists-ul-always-sits-inside-the-outer-div) |
 | [`copyable()` / `copyableState()` / `copyMessage()` / `copyMessageDuration()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) + [the control the partial renders](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php), [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [copyable.md](../support/copyable.md) · [semantics](#the-copy-target-is-the-content-element-and-the-badge-pill-when-there-is-one) |
 | [Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()`, `getStateOverListLimitCount()`](../../../packages/tables/src/Columns/TextColumn.php) + [`limited_list_controller.ts`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [semantics](#getstateitems-is-the-cells-value-list) · [diverges](#the-expand-toggles-render-only-where-there-is-something-to-expand) · [semantics](#the-collapsed-join-is-filaments-default-not-a-simplification) |
+| The standalone copy item's name, `components/copyable.label` (*Copy {label}*) over the item's text | [`TextColumn.php:435-438`](../../../vendor/filament/tables/src/Columns/TextColumn.php), `:468` | todo | — | [detail](#a-standalone-copy-item-is-named-by-its-text-where-filament-names-it-copy-label) |
 | [`rowIndex()`](../../../packages/tables/src/Columns/TextColumn.php) | [`TextColumn::rowIndex()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [column.md](column.md) · [diverges](#rowindex-refuses-a-cell-with-no-row-loop-rather-than-numbering-it-null) |
 | [`text-column.css`](../../../packages/tables/assets/src/styles/components/text-column.css) | [`columns/text.css`](../../../vendor/filament/tables/resources/css/columns/text.css) | done | — | [diverges](#a-lists-ul-always-sits-inside-the-outer-div) · [diverges](#the-icons-gap-is-a-margin-because-the-line-clamp-owns-the-items-display) · [diverges](color-column.md#the-stacked-on-mobile-rule-has-nothing-to-select) |
 
 ## Details
+
+### A standalone copy item is named by its text, where Filament names it `Copy {label}`
+
+Filament binds `aria-label` to `components/copyable.label` while a copyable item is standalone (`isStandalone`, no interactive ancestor), with the item's formatted state as `label`, a `Markup` one stripped and entity-decoded (`TextColumn.php:435-438`, `:468`), so a screen reader hears *Copy Acme* rather than *Acme*.
+The port's copy control takes `role="button"` and names itself from the item's text ([copyable.md](../support/copyable.md#a-contentless-copy-control-owes-its-own-aria-label)), so it announces the value without the verb.
+Next step: render the same `aria-label` on a standalone copy item, from the formatted state read through `plain_text`, and pin it.
 
 ### Dates and relative times read in English only
 

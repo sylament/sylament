@@ -56,7 +56,7 @@ Clearing is guarded on the region's text still equalling this controller's messa
 
 ### A contentless copy control owes its own `aria-label`
 
-`role="button"` names itself from the element's text content, which is right for a text item or a badge pill and empty for a contentless control.
+`role="button"` names itself from the element's text content, which reads the value for a text item or a badge pill, where Filament's text column names a standalone item *Copy {label}* ([text-column.md](../tables/text-column.md#a-standalone-copy-item-is-named-by-its-text-where-filament-names-it-copy-label)), and is empty for a contentless control.
 [`ColorColumn`](../tables/color-column.md)'s swatch is the live case, a `<span>` painted by `background-color` with nothing inside it, so its partial writes `aria-label` of its own, from `components/copyable.label` (*Copy {label}*, in `sylament`) or [the port-added fallback](../tables/color-column.md#an-unsanitizable-value-paints-nothing-and-a-plain-swatch-names-nothing).
 The controller stamps no name, because only the template knows what the copy is of.
 

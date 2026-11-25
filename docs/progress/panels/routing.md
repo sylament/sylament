@@ -29,10 +29,17 @@ The page chrome the page's own component renders is [custom-pages.md](custom-pag
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | — | [detail](#the-document-carries-the-shell-and-none-of-the-panels-appearance-settings) · [diverges](#the-document-calls-importmap-unguarded) |
 | The document's theme head script | `base.blade.php`'s dark-mode script | done | — | [semantics](#the-head-script-is-the-one-inline-script-in-the-port-and-agrees-with-the-theme-controller) |
 | The document's notifications outlet | `@livewire(Notifications::class)` in `base.blade.php` | done | — | [semantics](#the-notifications-outlet-is-the-documents-and-the-actions-outlet-is-not) |
+| The document `<title>` reduces a `Markup` page title and brand name to their text | [`base.blade.php:37-38`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php)'s `trim(strip_tags(…))` | todo | — | [detail](#the-document-title-prints-a-markup-page-title-or-brand-name-raw) |
 | The document's `lang` from the request's locale and `dir` from `layout.direction` | [`base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php)'s `<html lang dir>` | todo | — | [detail](#the-document-is-always-english-and-left-to-right) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
+
+### The document title prints a `Markup` page title or brand name raw
+
+Filament builds the document `<title>` from `trim(strip_tags($livewire->getTitle()))` and `trim(strip_tags(filament()->getBrandName()))` (`base.blade.php:37-38`), so a title or brand name given as `Htmlable` reads as its text in the browser tab.
+The port's [`Document`](../../../packages/panels/templates/partials/Document/index.html.twig) prints `pageTitle` and `panel.getBrandName` with `{{ }}`, which renders a `Markup` raw, and a `<title>` shows its tags as text.
+Next step: pass both through `plain_text` (support's `MarkupExtension`) and trim them, and pin a `Markup` title with an entity.
 
 ### The document is always English and left to right
 

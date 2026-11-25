@@ -18,7 +18,7 @@ It is the plural of [`EnumStateCast`](enum-state-cast.md): the whole selection i
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Blank handling | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#blank-state-is-always-an-empty-list-with-no-nullable-switch) |
-| Per-element enum resolution | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#the-element-body-is-the-composed-enumstatecast) |
+| Per-element enum resolution | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#the-element-body-is-the-composed-enumstatecast) · [diverges](#the-element-cast-is-built-with-new-where-filament-resolves-it-through-the-container) |
 | Unresolvable-element handling | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [semantics](#an-unresolvable-element-is-dropped-and-validation-still-sees-it) |
 | Scalar state wrapping | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | — | [diverges](#the-json-string-arm-is-not-ported) |
 | `set()` stringification | [`EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | in progress | — | [detail](enum-state-cast.md#set-passes-a-value-that-is-no-case-through-where-filament-answers-null) |
@@ -45,6 +45,12 @@ The array cast therefore inherits the port's element cast's [case-scan resolutio
 A blank element comes back from the element cast as `null`, which is the filter both casts apply before reindexing.
 
 ## Divergences
+
+### The element cast is built with `new`, where Filament resolves it through the container
+
+Filament builds its element cast with `app(EnumStateCast::class, ['enum' => $enum])` (`EnumArrayStateCast.php:19`), so an application that rebinds `EnumStateCast` in Laravel's container changes the array cast's elements too.
+The port calls `new EnumStateCast($enum)`: the enum class is a runtime argument Symfony's container cannot pass to a service, and reaching the container from a value object is the service locator the port's first principle refuses.
+An application that wants other element behaviour subclasses `EnumArrayStateCast` and sets its own `$enumStateCast`.
 
 ### The JSON-string arm is not ported
 

@@ -6,6 +6,7 @@ ports:
   - vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php
   - vendor/filament/filament/resources/views/components/page/index.blade.php
   - vendor/filament/filament/src/Resources/Pages/Page.php
+  - vendor/filament/filament/src/Livewire/ValidatePanelOrigin.php
 owns:
   - packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php
   - packages/panels/templates/components/Header/

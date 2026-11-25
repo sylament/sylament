@@ -624,7 +624,7 @@ trait CanOpenModal
     public function getModalSubmitActionLabel(): string
     {
         $label = $this->evaluate($this->modalSubmitActionLabel);
-        $label = $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+        $label = $this->translateText($label);
 
         if (filled($label)) {
             return $label;
@@ -641,7 +641,7 @@ trait CanOpenModal
     {
         $label = $this->evaluate($this->modalCancelActionLabel) ?? new TranslatableMessage('modal.actions.cancel.label', [], 'sylament-actions');
 
-        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+        return $this->translateText($label);
     }
 
     public function getModalWidth(): string

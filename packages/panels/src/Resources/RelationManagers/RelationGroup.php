@@ -106,7 +106,7 @@ class RelationGroup extends Component
     {
         $label = $this->evaluate($this->label);
 
-        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+        return $this->translateText($label);
     }
 
     /**

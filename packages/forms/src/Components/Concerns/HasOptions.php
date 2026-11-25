@@ -88,7 +88,7 @@ trait HasOptions
      */
     private function translateOptionLabel(mixed $label): mixed
     {
-        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+        return $this->translateText($label);
     }
 
     public function hasDynamicOptions(): bool

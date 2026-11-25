@@ -105,7 +105,7 @@ class Step extends Component implements CanConcealComponents
     {
         $description = $this->evaluate($this->description);
 
-        return $description instanceof TranslatableInterface ? $description->trans($this->getTranslator()) : $description;
+        return $this->translateText($description);
     }
 
     public function getIcon(): string|BackedEnum|Markup|null

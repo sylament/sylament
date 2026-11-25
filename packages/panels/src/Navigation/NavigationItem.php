@@ -174,14 +174,14 @@ class NavigationItem extends Component
     {
         $label = $this->evaluate($this->label);
 
-        return $label instanceof TranslatableInterface ? $label->trans($this->getTranslator()) : $label;
+        return $this->translateText($label);
     }
 
     public function getBadge(): ?string
     {
         $badge = $this->evaluate($this->badge);
 
-        return $badge instanceof TranslatableInterface ? $badge->trans($this->getTranslator()) : $badge;
+        return $this->translateText($badge);
     }
 
     /**
@@ -196,7 +196,7 @@ class NavigationItem extends Component
     {
         $group = $this->evaluate($this->group);
 
-        return $group instanceof TranslatableInterface ? $group->trans($this->getTranslator()) : $group;
+        return $this->translateText($group);
     }
 
     public function getSort(): int

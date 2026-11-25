@@ -55,7 +55,7 @@ trait HasTooltips
             $translated = [];
 
             foreach ($tooltips as $value => $tooltip) {
-                $translated[$value] = $tooltip instanceof TranslatableInterface ? $tooltip->trans($this->getTranslator()) : $tooltip;
+                $translated[$value] = $this->translateText($tooltip);
             }
 
             $tooltips = $translated;

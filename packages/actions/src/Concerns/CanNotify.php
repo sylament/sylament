@@ -58,14 +58,14 @@ trait CanNotify
     {
         $title = $this->evaluate($this->successNotificationTitle);
 
-        return $title instanceof TranslatableInterface ? $title->trans($this->getTranslator()) : $title;
+        return $this->translateText($title);
     }
 
     public function getFailureNotificationTitle(): ?string
     {
         $title = $this->evaluate($this->failureNotificationTitle, $this->getFailureNotificationNamedInjections());
 
-        return $title instanceof TranslatableInterface ? $title->trans($this->getTranslator()) : $title;
+        return $this->translateText($title);
     }
 
     /**

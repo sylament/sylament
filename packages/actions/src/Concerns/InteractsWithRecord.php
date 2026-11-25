@@ -281,7 +281,7 @@ trait InteractsWithRecord
      */
     protected function translateRecordText(string|TranslatableInterface|null $text): ?string
     {
-        return $text instanceof TranslatableInterface ? $text->trans($this->getTranslator()) : $text;
+        return $this->translateText($text);
     }
 
     /**

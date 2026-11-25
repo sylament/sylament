@@ -61,7 +61,7 @@ trait HasDescriptions
         $descriptions = $this->evaluate($this->descriptions);
 
         foreach ($descriptions as $value => $description) {
-            $descriptions[$value] = $description instanceof TranslatableInterface ? $description->trans($this->getTranslator()) : $description;
+            $descriptions[$value] = $this->translateText($description);
         }
 
         if ($descriptions === [] && ($enum = $this->getEnum()) !== null && is_a($enum, HasDescription::class, allow_string: true)) {

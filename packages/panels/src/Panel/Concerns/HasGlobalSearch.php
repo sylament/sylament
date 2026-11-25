@@ -97,7 +97,7 @@ trait HasGlobalSearch
     {
         $suffix = $this->evaluate($this->globalSearchFieldSuffix);
 
-        return $suffix instanceof TranslatableInterface ? $suffix->trans($this->getTranslator()) : $suffix;
+        return $this->translateText($suffix);
     }
 
     /**

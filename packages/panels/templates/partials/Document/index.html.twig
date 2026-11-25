@@ -23,7 +23,7 @@
             {% block importmap %}{{ importmap('app') }}{% endblock importmap %}
         {% endblock javascripts %}
     </head>
-    <body {{ attrs(bodyAttributes) }}>
+    <body {{ attrs({class: 'sy'}, bodyAttributes) }}>
         {% if layout == 'SylamentPanels:SimpleLayout' %}
             <twig:SylamentPanels:SimpleLayout :hasTopbar="hasTopbar" :maxContentWidthClass="maxContentWidthClass">
                 <twig:block name="content">

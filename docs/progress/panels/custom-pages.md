@@ -35,7 +35,7 @@ Every member this file describes is inherited by the resource base and by every 
 | [`$headerActionsAlignment`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) + `getHeaderActionsAlignment()` + the two-level [`Header`](../../../packages/panels/templates/components/Header/index.html.twig) DOM | the same property and the `fi-header-actions-ctn` wrapper | done | — | [semantics](#the-alignment-class-rides-the-inner-row-and-the-container-is-what-the-breadcrumb-offset-hangs-off) |
 | The placement default on a placement-less header `ActionGroup` | `dropdownPlacement('bottom-end')` in the same walk | done | — | — |
 | [`getPageClasses()`](../../../packages/panels/src/Pages/Page.php) | [`Page::getPageClasses()`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
-| [`getExtraBodyAttributes()`](../../../packages/panels/src/Pages/Page.php) → `<body>` | [`BasePage::getExtraBodyAttributes()`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [semantics](#a-page-with-no-body-attributes-still-renders-a-stray-space) |
+| [`getExtraBodyAttributes()`](../../../packages/panels/src/Pages/Page.php) → `<body>` | [`BasePage::getExtraBodyAttributes()`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [semantics](#the-document-body-always-carries-the-sy-marker) |
 | [`$layout`](../../../packages/panels/src/Pages/Page.php) + `getLayout()` + `Page::LAYOUT` | `protected static string $layout` (a Blade view name) | done | — | [diverges](#a-third-shell-layout-is-a-document-override-not-a-getlayout-value) |
 | [`getLayoutData()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage::getLayoutData()`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](simple-page.md#getlayoutdata-answers-two-keys-where-filaments-answers-three) |
 | [`$maxContentWidth`](../../../packages/panels/src/Pages/Page.php) + `getMaxContentWidth()` | [`BasePage`](../../../vendor/filament/filament/src/Pages/BasePage.php)'s pair | done | — | [simple-page.md](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) |
@@ -127,11 +127,11 @@ That is the whole of what the grammar closes.
 A key of **one** identifier field is the flattened value verbatim, with no escaping and no alphabet check, so a single `string` identifier holding whitespace still splits the token; and so does a resource declaring `$recordRouteKeyName`, which stamps an arbitrary property [without passing it through the codec at all](resource.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
 Only `EditRecord` and `ManageRelatedRecords` emit the token (a custom record page inherits `Pages\Page`'s empty `getPageClasses()` and has none), and nothing in the toolkit's CSS, JavaScript or Twig selects it, so `~` and `=` inside it cost nothing either.
 
-### A page with no body attributes still renders a stray space
+### The document body always carries the `sy` marker
 
 `getExtraBodyAttributes()` is read off the **un-mounted** page by [`PageController`](routing.md), like `getTitle()`, and passed to the Document as `bodyAttributes`.
-The Document renders `<body {{ attrs(bodyAttributes) }}>` unconditionally, so a page that adds nothing emits `<body >`, a single stray space inside the tag.
-It is valid HTML and every parser ignores it; guarding it would mean an `{% if %}` around an attribute expression that is already a no-op, so the space is accepted rather than spelled around.
+The Document renders `<body {{ attrs({class: 'sy'}, bodyAttributes) }}>` unconditionally, so a page that adds nothing still emits `class="sy"`, and a page's own `class` appends to it.
+The marker is what lets the scoped preflight reset the body's margin, because the preflight scopes every rule to `.sy` markup and drops its own `body` rule ([styling.md](../../internals/styling.md#why-is-preflight-scoped-to-sylament-markup)); without it the browser's 8px margin would push the shell's `min-h-dvh` past the viewport.
 
 ### `refresh` is a listener, and therefore also a no-op action any client can call
 

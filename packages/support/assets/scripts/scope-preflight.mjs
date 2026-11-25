@@ -14,7 +14,8 @@
  *   - `html, :host` maps onto Sylament root elements (sy- with no sy- ancestor) so its
  *     inherited properties cascade through the component subtree like the original, and
  *     its font-* declarations are dropped so components inherit the host page's font;
- *   - `body` is dropped (its margin reset is covered by the universal rule).
+ *   - `body` is dropped; a document that wants its margin reset marks its own `<body>` `sy`, which the
+ *     universal rule then covers like any other root (the panels Document does).
  */
 
 import fs from 'node:fs';

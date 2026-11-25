@@ -187,6 +187,11 @@ describe('body', function (): void {
         expect($this->visit('/pages/settings-page')->filter('body[data-page="settings"]'))->toHaveCount(1)
             ->and($this->visit('/pages/notes-page')->filter('body')->attr('data-page'))->toBeNull();
     });
+
+    it('marks the document body as Sylament markup, so the scoped preflight resets its margin', function (): void {
+        expect($this->visit('/pages/settings-page')->filter('body' . SupportSelectors::STANDALONE_ROOT . '[data-page="settings"]'))->toHaveCount(1)
+            ->and($this->visit('/pages/notes-page')->filter('body' . SupportSelectors::STANDALONE_ROOT))->toHaveCount(1);
+    });
 });
 
 describe('shell', function (): void {

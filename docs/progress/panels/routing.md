@@ -50,7 +50,7 @@ The port's [Document template](../../../packages/panels/templates/partials/Docum
 
 ### The document carries the shell and none of the panel's appearance settings
 
-`Document/index.html.twig` renders the title (the page title, then the brand name when the panel has one), the theme head script, `sylamentStyles()`, the importmap, a `<body>` carrying whatever [`getExtraBodyAttributes()`](custom-pages.md#a-page-with-no-body-attributes-still-renders-a-stray-space) answered, the shell component with the page's live component in its content block, and the notifications outlet.
+`Document/index.html.twig` renders the title (the page title, then the brand name when the panel has one), the theme head script, `sylamentStyles()`, the importmap, a `<body>` carrying the `sy` marker and whatever [`getExtraBodyAttributes()`](custom-pages.md#the-document-body-always-carries-the-sy-marker) answered, the shell component with the page's live component in its content block, and the notifications outlet.
 The shell is an `{% if %}` over two literal `<twig:>` tags: `SylamentPanels:SimpleLayout` when the page's [`getLayout()`](custom-pages.md#a-third-shell-layout-is-a-document-override-not-a-getlayout-value) named it, `SylamentPanels:Layout` otherwise, both handed the `maxContentWidthClass` the controller [resolved for this request](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller).
 The `component()` function is not used for the shell because a function call cannot take a `<twig:block>`, which is how the page reaches it.
 

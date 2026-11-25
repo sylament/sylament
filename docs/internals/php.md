@@ -177,13 +177,14 @@ Two architecture checks keep the default out, one per way code obtains it:
 - **What the container injects.** `ManagerInjectionTest` reads the list `ManagerInjectionPass` exports of every shipped constructor, factory and method the container hands an `ObjectManager` or a DBAL `Connection`, and expects it empty.
   It follows every argument: a reference, one inside an array, a service closure, an iterator or a locator (the one `ServiceLocatorTagPass` registers included), and an inline definition, which counts by its class, or by its factory's return type when it names none, and is walked as a service of its own.
   It sees what autowiring resolved, which no source scan can, and it attributes each injection to the class or trait whose source declares the method, so a fixture subclass inheriting a shipped setter counts and a fixture's own constructor does not.
+  It also reads the argument locator `RegisterControllerArgumentLocatorsPass` keys by `Class::method`, since every `#[AsLiveComponent]` is a `controller.service_arguments` service: a manager the container hands a controller's or a live component's public method when it calls it counts under the class or trait that declares the method, whatever attribute the method carries.
   An object built with `new` and handed a manager (`RecordReplicator`, `KeySelection`) is no definition and never appears; its caller resolved the manager.
+  It does not see an injected property, which shipped code never takes, since a service arrives through the constructor or a `#[Required]` setter.
+  Nor does it see an inline factory whose native return type names no class, as the registry's own `getConnection()` returns `object`.
 - **What the source asks a registry.** `DefaultManagerCallTest` reads shipped source through PHP's tokenizer, so a comment or a string never counts, and refuses a `getManager()` or `resetManager()` call with no argument, which only a registry has.
   It also refuses a no-argument `getConnection()` on a variable or property whose name contains `registry`, because an entity manager has a `getConnection()` too and only types could tell the two apart.
   A call chained onto a result (`$registry->getManager($name)->getConnection()`) names no receiver and passes.
-  A registry held under a name without `registry` would pass as well; the container check narrows that gap, since it refuses a manager or a connection handed to any shipped constructor, factory or method call, wrapped or not.
-  The container check does not see an injected property, which shipped code never takes, since a service arrives through the constructor or a `#[Required]` setter.
-  Nor does it see an inline factory whose native return type names no class, as the registry's own `getConnection()` returns `object`.
+  A registry held under a name without `registry` would pass as well; the container check narrows that gap, since it refuses a manager or a connection handed to any shipped constructor, factory, method call or controller argument, wrapped or not.
 
 In the root suite the second manager's connection reaches the same database as the default's, so a raw query over the wrong connection still finds its table; the two checks cover how code obtains that connection ([test-infrastructure.md](test-infrastructure.md#the-secondary-manager)).
 

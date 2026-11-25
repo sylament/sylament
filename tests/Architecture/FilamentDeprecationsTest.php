@@ -16,11 +16,6 @@ Sylament\Actions\Testing\TestsActions::assertActionDataSet
 Sylament\Actions\Testing\TestsActions::assertHasActionErrors
 Sylament\Actions\Testing\TestsActions::assertHasNoActionErrors
 Sylament\Actions\Testing\TestsActions::setActionData
-Sylament\Forms\Components\Concerns\CanLimitItemsLength
-Sylament\Forms\Components\Concerns\HasAffixes::postfix
-Sylament\Forms\Components\FileUpload::getParentTargetSizes
-Sylament\Forms\Components\FileUpload::isSvgEditingConfirmed
-Sylament\Forms\Components\Repeater::getRawItemState
 Sylament\Panels\Navigation\NavigationItem::isActiveWhen
 Sylament\Panels\Pages\Concerns\HasMaxWidth
 Sylament\Panels\Pages\Concerns\HasMaxWidth::$maxWidth

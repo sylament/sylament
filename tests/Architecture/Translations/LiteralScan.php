@@ -63,7 +63,7 @@ final class LiteralScan
         'keyLabel', 'keyPlaceholder', 'label', 'labelBetweenItems', 'loadingMessage', 'maxItemsMessage',
         'modalCancelActionLabel', 'modalDescription', 'modalHeading', 'modalSubmitActionLabel', 'modelLabel',
         'navigationGroup', 'navigationLabel', 'noOptionsMessage', 'noSearchResultsMessage', 'options', 'placeholder',
-        'pluralModelLabel', 'pluralRecordLabel', 'postfix', 'prefix', 'recordLabel', 'recordTitle',
+        'pluralModelLabel', 'pluralRecordLabel', 'prefix', 'recordLabel', 'recordTitle',
         'reorderActionLabel', 'searchingMessage', 'searchPlaceholder', 'searchPrompt', 'subheading',
         'successNotificationTitle', 'suffix', 'tagPrefix', 'tagSuffix', 'title', 'tooltip', 'tooltips', 'trueLabel',
         'validationMessages', 'valueLabel', 'valuePlaceholder',

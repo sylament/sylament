@@ -28,7 +28,7 @@ The *plain* repeater maps **value-shaped array items only**.
 Object collections, a `Traversable`-typed property or a Doctrine `Collection` behind an adder, [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused), because mapping collection *items* needs identity: which state row is which entity, and what happens to the rows that disappeared.
 The measured failure that draws the line is recorded in [the Serializer rejection](../schemas/belongs-to-record.md#a-serializer-based-mapper-is-rejected-for-collection-population): identity-less collection population produced duplicate INSERTs and orphan deletions on a real two-tag `Post`.
 That identity is what [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) supplies, so a repeater that declares one maps a Doctrine collection and the refusal steps aside for it, [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
-The Surface table lists every public member of the ported classes and traits except two families with files of their own: `relationship()` and its family are in [repeater-relationship.md](repeater-relationship.md), and `minItems()` / `maxItems()` / `getItemsCount()` in [can-limit-items-length.md](can-limit-items-length.md).
+The Surface table lists every public member of the ported classes and traits except two families with files of their own: `relationship()` and its family are in [repeater-relationship.md](repeater-relationship.md), and `minItems()` / `maxItems()` / `getItemsCount()` in [can-limit-items-count.md](can-limit-items-count.md).
 
 ## Surface
 
@@ -47,7 +47,7 @@ The Surface table lists every public member of the ported classes and traits exc
 | `getReorderAction()` / `reorderAction()` / `getReorderActionName()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-drag-reorder-round-trip-accepts-the-clients-order) · [semantics](#a-drag-only-list-renders-its-move-buttons-visually-hidden-and-hides-its-handle-behind-them) · [diverges](#the-reorder-action-is-hardened-and-answers-only-real-moves) |
 | `reorderAnimationDuration()` / `getReorderAnimationDuration()` | [`HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | — |
 | `itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `hasItemNumbers()` / `itemHeaders()` / `hasItemHeaders()` / `truncateItemLabel()` / `isItemLabelTruncated()` / `getHeadingsCount()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
-| `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| `getItemState()` / `getItemStateSnapshot()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
 | `getItemKeys()` / `getItemStatePaths()` (Sylament's [`HasKeyedItems`](../schemas/violation-path-translator.md)) | — | done | — | [semantics](#a-save-records-which-collection-key-each-item-was-written-to) |
 | [`getTemplate()`](../../../packages/forms/src/Components/Repeater.php) and the `partials/Repeater/` templates, for `toEmbeddedHtml()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
 | `getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()`, their `*Action()` modifiers and `get*ActionName()` names, and `CanBeCollapsed` / `CanBeCompact` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](#the-repeater-item-owns-its-collapse-state-unlike-the-section) |
@@ -306,7 +306,7 @@ So the repeater applies the cast itself, at the two item-pipeline boundaries whe
 All four nesting quadrants are pinned by tests.
 
 **Everything mid-edit keeps the uncast shapes.**
-Because `$stateCasts` stays empty, `getState()`, `getOldState()`, the `$state` closure injection, `getItemState()` / `getRawItemState()`, every structural action body, the structural freshness fingerprint, and validation (raw, per path, unchanged) all see exactly what they see on an uncast repeater — uuid-keyed value arrays.
+Because `$stateCasts` stays empty, `getState()`, `getOldState()`, the `$state` closure injection, `getItemState()` / `getItemStateSnapshot()`, every structural action body, the structural freshness fingerprint, and validation (raw, per path, unchanged) all see exactly what they see on an uncast repeater — uuid-keyed value arrays.
 The `minItems()`/`maxItems()` `Count` constraint counts the raw map.
 Programmatic `$set()` takes array items, as on an uncast repeater; handing it DTOs is undefined, not converted.
 The DTO shape exists at exactly two places: the record read that `fill()` makes, and the dehydrated bag from the mutate pass on — which is what `getData()` maps and what a host's `getState()` returns.

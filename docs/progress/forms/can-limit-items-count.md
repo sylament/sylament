@@ -1,13 +1,13 @@
 ---
 description: The `minItems()` / `maxItems()` item-count bounds and the raw-state `getItemsCount()` of Repeater, CheckboxList and multiple Select.
 ports:
-  - vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php
+  - vendor/filament/forms/src/Components/Concerns/CanLimitItemsCount.php
 owns:
-  - packages/forms/src/Components/Concerns/CanLimitItemsLength.php
+  - packages/forms/src/Components/Concerns/CanLimitItemsCount.php
 ---
-# CanLimitItemsLength (forms)
+# CanLimitItemsCount (forms)
 
-`Sylament\Forms\Components\Concerns\CanLimitItemsLength` holds the item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()` counts the field's raw state.
+`Sylament\Forms\Components\Concerns\CanLimitItemsCount` holds the item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()` counts the field's raw state.
 
 [`Repeater`](repeater.md), [`CheckboxList`](checkbox-list.md) and [`Select`](select.md) compose it.
 `Select` takes `maxItems()` for its `multiple()` chips control (the JS control refuses a further pick and shows `getMaxItemsMessage()`) and both bounds as a `Count` in the same shape as the checkbox list's.
@@ -17,8 +17,8 @@ Filament composes the same trait on those three plus `Builder`, `TableSelect` an
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `minItems()` / `maxItems()` / `getMinItems()` / `getMaxItems()` — the bounds and their closure arms | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [diverges](#the-setters-register-no-rules-the-composing-field-builds-the-constraint) |
-| `getItemsCount()` — the raw-state count | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | — |
+| `minItems()` / `maxItems()` / `getMinItems()` / `getMaxItems()` — the bounds and their closure arms | [`Concerns/CanLimitItemsCount.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsCount.php) | done | — | [diverges](#the-setters-register-no-rules-the-composing-field-builds-the-constraint) |
+| `getItemsCount()` — the raw-state count | [`Concerns/CanLimitItemsCount.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsCount.php) | done | — | — |
 ## Divergences
 
 ### The setters register no rules; the composing field builds the constraint

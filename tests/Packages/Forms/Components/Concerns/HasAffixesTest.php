@@ -15,11 +15,9 @@ use Sylament\Tests\Infrastructure\ComponentRegistry;
 
 use function Symfony\Component\Translation\t;
 
-it('renders prefix and suffix labels around the input, postfix() being suffix()', function (): void {
+it('renders prefix and suffix labels around the input', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('price')->prefix('€')->suffix('per kg')))
         ->toContainElement(SupportSelectors::PREFIX, '€')
-        ->toContainElement(SupportSelectors::SUFFIX, 'per kg')
-        ->and($this->renderSchemaComponent(TextInput::make('price')->postfix('per kg')))
         ->toContainElement(SupportSelectors::SUFFIX, 'per kg');
 });
 

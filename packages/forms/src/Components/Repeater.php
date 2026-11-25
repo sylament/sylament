@@ -11,7 +11,7 @@ use Sylament\Actions\Action;
 use Sylament\Forms\Components\Concerns\BelongsToRelationship;
 use Sylament\Forms\Components\Concerns\CanBeCloned;
 use Sylament\Forms\Components\Concerns\CanGenerateUuids;
-use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
+use Sylament\Forms\Components\Concerns\CanLimitItemsCount;
 use Sylament\Forms\Components\Concerns\HasExtraItemActions;
 use Sylament\Forms\Components\Repeater\TableColumn;
 use Sylament\Forms\Twig\FormsIconAlias;
@@ -52,7 +52,7 @@ class Repeater extends Field implements HasExtraItemActionsContract, HasKeyedIte
     use CanBeCollapsed;
     use CanBeCompact;
     use CanGenerateUuids;
-    use CanLimitItemsLength;
+    use CanLimitItemsCount;
     use HasContainerGridLayout;
     use HasExtraItemActions;
     use HasReorderAnimationDuration;
@@ -581,7 +581,7 @@ class Repeater extends Field implements HasExtraItemActionsContract, HasKeyedIte
     /**
      * @return array<string, mixed>
      */
-    public function getRawItemState(string $key): array
+    public function getItemStateSnapshot(string $key): array
     {
         return $this->getChildSchema($key)?->getStateSnapshot() ?? [];
     }

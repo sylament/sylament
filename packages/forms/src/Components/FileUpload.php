@@ -78,7 +78,7 @@ class FileUpload extends BaseFileUpload
 
     protected bool|Closure $canEditSvgs = true;
 
-    protected bool|Closure $isSvgEditingConfirmed = false;
+    protected bool|Closure $shouldConfirmSvgEditing = false;
 
     protected bool|Closure $shouldAutomaticallyOpenImageEditorForAspectRatio = false;
 
@@ -260,7 +260,7 @@ class FileUpload extends BaseFileUpload
 
     public function confirmSvgEditing(bool|Closure $condition = true): static
     {
-        $this->isSvgEditingConfirmed = $condition;
+        $this->shouldConfirmSvgEditing = $condition;
 
         return $this;
     }
@@ -434,7 +434,7 @@ class FileUpload extends BaseFileUpload
     public function getImageEditorViewportHeight(): ?int
     {
         if (($targetHeight = (int) $this->getAutomaticallyResizeImagesHeight()) > 1) {
-            return (int) round($targetHeight * $this->getParentTargetSizes($targetHeight));
+            return (int) round($targetHeight * $this->getImageEditorViewportScaleFactor($targetHeight));
         }
 
         if (filled($ratio = $this->getAutomaticallyCropImagesAspectRatio())) {
@@ -451,7 +451,7 @@ class FileUpload extends BaseFileUpload
     public function getImageEditorViewportWidth(): ?int
     {
         if (($targetWidth = (int) $this->getAutomaticallyResizeImagesWidth()) > 1) {
-            return (int) round($targetWidth * $this->getParentTargetSizes($targetWidth));
+            return (int) round($targetWidth * $this->getImageEditorViewportScaleFactor($targetWidth));
         }
 
         if (filled($ratio = $this->getAutomaticallyCropImagesAspectRatio())) {
@@ -465,7 +465,7 @@ class FileUpload extends BaseFileUpload
         return $this->evaluate($this->imageEditorViewportWidth);
     }
 
-    protected function getParentTargetSizes(int $widthOrHeight): int|float
+    protected function getImageEditorViewportScaleFactor(int $widthOrHeight): int|float
     {
         $targetWidth = (int) $this->getAutomaticallyResizeImagesWidth();
 
@@ -520,9 +520,9 @@ class FileUpload extends BaseFileUpload
         return (bool) $this->evaluate($this->canEditSvgs);
     }
 
-    public function isSvgEditingConfirmed(): bool
+    public function shouldConfirmSvgEditing(): bool
     {
-        return (bool) $this->evaluate($this->isSvgEditingConfirmed);
+        return (bool) $this->evaluate($this->shouldConfirmSvgEditing);
     }
 
     public function shouldAutomaticallyOpenImageEditorForAspectRatio(): bool

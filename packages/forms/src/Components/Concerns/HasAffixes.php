@@ -65,11 +65,6 @@ trait HasAffixes
         return $this;
     }
 
-    public function postfix(string|Markup|TranslatableInterface|Closure|null $label, bool|Closure $isInline = false): static
-    {
-        return $this->suffix($label, $isInline);
-    }
-
     public function suffix(string|Markup|TranslatableInterface|Closure|null $label, bool|Closure $isInline = false): static
     {
         $this->suffixLabel = $label;

@@ -219,7 +219,7 @@ Any snapshot that ran the hooks during a render would be destructive, and a repe
 A file field inside a repeater item would then have its upload consumed by the render that followed it: the store runs against a throwaway pass whose `rawState()` write never reaches the wire, the browser posts the same token back, and the save's own pass can no longer resolve it, because the token's temporary file is gone.
 The entry drops, `FileUploadStateCast::get()` answers `null` for the emptied map, and the field saves as null: on a non-nullable column that surfaces as `PropertyAccessor`'s `Expected argument of type "string", "null" given`, and on a nullable one it is silent data loss.
 Pinned at both levels: the hook-free snapshot, and the repeater-item upload surviving its renders on forms' file upload.
-`Repeater::getItemState()` passes `shouldCallHooksBefore: false` for the same reason; `getRawItemState()` and `getItemLabel()` reach the hooks only through `getStateSnapshot()`.
+`Repeater::getItemState()` passes `shouldCallHooksBefore: false` for the same reason; `getItemStateSnapshot()` and `getItemLabel()` reach the hooks only through `getStateSnapshot()`.
 
 ### `getRawState()` seeds an empty array on a blank or top-level path
 

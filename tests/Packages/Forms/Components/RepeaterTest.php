@@ -259,7 +259,7 @@ describe('simple()', function (): void {
 });
 
 describe('getItemState()', function (): void {
-    it("reads one item's state, validated, while getRawItemState() reads it unvalidated", function (): void {
+    it("reads one item's state, validated, while getItemStateSnapshot() reads it unvalidated", function (): void {
         $host = $this->validatingRecordMappingHost();
         $repeater = $host->mapping(Repeater::make('lines')->components([
             Select::make('letter')->options(StringBackedLetter::class),
@@ -268,7 +268,7 @@ describe('getItemState()', function (): void {
         $host->data = ['lines' => ['a' => ['letter' => 'a', 'name' => 'Ada'], 'b' => ['letter' => 'b', 'name' => '']]];
 
         expect($repeater->getItemState('a'))->toBe(['letter' => StringBackedLetter::A, 'name' => 'Ada'])
-            ->and($repeater->getRawItemState('b'))->toBe(['letter' => StringBackedLetter::B, 'name' => null])
+            ->and($repeater->getItemStateSnapshot('b'))->toBe(['letter' => StringBackedLetter::B, 'name' => null])
             ->and(fn () => $repeater->getItemState('b'))->toThrow(ValidationException::class);
     });
 });

@@ -6,7 +6,7 @@ namespace Sylament\Forms\Components\Concerns;
 
 use Closure;
 
-trait CanLimitItemsLength
+trait CanLimitItemsCount
 {
     protected int|Closure|null $maxItems = null;
 

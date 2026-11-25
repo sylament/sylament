@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Schemas;
 
 use Sylament\Forms\Components\Field;
-use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Sylament\Support\Components\Attributes\Exposed;
 use Symfony\Contracts\Service\Attribute\Required;
 
 /**
@@ -23,7 +23,7 @@ class ExposedMethodField extends Field
         $this->hookLog = $hookLog;
     }
 
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function greet(string $name, string $greeting = 'Hello'): string
     {
         $this->hookLog->record("greet: {$name}");
@@ -38,7 +38,7 @@ class ExposedMethodField extends Field
         return 'unexposed';
     }
 
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function rawBytes(): string
     {
         $this->hookLog->record('rawBytes');
@@ -46,7 +46,7 @@ class ExposedMethodField extends Field
         return "\xB1\x31";
     }
 
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     protected function guarded(): string
     {
         $this->hookLog->record('guarded');

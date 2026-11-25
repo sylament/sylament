@@ -187,7 +187,7 @@ What the comparison never sees is a raw `getState()`: the normalization is one m
 
 ### `getOptionLabel()` resolves off the map or through `getOptionLabelUsing()`
 
-`getOptionLabel(bool $withDefault = true)` is a thin `#[ExposedLiveComponentMethod]` wrapper over `resolveOptionLabel($withDefault, ?array $options)`, Filament's shape, and the two arms are Filament's too.
+`getOptionLabel(bool $withDefault = true)` is a thin `#[Exposed]` wrapper over `resolveOptionLabel($withDefault, ?array $options)`, Filament's shape, and the two arms are Filament's too.
 
 **The map arm** — no `getOptionLabelUsing()` — looks the selected value up in the option map (the one given, else `getOptions()`), walking both the flat and the grouped shape.
 The match is an array-key lookup rather than a comparison, which is what Filament's `$options[$state]` is: PHP canonicalizes a numeric-string key to an int, so a state of `'1'` finds the `1` option however the field's casts spell it.

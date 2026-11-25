@@ -9,7 +9,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Wizard\Step;
-use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Sylament\Support\Components\Attributes\Exposed;
 use Sylament\Support\Components\Concerns\CanBeContained;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Support\Exceptions\Halt;
@@ -93,7 +93,7 @@ class Wizard extends Component
         ]);
     }
 
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function nextStep(int $currentStepIndex): void
     {
         if (!$this->isSkippable()) {
@@ -121,7 +121,7 @@ class Wizard extends Component
         $this->getLiveComponent()->dispatchBrowserEvent('next-wizard-step', ['key' => $this->getKey()]);
     }
 
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function previousStep(int $currentStepIndex): void
     {
         $this->currentStepIndex(max(1, $currentStepIndex) - 1);

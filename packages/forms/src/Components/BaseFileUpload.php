@@ -17,7 +17,7 @@ use Sylament\Forms\Validation\MinFileSize;
 use Sylament\Schemas\Components\Contracts\AcceptsUploadedFiles;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\FileUploadStateCast;
-use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Sylament\Support\Components\Attributes\Exposed;
 use Sylament\Support\Filesystem\FilesystemRegistry;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
@@ -1021,7 +1021,7 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles, Has
      * record's original paths and the gate would otherwise refuse the user's own upload and leak
      * the temporary file.
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function removeUploadedFile(string $fileKey): string|TemporaryUploadedFile|null
     {
         if ($this->isDisabled() || ! $this->isDeletable()) {
@@ -1066,7 +1066,7 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles, Has
      * Browser-callable. Returns nothing where Filament returns `$this`: our seam serialises a
      * result into a browser event, and a component object has no business travelling there.
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function deleteUploadedFile(string $fileKey): void
     {
         $file = $this->removeUploadedFile($fileKey);
@@ -1091,7 +1091,7 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles, Has
      *
      * @param array<array-key> $fileKeys
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function reorderUploadedFiles(array $fileKeys): void
     {
         if ($this->isDisabled() || ! $this->isReorderable()) {

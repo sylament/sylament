@@ -22,7 +22,7 @@ type ResultDetail = {
 const queues = new WeakMap<Component, Map<string, Pending[]>>();
 
 /**
- * Call an `#[ExposedLiveComponentMethod]` on the schema component `componentKey` names, through
+ * Call an `#[Exposed]` on the schema component `componentKey` names, through
  * the host's `callSchemaComponentMethod` live action, and resolve with the result the host hands
  * back in the `sylament:schema-component-method-result` browser event.
  *

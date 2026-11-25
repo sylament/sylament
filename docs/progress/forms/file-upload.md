@@ -263,7 +263,7 @@ Both the mutator and the save-time `Callback` therefore skip `TemporaryUploads::
 
 ### The three exposed mutators return what the seam can serialise
 
-`removeUploadedFile()`, `deleteUploadedFile()` and `reorderUploadedFiles()` are `#[ExposedLiveComponentMethod]`.
+`removeUploadedFile()`, `deleteUploadedFile()` and `reorderUploadedFiles()` are `#[Exposed]`.
 Our seam puts a method's result straight into a browser-event payload, so `deleteUploadedFile()` returns `void` where Filament returns `static` — a component object has no business travelling there.
 `removeUploadedFile()` keeps its `string|TemporaryUploadedFile|null`, because the value object is `JsonSerializable` and serialises to its token.
 

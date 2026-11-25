@@ -38,7 +38,7 @@ use Sylament\Schemas\State\Casts\EnumArrayStateCast;
 use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
-use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Sylament\Support\Components\Attributes\Exposed;
 use Sylament\Support\Icons\IconManager;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Validator\Constraint;
@@ -642,7 +642,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     /**
      * @return array<array<string, mixed>>
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function getSearchResultsForJs(string $search): array
     {
         return $this->transformOptionsForJs($this->getSearchResults($search));
@@ -651,7 +651,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     /**
      * @return array<array<string, mixed>>
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function getOptionsForJs(): array
     {
         return $this->transformOptionsForJs($this->getOptions());
@@ -660,7 +660,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     /**
      * @return array<array<string, mixed>>
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function getOptionLabelsForJs(): array
     {
         return $this->transformOptionsForJs($this->getOptionLabels());
@@ -996,7 +996,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return $this->cachedSelectedRecord = $this->requireSelectedRecord($this->evaluate($this->getSelectedRecordUsing));
     }
 
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function getOptionLabel(bool $withDefault = true): string|Markup|null
     {
         return $this->resolveOptionLabel($withDefault);

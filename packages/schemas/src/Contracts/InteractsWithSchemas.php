@@ -79,7 +79,7 @@ interface InteractsWithSchemas
      * Wizard and Tabs. Resolves `$componentKey` through
      * {@see getSchemaComponent()}, then calls `$method` only when it exists
      * on the resolved component, carries the
-     * `Sylament\Support\Components\Attributes\ExposedLiveComponentMethod`
+     * `Sylament\Support\Components\Attributes\Exposed`
      * attribute, and the supplied `$arguments` match its signature (every
      * key names a parameter, every parameter without a default is present) —
      * otherwise the result is `null`, never a throw or a 500, including when

@@ -13,7 +13,7 @@ use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\BadgeComponent;
-use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Sylament\Support\Components\Attributes\Exposed;
 use Sylament\Support\Components\Concerns\CanBeContained;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Support\Enums\IconSize;
@@ -226,7 +226,7 @@ class Tabs extends Component
     /**
      * @return array<string, array{badge: ?string, badgeColorClasses: string, badgeColorStyles: string, badgeIconHtml: ?string, badgeIconPosition: ?string, badgeTooltip: ?string}>
      */
-    #[ExposedLiveComponentMethod]
+    #[Exposed]
     public function getDeferredTabBadges(): array
     {
         $icons = $this->icons;

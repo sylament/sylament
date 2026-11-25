@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Concerns;
 
 use JsonException;
 use LogicException;
+use ReflectionAttribute;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -20,7 +21,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\Validation\PresenceGate;
 use Sylament\Schemas\Validation\RecordKeyGuard;
-use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Sylament\Support\Components\Attributes\Exposed;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraint;
@@ -211,14 +212,14 @@ trait HasSchemas
     ): void {
         // Security: callable from the browser. The schema name is resolved through
         // resolveSchemaByName()'s reflection gate (never getSchema()), and only public
-        // #[ExposedLiveComponentMethod] methods on the resolved component are called.
+        // #[Exposed] methods on the resolved component are called.
         $result = null;
         $component = $this->getSchemaComponent($componentKey);
         if ($component !== null && method_exists($component, $method)) {
             $reflection = new ReflectionMethod($component, $method);
             if (
                 $reflection->isPublic()
-                && $reflection->getAttributes(ExposedLiveComponentMethod::class) !== []
+                && $reflection->getAttributes(Exposed::class, ReflectionAttribute::IS_INSTANCEOF) !== []
                 && $this->argumentsMatchSignature($reflection, $arguments)
             ) {
                 try {

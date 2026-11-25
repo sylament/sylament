@@ -116,6 +116,7 @@ UX LiveComponent copies a `#[LiveArg]` into a request attribute only when `isset
 
 `CanUpdateState` writes with schemas' [`PropertyAccessor::setOnRecord()`](../schemas/property-accessor.md), which is a superset of Filament's relationship arm: `artist.name` walks the to-one association and writes on the far side, and Doctrine's unit of work picks the change up from the flush.
 A path whose leaf is an object **collection** is refused by the accessor in the vocabulary of the schema component that would map it; `CanUpdateState` catches that and re-throws it naming the column, which is what the reader of a table has in hand.
+A record of the `records()` lane is written through [`RecordManager`](../schemas/association-reader.md#the-lookup-answers-the-manager-that-maps-a-class-or-none), so an entity only a non-default manager maps is persisted and flushed on that manager; a query-lane table writes through its own query manager.
 
 One consequence has no Eloquent counterpart: a `<select>` and a text input post **strings**, and the record's declared PHP type is what receives them.
 Symfony's accessor is compiled without `strict_types`, so a *numeric* string reaches an `int` or `float` property coerced and silent, but any other string raises its `InvalidTypeException` (`Expected argument of type "?int", "string" given`), and an object-typed property (`DateTimeImmutable`, a backed enum) has no coercion to reach at all.

@@ -11,9 +11,11 @@ use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
 use Sylament\Tests\Fixtures\Tables\InvoiceLineTable;
+use Sylament\Tests\Fixtures\Tables\ObservatoryRecordsTable;
 use Sylament\Tests\Fixtures\Tables\OrderLineTable;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 
@@ -70,6 +72,16 @@ it("heads its confirmation with the row's title, else the bare verb", function (
     'a table titling its rows' => [DeletingProductTable::class, true, 'Delete Lamp'],
     'no record to name' => [TablelessBulkHost::class, false, 'Delete'],
 ]);
+
+it("deletes a records() row's entity through the manager that maps its class", function (): void {
+    $this->seed($kept = new Observatory('Kitt Peak'), $gone = new Observatory('Mauna Kea'));
+
+    $this->createLiveComponent(ObservatoryRecordsTable::class)
+        ->callAction(TestAction::make(DeleteAction::class)->table($gone))
+        ->assertNotified('Deleted');
+
+    expect(array_map(static fn (Observatory $observatory): string => $observatory->name, $this->entityManagerFor(Observatory::class)->getRepository(Observatory::class)->findAll()))->toBe([$kept->name]);
+});
 
 it('hands the record to the using() that replaces its delete, and toasts by its answer', function (string $action, string $toast): void {
     $this->seed($lamp = new Product('Lamp'));

@@ -13,6 +13,7 @@ use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\RawUuidCrate;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingCachedLanternTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingInvoiceLineTable;
@@ -21,6 +22,7 @@ use Sylament\Tests\Fixtures\Tables\ByKeyDeletingOrderLineTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingProductTable;
 use Sylament\Tests\Fixtures\Tables\ByKeyDeletingRawUuidCrateTable;
 use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
+use Sylament\Tests\Fixtures\Tables\ObservatoryRecordsTable;
 use Sylament\Tests\Fixtures\Tables\RecordsLaneDeletingTable;
 use Sylament\Tests\Infrastructure\Doctrine\FailingWrite;
 use Symfony\Component\Uid\Uuid;
@@ -59,6 +61,17 @@ describe('the fetching arm', function (): void {
 
         expect(array_map(static fn (string $statement): string => implode(' ', array_slice(explode(' ', $statement), 0, 3)), array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))))->toBe(['"START TRANSACTION"', 'DELETE FROM Product', 'DELETE FROM Product', '"COMMIT"'])
             ->and($tester->render()->crawler()->filter(Selectors::BULK_ONLY . '[hidden]'))->not->toHaveCount(0);
+    });
+
+    it('removes the selected entities through the manager that maps their class', function (): void {
+        $this->seed($kitt = new Observatory('Kitt Peak'), $mauna = new Observatory('Mauna Kea'), $kept = new Observatory('Paranal'));
+
+        $this->createLiveComponent(ObservatoryRecordsTable::class)
+            ->selectTableRecords([$kitt, $mauna])
+            ->callAction(TestAction::make('delete')->table()->bulk())
+            ->assertNotified('Deleted');
+
+        expect(array_map(static fn (Observatory $observatory): string => $observatory->name, $this->entityManagerFor(Observatory::class)->getRepository(Observatory::class)->findAll()))->toBe([$kept->name]);
     });
 
     it('toasts "Deleted" and writes nothing for an empty selection', function (): void {

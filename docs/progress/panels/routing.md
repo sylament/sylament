@@ -31,6 +31,7 @@ The page chrome the page's own component renders is [custom-pages.md](custom-pag
 | The document's notifications outlet | `@livewire(Notifications::class)` in `base.blade.php` | done | — | [semantics](#the-notifications-outlet-is-the-documents-and-the-actions-outlet-is-not) |
 | The document `<title>` reduces a `Markup` page title and brand name to their text | [`base.blade.php:37-38`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php)'s `trim(strip_tags(…))` | todo | — | [detail](#the-document-title-prints-a-markup-page-title-or-brand-name-raw) |
 | The document's `lang` from the request's locale and `dir` from `layout.direction` | [`base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php)'s `<html lang dir>` | todo | — | [detail](#the-document-is-always-english-and-left-to-right) |
+| Access control on a panel's live requests | [`Panel/Concerns/HasMiddleware.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasMiddleware.php)'s `authMiddleware()` and persistent middleware | blocked | authorization | [detail](#a-panels-access-rules-do-not-reach-its-live-requests) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
@@ -55,6 +56,18 @@ The `component()` function is not used for the shell because a function call can
 
 Filament's `base.blade.php` also carries what the unported panel traits configure: the CSRF meta tag, the favicon, the theme and font links, the sidebar-width and font custom properties, the dark-mode configuration arms, the `fi-panel-<id>` body class, the render hooks and broadcasting.
 Each lands with the `Panel/Concerns` trait that configures it.
+
+### A panel's access rules do not reach its live requests
+
+Every action, save, delete and re-render of a panel page reaches the server through UX's `ux_live_component` route, mounted under the application's live prefix (`/_components` in the recipe), because [`PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) registers every page with `route: 'ux_live_component'`.
+So an `access_control` rule on the panel's path, or a listener keyed on its route names, guards the page load and none of its live requests, while `#[IsGranted]` on a page class guards its live requests and not the page load.
+A live request knows its panel only once the page has hydrated ([`Page::stampPanelRequestAttribute()`](../../../packages/panels/src/Pages/Page.php)), which is after the firewall and every `kernel.request` listener have run.
+No Sylament code checks access on a live request.
+UX's props checksum binds the props to the component name and `framework.secret` (`LiveComponentHydrator::calculateChecksum()`), not to a user, a session or a time, so a live request carrying props one user received is accepted from anyone who sends it.
+A table action's record key travels in the action's arguments, which the checksum does not cover, so authorization has to check the record itself on every call.
+Filament applies a panel's `authMiddleware()` to every Livewire update as persistent middleware ([`HasMiddleware.php:50-60`](../../../vendor/filament/filament/src/Panel/Concerns/HasMiddleware.php)), and `CanAuthorizeAccess` checks access again on hydrate ([custom-pages.md](custom-pages.md)).
+Until authorization lands, an application guards the live route itself: an `access_control` rule on its live prefix, which covers every live component of the application, or `#[IsGranted]` on every page class beside the rule on the panel's path.
+**Next step:** with authorization, put each panel's live requests under the panel's own path (UX enforces a component's `route:`, which `PageComponentPass` overwrites) or identify the panel before the firewall runs, and apply the panel's access rules to the page load and its live requests alike.
 
 ## Semantics
 

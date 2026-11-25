@@ -85,15 +85,16 @@ That is what lets tables' filter indicator chip and forms' tags-input chip hand 
 
 The placement follows Filament: the button renders **inside** the badge capsule after the label spans and takes the place of an icon positioned `after` (Filament's `@elseif`, so a deletable badge with a trailing icon shows the X, not the icon).
 
-The glyph does not.
-Filament renders an empty `<span class="fi-badge-delete-btn-icon">` that [`badge.css`](../../../vendor/filament/support/resources/css/components/badge.css) paints as a `mask-image` filled with `currentColor`, and reads no icon alias for it; `SupportIconAlias::BADGE_DELETE_BUTTON` survives in Filament only as a constant.
-The port draws an SVG through `generateIconHtml()` under that alias, at the extra-small icon size with `aria-hidden="true"`, so an application can swap the glyph the way every other support icon is swapped.
+The glyph follows Filament.
+The button holds an empty `<span aria-hidden="true" class="sy-badge-delete-btn-icon">` that [`badge.css`](../../../vendor/filament/support/resources/css/components/badge.css) paints as a `mask-image` filled with `currentColor`, and it reads no icon alias: Filament deprecates `SupportIconAlias::BADGE_DELETE_BUTTON` with "Customize the `.fi-badge-delete-btn-icon` CSS class instead", so the port ships no such alias and an application restyles the glyph through `sy-badge-delete-btn-icon`.
+The class is a new hook, the `sy-` form of `fi-badge-delete-btn-icon`; the button holds no `.sy-icon`, so a selector written against `.sy-badge-delete-btn > .sy-icon` matches nothing and takes the new class instead.
+Forms' select builds the same span into the chips it creates in the browser, as Filament's `select.js` does.
 
 Two smaller shifts ride with it.
 The accessible name is an `aria-label` on the button rather than Filament's `fi-sr-only` span, matching [`IconButton`](icon-button.md): support ships no sr-only class of its own, and the escaped-on-output caveat the `labelSrOnly` divergence records applies here too.
-And the glyph colour reads `currentColor` at 50 % opacity (75 % on hover and focus) where Filament's stylesheet sets `text-color-700/50` and `text-gray-700/50` on the glyph: the badge's own text colour is already the shade `BadgeComponent` resolved for this palette, so inheriting it keeps the one contrast decision in the policy instead of re-fixing a shade in the stylesheet, [the policy layer](../../internals/styling.md#why-does-a-policy-pick-the-shade-instead-of-the-stylesheet) of the styling contract.
+And the glyph colour on a coloured badge reads the policy's `--sy-text` and `--sy-dark-text` slots at 50 % where Filament's stylesheet sets `text-color-700/50` and `text-color-300/50`: the slots are the shades `BadgeComponent` resolved for this palette, so reading them keeps the one contrast decision in the policy instead of re-fixing a shade in the stylesheet, [the policy layer](../../internals/styling.md#why-does-a-policy-pick-the-shade-instead-of-the-stylesheet) of the styling contract; an uncoloured badge keeps Filament's `text-gray-700/50` and `text-gray-300/50`.
 
-The hover and focus states hang off the button, not the glyph: Filament writes them as `hover:` / `focus-visible:` utilities on `.fi-badge-delete-btn-icon`, pseudo-classes on the glyph `<span>`, where ours reads `.sy-badge-delete-btn:hover > .sy-icon` and its `:focus-visible` twin.
+The hover and focus states hang off the button, not the glyph: Filament writes them as `hover:` / `focus-visible:` utilities on `.fi-badge-delete-btn-icon`, pseudo-classes on the glyph `<span>`, where ours reads `.sy-badge-delete-btn:hover > .sy-badge-delete-btn-icon` and its `:focus-visible` twin, recolouring the glyph to 75 %.
 The glyph is not focusable, so Filament's `focus-visible` variant can never match: keyboard focus lands on the button, and the glyph inside it is never the `:focus-visible` element.
 Filament's uncoloured branch also has no light-mode `hover:` (it ships `focus-visible:text-gray-700/75` beside `dark:hover:` and `dark:focus-visible:`), which the selector shift fills as a side effect rather than as a second decision.
 

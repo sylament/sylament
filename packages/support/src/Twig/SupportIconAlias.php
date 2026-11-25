@@ -6,8 +6,6 @@ namespace Sylament\Support\Twig;
 
 class SupportIconAlias
 {
-    public const string BADGE_DELETE_BUTTON = 'badge.delete-button';
-
     public const string BREADCRUMBS_SEPARATOR = 'breadcrumbs.separator';
 
     public const string BREADCRUMBS_SEPARATOR_RTL = 'breadcrumbs.separator.rtl';

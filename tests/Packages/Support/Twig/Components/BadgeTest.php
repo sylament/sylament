@@ -6,7 +6,6 @@ use Sylament\Support\Colors\Color;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Support\Enums\Size;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
-use Symfony\Component\DomCrawler\Crawler;
 
 it('renders a span, a link to its href in a new tab only when asked for one, and a button with neither', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Badge', content: 'Urgent')->crawler())
@@ -81,20 +80,24 @@ it('is named by its label stripped of markup when the label is hidden, and by it
 });
 
 it('offers a button after its label that removes it, named Remove unless named otherwise, carrying the caller attributes', function (): void {
-    expect($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true], content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE, 'Urgentx-mark-16-solid')
-        ->toContainElement(SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_DELETE_BUTTON . '[type="button"] svg' . SupportSelectors::ICON . SupportSelectors::size('xs') . '[aria-hidden="true"]', 'x-mark-16-solid')
+    $badge = $this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true], content: 'Urgent')->crawler();
+
+    expect($badge)
+        ->toContainElement(SupportSelectors::BADGE, 'Urgent')
+        ->toContainElement(SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_DELETE_BUTTON . '[type="button"] > span.sy-badge-delete-btn-icon[aria-hidden="true"]', '')
+        ->and($badge->filter(SupportSelectors::BADGE_DELETE_BUTTON . ' svg'))->toHaveCount(0)
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true, 'deleteLabel' => ' <b>Discard</b> ', 'deleteAttributes' => ['class' => 'js-discard', 'data-tag' => 'urgent']], content: 'Urgent')->crawler())
-        ->toContainElement('button.sy-badge-delete-btn.js-discard[aria-label="Discard"][data-tag="urgent"]', 'x-mark-16-solid')
+        ->toContainElement('button.sy-badge-delete-btn.js-discard[aria-label="Discard"][data-tag="urgent"]')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true, 'deleteAttributes' => ['aria-label' => 'Remove tag']], content: 'Urgent')->crawler())
-        ->toContainElement('button.sy-badge-delete-btn[aria-label="Remove tag"]', 'x-mark-16-solid')
+        ->toContainElement('button.sy-badge-delete-btn[aria-label="Remove tag"]')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true, 'deleteLabel' => ''], content: 'Urgent')->crawler())
-        ->toContainElement('button.sy-badge-delete-btn:not([aria-label])', 'x-mark-16-solid');
+        ->toContainElement('button.sy-badge-delete-btn:not([aria-label])');
 });
 
 it('shows its remove button in place of an icon positioned after its label', function (): void {
     $badge = $this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true, 'icon' => 'support:star', 'iconPosition' => IconPosition::After], content: 'Urgent')->crawler();
 
-    expect($badge)->toContainElement(SupportSelectors::BADGE, 'Urgentx-mark-16-solid')
-        ->and($badge->filter(SupportSelectors::ICON)->each(fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark-16-solid']);
+    expect($badge)->toContainElement(SupportSelectors::BADGE, 'Urgent')
+        ->toContainElement(SupportSelectors::BADGE_DELETE_BUTTON . ' > span.sy-badge-delete-btn-icon')
+        ->and($badge->filter('svg'))->toHaveCount(0);
 });

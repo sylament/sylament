@@ -54,8 +54,6 @@ export type SelectOptions = {
 /** The token the server renders in place of the option's label, which only the browser knows. */
 const LABEL_TOKEN = "__LABEL__";
 
-const X_MARK_16 =
-  '<svg class="sy sy-icon sy-size-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>';
 const X_MARK_20 =
   '<svg class="sy sy-icon sy-size-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
 
@@ -821,7 +819,12 @@ export class Select {
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "sy-badge-delete-btn";
-    removeButton.innerHTML = X_MARK_16;
+
+    const removeButtonIcon = document.createElement("span");
+    removeButtonIcon.setAttribute("aria-hidden", "true");
+    removeButtonIcon.className = "sy-badge-delete-btn-icon";
+    removeButton.appendChild(removeButtonIcon);
+
     removeButton.setAttribute(
       "aria-label",
       this.removeOptionLabel.replace(LABEL_TOKEN, () =>

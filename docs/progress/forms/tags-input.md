@@ -95,7 +95,7 @@ The server still renders the initial chips into it, so with JavaScript off the t
 
 ### The chips are cloned from a server-rendered `<template>`, and the tag parameter is not called `tag`
 
-Both the initial chips and the blueprint the controller clones come from one Twig `{% macro chip(value, color, prefix, suffix, reorderable, delete_attributes, tag_token) %}`, so the delete icon stays on `SupportIconAlias::BADGE_DELETE_BUTTON` and the chip colour stays on the badge policy rather than being retyped as markup in JavaScript.
+Both the initial chips and the blueprint the controller clones come from one Twig `{% macro chip(value, color, prefix, suffix, reorderable, delete_attributes, tag_token) %}`, so the delete glyph stays support's `sy-badge-delete-btn-icon` span and the chip colour stays on the badge policy rather than being retyped as markup in JavaScript.
 The macro lives in its own file ([`TagsInput/Chip.html.twig`](../../../packages/forms/templates/partials/TagsInput/Chip.html.twig)) because `_self` inside a `<twig:>` block resolves to the *embedded* component template, which carries none of the outer template's macros.
 Its first parameter is `value`, not `tag`: the chip is a `<twig:SylamentSupport:Badge>` in block form, whose content block inherits the component's context, and the Badge declares a `tag` prop of its own (defaulting to `'span'`) — so a macro parameter named `tag` renders the string `span` inside the label and nothing warns.
 The delete button's label is the port-added `components.tags_input.actions.delete_tag.label`, `Delete: {tag}`, one message with the tag as an argument, beside Filament's unused `components.tags_input.actions.delete.label`, which Filament joins with the tag in its template.

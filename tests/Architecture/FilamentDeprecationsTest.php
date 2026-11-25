@@ -36,7 +36,6 @@ Sylament\Schemas\Components\Tabs\Tab::isBadgeDeferred
 Sylament\Schemas\State\Get::skipComponentsChildContainersWhileSearching
 Sylament\Schemas\State\Set::skipComponentsChildContainersWhileSearching
 Sylament\Schemas\Twig\SchemaIconAlias
-Sylament\Support\Twig\SupportIconAlias::BADGE_DELETE_BUTTON
 Sylament\Tables\Columns\Concerns\HasRowLoopObject
 Sylament\Tables\Columns\Summarizers\Concerns\InteractsWithTableQuery::hasQueryModification
 Sylament\Tables\Concerns\CanDeferLoading

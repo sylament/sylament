@@ -16,7 +16,7 @@ owns:
 | [`SECTION_COLLAPSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::SECTION_COLLAPSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [diverges](#the-section-alias-is-a-pinned-literal-not-referenced-from-the-template) |
 | [`MODAL_CLOSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::MODAL_CLOSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | — |
 | [`PAGINATION_FIRST_BUTTON`, `PAGINATION_LAST_BUTTON`, `PAGINATION_NEXT_BUTTON`, `PAGINATION_PREVIOUS_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | — |
-| [`BADGE_DELETE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::BADGE_DELETE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | — |
+| `BADGE_DELETE_BUTTON` | [`SupportIconAlias::BADGE_DELETE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | skipped | — | [diverges](#the-badge-delete-button-has-no-alias-because-filament-deprecates-it) |
 | [`BREADCRUMBS_SEPARATOR`, `BREADCRUMBS_SEPARATOR_RTL`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | — |
 | `PAGINATION_FIRST_BUTTON_RTL`, `PAGINATION_LAST_BUTTON_RTL`, `PAGINATION_NEXT_BUTTON_RTL`, `PAGINATION_PREVIOUS_BUTTON_RTL` | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | [the pagination RTL branch](pagination.md#the-footer-has-no-rtl-branch) | [detail](#the-four-pagination-rtl-aliases-wait-on-the-footers-rtl-branch) · [diverges](#an-alias-constant-lands-with-the-template-that-reads-it) |
 
@@ -39,5 +39,10 @@ The class reaches Filament's constant set once every slot's component ships.
 
 Filament's Section blade wires the alias by referencing the constant: `:icon-alias="\Filament\Support\View\SupportIconAlias::SECTION_COLLAPSE_BUTTON"` ([section/index.blade.php](../../../vendor/filament/support/resources/views/components/section/index.blade.php)).
 Sylament's [Section template](../../../packages/support/templates/components/Section/index.html.twig) hardcodes the literal `iconAlias="section.collapse-button"` instead, and an override registered under the constant is pinned to swap Section's collapse icon, which holds the constant to that literal, so for this one slot the class mirrors the alias the template carries rather than being its single source.
-The Modal, Pagination, Badge and Breadcrumbs templates do it Filament's way, with `constant('Sylament\\Support\\Twig\\SupportIconAlias::…')`, Twig's equivalent of Blade's constant reference.
+The Modal, Pagination and Breadcrumbs templates do it Filament's way, with `constant('Sylament\\Support\\Twig\\SupportIconAlias::…')`, Twig's equivalent of Blade's constant reference.
 Section reverses by adopting the same `constant()` call.
+
+### The badge delete button has no alias, because Filament deprecates it
+
+Filament marks `SupportIconAlias::BADGE_DELETE_BUTTON` `@deprecated` with "Customize the `.fi-badge-delete-btn-icon` CSS class instead", because its badge paints the delete glyph as a CSS mask on an empty span and reads no alias for it.
+The port ships no constant: [`Badge`](badge.md#the-delete-button-is-three-props-not-an-attribute-carrying-slot) renders the same span as `sy-badge-delete-btn-icon`, and an application restyles the glyph through that class.

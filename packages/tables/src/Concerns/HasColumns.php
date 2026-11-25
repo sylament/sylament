@@ -117,7 +117,7 @@ trait HasColumns
             $messages = $validationException->getErrors()[$column] ?? [];
 
             $this->tableColumnStateErrors[$column][$record] = [
-                'message' => $messages[0] ?? (string) $tableColumn->translateText(new TranslatableMessage('The value is invalid.', domain: 'validators')),
+                'message' => $messages[0] ?? $this->translateInvalidTableColumnState($tableColumn),
                 'input' => $input,
             ];
 
@@ -132,7 +132,7 @@ trait HasColumns
             }
 
             $this->tableColumnStateErrors[$column][$record] = [
-                'message' => $recordWriteException->getInvalidMessage() ?? (string) $tableColumn->translateText(new TranslatableMessage('The value is invalid.', domain: 'validators')),
+                'message' => $recordWriteException->getInvalidMessage() ?? $this->translateInvalidTableColumnState($tableColumn),
                 'input' => $input,
             ];
 
@@ -154,5 +154,10 @@ trait HasColumns
     protected function getTableColumnStateLogger(): LoggerInterface
     {
         return $this->tableColumnStateLogger ?? new NullLogger();
+    }
+
+    private function translateInvalidTableColumnState(Column $column): string
+    {
+        return (string) $column->translateText(new TranslatableMessage('The value is invalid.', domain: 'validators'));
     }
 }

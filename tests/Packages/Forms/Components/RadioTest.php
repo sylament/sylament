@@ -142,13 +142,15 @@ describe('validation', function (): void {
         $options = static fn (Crawler $render): array => $render->filter('[aria-labelledby="form.plan-label"] ' . Selectors::RADIO)->each(static fn (Crawler $input): array => [$input->attr('aria-invalid'), $input->attr('aria-describedby')]);
         $tester = $this->createLiveComponent(RadioForm::class)->fillForm(['plan' => 'gold']);
 
-        expect($options($tester->render()->crawler()))->toBe([[null, null], [null, null], [null, null]])
-            ->and($group($tester->render()->crawler()))->toBe([[null, null]]);
+        $before = $tester->render()->crawler();
 
-        $tester->call('save')->assertHasFormErrors(['plan' => Choice::class]);
+        expect($options($before))->toBe([[null, null], [null, null], [null, null]])
+            ->and($group($before))->toBe([[null, null]]);
 
-        expect($options($tester->render()->crawler()))->toBe([['true', 'form.plan-error'], ['true', 'form.plan-error'], ['true', 'form.plan-error']])
-            ->and($group($tester->render()->crawler()))->toBe([['true', 'form.plan-error']]);
+        $after = $tester->call('save')->assertHasFormErrors(['plan' => Choice::class])->render()->crawler();
+
+        expect($options($after))->toBe([['true', 'form.plan-error'], ['true', 'form.plan-error'], ['true', 'form.plan-error']])
+            ->and($group($after))->toBe([['true', 'form.plan-error']]);
     });
 
     it('validates an enum radio by its cases, refusing a value no case backs though the enum cast reads it as nothing selected', function (string $state, bool $isValid): void {

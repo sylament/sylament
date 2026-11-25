@@ -56,7 +56,7 @@ Every package requires `support`, so anything support declares, every package in
 
 ## The transitive guarantees behind the omissions
 
-An omission is safe only while a package the importer requires hard-requires the omitted one, over a range on which every imported name exists. These are the guarantees, read from the installed manifests:
+An omission is safe only while a package the importer requires hard-requires the omitted one, over a range on which every imported name exists. These are the guarantees, read from the installed manifests; `.claude/rules/manifests.md`'s list of deliberate omissions restates each one on purpose, because the rule has to be actionable at the manifest without this table, so a guarantee that changes is edited in both:
 
 | Omitted | Imported by | Guaranteed by |
 |---|---|---|

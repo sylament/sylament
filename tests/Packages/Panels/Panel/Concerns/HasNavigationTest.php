@@ -48,8 +48,8 @@ it('places a registered group given as a message by its translated label, ahead 
 });
 
 it('answers a registered group given as a message by its translation, and a NavigationGroup as registered', function (): void {
-    $registry = $this::getContainer()->get(PanelRegistry::class);
+    $library = NavigationGroup::make('Library');
 
-    expect($registry->get('translated')?->getNavigationGroups())->toBe(['Library (translated)'])
-        ->and($registry->get('panel-branded')?->getNavigationGroups()['library'])->toBeInstanceOf(NavigationGroup::class);
+    expect($this::getContainer()->get(PanelRegistry::class)->get('translated')?->getNavigationGroups())->toBe(['Library (translated)'])
+        ->and(Panel::make()->id('panel-grouped')->navigationGroups(['library' => $library])->getNavigationGroups()['library'])->toBe($library);
 });

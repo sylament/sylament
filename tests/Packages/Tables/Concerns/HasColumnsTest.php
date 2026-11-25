@@ -188,6 +188,16 @@ describe('the refusal', function (): void {
             ->and($tester->render()->crawler())->toContainElement(Selectors::cell((string) $jar->id, 'sealedOn') . ' ' . Selectors::CELL_ERROR, 'The value is invalid.');
     });
 
+    it('files a write the record turns down under the cell on a host no logger was set on', function (): void {
+        $this->seed($jar = new LarderJar('Plum', position: 1));
+        $host = new EditableLarderJarTable($this->entityManager(), $this::getContainer()->get(HookLog::class));
+
+        $host->updateTableColumnState('sealedOn', (string) $jar->id, 'next spring');
+
+        expect($host->getTableColumnStateError('sealedOn', (string) $jar->id))->toBe(['message' => 'The value is invalid.', 'input' => 'next spring'])
+            ->and($this::getContainer()->get(WriteLog::class)->records)->toBe([]);
+    });
+
     it("lets an exception the application's own write closure throws propagate", function (): void {
         $tester = $this->createLiveComponent(RecordsLaneCellsTable::class);
 

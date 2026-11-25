@@ -40,7 +40,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
 use Symfony\Component\Routing\RouterInterface;
 use Twig\Error\RuntimeError;
-use Twig\Markup;
 
 it('hands back the schema and the table it is given when the resource configures neither', function (): void {
     $resource = $this::getContainer()->get(BareResource::class);
@@ -156,7 +155,6 @@ describe('record title', function (): void {
                 return 'Closing down';
             }
         }, 'Closing down'],
-        'a markup, as its text' => [new Markup('<b>Closing</b> &amp; down', 'UTF-8'), 'Closing & down'],
         'an integer' => [42, '42'],
         'a zero' => [0, '0'],
     ]);

@@ -10,7 +10,6 @@ use Sylament\Support\Pagination\Paginator;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\Translation\TranslatableInterface;
-use Twig\Markup;
 
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
@@ -120,9 +119,7 @@ trait HasRecords
             return $this->getRecordLabel();
         }
 
-        if ($value instanceof Markup) {
-            $value = html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        } elseif ($value instanceof Stringable) {
+        if ($value instanceof Stringable) {
             $value = (string) $value;
         }
 

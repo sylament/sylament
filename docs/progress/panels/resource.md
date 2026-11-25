@@ -194,7 +194,7 @@ The read needs a `catch` Filament does not: `$record?->getAttribute($attr)` answ
 Catching it and falling back to the label reproduces Filament's behaviour, so a mis-declared `$recordTitleAttribute` degrades to the label rather than fataling a list page.
 It is the only swallowed exception on the class; `getRecordRouteKey()` lets the same failure through, because a route key that cannot be read is a broken URL, not a cosmetic default.
 
-The value is also tested where Filament tests nothing: a `Markup` is read as its text (tags stripped, entities decoded), any other `Stringable` is cast, anything else non-scalar becomes `null`, a scalar is cast to a string, and a result that is not `filled()` falls back to the label.
+The value is also tested where Filament tests nothing: a `Stringable` is cast, a `Markup` to its markup ([table.md](../tables/table.md#a-markup-record-title-reaches-its-readers-as-its-markup)), anything else non-scalar becomes `null`, a scalar is cast to a string, and a result that is not `filled()` falls back to the label.
 So a title column holding `''`, `false` or whitespace titles the record with its label instead of a heading that reads `Edit `, while `0` and `'0'` stay titles.
 The cast comes before the test because `blank()` mirrors Laravel in calling `false` filled.
 

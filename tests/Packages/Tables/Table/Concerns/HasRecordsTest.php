@@ -14,12 +14,10 @@ use Sylament\Tests\Fixtures\Tables\AlignedColumnsTable;
 use Sylament\Tests\Fixtures\Tables\AssociableRelationTable;
 use Sylament\Tests\Fixtures\Tables\GroupedLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\HeadedLarderJarTable;
-use Sylament\Tests\Fixtures\Tables\Record\ShelfItem;
 use Sylament\Tests\Fixtures\Tables\ReorderableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\ShapedRecordsTable;
 use Sylament\Tests\Fixtures\Tables\TranslatedLarderJarTable;
-use Twig\Markup;
 
 it('says there are no records on an empty table with no record class', function (): void {
     expect($this->createLiveComponent(ShapedRecordsTable::class, ['shape' => 'none'])->render()->crawler())->toContainElement(Selectors::EMPTY_STATE . ' h2', 'No records');
@@ -49,12 +47,6 @@ it("titles a record by the closure, else by the title attribute, and by the tabl
     'an object column' => [fn (Table $table): Table => $table->recordTitleAttribute('larder'), 'larder jar'],
     'no title at all' => [fn (Table $table): Table => $table, 'larder jar'],
 ]);
-
-it('titles a record by the text of a markup its title attribute reads', function (): void {
-    $table = $this->createLiveComponent(HeadedLarderJarTable::class)->component()->getTable()->recordTitleAttribute('id');
-
-    expect($table->getRecordTitle(new ShelfItem('Jar', new Markup('<b>Jar</b> &amp; lid', 'UTF-8'))))->toBe('Jar & lid');
-});
 
 it("hands back the current page keyed by record key, and the page's carrier only on a paginated table", function (): void {
     $this->seed(...array_map(static fn (int $position): LarderJar => new LarderJar("Jar {$position}", position: $position), range(1, 6)));

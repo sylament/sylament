@@ -232,9 +232,7 @@ abstract class Resource
             return $this->getRecordLabel();
         }
 
-        if ($title instanceof Markup) {
-            $title = html_entity_decode(strip_tags((string) $title), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        } elseif ($title instanceof Stringable) {
+        if ($title instanceof Stringable) {
             $title = (string) $title;
         }
 

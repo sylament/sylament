@@ -56,7 +56,7 @@ Filament caches for the same reason.
 ### The label generator is two replaces because symfony/string takes one needle
 
 `generateTabLabel('needs_review')` is `Needs review`, from Filament's `str($key)->replace(['_', '-'], ' ')->ucfirst()`.
-Symfony's `u()->replace()` takes a single needle rather than an array, so the port chains two calls, and `title()` stands in for `ucfirst()` — with its default `allWords: false` it title-cases the first character and leaves the rest, which is what `ucfirst()` does.
+Symfony's `u()->replace()` takes a single needle rather than an array, so the port chains two calls, and `title()` stands in for `ucfirst()` — with its default `allWords: false` it title-cases the first letter and leaves the rest, which is what `ucfirst()` does unless the key starts with a separator (`_draft` reads " Draft" here and " draft" in Filament, [translations.md](../translations.md#symfonys-kebab-and-title-differ-from-laravels-on-acronyms-a-leading-separator-and-hyphens)).
 Both separators are pinned by a test precisely because the two-call form is where a translation like this silently loses one.
 
 ### A blank key and an unknown key are both no-ops, and that is what heals a bookmark

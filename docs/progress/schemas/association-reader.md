@@ -5,6 +5,7 @@ owns:
   - packages/schemas/src/Components/Concerns/CanAccessAssociations.php
   - packages/schemas/src/State/AssociationReader.php
   - packages/schemas/src/State/AssociationTarget.php
+  - packages/schemas/src/State/RecordManager.php
 ---
 # AssociationReader (schemas)
 
@@ -42,12 +43,20 @@ It is a relation **owner** there too: both relationship queries narrow to an own
 | [`AssociationTarget::$isOwningSide`](../../../packages/schemas/src/State/AssociationTarget.php) — whether writing this side writes the database | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | — | done | — | [semantics](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
 | [`AssociationTarget::$isManyToMany` / `$mappedBy` / `$inversedBy` / `$isNullable` / `$orderBy`](../../../packages/schemas/src/State/AssociationTarget.php) — what a relationship writer reads | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
+| [`RecordManager::of()` / `find()`](../../../packages/schemas/src/State/RecordManager.php) — the ORM entity manager a `ManagerRegistry` answers for a class, thrown or null | — | done | — | [semantics](#the-lookup-answers-the-manager-that-maps-a-class-or-none) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader`, its class alias and a null-on-invalid `EntityManagerInterface` | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
 | [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — the `#[Required]` setter every consumer tier reaches the reader through | — | done | — | [semantics](#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
 | Composite records as relation **targets**, at any identifier width | — | done | — | [semantics](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route) |
 | Through-relations, morphs, pivot data | — | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
 
 ## Semantics
+
+### The lookup answers the manager that maps a class, or none
+
+[`RecordManager`](../../../packages/schemas/src/State/RecordManager.php) has no Filament counterpart: Eloquent models name their own connection, while Doctrine maps each class on one of the registry's managers, and an application may run several.
+It comes as a pair, as `RecordKey::of()` and `RecordKey::find()` do: `find()` answers `null` when no manager maps the class (an anonymous class included), and `of()` throws a `LogicException` naming it.
+Both throw a `LogicException` when the manager the registry answers is not an `EntityManagerInterface` (an ODM manager), naming the class and the manager's type.
+It looks the manager up on every call and stores nothing, so no caller holds a manager Doctrine has since reset.
 
 ### The entity manager is optional, and the two halves answer differently
 

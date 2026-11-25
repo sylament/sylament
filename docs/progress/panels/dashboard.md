@@ -31,7 +31,7 @@ owns:
 
 ### The dashboard title is read from the catalogue, and a `$title` override still wins
 
-Filament's `Dashboard` resolves its label through `__('filament-panels::pages/dashboard.title')`; ours reads the same key path, `pages/dashboard.title`, from the `sylament-panels` catalogue.
+Filament's `Dashboard` resolves its label through `__('filament-panels::pages/dashboard.title')`; ours reads Filament's key path in the catalogue's shape, `pages.dashboard.title`, from the `sylament-panels` catalogue.
 The class sets no `$title`, because a static property initialiser cannot hold a message, and overrides two getters instead: the instance `getTitle()` returns the translated string, and the static `getNavigationLabel()` returns the message itself for [the navigation item to translate](page.md#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it).
 A subclass that sets `$title` wins in both and keeps a plain string.
 

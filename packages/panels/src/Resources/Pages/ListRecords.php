@@ -179,7 +179,7 @@ abstract class ListRecords extends Page implements InteractsWithTable
 
     public function getBreadcrumb(): string
     {
-        return static::$breadcrumb ?? new TranslatableMessage('resources/pages/list-records.breadcrumb', [], 'sylament-panels')->trans($this->getTranslator());
+        return static::$breadcrumb ?? new TranslatableMessage('resources.pages.list_records.breadcrumb', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public function form(Schema $schema): Schema

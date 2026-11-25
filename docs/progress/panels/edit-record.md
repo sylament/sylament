@@ -130,7 +130,7 @@ The create page's redirect takes the other delivery path, the flash bag drained 
 
 ### The save action reads `Save`, where Filament's catalogue says `Save changes`
 
-The key is Filament's, `resources/pages/edit-record.form.actions.save.label`, and the `sylament-panels` catalogue keeps the port's English `Save` under it.
+The key is Filament's key path in the catalogue's shape, `resources.pages.edit_record.form.actions.save.label`, and the `sylament-panels` catalogue keeps the port's English `Save` under it.
 A Filament locale file maps onto the key, so an imported translation of `Save changes` replaces the English as it stands.
 
 ### The document title of an edit page carries the record label, not the record title

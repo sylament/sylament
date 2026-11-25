@@ -1,4 +1,4 @@
-global-search:
+global_search:
     failure_message: 'Search has not completed. Reload the page to try again.'
     field:
         instructions: 'Press Down arrow to browse results. Use Up and Down arrows to move between results and their actions. Press Escape to close results.'
@@ -33,33 +33,36 @@ layout:
         label: 'Skip to content'
     topbar:
         label: 'Topbar'
-pages/dashboard:
-    title: 'Dashboard'
-resources/pages/create-record:
-    breadcrumb: 'Create'
-    form:
-        actions:
-            cancel:
-                label: 'Cancel'
-            create:
-                label: 'Create'
-    notifications:
-        created:
-            title: 'Created'
-    title: 'Create {label}'
-resources/pages/edit-record:
-    breadcrumb: 'Edit'
-    form:
-        actions:
-            cancel:
-                label: 'Cancel'
-            save:
-                label: 'Save'
-    notifications:
-        saved:
-            title: 'Saved'
-    title: 'Edit {label}'
-resources/pages/list-records:
-    breadcrumb: 'List'
-resources/pages/manage-related-records:
-    title: 'Manage {label} {relationship}'
+pages:
+    dashboard:
+        title: 'Dashboard'
+resources:
+    pages:
+        create_record:
+            breadcrumb: 'Create'
+            form:
+                actions:
+                    cancel:
+                        label: 'Cancel'
+                    create:
+                        label: 'Create'
+            notifications:
+                created:
+                    title: 'Created'
+            title: 'Create {label}'
+        edit_record:
+            breadcrumb: 'Edit'
+            form:
+                actions:
+                    cancel:
+                        label: 'Cancel'
+                    save:
+                        label: 'Save'
+            notifications:
+                saved:
+                    title: 'Saved'
+            title: 'Edit {label}'
+        list_records:
+            breadcrumb: 'List'
+        manage_related_records:
+            title: 'Manage {label} {relationship}'

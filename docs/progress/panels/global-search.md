@@ -198,7 +198,7 @@ Authorization revisits all three when it lands.
 `GlobalSearchResult` is built with `new` by a resource or a provider, so no translator sits on it and its public `title` and `details` hold whatever it was given.
 Both widen to take a `TranslatableInterface`, and so do `getGlobalSearchResultTitle()` and the values of `getGlobalSearchResultDetails()`; the [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php), which holds a translator, translates each result before the template reads it, so a custom `GlobalSearchProvider` may return messages and the template meets text.
 A category name and a detail label are array keys, which cannot be messages: the default provider passes the resource's plural label, already text, and a provider translates a label itself.
-The detail label's trailing colon is the port-added `global-search.result.detail_label` message, `{label}:`, so a locale that spaces its colons says so in the catalogue.
+The detail label's trailing colon is the port-added `global_search.result.detail_label` message, `{label}:`, so a locale that spaces its colons says so in the catalogue.
 
 ### The value objects answer with arrays, not collections
 

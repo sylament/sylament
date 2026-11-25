@@ -27,12 +27,12 @@ class Dashboard extends Page
 
     public function getTitle(): string|Markup
     {
-        return static::$title ?? new TranslatableMessage('pages/dashboard.title', [], 'sylament-panels')->trans($this->getTranslator());
+        return static::$title ?? new TranslatableMessage('pages.dashboard.title', [], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public static function getNavigationLabel(): string|TranslatableInterface
     {
-        return static::$navigationLabel ?? static::$title ?? new TranslatableMessage('pages/dashboard.title', [], 'sylament-panels');
+        return static::$navigationLabel ?? static::$title ?? new TranslatableMessage('pages.dashboard.title', [], 'sylament-panels');
     }
 
     public static function getNavigationIcon(): string|BackedEnum|Markup|Closure|null

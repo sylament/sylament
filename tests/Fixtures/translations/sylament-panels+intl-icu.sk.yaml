@@ -1,2 +1,3 @@
-pages/dashboard:
-    title: 'Nástenka'
+pages:
+    dashboard:
+        title: 'Nástenka'

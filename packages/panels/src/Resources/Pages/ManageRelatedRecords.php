@@ -100,7 +100,7 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithTable
 
     public function getTitle(): string|Markup
     {
-        return static::$title ?? new TranslatableMessage('resources/pages/manage-related-records.title', ['label' => $this->getRecordTitle(), 'relationship' => $this->getRelationshipTitle()], 'sylament-panels')->trans($this->getTranslator());
+        return static::$title ?? new TranslatableMessage('resources.pages.manage_related_records.title', ['label' => $this->getRecordTitle(), 'relationship' => $this->getRelationshipTitle()], 'sylament-panels')->trans($this->getTranslator());
     }
 
     public function getBreadcrumb(): string

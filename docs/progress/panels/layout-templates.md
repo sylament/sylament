@@ -156,7 +156,7 @@ When `darkModeBrandLogo()` is set both renditions render, `sy-pa-logo-light` and
 
 ### The shell's fixed texts are catalogue keys
 
-Every fixed text the layout, the topbar, the sidebar, the theme switcher, the user menu and the global search render is a `'<key>'|trans(domain: 'sylament-panels')` call, with Filament's key path where Filament has one ([panel.md](panel.md#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) lists the keys whose English differs).
+Every fixed text the layout, the topbar, the sidebar, the theme switcher, the user menu and the global search render is a `'<key>'|trans(domain: 'sylament-panels')` call, with Filament's key path in the catalogue's shape where Filament has one ([panel.md](panel.md#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders) lists the keys whose English differs).
 The skip link reads one key in both shells, and the topbar's one toggle button reads [a port-added key](panel.md#the-catalogue-is-found-by-the-bundles-translations-directory-and-holds-the-texts-panels-renders).
 
 ### `USER_MENU_TRIGGER` is an addition, not a rename

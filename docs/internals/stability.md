@@ -262,7 +262,8 @@ A block (T4), a context variable (T5), a `sy-` class (S1) and a Contract item (J
 
 One artefact per kind of surface, each the recommended form rather than a menu.
 Each runtime channel is built, with a test, in the change that first renames something on its surface; the row is Stable from 1.0 regardless, because no rename can land without its channel.
-The PHP channel needs no further artefact: `.claude/rules/stability.md` says how to write a deprecation, and the suite reports a silenced deprecation (`ignoreSuppressionOfDeprecations` on `phpunit.dist.xml`'s `<source>`), so a test pins one with `expectUserDeprecationMessage()`; nothing calls it yet.
+The PHP channel needs no further artefact: `.claude/rules/stability.md` says how to write a deprecation, and `expectUserDeprecationMessage()` sees the silenced deprecation `trigger_deprecation()` raises, so a test pins one; nothing calls it yet.
+A silenced deprecation no test expects is not reported, because the suite leaves `ignoreSuppressionOfDeprecations` off: setting it would fail even an expected one ([test infrastructure](test-infrastructure.md)).
 
 ### A PHP method
 

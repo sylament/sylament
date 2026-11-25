@@ -63,7 +63,8 @@ Unlike Macroable, this is a deferral, not a principled rejection.
 The port has no runtime method injection.
 The extension points are subclassing and `configureUsing()`.
 Reversing it would mean `__call()`-based APIs, which [principle §1](../../internals/principles.md#the-test) rejects.
-A customizer adds a method by subclassing the component and routes every `make()` to the subclass with `configureUsing()`, or with `#[AsDecorator]` once Sylament supports it.
+A customizer adds a method by subclassing the component and calling the subclass's own `make()`, since `configureUsing()` configures every instance but adds no method.
+Routing the parent's `make()` to the subclass waits on `#[AsDecorator]` support, because the resolver's locator is keyed by the class `make()` is called on.
 Two plugins cannot both add methods to one class, which is the accepted cost.
 
 ### `newInstance()` routes every `make()` through a locator

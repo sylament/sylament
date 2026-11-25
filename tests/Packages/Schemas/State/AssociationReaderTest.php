@@ -69,7 +69,7 @@ describe('without an entity manager', function (): void {
     it('answers no association and refuses every operation with one message naming both causes and both ways out', function (): void {
         $reader = new AssociationReader();
         $product = new Product('Lamp');
-        $message = 'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no EntityManagerInterface service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().';
+        $message = 'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no Doctrine ManagerRegistry service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().';
 
         expect($reader->describe(AtelierEasel::class, 'atelier'))->toBeNull()
             ->and($this::getContainer()->get(AssociationReader::class)->describe(AtelierEasel::class, 'atelier'))->toBeInstanceOf(AssociationTarget::class)
@@ -761,7 +761,7 @@ describe('describeRelationship()', function (): void {
             true,
             new Garden(),
             'plants',
-            'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no EntityManagerInterface service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().',
+            'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no Doctrine ManagerRegistry service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().',
         ],
         'an owner that is no entity' => [
             false,

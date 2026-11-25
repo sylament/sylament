@@ -154,7 +154,7 @@ class AssociationReader
      */
     public function createRelationshipQuery(Relationship $relationship, string $alias = 'record'): QueryBuilder
     {
-        return $this->scopeToRelationship($this->createOptionQuery($this->describeRelationship($relationship)->targetClass, $alias), $relationship, $alias);
+        return $this->scopeToRelationship($this->createTargetQuery($relationship, $this->describeRelationship($relationship), $alias), $relationship, $alias);
     }
 
     /**
@@ -190,7 +190,7 @@ class AssociationReader
     public function createRelationshipCandidateQuery(Relationship $relationship, string $alias = 'record'): QueryBuilder
     {
         $target = $this->describeRelationship($relationship);
-        $query = $this->createOptionQuery($target->targetClass, $alias);
+        $query = $this->createTargetQuery($relationship, $target, $alias);
 
         if (! $target->isManyToMany) {
             $this->assertRelationshipAcceptsAssociate($relationship);
@@ -286,7 +286,7 @@ class AssociationReader
 
         $mappedBy = $this->getMappedBy($relationship, $target);
 
-        if ($this->isIdentifierField($target->targetClass, $mappedBy)) {
+        if ($this->isIdentifierField($relationship, $target->targetClass, $mappedBy)) {
             throw $this->refuseRekeyingAssociate($relationship, $target->targetClass, $mappedBy);
         }
     }
@@ -315,7 +315,7 @@ class AssociationReader
             throw new LogicException(sprintf('[%s::$%s] declares orphanRemoval, so a record removed from it is deleted rather than dissociated — dissociating is not something the mapping permits; use DeleteAction.', $ownerClass, $relationship->name));
         }
 
-        if ($this->isIdentifierField($target->targetClass, $mappedBy)) {
+        if ($this->isIdentifierField($relationship, $target->targetClass, $mappedBy)) {
             throw new LogicException(sprintf('[%s::$%s] is part of the identifier of [%s], so a [%s] cannot be dissociated from its [%s] — nulling it would erase half the record\'s identity; use DeleteAction.', $target->targetClass, $mappedBy, $target->targetClass, $target->targetClass, $ownerClass));
         }
 
@@ -573,7 +573,11 @@ class AssociationReader
 
             $visited[spl_object_id($current)] = true;
 
-            $entityManager = $entityManagerByClass[$current::class] ??= $this->findEntityManager($current::class);
+            if (! array_key_exists($current::class, $entityManagerByClass)) {
+                $entityManagerByClass[$current::class] = $this->findEntityManager($current::class);
+            }
+
+            $entityManager = $entityManagerByClass[$current::class];
 
             if (! $entityManager instanceof EntityManagerInterface) {
                 continue;
@@ -1029,11 +1033,25 @@ class AssociationReader
     }
 
     /**
-     * @param class-string $class
+     * The relationship's target class as a single root under $alias, on the
+     * manager that maps the owner.
      */
-    private function isIdentifierField(string $class, string $field): bool
+    private function createTargetQuery(Relationship $relationship, AssociationTarget $target, string $alias): QueryBuilder
     {
-        return in_array($field, $this->requireEntityManager($class)->getClassMetadata($class)->identifier, true);
+        return $this->getOwnerEntityManager($relationship)->createQueryBuilder()->select($alias)->from($target->targetClass, $alias);
+    }
+
+    private function getOwnerEntityManager(Relationship $relationship): EntityManagerInterface
+    {
+        return $this->requireEntityManager($this->getEntityClass($relationship->owner));
+    }
+
+    /**
+     * @param class-string $class a class of the relationship, read on the owner's manager
+     */
+    private function isIdentifierField(Relationship $relationship, string $class, string $field): bool
+    {
+        return in_array($field, $this->getOwnerEntityManager($relationship)->getClassMetadata($class)->identifier, true);
     }
 
     /**
@@ -1050,9 +1068,9 @@ class AssociationReader
     {
         $mappedBy = $this->getMappedBy($relationship, $target);
 
-        $entityManager = $this->requireEntityManager($target->targetClass);
+        $entityManager = $this->getOwnerEntityManager($relationship);
 
-        if (! $this->isIdentifierField($target->targetClass, $mappedBy) || ! $entityManager->contains($related)) {
+        if (! $this->isIdentifierField($relationship, $target->targetClass, $mappedBy) || ! $entityManager->contains($related)) {
             return;
         }
 
@@ -1174,7 +1192,7 @@ class AssociationReader
     private function refuseWithoutEntityManager(): LogicException
     {
         return new LogicException(
-            'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no EntityManagerInterface service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().',
+            'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no Doctrine ManagerRegistry service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().',
         );
     }
 }

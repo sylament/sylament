@@ -65,7 +65,7 @@ A reader that reaches no manager — no registry, and no manager pinned — spli
 
 - **`describe()` answers null**, because "is this property an association?" has a meaningful negative answer — no Doctrine means no associations, and a caller keeps whatever non-association behaviour it already had.
 - **Every operation throws a `LogicException`**, because `getReference()`, `getRecordKey()`, `createOptionQuery()`, `remove()` and the rest have no meaningful negative answer: a caller reaching them has already decided it is handling a relationship, so a silent null would corrupt state instead of failing.
-  One message covers them all, and it names both causes (a reader built outside the container, or no `EntityManagerInterface` service) and the two ways out — register `doctrine/doctrine-bundle`, or bind the record by hand after `getData()`.
+  One message covers them all, and it names both causes (a reader built outside the container, or no Doctrine `ManagerRegistry` service) and the two ways out — register `doctrine/doctrine-bundle`, or bind the record by hand after `getData()`.
 
 `hasEntityManager()` exists so a caller can branch **before** it commits to the relationship path, rather than catching the exception the operations throw.
 It answers whether the reader reaches any manager, pinned or through a registry, not whether a manager maps the class a caller has in mind; [the per-class entry](#an-unpinned-reader-asks-the-registry-for-the-manager-of-each-class-it-reads) says what each method answers for a class none maps.
@@ -77,7 +77,7 @@ The changed-key and taken-key test files pin it, *guards nothing without an enti
 ### An unpinned reader asks the registry for the manager of each class it reads
 
 The reader holds no manager of its own: every call asks [`RecordManager`](#the-lookup-answers-the-manager-that-maps-a-class-or-none) for the manager that maps the class it concerns, so an entity only another of the registry's managers maps is described, queried, keyed and written as one the default manager maps is.
-The class a call concerns is the class it is passed (`describe()`, `createOptionQuery()`, `getReference()`), the relationship's owner or target (`describeRelationship()`, the relationship queries, `attach()`, `detach()` and the accept checks), which one manager maps since a Doctrine association never spans two, or the entity's own class (the key and identifier methods, `persist()`, `remove()` and [`flush()`](#flush-names-the-entity-whose-manager-it-flushes)); the record check's walk asks once for each class it meets.
+The class a call concerns is the class it is passed (`describe()`, `createOptionQuery()`, `getReference()`), the relationship's owner (`describeRelationship()`, the relationship queries, `attach()`, `detach()` and the accept checks), whose manager also maps the target since a Doctrine association never spans two, or the entity's own class (the key and identifier methods, `persist()`, `remove()` and [`flush()`](#flush-names-the-entity-whose-manager-it-flushes)); the record check's walk asks once for each class it meets.
 
 Each method keeps the answer it gives a class no manager maps.
 `describe()` and the record check's three members take the lookup's `null`, and answer no association and no refusal, as they do on a reader with no manager.
@@ -87,7 +87,8 @@ Nothing falls back to the default manager: a class no manager maps has no manage
 A reader pinned with [`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) asks no registry and uses its pin for every class, which is how a write seam reads through the manager it flushes through.
 Like the lookup, the reader stores no manager it was answered, so a manager Doctrine has reset is never held across calls.
 
-Pinned: on the container's reader, a class only the second manager maps is described, and its option and relationship queries are built, and it is persisted and flushed, on that manager; a pinned reader keeps its pin for it; and a class no manager maps is described as no association and refused by name.
+Pinned: on the container's reader, a class only the second manager maps is described, its option and relationship queries are built on that manager, and it is persisted and flushed through it; a pinned reader keeps its pin for it; and a class no manager maps is described as no association and its option query refused by name.
+The record check's walk and the key and identifier methods resolve through the same two lookups and have no case on the second manager, nor does `flush()` on a class no manager maps.
 
 ### `withEntityManager()` is a clone, so a subclassed reader survives the rebind
 

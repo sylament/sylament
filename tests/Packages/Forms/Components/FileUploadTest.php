@@ -165,8 +165,8 @@ describe('render', function (): void {
     });
 
     it('words the file limit for one file in the singular, and shows a markup label as plain text', function (): void {
-        expect(FileUploadFixtures::values($this->renderSchemaComponent(FileUpload::make('photo')->label(new Markup('<b>Photo</b>', 'UTF-8'))->maxFiles(1)), 'data.photo'))
-            ->toMatchArray(['maxFilesMessage' => 'The Photo field must not have more than 1 item.']);
+        expect(FileUploadFixtures::values($this->renderSchemaComponent(FileUpload::make('photo')->label(new Markup('<b>Photo</b> &amp; scan', 'UTF-8'))->maxFiles(1)), 'data.photo'))
+            ->toMatchArray(['maxFilesMessage' => 'The Photo & scan field must not have more than 1 item.']);
     });
 
     it('leaves a plain label untouched in the file limit message', function (): void {

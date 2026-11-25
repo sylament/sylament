@@ -18,6 +18,12 @@ it('renders a logo path as an image named after the brand', function (): void {
     expect([$logo->nodeName(), $logo->attr('src'), $logo->attr('alt'), $logo->attr('style')])->toBe(['img', '/brand/acme.svg', 'Acme logo', 'height: 1.5rem']);
 });
 
+it('names a logo image after the text of a markup brand name', function (): void {
+    $logo = $this->renderTwigComponent('SylamentPanels:Logo', ['brandName' => new Markup('<b>Tom</b> &amp; Jerry', 'UTF-8'), 'brandLogo' => '/brand/acme.svg'])->crawler()->filter(Selectors::LOGO);
+
+    expect($logo->attr('alt'))->toBe('Tom & Jerry logo');
+});
+
 it('falls back to the brand name without a logo, and to nothing without a name either', function (): void {
     $named = $this->renderTwigComponent('SylamentPanels:Logo', ['brandName' => 'Acme'])->crawler()->filter(Selectors::LOGO);
 

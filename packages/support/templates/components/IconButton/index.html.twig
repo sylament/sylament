@@ -20,7 +20,7 @@
 {% set sizeValue = size.value ?? size %}
 {% set iconSize = iconSize ?? (sizeValue == 'xs' ? 'sm' : (sizeValue in ['lg', 'xl'] ? 'lg' : null)) %}
 {% set colorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\IconButtonComponent', color) %}
-{% set ariaLabel = (label ?? '')|striptags|trim %}
+{% set ariaLabel = (label is markup ? label|plain_text : (label ?? '')|striptags)|trim %}
 
 <{{ tag }}
     {{ attributes.without('style').defaults({

@@ -18,6 +18,7 @@ use Sylament\Tests\Fixtures\Entity\Larder;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Twig\Markup;
 
 /**
  * A larder table a user searches, ordered by name with an `archive` bulk action: `name` is
@@ -28,7 +29,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * a larder's id and one keeping out the `Pantry`, beside two blank members), `notSearchable`
  * (`searchable(false)`, after the extras), `searchUsing` (a closure matching the term as the
  * supplier's whole name), `wholeTerm` (`splitSearchTerms(false)`), `onBlur`, `paged` (two rows
- * a page) and `keepsSelection`; `placeholder` and `debounce` are handed to their setters as given.
+ * a page), `keepsSelection` and `markupSupplierLabel` (a markup label on `supplier.name`);
+ * `placeholder` and `debounce` are handed to their setters as given.
  */
 #[AsLiveComponent(name: 'Tables:SearchableLarderTable', template: '@Fixtures/tables/table.html.twig')]
 class SearchableLarderTable implements InteractsWithActions, InteractsWithTable
@@ -70,7 +72,8 @@ class SearchableLarderTable implements InteractsWithActions, InteractsWithTable
                 TextColumn::make('supplier.name')
                     ->searchable(isIndividual: true, isGlobal: $this->has('globalSupplier'))
                     ->hidden($this->has('supplierHidden'))
-                    ->toggleable($this->has('supplierToggleable')),
+                    ->toggleable($this->has('supplierToggleable'))
+                    ->label($this->has('markupSupplierLabel') ? new Markup('<b>Supplier</b> &amp; maker', 'UTF-8') : null),
             ])
             ->defaultSort('name')
             ->toolbarActions([

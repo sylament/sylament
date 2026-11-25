@@ -82,7 +82,7 @@
                         <twig:SylamentSupport:TabsItem
                                 role="tab"
                                 aria-selected="false"
-                                :aria-label="'components.tabs.actions.more.active_label'|trans({tab: (tab.getLabel ?? '')|striptags|trim}, domain: 'sylament-schemas')"
+                                :aria-label="'components.tabs.actions.more.active_label'|trans({tab: (tab.getLabel ?? '')|plain_text|trim}, domain: 'sylament-schemas')"
                                 :active="activeTabKey == tabKey"
                                 :data-tab-key="tabKey ?: false"
                                 icon="heroicons:chevron-down"

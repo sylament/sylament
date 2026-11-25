@@ -101,9 +101,9 @@ describe('client mode', function (): void {
             ->not->toContainElement(Selectors::tabsTarget('dropdown'));
     });
 
-    it('names an overflow trigger after its tab with the markup of a label stripped', function (): void {
-        expect($this->renderSchemaComponent(Tabs::make('Orders')->scrollable(false)->tabs([Tab::make('Open')->label(new Markup('<em>Open</em> now', 'UTF-8'))])))
-            ->toContainButtons(Selectors::tabsTarget('triggerTab'), ['More tabs: Open now']);
+    it('names an overflow trigger after the text of its tab\'s label', function (): void {
+        expect($this->renderSchemaComponent(Tabs::make('Orders')->scrollable(false)->tabs([Tab::make('Open')->label(new Markup('<em>Open</em> &amp; now', 'UTF-8'))])))
+            ->toContainButtons(Selectors::tabsTarget('triggerTab'), ['More tabs: Open & now']);
     });
 
     it('hides itself until its controller has restored a persisted tab, and only then', function (): void {

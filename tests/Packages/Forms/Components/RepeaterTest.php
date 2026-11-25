@@ -317,6 +317,11 @@ describe('the add action', function (): void {
             ->and($tester->render()->crawler()->filter(FormsSelectors::REPEATER_ITEM . '[id^="form.lines."]'))->toHaveCount(2);
     });
 
+    it('labels its add button after the text of a markup field label', function (): void {
+        expect($this->renderSchemaComponent(Repeater::make('lines')->label(new Markup('<b>Lines</b> &amp; notes', 'UTF-8'))->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada']]]))
+            ->toContainElement(FormsSelectors::REPEATER_ADD_BUTTON, 'Add to lines & notes');
+    });
+
     it("renders a button labelled after the field, aligned as asked, and none when the repeater is not addable", function (): void {
         $items = ['lines' => ['a' => ['name' => 'Ada']]];
 

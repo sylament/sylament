@@ -20,7 +20,7 @@ The `## Details` entries below also serve the same rows on [`Badge`](badge.md) a
 | --- | --- | --- | --- | --- |
 | [Tag + size classes](../../../packages/support/templates/components/IconButton/index.html.twig) | [`icon-button.blade.php` `->class([…])`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
 | [Icon rendering + derived size](../../../packages/support/templates/components/IconButton/index.html.twig) | [`generate_icon_html(…)`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
-| [Label → `aria-label` + `title`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`aria-label`/`title` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [diverges](#the-aria-label-is-double-encoded-where-filament-suppresses-it) |
+| [Label → `aria-label` + `title`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`aria-label`/`title` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [diverges](#a-string-labels-entities-stay-written-out-in-the-aria-label-where-filament-decodes-them) |
 | [`disabled` / `aria-disabled`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`disabled`/`aria-disabled` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [diverges](#the-disabled-attribute-is-emitted-only-on-button) |
 | [Link `href` / `target`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`generate_href_html(…)`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
 | [`type` / `form` association](../../../packages/support/templates/components/IconButton/index.html.twig) | [`type`/`form` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
@@ -73,8 +73,8 @@ Sylament guards the attribute with `disabled and tag == 'button'`, so a disabled
 The `aria-disabled` / `sy-disabled` signalling is identical across tags; only the native attribute is withheld from non-buttons.
 It is pinned: a disabled link carries no `disabled` attribute.
 
-### The `aria-label` is double-encoded, where Filament suppresses it
+### A string label's entities stay written out in the `aria-label`, where Filament decodes them
 
-Filament escapes the accessible name with `e(trim(strip_tags($label)), doubleEncode: false)` and merges it with `escape: false`, so a label already carrying an escaped entity stays singly encoded.
-Sylament runs `label|striptags|trim` through `attributes.defaults(...)`, whose Twig escaper has no double-encode toggle, so the same pre-escaped input renders doubly encoded (`&amp;` → `&amp;amp;`).
-Unescaped labels, the normal case, render identically; only labels that already contain HTML entities differ.
+Filament escapes the accessible name with `e(trim(strip_tags($label)), doubleEncode: false)` and merges it with `escape: false`, so an entity in the label, a `Markup`'s or a plain string's, reaches the reader decoded.
+Sylament reads a `Markup` label as its text with `plain_text` (tags stripped, entities decoded), which gives Filament's name, and strips a plain string with `striptags` without decoding it; `attributes.defaults(...)` then escapes either once.
+A plain string is text here, so its `&amp;` is what its author wrote and the name reads `&amp;` where Filament's reads `&`; a label without an entity renders identically.

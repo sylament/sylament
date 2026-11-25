@@ -7,6 +7,7 @@ namespace Sylament\Support\Twig\Extension;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
 use Twig\Markup;
+use Twig\TwigFilter;
 use Twig\TwigFunction;
 use Twig\TwigTest;
 
@@ -15,6 +16,16 @@ use function Sylament\Support\filled;
 
 class MarkupExtension extends AbstractExtension
 {
+    /**
+     * @return array<TwigFilter>
+     */
+    public function getFilters(): array
+    {
+        return [
+            new TwigFilter('plain_text', $this->plainText(...)),
+        ];
+    }
+
     /**
      * @return array<TwigFunction>
      */
@@ -45,5 +56,18 @@ class MarkupExtension extends AbstractExtension
         }
 
         return new Markup($content, $twig->getCharset());
+    }
+
+    /**
+     * A `Markup` as the text a reader sees, as Filament reads an `Htmlable` with `html_entity_decode(strip_tags(…))`;
+     * the result is a plain string, so the sink escapes it again.
+     */
+    public function plainText(string|Markup|null $value): ?string
+    {
+        if (! $value instanceof Markup) {
+            return $value;
+        }
+
+        return html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, $value->getCharset());
     }
 }

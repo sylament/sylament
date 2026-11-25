@@ -108,7 +108,7 @@ Because the descent reads the item schemas the default produced, a defaults fill
 
 ### The default add label is a message over the lower-cased field label
 
-`getAddActionLabel()` falls back to `components.repeater.actions.add.label`, `Add to {label}`, with the field's label, its first letter lower-cased, as `label`, where Filament passes `Str::lcfirst($this->getLabel())`.
+`getAddActionLabel()` falls back to `components.repeater.actions.add.label`, `Add to {label}`, with the field's label, its first letter lower-cased, as `label`, where Filament passes `Str::lcfirst($this->getLabel())`; a `Markup` label goes in as its text (tags stripped, entities decoded), where Filament's stringifies to its markup and the button shows the tags escaped.
 The lower-casing is English-oriented and stays out of the message, so a locale whose labels keep their case needs `addActionLabel()` set.
 A `Markup` label reaches the parameter as its string, which the action's label escapes.
 The structural actions' labels (delete, clone, move up and down, reorder, collapse and expand, collapse all and expand all, add between) are catalogue messages under `components.repeater.actions.*` too, and `addActionLabel()`, `addBetweenActionLabel()`, `labelBetweenItems()`, `itemLabel()` and `TableColumn::label()` each take a message.

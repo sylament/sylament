@@ -64,10 +64,10 @@ Every catalog palette's text slot is pinned at 4.5:1 or above against its surfac
 Filament's `badge.blade.php` has no hidden-label mode, because its `Action::toBadgeHtml()` passes no `isLabelSrOnly`, so a badge action ignores `hiddenLabel()`.
 This port honours `hiddenLabel()` on badge actions ([`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig) passes `labelSrOnly`), so the primitive has to express it, and mirroring the prop Filament's sibling [`link.blade.php`](../../../vendor/filament/support/resources/views/components/link.blade.php) carries is smaller than either alternative: gating the label spans on empty content makes the primitive silently drop structure, and having the caller hand-build the `aria-label` leaves a pair of empty label spans behind.
 
-The accessible name is `striptags`'d and trimmed off the content, matching the `trim(strip_tags(…))` Filament runs for the same prop on `link.blade.php`.
+The accessible name is the content read as its text (a `Markup` through `plain_text`, which strips its tags and decodes its entities, a string through `striptags`) and trimmed, matching the `trim(strip_tags(…))` Filament escapes with `doubleEncode: false` for the same prop on `link.blade.php`.
 The `// Security:` comment there covers the third step Filament needs and this port does not: Blade merges the attribute with `escape: false`, so an `Htmlable` label would break out of the attribute unless explicitly escaped, while `attributes.defaults()` escapes on output.
 The strip is still load-bearing: a `Markup` label's tags would otherwise be announced as part of the name.
-Escaping on output brings the same double-encoding caveat recorded on [icon-button.md](icon-button.md#the-aria-label-is-double-encoded-where-filament-suppresses-it): a label that already carries an escaped entity renders doubly encoded.
+Escaping on output brings the caveat recorded on [icon-button.md](icon-button.md#a-string-labels-entities-stay-written-out-in-the-aria-label-where-filament-decodes-them): a plain string that already carries an escaped entity names the badge with the entity written out.
 
 ### The `disabled` attribute is emitted only on `<button>`
 

@@ -26,3 +26,11 @@ it('passes the markup test only for a Twig Markup', function (): void {
     expect($template->render(['value' => new Markup('<b>Bold</b>', 'UTF-8')]))->toBe('markup')
         ->and($template->render(['value' => '<b>Bold</b>']))->toBe('plain');
 });
+
+it('reads a Markup as its decoded text through plain_text, still escaped on output, and leaves a string as it is', function (): void {
+    $template = $this::getContainer()->get('twig')->createTemplate('<div>{{ value|plain_text }}</div>');
+
+    expect(new Crawler($template->render(['value' => new Markup('<b>Tom</b> &amp; &lt;i&gt;Jerry', 'UTF-8')])))->toContainElement('div', 'Tom & <i>Jerry')
+        ->not->toContainElement('div b')
+        ->and(new Crawler($template->render(['value' => 'Tom &amp; <b>Jerry</b>'])))->toContainElement('div', 'Tom &amp; <b>Jerry</b>');
+});

@@ -527,11 +527,11 @@ describe('value comparison', function (): void {
     });
 
     it('confirms against the component at its own path suffixed _confirmation, by its plain-text label, or by that path humanised when no component holds it', function (): void {
-        $labelled = $this->host->mapping(TextInput::make('pin')->confirmed(), TextInput::make('pin_confirmation')->label(new Markup('<b>Pin again</b>', 'UTF-8')));
+        $labelled = $this->host->mapping(TextInput::make('pin')->confirmed(), TextInput::make('pin_confirmation')->label(new Markup('<b>Pin</b> &amp; again', 'UTF-8')));
         $this->host->data = ['pin' => '1234', 'pin_confirmation' => '4321'];
 
         expect(fn () => $this->host->validateSchema($labelled))->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toBe(['data.pin' => ['This value must match Pin again.']]);
+            expect($exception->getErrors())->toBe(['data.pin' => ['This value must match Pin & again.']]);
         });
 
         $unlabelled = $this->host->mapping(TextInput::make('pin')->confirmed());

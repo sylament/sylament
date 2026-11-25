@@ -54,6 +54,7 @@ use Symfony\Component\Validator\Constraints\Uuid;
 use Symfony\Component\Validator\Constraints\When;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Contracts\Translation\TranslatableInterface;
+use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -323,7 +324,7 @@ trait CanBeValidated
         $label = $sibling instanceof Field ? $sibling->getLabel() : null;
 
         if (filled($label)) {
-            return strip_tags((string) $label);
+            return $label instanceof Markup ? html_entity_decode(strip_tags((string) $label), ENT_QUOTES | ENT_HTML5, 'UTF-8') : strip_tags($label);
         }
 
         $segment = mb_substr($absoluteStatePath, (int) mb_strrpos($absoluteStatePath, '.') + (str_contains($absoluteStatePath, '.') ? 1 : 0));

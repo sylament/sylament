@@ -227,6 +227,14 @@ describe('the per-column terms', function (): void {
         expect($chips($hidden))->toBe(['Name: Lamp']);
     });
 
+    it('names a markup-labelled column by the text of its label on its search input and its chip', function (): void {
+        $tester = $this->createLiveComponent(SearchableLarderTable::class, ['variants' => ['markupSupplierLabel']])->searchTableColumns(['supplier' => ['name' => 'Acme']]);
+
+        expect($tester->render()->crawler())
+            ->toContainElement(Selectors::columnSearch('supplier.name') . '[aria-label="Search Supplier & maker"]')
+            ->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Supplier & maker: Acme');
+    });
+
     it('ignores a reset naming no column searchable on its own input, leaving every term where it was', function (string $column): void {
         $this->seed($oak = new Seedling('Oak'), $elm = new Seedling('Elm'));
         $bag = fn (Testable $tester): mixed => $this::liveProps($tester->render()->crawler())['tableColumnSearches'];

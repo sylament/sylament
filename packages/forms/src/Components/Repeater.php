@@ -935,7 +935,8 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
             return (string) $label;
         }
 
-        $componentLabel = u((string) $this->getLabel());
+        $label = $this->getLabel();
+        $componentLabel = u($label instanceof Markup ? html_entity_decode(strip_tags((string) $label), ENT_QUOTES | ENT_HTML5, 'UTF-8') : (string) $label);
 
         return new TranslatableMessage('components.repeater.actions.add.label', ['label' => $componentLabel->slice(0, 1)->lower()->toString() . $componentLabel->slice(1)->toString()], 'sylament-forms')->trans($this->getTranslator());
     }

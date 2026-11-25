@@ -409,7 +409,7 @@ The SVG confirmation carries a real newline where Filament's single-quoted PHP l
 The free-ratio option's label is an array key of `getImageEditorAspectRatioOptionsForJs()`, translated when the map is built, so each use of it, the button text, the title and the label param the controller matches the selected ratio on, is the same translated string.
 
 The texts below have no Filament key and take port-added ones.
-`components.file_upload.max_files_message` is an ICU plural over `count` that names the field's label, tag-stripped, as `label`, where Filament formats Laravel's core `validation.max.array`.
+`components.file_upload.max_files_message` is an ICU plural over `count` that names the field's label as `label`, a `Markup` one read as its text (tags stripped, entities decoded), where Filament formats Laravel's core `validation.max.array`.
 `components.file_upload.errors.{upload,remove,load,reorder}` are the controller's refusal texts, and `errors.type_undetected` carries a `__NAME__` token the controller replaces with the file's name.
 The template hands all of them to the controller as Stimulus values, and the controller keeps no English default.
 `The submitted file path is not authorised.` is an id in `validators.en.yaml`, which Filament's `validation.tampered_file_path` words differently.

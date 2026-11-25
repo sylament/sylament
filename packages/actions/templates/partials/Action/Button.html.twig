@@ -56,7 +56,7 @@
     :type="component.canSubmitForm ? 'submit' : 'button'"
     :formId="component.getFormId"
     {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
-    {{ ...(component.isLabelHidden ? {'aria-label': (component.getLabel ?? component.getName)|striptags|trim} : {}) }}
+    {{ ...(component.isLabelHidden ? {'aria-label': (component.getLabel is markup ? component.getLabel|plain_text : (component.getLabel ?? component.getName)|striptags)|trim} : {}) }}
     {{ ...extraAttributes }}
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}

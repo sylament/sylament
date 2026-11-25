@@ -13,16 +13,19 @@ use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Filters\Filter;
 use Sylament\Tables\Filters\Indicator;
+use Sylament\Tables\Filters\TernaryFilter;
 use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Twig\Markup;
 
 /**
  * A larder's jars under filters that chip in every way a filter can: always as a string, as
  * a built green indicator and as a list of two; when ticked, as an indicator removing its
  * `isActive` field, as one that cannot be removed while it keeps the sealed jars, and under a
- * prefix of its own while it keeps the waxed ones.
+ * prefix of its own while it keeps the waxed ones; the ternary `sealed` chips under a markup
+ * indicator.
  */
 #[AsLiveComponent(name: 'Tables:IndicatingJarFilterTable', template: '@Fixtures/tables/table.html.twig')]
 class IndicatingJarFilterTable implements InteractsWithSchemas, InteractsWithTable
@@ -60,6 +63,7 @@ class IndicatingJarFilterTable implements InteractsWithSchemas, InteractsWithTab
                     ->query(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere('jar.seal IS NOT NULL'))
                     ->indicateUsing(static fn (array $state): array => ($state['isActive'] ?? false) ? [Indicator::make('Pinned chip')->removable(false)] : []),
                 Filter::make('waxed')->indicator('Wax only')->query(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere("jar.seal = 'wax'")),
+                TernaryFilter::make('sealed')->attribute('seal')->indicator(new Markup('<b>Seal</b> &amp; lid', 'UTF-8')),
             ]);
     }
 }

@@ -196,7 +196,7 @@ The active trigger tab renders `sy-active` **and** `aria-current="true"` server-
 ### The active overflow trigger names itself with a port-added message
 
 The ellipsis "more" button carries `components.tabs.actions.more.label` (`More tabs`), Filament's key, and each trigger tab carries `aria-label="More tabs: {tab}"` from `components.tabs.actions.more.active_label`, a key the port adds beside it because [`catalogues.md`](../../../.claude/rules/catalogues.md) makes a composed text one message and Filament joins the two with `. ': ' .` in PHP.
-The `{tab}` argument is the tab's label reduced by `striptags` and `trim` ([the rule](../../internals/i18n.md#a-message-renders-exactly-as-the-string-it-becomes)), where Filament decodes entities after `strip_tags()`; a `Markup` label holding an entity such as `&amp;` therefore names the trigger with the entity written out.
+The `{tab}` argument is the tab's label read as its text with `plain_text` and trimmed ([the rule](../../internals/i18n.md#a-message-renders-exactly-as-the-string-it-becomes)), as Filament decodes a `Markup` label's entities after `strip_tags()`, so `<em>Open</em> &amp; now` names the trigger `More tabs: Open & now`; a plain string passes as it is, as in Filament.
 Every tab renders its own trigger with its own name from the server and the controller only toggles which one shows, so no client update replaces the name.
 
 ### Alpine-only surface is skipped, not deferred

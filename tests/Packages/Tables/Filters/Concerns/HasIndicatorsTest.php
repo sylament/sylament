@@ -20,6 +20,12 @@ it('labels its chip with its indicator in place of its label', function (): void
         ->and($tester->render()->crawler()->filter(Selectors::FILTER_INDICATOR_LABEL)->each(static fn (Crawler $chip): string => $chip->text()))->not->toContain('Waxed');
 });
 
+it('words a state chip with the text of a markup indicator', function (): void {
+    $tester = $this->createLiveComponent(IndicatingJarFilterTable::class)->filterTable('sealed', 1);
+
+    expect($tester->render()->crawler())->toContainElement(Selectors::FILTER_INDICATOR_LABEL, 'Seal & lid: Yes');
+});
+
 it('removes only the field a chip is keyed by', function (): void {
     $tester = $this->createLiveComponent(ShapedJarFilterTable::class)->filterTable('stocked', ['state' => 'shut', 'note' => 'Top shelf']);
 

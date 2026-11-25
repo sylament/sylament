@@ -56,7 +56,7 @@
 {% set groupCollapsible = group is not null and group.isCollapsible %}
 {% set groupsCollapsed = groupCollapsible and component.areGroupsCollapsedByDefault %}
 {% set groupLabelPrefix = group is not null and group.isTitlePrefixedWithLabel ? group.getLabel : null %}
-{% set groupLabelText = groupLabelPrefix is not empty ? (groupLabelPrefix is markup ? groupLabelPrefix|striptags : groupLabelPrefix) ~ '' : null %}
+{% set groupLabelText = groupLabelPrefix is not empty ? groupLabelPrefix|plain_text ~ '' : null %}
 
 {% set filterIndicators = component.getFilterIndicators %}
 {% set removableIndicatorCount = filterIndicators|filter(carrier => carrier.indicator.isRemovable)|length %}
@@ -671,7 +671,7 @@
                                 {% for column in columns %}
                                     {% set columnName = column.getName %}
                                     {% set columnLabel = column.getLabel %}
-                                    {% set columnAriaLabel = (columnLabel is markup ? columnLabel|striptags : columnLabel)|trim ?: null %}
+                                    {% set columnAriaLabel = columnLabel|plain_text|trim ?: null %}
                                     {% set isColumnIndividuallySearchable = column.isIndividuallySearchable %}
                                     {% set columnHiddenFrom = column.getHiddenFrom %}
                                     {% set columnVisibleFrom = column.getVisibleFrom %}
@@ -716,7 +716,7 @@
                             {% if boundary is not null and boundary.isFirstOfGroup and not isGroupsOnly %}
                                 {% set groupKey = boundary.key %}
                                 {% set groupTitle = boundary.title ~ '' %}
-                                {% set groupTitleText = (boundary.title is markup ? boundary.title|striptags : boundary.title) ~ '' %}
+                                {% set groupTitleText = boundary.title|plain_text ~ '' %}
                                 {% set groupRowId = hostId ~ '.table.groups.' ~ ((groupKey ?? '')|url_encode) %}
 
                                 {% set groupSelectionCell %}{% if isSelectionEnabled %}
@@ -940,7 +940,7 @@
                                 <twig:SylamentTables:SummaryRow
                                     :id="hostId ~ '.table.group-summary.' ~ ((boundary.key ?? '')|url_encode)"
                                     :columns="summaryColumns"
-                                    :heading="isGroupsOnly ? boundary.title : 'table.summary.subheadings.group'|trans({group: (boundary.title is markup ? boundary.title|striptags : boundary.title) ~ ''}, domain: 'sylament-tables')"
+                                    :heading="isGroupsOnly ? boundary.title : 'table.summary.subheadings.group'|trans({group: boundary.title|plain_text ~ ''}, domain: 'sylament-tables')"
                                     :query="groupSummaryQuery"
                                     :selectedState="component.getLiveComponent.getTableSummarySelectedState(groupSummaryQuery)"
                                     :groupsOnly="isGroupsOnly"

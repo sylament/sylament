@@ -244,6 +244,7 @@ Everything else in the bag lands untouched, escaped like any other attribute —
 
 `getRecordTitle()` tries the `recordTitle()` closure first — the record injected by name and by type — then `recordTitleAttribute()` read through schemas' [`PropertyAccessor::getFromRecord()`](../schemas/property-accessor.md), then the record label.
 The attribute arm swallows an `AccessException` and treats a blank or non-scalar value as absent, so a missing property, a null column and an object column all answer the label rather than throwing or rendering an empty title — the same fallback panels' `Resource::getRecordTitle()` uses.
+A `Markup` the title attribute reads is taken as its text (tags stripped, entities decoded) where any other `Stringable` is cast, because every reader prints the title as text: an action heading's message argument, an option label, the reorder handle's description.
 
 The return type is therefore `string`, never null: the label always answers.
 That is what makes actions' unconditional table hop ([action.md](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)) terminal — a table-bound action never reaches its host's title hook, because the table's answer is always filled.
@@ -392,6 +393,6 @@ Filament's table layout evaluates `getExtraRecordLinkAttributeBag($record)` insi
 
 ### A `Markup` that goes into a message reads as its text
 
-The texts the port composes around a label or a title are one message with the label as an argument, and an argument is plain text: a `Markup` group label (in the group heading's prefix and the collapse button's name), a `Markup` group title (in the group summary's heading, the group checkbox's name and the collapse button's name), a `Markup` column label (in a column's search chip) and a `Markup` filter indicator (in the `<indicator>: <state>` chip) are reduced with `striptags` first.
+The texts the port composes around a label or a title are one message with the label as an argument, and an argument is plain text: a `Markup` group label (in the group heading's prefix and the collapse button's name), a `Markup` group title (in the group summary's heading, the group checkbox's name and the collapse button's name), a `Markup` column label (in a column's search chip and its search input's name), a `Markup` filter indicator (in the `<indicator>: <state>` chip) and a `Markup` record title are reduced to their text first: tags stripped, then entities decoded (`plain_text` in the template), so `Tom &amp; Jerry` reads `Tom & Jerry`.
 A heading that prints the title itself still renders a `Markup` title raw, since no message holds it.
 Filament concatenates the same pieces in code, where a `Markup` stringifies to its markup and the badge or attribute shows it escaped.

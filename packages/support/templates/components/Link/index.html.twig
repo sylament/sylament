@@ -27,7 +27,7 @@
 {% set iconPositionValue = iconPosition.value ?? iconPosition %}
 {% set iconSize = iconSize ?? (sizeValue in ['xs', 'sm'] ? 'sm' : null) %}
 {% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize) : null %}
-{% set ariaLabel = labelSrOnly ? (content ?? '')|striptags|trim : null %}
+{% set ariaLabel = labelSrOnly ? (content is markup ? content|plain_text : (content ?? '')|striptags)|trim : null %}
 
 <{{ tag }}
     {{ attributes.without('style').defaults({

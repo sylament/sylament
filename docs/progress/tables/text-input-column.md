@@ -62,7 +62,7 @@ The setter, the getter and the closure evaluation are the same trait.
 
 ### The chrome is support's `InputWrapper` around forms' `sy-fo-input`
 
-The cell renders `<twig:SylamentSupport:InputWrapper>`, the input chrome every text-like forms control renders inside, around `input.sy-fo-input`, without the `id`, `name` and `data-model` a schema field carries and with an `aria-label` taken from the column label with any markup stripped.
+The cell renders `<twig:SylamentSupport:InputWrapper>`, the input chrome every text-like forms control renders inside, around `input.sy-fo-input`, without the `id`, `name` and `data-model` a schema field carries and with an `aria-label` taken from the column label as its text, a `Markup` one with its tags stripped and its entities decoded, as Filament's `doubleEncode: false` escape reads it.
 The wrapper's `valid` prop is what paints the refusal ring, and its affix props render the prefix and suffix labels and icons.
 
 ## Divergences

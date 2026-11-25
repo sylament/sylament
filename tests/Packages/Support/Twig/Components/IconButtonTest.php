@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Support\Colors\Color;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Twig\Markup;
 
 it('renders a medium button, a link when asked, and a size outside the scale as its own class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star'])->crawler())
@@ -24,11 +25,13 @@ it('draws its glyph at the size its button size calls for, unless given one', fu
     "the given glyph size over the button's" => [['size' => 'lg', 'iconSize' => 'xs'], SupportSelectors::ICON_BUTTON . SupportSelectors::size('lg') . ' ' . SupportSelectors::ICON . SupportSelectors::size('xs')],
 ]);
 
-it('is named by its label stripped of markup, titled by it, and neither without one', function (): void {
+it('is named by the text of its label, titled by it, and neither without one', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'label' => 'Favourite'])->crawler())
         ->toContainElement('button' . SupportSelectors::ICON_BUTTON . '[aria-label="Favourite"][title="Favourite"]', 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'label' => ' <b>Favourite</b> '])->crawler())
         ->toContainElement('button' . SupportSelectors::ICON_BUTTON . '[aria-label="Favourite"]', 'Star')
+        ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'label' => new Markup('<b>Salt</b> &amp; pepper', 'UTF-8')])->crawler())
+        ->toContainElement('button' . SupportSelectors::ICON_BUTTON . '[aria-label="Salt & pepper"]', 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star'])->crawler())
         ->toContainElement('button' . SupportSelectors::ICON_BUTTON . ':not([aria-label]):not([title])', 'Star');
 });

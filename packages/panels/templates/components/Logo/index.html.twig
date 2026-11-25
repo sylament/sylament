@@ -23,7 +23,7 @@
         <div {{ attrs({class: logoClasses, style: ['height: ' ~ logoHeight]}, attributes.all) }}>{{ rendition.logo }}</div>
     {% elseif rendition.logo is filled %}
         <img {{ attrs({
-            alt: ('layout.logo.alt'|trans({name: '' ~ brandName}, domain: 'sylament-panels'))|trim,
+            alt: ('layout.logo.alt'|trans({name: (brandName ?? '')|plain_text}, domain: 'sylament-panels'))|trim,
             src: rendition.logo,
             class: logoClasses,
             style: ['height: ' ~ logoHeight],

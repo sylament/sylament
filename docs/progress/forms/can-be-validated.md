@@ -240,7 +240,7 @@ Symfony's `IdenticalTo` and `NotIdenticalTo` cannot serve, and the reason is a t
 
 So the three arms emit [`MatchesField`](../../../packages/forms/src/Validation/MatchesField.php) `(value:, other:, match:)`, holding the resolved sibling value, the sibling's plain-text label and the polarity.
 It compares with `===`/`!==` (Laravel's `same`/`different`), returns on a blank **own** value, and compares a blank or null **partner** rather than skipping it — the one place the cross-field arms part company with the ordering ones.
-`other` is the partner component's label, read through `getComponentByStatePath()` and `strip_tags()`-ed because a label may be `Markup`, falling back to the path's last segment humanised.
+`other` is the partner component's label, read through `getComponentByStatePath()` and `strip_tags()`-ed, a `Markup` one with its entities decoded after, falling back to the path's last segment humanised.
 
 Two things this buys that the stock classes could not: its own `validationMessages()` class key, so `same()` does not share `IdenticalTo::class` with a user's escape-hatch constraint; and messages that **name** the partner instead of printing it — `'This value must match {{ other }}.'` rather than a confirmed password landing in the DOM.
 

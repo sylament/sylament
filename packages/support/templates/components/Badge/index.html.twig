@@ -27,8 +27,8 @@
 {% set colorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\BadgeComponent', color) %}
 {% set iconPositionValue = iconPosition.value ?? iconPosition %}
 {% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize ?? 'sm') : null %}
-{% set ariaLabel = labelSrOnly ? (content ?? '')|striptags|trim : null %}
-{% set deleteAriaLabel = (deleteLabel ?? '')|striptags|trim %}
+{% set ariaLabel = labelSrOnly ? (content is markup ? content|plain_text : (content ?? '')|striptags)|trim : null %}
+{% set deleteAriaLabel = (deleteLabel is markup ? deleteLabel|plain_text : (deleteLabel ?? '')|striptags)|trim %}
 
 <{{ tag }}
     {{ attributes.without('style').defaults({

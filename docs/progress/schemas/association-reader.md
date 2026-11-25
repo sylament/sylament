@@ -308,8 +308,9 @@ Six limits, recorded rather than closed:
   An action rebinds its schema's reader to the manager it writes through, with [`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) — `getEntityManagerForRecord()`, the table query's manager, else the registry's for the class — so on a table whose `query()` runs on a second manager both rules read that manager's unit of work and database, where the flush runs; panels' create and edit pages bind their form's reader to the manager they flush through, the one their resource's `getEntityManager()` answers, the manager that maps the record class unless the resource overrides it; and a custom host that writes through another manager binds its schema's reader the same way, `$schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($manager))`.
   The detached record is what remains, and its write fails without the probe too: `persist()` takes a detached record for a new one, so its flush meets the stored key.
   The hosts' half is pinned for the create, edit and replicate actions on a table whose query runs on a second manager over the same database: a spy reader the schema holds records that it is rebound to that manager, not the registry's.
-- **A record whose class only another entity manager maps is skipped by both passes** of a reader over a manager that does not map it: the walk asks the reader's own manager's metadata factory, to which that class is transient, so neither this probe nor the changed-key pass sees it.
-  An action writing such a record binds its schema's reader to the manager that maps it, so both passes run there; what is left is a custom host that writes through that manager without binding its schema's reader.
+- **A record whose class only another entity manager maps is skipped by both passes** of a reader pinned to a manager that does not map it: the walk asks the pin's metadata factory, to which that class is transient, so neither this probe nor the changed-key pass sees it.
+  An unpinned reader resolves the manager of each class it meets, so it skips only a class no manager maps.
+  An action writing such a record binds its schema's reader to the manager that maps it, so both passes run there; what is left is a custom host that pins its schema's reader to a manager that does not map the record.
   Unexecuted.
 - **Two requests creating one key at once** both pass the lookup, and the second meets the database's constraint: the probe is a read, not a lock.
   Executed on PostgreSQL 18 and MySQL 8, the second flush is a `UniqueConstraintViolationException` that closes that request's entity manager.
@@ -417,7 +418,8 @@ A schema built with `new` holds the manager-less fallback and so guards nothing,
 
 The blast radius is worth stating because it is wider than it looks.
 `BelongsToRecord` sits on the base `Component`, so **every** schemas component — and every component of every package built on schemas — consumes the reader service.
-The service's `EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason: in a container with no entity manager the argument resolves to `null` rather than failing the compile, so every component's setter still autowires, and the reader it receives answers `hasEntityManager()` false.
+The service's `ManagerRegistry` argument is `nullOnInvalid()` for exactly that reason: in a container with no Doctrine registry the argument resolves to `null` rather than failing the compile.
+So every component's setter still autowires, and the reader it receives answers `hasEntityManager()` false.
 
 ### `orphanRemoval` is a plain bool on the ORM 3 mapping object
 

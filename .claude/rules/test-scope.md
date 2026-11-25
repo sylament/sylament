@@ -9,7 +9,7 @@ description: How much a package test covers, how a bug is pinned, and what never
 
 1. **One case per trail row a user can observe** (`done` rows and the shipped part of `in progress` rows); its semantics and divergence entries become assertions in that case, or an extra case only when they describe a different outcome a user can trigger.
 2. **One case per branch a user can trigger:** a different input leading to a different visible outcome; code branches do not count.
-3. **One deep case where the risk is:** a composite key over both flavours (scalar fields; an association plus a scalar), a platform difference, record identity; a composite case runs as a two-row dataset over `OrderLine` and `InvoiceLine`, since a by-key site can handle one flavour and miss the other.
+3. **One deep case where the risk is:** a composite key over both flavours (scalar fields; an association plus a scalar), a platform difference, record identity, a record class another manager maps; a composite case runs as a two-row dataset over `OrderLine` and `InvoiceLine`, since a by-key site can handle one flavour and miss the other; a site that resolves its manager from a record class gets one case over an entity of `src/SecondaryEntity/`, since a site that reaches the default manager passes every case over `src/Entity/`.
 4. **One case per fixed bug,** unless an existing case already fails without the fix.
 5. **A dataset row only for a different class of input,** never more of the same.
 6. **One failing case per testing-API assertion helper with logic of its own;** an alias that only forwards to another helper is covered by use, since its failure message is that helper's.

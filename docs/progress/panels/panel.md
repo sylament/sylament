@@ -167,7 +167,7 @@ The piece worth keeping from it is the cloning discipline, which ours has: group
 
 That discipline covers `getNavigation()` and nothing else.
 `getNavigationItems()` hands back the registered items and `getNavigationGroups()` hands back each registered `NavigationGroup` itself (a bare message comes back as its translation), and `PanelRegistry` builds each panel once and memoises it — so under a long-running worker those objects are the same instances for every request the process serves.
-Read against them, [`NavigationItem::isActive()`](navigation-item.md) is destructive: it overwrites its `isActiveWhen()` closure with the boolean the first evaluation produced, so a raw item asked once whether it is active answers that way for the life of the process, on every request, whatever the route.
+Read against them, [`NavigationItem::isActive()`](navigation-item.md) is destructive: it overwrites its `activeWhen()` closure with the boolean the first evaluation produced, so a raw item asked once whether it is active answers that way for the life of the process, on every request, whatever the route.
 Navigation is read through `getNavigation()`, whose clones absorb exactly that; the getters are registration-time composition surface — what a provider reads to add to what an earlier call registered — and are not a render path.
 
 ### Resource navigation is pulled through the registry, not pushed by the resource

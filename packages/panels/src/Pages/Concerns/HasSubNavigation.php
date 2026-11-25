@@ -151,7 +151,7 @@ trait HasSubNavigation
                 ->sort($component::getNavigationSort())
                 ->badge($component::getNavigationBadge(), color: $component::getNavigationBadgeColor())
                 ->url($this->generatePageNavigationUrl($component))
-                ->isActiveWhen(fn (): bool => $component === static::class);
+                ->activeWhen(fn (): bool => $component === static::class);
         }
 
         return $items;

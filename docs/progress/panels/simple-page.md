@@ -2,7 +2,6 @@
 description: 'SimplePage, the panel page rendered as a centred card with no sidebar, and the width vocabulary: the Width enum, the sy-width ladder and the panel knobs.'
 ports:
   - vendor/filament/filament/src/Pages/SimplePage.php
-  - vendor/filament/filament/src/Pages/Concerns/HasMaxWidth.php
   - vendor/filament/filament/src/Pages/Concerns/HasTopbar.php
   - vendor/filament/filament/src/Panel/Concerns/HasMaxContentWidth.php
   - vendor/filament/support/src/Enums/Width.php
@@ -10,7 +9,6 @@ ports:
   - vendor/filament/filament/resources/views/components/header/simple.blade.php
   - vendor/filament/filament/resources/views/components/page/simple.blade.php
 owns:
-  - packages/panels/src/Pages/Concerns/HasMaxWidth.php
   - packages/panels/src/Pages/Concerns/HasTopbar.php
   - packages/panels/src/Pages/SimplePage.php
   - packages/panels/src/Panel/Concerns/HasMaxContentWidth.php
@@ -26,10 +24,8 @@ It picks that shell through the [`getLayout()` seam](custom-pages.md#a-third-she
 
 This file is also the home of the width vocabulary: support's [`Width`](../../../packages/support/src/Enums/Width.php) enum, the `sy-width-<token>` ladder both `<main>` elements read, the page-level `$maxContentWidth`, and the two panel knobs [`maxContentWidth()`](../../../packages/panels/src/Panel/Concerns/HasMaxContentWidth.php) and `simplePageMaxContentWidth()`.
 
-Two traits named `HasMaxWidth` exist, in two object tiers.
-`Sylament\Panels\Pages\Concerns\HasMaxWidth` is this one: composed by `SimplePage` alone, a `Width|string|null $maxWidth` with a getter and no setter, because a page assigns the property.
-The other, Filament's `Filament\Schemas\Components\Concerns\HasMaxWidth`, is a component-tier concern with a fluent `maxWidth()` setter, unported in schemas.
-Both are Filament's names in Filament's places, so neither moves: read the trait by its import, never by the bare `use HasMaxWidth;` in a class body.
+A simple page sets its width through `$maxContentWidth` and `getMaxContentWidth()`, as every page does.
+Filament's page-tier `HasMaxWidth` trait (`$maxWidth`, `getMaxWidth()`) is `@deprecated` for them and is not ported, so `SimplePage::getLayoutData()` reads `getMaxContentWidth()` alone, where Filament's still prefers `getMaxWidth()` when a page sets it.
 
 ## Surface
 
@@ -41,7 +37,6 @@ Both are Filament's names in Filament's places, so neither moves: read the trait
 | [`hasLogo()`](../../../packages/panels/src/Pages/SimplePage.php) | the same | done | — | — |
 | [`getLayoutData()`](../../../packages/panels/src/Pages/SimplePage.php) | the same | done | — | [diverges](#getlayoutdata-answers-two-keys-where-filaments-answers-three) |
 | [`$shouldRegisterNavigation = false`](../../../packages/panels/src/Pages/SimplePage.php) | no counterpart — Filament's `SimplePage` is unroutable | done | — | [diverges](#simplepage-extends-page-so-it-is-routable-and-hides-itself-from-navigation) |
-| [`Pages\Concerns\HasMaxWidth`](../../../packages/panels/src/Pages/Concerns/HasMaxWidth.php) — `$maxWidth` + `getMaxWidth()` | [`Pages/Concerns/HasMaxWidth.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasMaxWidth.php) | done | — | — |
 | [`Pages\Concerns\HasTopbar`](../../../packages/panels/src/Pages/Concerns/HasTopbar.php) — `$hasTopbar` + `hasTopbar()` | [`Pages/Concerns/HasTopbar.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasTopbar.php) | done | — | — |
 | [`SimpleLayout`](../../../packages/panels/templates/components/SimpleLayout/index.html.twig) | [`layout/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/simple.blade.php) | done | — | [diverges](#the-simple-layouts-auth-gates-are-absent-and-the-strip-holds-the-ordinary-user-menu) |
 | [`SimpleHeader`](../../../packages/panels/templates/components/SimpleHeader/index.html.twig) | [`header/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/header/simple.blade.php) | done | — | — |
@@ -61,7 +56,7 @@ Both are Filament's names in Filament's places, so neither moves: read the trait
 
 [`PageController`](routing.md) resolves exactly one value per request and threads it through the Document into the shell as `maxContentWidthClass`:
 
-1. `getLayoutData()['maxContentWidth']` — which only `SimplePage` fills, from `getMaxWidth() ?? getMaxContentWidth()`;
+1. `getLayoutData()['maxContentWidth']` — which only `SimplePage` fills, from `getMaxContentWidth()`;
 2. the page's own `getMaxContentWidth()`;
 3. the panel's — `getSimplePageMaxContentWidth() ?? Width::Large` for the simple shell, `getMaxContentWidth() ?? Width::SevenExtraLarge` for the ordinary one.
 

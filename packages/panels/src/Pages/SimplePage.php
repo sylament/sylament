@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Pages;
 
-use Sylament\Panels\Pages\Concerns\HasMaxWidth;
 use Sylament\Panels\Pages\Concerns\HasTopbar;
 
 /**
@@ -14,7 +13,6 @@ use Sylament\Panels\Pages\Concerns\HasTopbar;
  */
 abstract class SimplePage extends Page
 {
-    use HasMaxWidth;
     use HasTopbar;
 
     public const string LAYOUT = 'SylamentPanels:SimpleLayout';
@@ -37,7 +35,7 @@ abstract class SimplePage extends Page
     {
         return [
             'hasTopbar' => $this->hasTopbar(),
-            'maxContentWidth' => $this->getMaxWidth() ?? $this->getMaxContentWidth(),
+            'maxContentWidth' => $this->getMaxContentWidth(),
         ];
     }
 }

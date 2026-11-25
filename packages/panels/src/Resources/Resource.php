@@ -491,7 +491,7 @@ abstract class Resource
                 ->sort($this->getNavigationSort())
                 ->badge($this->getNavigationBadge(), color: $this->getNavigationBadgeColor())
                 ->url(fn (UrlGeneratorInterface $urlGenerator): string => $urlGenerator->generate($indexRouteName))
-                ->isActiveWhen(function (RequestStack $requestStack) use ($routeBaseName): bool {
+                ->activeWhen(function (RequestStack $requestStack) use ($routeBaseName): bool {
                     $route = $requestStack->getCurrentRequest()?->attributes->get('_route');
 
                     return is_string($route) && str_starts_with($route, $routeBaseName . '.');

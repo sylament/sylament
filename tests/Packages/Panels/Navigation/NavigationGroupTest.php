@@ -37,8 +37,8 @@ it('lights up only for an active item it shows', function (): void {
     ])->crawler()->filter(Selectors::NAVIGATION_GROUP)->matches(SupportSelectors::ACTIVE);
 
     expect($lit([
-        NavigationItem::make('Concealed')->hidden()->isActiveWhen(fn (): bool => true)->url('/concealed'),
+        NavigationItem::make('Concealed')->hidden()->activeWhen(fn (): bool => true)->url('/concealed'),
         NavigationItem::make('Outline')->url('/outline'),
     ]))->toBeFalse()
-        ->and($lit([NavigationItem::make('Outline')->isActiveWhen(fn (): bool => true)->url('/outline')]))->toBeTrue();
+        ->and($lit([NavigationItem::make('Outline')->activeWhen(fn (): bool => true)->url('/outline')]))->toBeTrue();
 });

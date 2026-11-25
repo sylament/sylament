@@ -51,6 +51,10 @@ describe('card', function (): void {
             ->and($bare->filter(Selectors::LOGO))->toHaveCount(0);
     });
 
+    it("sizes a simple page's card to its own content width ahead of the panel's, a token string read as its token", function (): void {
+        expect($this->visit('/simple-knobs/token-width-simple-page')->filter(Selectors::MAIN)->attr('class'))->toBe('sy-pa-simple-main sy-width-md');
+    });
+
     it('hosts the actions its content declares, opening their modal inside the card page', function (): void {
         $page = $this->createLiveComponent(CardSimplePage::class, ['panelId' => 'simple-shapes'])
             ->mountAction(TestAction::make('resend')->schemaComponent(schema: 'content'));

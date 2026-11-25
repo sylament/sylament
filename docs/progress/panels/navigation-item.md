@@ -22,7 +22,7 @@ owns:
 | [`group()` / `getGroup()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the group pair | done | — | [diverges](#group-and-getgroup-carry-no-unitenum-arm) · [semantics](#a-label-a-badge-or-a-group-may-be-a-message-translated-in-its-getter) |
 | [`sort()` / `getSort()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the sort pair | done | — | — |
 | [`visible()` / `hidden()` / `isVisible()` / `isHidden()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the visibility pairs, hidden winning | done | — | — |
-| [`isActiveWhen()` / `isActive()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the memoising active-state pair | done | — | [panel.md](panel.md#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) |
+| [`activeWhen()` / `isActive()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the memoising active-state pair | done | — | [panel.md](panel.md#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) |
 | [`setEvaluationServices()`](../../../packages/panels/src/Navigation/NavigationItem.php) and its closure seam | `app()->make()` inside Filament's closure evaluation | done | — | [diverges](#the-item-hands-its-own-services-to-evaluated-closures) · [semantics](#the-evaluation-services-are-a-container-build-requirement) |
 | `key()` / `getKey()` | the key pair | todo | — | [detail](#the-nesting-arm-waits-on-key) |
 | `parentItem()` / `getParentItem()` / `childItems()` / `getChildItems()` / `isChildItemsActive()`, and `getIcon()`'s parent-without-icon refusal | the nesting arm | todo | — | [detail](#the-nesting-arm-waits-on-key) |

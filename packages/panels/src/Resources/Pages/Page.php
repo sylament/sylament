@@ -277,7 +277,7 @@ abstract class Page extends BasePage
                 ->sort($pageClass::getNavigationSort())
                 ->badge($pageClass::getNavigationBadge(), color: $pageClass::getNavigationBadgeColor())
                 ->url($resource->getUrl($pageKey, $parameters, isAbsolute: false, shouldGuessMissingParameters: true))
-                ->isActiveWhen(fn (): bool => $pageClass === static::class),
+                ->activeWhen(fn (): bool => $pageClass === static::class),
         ];
     }
 

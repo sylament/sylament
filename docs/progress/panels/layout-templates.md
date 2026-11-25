@@ -100,7 +100,7 @@ Sidebar collapse state is restored from `localStorage` on `connect()` rather tha
 **Worker-safe.**
 No mutable static per-request state anywhere in the shell.
 A long-running worker (FrankenPHP, RoadRunner, Swoole) reuses the PHP process across requests, so anything static that remembers *this* request leaks into the next one — a class of bug that never shows up under php-fpm and is close to undebuggable in production.
-Request awareness reaches the navigation model through evaluated closures instead — `isActiveWhen(fn (RequestStack $requests) => …)` — whose services [the item hands in itself](navigation-item.md#the-item-hands-its-own-services-to-evaluated-closures), and the current-panel lookup is derived from the request the same way, never held in a stateful singleton ([the lookup](panel.md#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager)).
+Request awareness reaches the navigation model through evaluated closures instead — `activeWhen(fn (RequestStack $requests) => …)` — whose services [the item hands in itself](navigation-item.md#the-item-hands-its-own-services-to-evaluated-closures), and the current-panel lookup is derived from the request the same way, never held in a stateful singleton ([the lookup](panel.md#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager)).
 
 ### The shell is not live
 

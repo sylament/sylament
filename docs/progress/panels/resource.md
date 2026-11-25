@@ -216,7 +216,7 @@ A nested live component that hydrates without its host page gets no stamp, which
 ### Active state is a route-name prefix match
 
 Filament matches with `original_request()->routeIs(static::getNavigationItemActiveRoutePattern())`, a route-name glob of `getRouteBaseName() . '.*'`, so the item stays lit on the resource's create and edit pages.
-Symfony's router has no `routeIs()`, so the item's `isActiveWhen()` closure tests `str_starts_with($route, $routeBaseName . '.')` on the current request's `_route`, taking `RequestStack` from [the item's own injected services](navigation-item.md#the-item-hands-its-own-services-to-evaluated-closures).
+Symfony's router has no `routeIs()`, so the item's `activeWhen()` closure tests `str_starts_with($route, $routeBaseName . '.')` on the current request's `_route`, taking `RequestStack` from [the item's own injected services](navigation-item.md#the-item-hands-its-own-services-to-evaluated-closures).
 The trailing dot keeps `…resources.articles` from also matching `…resources.articles-archive`.
 With no glob to hand over, there is no `getNavigationItemActiveRoutePattern()` hook; a resource that wants another rule overrides `getNavigationItems()`.
 

@@ -35,7 +35,7 @@ it('is drawn only while it is neither hidden nor made invisible, hidden winning 
 it('settles whether it is active once, so its icon, its mark and its link agree', function (): void {
     $asked = 0;
     $item = NavigationItem::make('Today')->icon('support:star')->activeIcon('support:heart')->url('/today')
-        ->isActiveWhen(function () use (&$asked): bool {
+        ->activeWhen(function () use (&$asked): bool {
             return ++$asked === 1;
         });
 
@@ -48,7 +48,7 @@ it('hands its closures the router, the request stack and the icon manager when m
     $item = NavigationItem::make('Articles')
         ->url(fn (UrlGeneratorInterface $router): string => $router->generate('sylament.admin.resources.articles.index'))
         ->icon(fn (IconManager $icons): string => $icons->resolve('navigation.unregistered') ?? 'support:star')
-        ->isActiveWhen(fn (RequestStack $requests): bool => !$requests->getCurrentRequest() instanceof Request);
+        ->activeWhen(fn (RequestStack $requests): bool => !$requests->getCurrentRequest() instanceof Request);
 
     $link = $this->renderTwigComponent('SylamentPanels:SidebarItem', ['item' => $item])->crawler()->filter('a');
 

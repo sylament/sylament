@@ -166,9 +166,9 @@ And the band therefore routes *around* the parked static-shape decision rather t
 Filament's item is active when `original_request()->routeIs(<the page's route>)`.
 A route match is wrong here for a reason that only shows up after the first click: our pages **are** live components, so on every live re-render the current route is `ux_live_component` and no band item would match — the band would lose its active tab the moment the page did anything.
 
-`generateNavigationItems()` builds each item with `->isActiveWhen(fn (): bool => $component === static::class)`, evaluated against the page doing the rendering.
+`generateNavigationItems()` builds each item with `->activeWhen(fn (): bool => $component === static::class)`, evaluated against the page doing the rendering.
 Deterministic, live-safe, and equivalent for every item the generator builds: an item for page X is active exactly when X is rendering.
-A hand-built `NavigationItem` in `getRecordSubNavigation()` keeps whatever `isActiveWhen()` it declares.
+A hand-built `NavigationItem` in `getRecordSubNavigation()` keeps whatever `activeWhen()` it declares.
 
 ### Three sibling components, not one with variants
 

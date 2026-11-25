@@ -20,7 +20,7 @@ it("marks the item of the page shown as the current page in its active icon, eve
 });
 
 it('draws its icon while active when it has no active icon of its own', function (): void {
-    $item = NavigationItem::make('Today')->icon('support:star')->isActiveWhen(fn (): bool => true)->url('/today');
+    $item = NavigationItem::make('Today')->icon('support:star')->activeWhen(fn (): bool => true)->url('/today');
 
     expect($this->renderTwigComponent('SylamentPanels:SidebarItem', ['item' => $item])->crawler()->filter('a[aria-current="page"] svg')->text())->toBe('Star');
 });

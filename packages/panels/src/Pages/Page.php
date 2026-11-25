@@ -329,7 +329,7 @@ abstract class Page implements InteractsWithActions, InteractsWithSchemas
                 ->sort(static::getNavigationSort())
                 ->badge(static::getNavigationBadge(), color: static::getNavigationBadgeColor())
                 ->url(fn (UrlGeneratorInterface $urlGenerator): string => $urlGenerator->generate($routeName))
-                ->isActiveWhen(fn (RequestStack $requestStack): bool => $requestStack->getCurrentRequest()?->attributes->get('_route') === $routeName),
+                ->activeWhen(fn (RequestStack $requestStack): bool => $requestStack->getCurrentRequest()?->attributes->get('_route') === $routeName),
         ];
     }
 

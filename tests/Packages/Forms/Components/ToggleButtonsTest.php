@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Forms\Components\ToggleButtons;
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Support\Enums\GridDirection;
 use Sylament\Tests\Fixtures\Forms\BoolFieldsForm;
@@ -10,7 +11,6 @@ use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\Selectors as SchemasSelectors;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
-use Sylament\Schemas\Components\Section;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Length;
 use Twig\Markup;

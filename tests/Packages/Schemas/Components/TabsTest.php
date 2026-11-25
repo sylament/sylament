@@ -101,7 +101,7 @@ describe('client mode', function (): void {
             ->not->toContainElement(Selectors::tabsTarget('dropdown'));
     });
 
-    it('names an overflow trigger after the text of its tab\'s label', function (): void {
+    it("names an overflow trigger after the text of its tab's label", function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->scrollable(false)->tabs([Tab::make('Open')->label(new Markup('<em>Open</em> &amp; now', 'UTF-8'))])))
             ->toContainButtons(Selectors::tabsTarget('triggerTab'), ['More tabs: Open & now']);
     });

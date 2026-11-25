@@ -34,7 +34,7 @@ Filament types each nullable return as a PHPDoc conditional, `(TNullable is true
 
 ### The skip-child-schemas search state is per-call, with no static re-entrancy stack
 
-Filament keeps a static `array<Component> $skipComponentsChildSchemasWhileSearching`, pushes the current component onto it and pops it in a `finally` around the `getRootContainer()->getComponentByStatePath()` call, and passes `withHidden: true`, `withAbsoluteStatePath: true` and that stack (or `[]` when the `shouldSkipComponentsChildContainersWhileSearching` flag is off) as named arguments.
+Filament keeps a static `array<Component> $skipComponentsChildSchemasWhileSearching`, pushes the current component onto it and pops it in a `finally` around the `getRootContainer()->getComponentByStatePath()` call, and passes `withHidden: true`, `withAbsoluteStatePath: true` and that stack (or `[]` when the `shouldSkipComponentsChildSchemasWhileSearching` flag is off) as named arguments.
 The port keeps the mutable flag and its mutator, [`skipComponentsChildSchemasWhileSearching(bool $condition = true): static`](../../../packages/schemas/src/State/Get.php), parameter name included: it mutates `$this` and returns it.
 `__invoke` passes `[$this->component]` or `[]` to the two-argument [`HasComponents::getComponentByStatePath(string, array)`](../../../packages/schemas/src/Concerns/HasComponents.php), so each `Get` skips only its own bound component rather than the chain of components whose nested `$get` calls are in flight.
 The port's search takes absolute paths and includes hidden components by default, so it needs neither `withHidden` nor `withAbsoluteStatePath`.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture\Source;
 
+use PhpToken;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -37,5 +38,41 @@ final class ShippedSource
     public static function constructsAssociationReader(string $source): bool
     {
         return preg_match('/\bnew\s+\\\\?(?:\w+\\\\)*AssociationReader\s*\(/', $source) === 1;
+    }
+
+    /**
+     * Whether the source asks a registry for its default: a `getManager()` or `resetManager()` call with no
+     * argument, which only a registry has, or a no-argument `getConnection()` on a variable or property whose name
+     * contains `registry`, since only types could tell a registry's `getConnection()` from a manager's. Read through
+     * the tokenizer, so a comment or a string never counts.
+     */
+    public static function callsRegistryDefault(string $source): bool
+    {
+        $tokens = array_values(array_filter(PhpToken::tokenize($source), static fn (PhpToken $token): bool => !$token->isIgnorable()));
+
+        foreach ($tokens as $index => $token) {
+            $isCall = $token->is(T_STRING)
+                && ($tokens[$index - 1] ?? null)?->is([T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR])
+                && ($tokens[$index + 1] ?? null)?->text === '('
+                && ($tokens[$index + 2] ?? null)?->text === ')';
+
+            if (!$isCall) {
+                continue;
+            }
+
+            $method = mb_strtolower($token->text);
+
+            if ('getmanager' === $method || 'resetmanager' === $method) {
+                return true;
+            }
+
+            $receiver = $tokens[$index - 2] ?? null;
+
+            if ('getconnection' === $method && null !== $receiver && $receiver->is([T_VARIABLE, T_STRING]) && str_contains(mb_strtolower($receiver->text), 'registry')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

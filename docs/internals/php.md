@@ -167,7 +167,7 @@ PHPStan runs at level max over every `src/`, with `trait.unused` as the only glo
 
 ## Comments
 
-A comment stays only when it states something the code cannot. Type-carrying PHPDoc is load-bearing at level max and never optional. Beyond it, three kinds of comment earn their place:
+A comment stays only when it states something the code cannot. Type-carrying PHPDoc is load-bearing at level max and never optional, and the stability tags (`@internal`, `@deprecated since`, `@final since`) carry the promise [stability.md](stability.md) defines. Beyond them, three kinds of comment earn their place:
 - **Contract prose a signature cannot carry:** a null meaning, a side effect, or what a `mixed` return actually is, as in `ComponentManager::configureUsing()`.
 - **An invariant stated at its enforcement point:** the `// Security:` blocks in forms' upload code, whose downstream sinks rely on the check instead of re-validating.
 - **Why a `catch` swallows:** an empty or bare catch is the one shape a reader reliably "fixes", as in `HasActions`' `catch (Cancel)`.

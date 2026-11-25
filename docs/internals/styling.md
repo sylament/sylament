@@ -10,7 +10,7 @@ Tailwind scans no template (`source(none)`), so a utility class written in Twig 
 
 ## Why are the emitted classes public?
 
-An application restyles Sylament by selecting its classes from unlayered CSS, which [outranks every layered rule](#why-does-everything-ship-inside-cascade-layers), so every emitted `sy-` class is a hook some application's stylesheet may target, as Filament's `fi-` classes are. Renaming, dropping or re-specifying one changes what that stylesheet matches without any error, which is why such a change is recorded in the component's trail entry rather than left to a diff.
+An application restyles Sylament by selecting its classes from unlayered CSS, which [outranks every layered normal declaration](#why-does-everything-ship-inside-cascade-layers), so every emitted `sy-` class is a hook some application's stylesheet may target, as Filament's `fi-` classes are; which hooks the promise holds, and from when, is in [stability.md](stability.md#css). Renaming, dropping or re-specifying one changes what that stylesheet matches without any error, which is why such a change is recorded in the component's trail entry rather than left to a diff.
 
 ## Why does every component root carry the bare marker class?
 
@@ -26,7 +26,7 @@ The stylesheet is page-wide, so a utility sits at the narrowest tier that serves
 
 ## Why are per-instance values inline variables?
 
-A class name built at render time has no rule to match, since nothing compiles from templates, so a value that varies per instance travels as an inline custom property that the stylesheet consumes. The grid is the reference: `GridExtension`'s `grid()` and `gridColumn()` return class and style maps whose inline styles set Filament's own variables (`--cols-lg: repeat(3, minmax(0, 1fr))`, `--col-span-default: span 2 / span 2`) for `grid.css` to read, and the classes (`sy-grid`, `lg:sy-grid-cols`) only gate which breakpoint's variable applies. A variable set copied from Filament stays unprefixed so Filament's rules port unchanged. A variable Sylament invents takes the `--sy-` prefix, because custom properties inherit and Sylament renders inside a page it does not own: `--text` and `--primary-600` are among the most common names in the wild, and one `:root { --text: … }` in a host application would otherwise repaint every component.
+A class name built at render time has no rule to match, since nothing compiles from templates, so a value that varies per instance travels as an inline custom property that the stylesheet consumes. The grid is the reference: `GridExtension`'s `grid()` and `gridColumn()` return class and style maps whose inline styles set Filament's own variables (`--cols-lg: repeat(3, minmax(0, 1fr))`, `--col-span-default: span 2 / span 2`) for `grid.css` to read, and the classes (`sy-grid`, `lg:sy-grid-cols`) only gate which breakpoint's variable applies. A variable set copied from Filament stays unprefixed so Filament's rules port unchanged. A variable Sylament invents is prefixed, because custom properties inherit and Sylament renders inside a page it does not own: `--text` and `--primary-600` are among the most common names in the wild, and one `:root { --text: … }` in a host application would otherwise repaint every component. A token an application sets or reads takes `--sy-`, and a component-local knob such as a per-instance value takes `--_sy-`, so that only the promised set reads `--sy-` ([stability.md](stability.md#tokens-and-knobs)).
 
 ## How do colours reach the stylesheet?
 
@@ -58,7 +58,7 @@ A page-wide reset would restyle the host application, and Sylament does not own 
 
 ## Why does everything ship inside cascade layers?
 
-So that any unlayered CSS an application writes overrides Sylament at any specificity, with no `!important`. Support's `index.css` declares `theme`, `base`, `components` and `utilities` once, at its top, and imports everything into one of them; the `utilities` layer carries the `.sy-color-<palette>` swap classes.
+So that any unlayered CSS an application writes overrides Sylament at any specificity, with no `!important`. That holds for normal declarations only: a layered `!important` beats every unlayered normal one, so a component stylesheet carries none, and no Tailwind `!` modifier, except to beat an inline style a bundled library writes; the few that ship are listed in [stability.md](stability.md#layers-and-the-importants-that-stay). Support's `index.css` declares `theme`, `base`, `components` and `utilities` once, at its top, and imports everything into one of them; the `utilities` layer carries the `.sy-color-<palette>` swap classes.
 
 ## Why is dark mode class-based?
 

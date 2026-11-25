@@ -9,7 +9,7 @@ description: What each shipped surface promises extenders, how a new name is mar
 # Stability rules
 
 - **Know the tiers:** Stable, Evolving, Internal and Experimental, defined in `docs/internals/stability.md`; during 0.x every surface is Experimental, so a rename needs no alias yet, but every name below is chosen as a 1.0 promise.
-- **Pick every promised name as one extenders will write,** because it outlives the change that adds it: class and public or protected member names, closure-injection names per evaluation context, config keys, DI tags, documented service ids, route names, URL query parameters, `<twig:>` tags and their `{% props %}`, every `{% block %}`, partial paths, the context variable names a template receives, global Twig names, `sy-` classes of a done component, `--sy-` tokens, the colour contract, layer names, controller identifiers, Contract items, `data-sylament-action-*`, `#[LiveAction]` names, catalogue domains and icon aliases.
+- **Pick every promised name as one extenders will write,** because it outlives the change that adds it: class and public or protected member names, closure-injection names per evaluation context, config keys, DI tags, documented service ids, route names, URL query parameters, `<twig:>` tags and their `{% props %}`, every `{% block %}`, partial paths, the context variable names a template receives, global Twig names, `sy-` classes of a done component, `--sy-` tokens, the colour contract, layer names, controller identifiers, Contract items, `data-sylament-action-*`, `#[LiveAction]` names, colour palette names, stylesheet entry paths, render-hook names, catalogue domains and icon aliases.
 - **Record a Sylament-only, dropped or re-specified `sy-` hook in its component's trail entry,** because consumers restyle by selecting it from unlayered CSS.
 - **Mark what an application must not rely on with `@internal`,** adding the reason after it when the name does not say it, because a PHP class or member without it is covered by the promise.
 - **Mark every new Sylament-own machinery class `@internal` when you add it** (compiler passes, subscribers, resolvers, Twig runtime classes), because a class with no Filament counterpart is public otherwise.
@@ -29,6 +29,6 @@ description: What each shipped surface promises extenders, how a new name is mar
 
   Without the runtime half, an extender never sees the notice.
 - **Never port a member Filament marks `@deprecated`;** port the replacement it names, and when Filament deprecates a member Sylament already ships, replace it before the first tag and deprecate it through the channel above after it (`docs/progress/README.md`, Statuses), because a migrating application should meet Filament's current API only.
-- **From the first tag on, change a promised name only by adding the new name beside the old,** with the artefact for its kind in `docs/internals/stability.md`, "Mechanics", because a caret constraint skips no minor.
+- **From the first tag on, change a promised name only by adding the new name beside the old, and a method's signature only by an optional last parameter on a public method that is no listed hook,** with the artefact for its kind in `docs/internals/stability.md`, "Mechanics", because a caret constraint skips no minor.
 
 Background: `docs/internals/stability.md`.

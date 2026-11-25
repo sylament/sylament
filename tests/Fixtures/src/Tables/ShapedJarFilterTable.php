@@ -70,7 +70,7 @@ class ShapedJarFilterTable implements InteractsWithSchemas, InteractsWithTable
                 Filter::make('owned')->modifyFormFieldUsing(static fn (Checkbox $field): Checkbox => $field->label('Mine only')),
                 BaseFilter::make('bare'),
                 Filter::make('stocked')
-                    ->schema([
+                    ->form([
                         Select::make('state')->options(['open' => 'Open', 'shut' => 'Shut']),
                         TextInput::make('note'),
                     ])

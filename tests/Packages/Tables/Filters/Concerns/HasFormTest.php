@@ -33,7 +33,7 @@ it('renders no field when it has neither a schema nor a field of its own', funct
 it('answers the live schema its group holds, and refuses a filter the form holds no group for', function (): void {
     $table = $this->createLiveComponent(ShapedJarFilterTable::class)->component()->getTable();
 
-    expect($table->getFilter('stocked')->getSchema()->getComponent('note'))->toBeInstanceOf(TextInput::class)
-        ->and(fn () => $table->getFilter('hiddenOutright', withHidden: true)->getSchema())
+    expect($table->getFilter('stocked')->getForm()->getComponent('note'))->toBeInstanceOf(TextInput::class)
+        ->and(fn () => $table->getFilter('hiddenOutright', withHidden: true)->getForm())
         ->toThrow(LogicException::class, 'Filter [hiddenOutright] has no group in the filters form.');
 });

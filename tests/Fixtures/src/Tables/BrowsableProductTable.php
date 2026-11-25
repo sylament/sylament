@@ -49,6 +49,6 @@ class BrowsableProductTable implements InteractsWithTable
                 TextColumn::make('id')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('name')
-            ->deferLoading($this->defersLoading);
+            ->lazyLoaded($this->defersLoading);
     }
 }

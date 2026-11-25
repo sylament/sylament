@@ -79,7 +79,7 @@ class GroupedLarderJarTable implements InteractsWithActions, InteractsWithTable
             ->defaultGroup($this->defaultGroup)
             ->groupsOnly($this->groupsOnly)
             ->recordActions([Action::make('relabel')], position: $this->actionsPosition === 'AfterCells' ? RecordActionsPosition::AfterCells : RecordActionsPosition::BeforeCells)
-            ->bulkActions([BulkAction::make('archive')])
+            ->toolbarActions([BulkAction::make('archive')])
             ->recordCheckboxPosition($this->checkboxPosition === 'AfterCells' ? RecordCheckboxPosition::AfterCells : RecordCheckboxPosition::BeforeCells);
     }
 }

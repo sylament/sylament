@@ -65,7 +65,7 @@ A consuming app that leaves `@sylament/tables` out of its `assets/controllers.js
 Filament needs Alpine the same way, but the cost here is graded, and some of it is worse than inert:
 
 - **Selection** renders its checkboxes and does nothing, and a `limitList()` cell renders its Show-more and Show-less toggles inert ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)).
-- **A `deferLoading()` table** renders its loading indicator and nothing else, forever: the second request that fetches the records is the table controller's `loadTable` call on `connect()`.
+- **A `lazyLoaded()` table** renders its loading indicator and nothing else, forever: the second request that fetches the records is the table controller's `loadTable` call on `connect()`.
 - **An editable cell** lets the user change its control and writes nothing, with no request and no error, because the commit is the [editable-cell controller](has-columns.md#one-editable-cell-controller-stands-in-for-filaments-four-column-components)'s `change` action.
 - **A grouping selector** never fires, and on a table with `collapsedGroupsByDefault()` the rows the server painted collapsed can never expand ([grouping.md](grouping.md#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open)).
 
@@ -130,7 +130,7 @@ Upgrading to a require is one line if infolists' `TextEntry` wants markdown too.
 ### The manifest declares `sylament/forms`
 
 Filament's `filament/tables` requires `filament/forms` for exactly one reason and so does ours: a filter's control is a form field.
-[`Filters\Concerns\HasSchema`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) types `getFormField(): ?Sylament\Forms\Components\Field` and [`Filter`](base-filter.md) builds a `Checkbox`, so the symbol is imported unconditionally by `src/` — the test the [split-repo dependency rule](../../../.claude/rules/manifests.md) sets for a `require`, not a `suggest`.
+[`Filters\Concerns\HasForm`](../../../packages/tables/src/Filters/Concerns/HasForm.php) types `getFormField(): ?Sylament\Forms\Components\Field` and [`Filter`](base-filter.md) builds a `Checkbox`, so the symbol is imported unconditionally by `src/` — the test the [split-repo dependency rule](../../../.claude/rules/manifests.md) sets for a `require`, not a `suggest`.
 No cycle: `sylament/forms` requires `actions`, `schemas`, `support`, `doctrine/orm`, `league/flysystem` and Symfony packages, and nothing in forms references tables.
 
 The `require` also buys a set of **CSS classes**: `TextInputColumn` and `SelectColumn` render their controls inside support's `InputWrapper` wearing forms' `sy-fo-input` and `sy-fo-select` skins, and `ToggleColumn` wears forms' `sy-fo-toggle*`, rather than restating them.

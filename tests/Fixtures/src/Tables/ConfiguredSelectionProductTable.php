@@ -31,8 +31,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `visible`, `hidden` or `none`), `refuses` (a selectability callback refusing the Vase,
  * recording each record it is handed by name and by class), `checkboxPosition` (a
  * {@see RecordCheckboxPosition} case name), `pageOnly`, `tracks`, `groupsOnly`, `grouped`
- * (the bulk actions in one group), `deprecated` (declared through `bulkActions()` and
- * `pushBulkActions()`), `defersLoading`, `keepsSelectionWhenFiltered`, `simplePagination`
+ * (the bulk actions in one group), `defersLoading`, `keepsSelectionWhenFiltered`, `simplePagination`
  * and `records` (six array rows instead of the products). Its bulk actions record what they
  * read in the {@see HookLog}, sorted: `archive` the selected records, `archiveByKey` their keys and
  * `recount` how many it reads before and after clearing the selection itself; `purge` deletes the
@@ -80,9 +79,6 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
     public bool $grouped = false;
 
     #[LiveProp]
-    public bool $deprecated = false;
-
-    #[LiveProp]
     public bool $defersLoading = false;
 
     #[LiveProp]
@@ -128,7 +124,7 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
             ->selectCurrentPageOnly($this->pageOnly)
             ->trackDeselectedRecords($this->tracks)
             ->selectGroupsOnly($this->groupsOnly)
-            ->deferLoading($this->defersLoading)
+            ->lazyLoaded($this->defersLoading)
             ->deselectAllRecordsWhenFiltered(!$this->keepsSelectionWhenFiltered)
             ->paginationMode($this->simplePagination ? PaginationMode::Simple : null);
 
@@ -141,17 +137,13 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
         }
 
         $actions = match ($this->bulk) {
-            'visible' => $this->bulkActions(),
-            'hidden' => array_map(static fn (BulkAction $action): BulkAction => $action->hidden(), $this->bulkActions()),
+            'visible' => $this->makeBulkActions(),
+            'hidden' => array_map(static fn (BulkAction $action): BulkAction => $action->hidden(), $this->makeBulkActions()),
             default => [],
         };
 
         if ($this->grouped) {
             return $table->groupedBulkActions($actions);
-        }
-
-        if ($this->deprecated) {
-            return $table->bulkActions(array_slice($actions, 0, 1))->pushBulkActions(array_slice($actions, 1));
         }
 
         return $table->toolbarActions($actions);
@@ -160,7 +152,7 @@ class ConfiguredSelectionProductTable implements InteractsWithActions, Interacts
     /**
      * @return list<BulkAction>
      */
-    private function bulkActions(): array
+    private function makeBulkActions(): array
     {
         return [
             BulkAction::make('archive')->action(function (array $records): void {

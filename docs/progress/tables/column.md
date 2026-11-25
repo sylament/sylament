@@ -15,7 +15,7 @@ ports:
   - vendor/filament/tables/src/Columns/Concerns/HasLabel.php
   - vendor/filament/tables/src/Columns/Concerns/HasName.php
   - vendor/filament/tables/src/Columns/Concerns/HasRecord.php
-  - vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php
+  - vendor/filament/tables/src/Columns/Concerns/HasRowLoop.php
   - vendor/filament/tables/src/Columns/Concerns/HasTooltip.php
   - vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php
   - vendor/filament/tables/src/Table/Concerns/HasColumns.php
@@ -41,7 +41,7 @@ owns:
   - packages/tables/src/Columns/Concerns/HasLabel.php
   - packages/tables/src/Columns/Concerns/HasName.php
   - packages/tables/src/Columns/Concerns/HasRecord.php
-  - packages/tables/src/Columns/Concerns/HasRowLoopObject.php
+  - packages/tables/src/Columns/Concerns/HasRowLoop.php
   - packages/tables/src/Columns/Concerns/HasTooltip.php
 ---
 # Column (tables)
@@ -72,7 +72,7 @@ A name crossing an association needs nothing declared in `query()`: the [relatio
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php), [`Column::getTable()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [detail](#gettable-refuses-without-filaments-three-source-chain) |
 | [`$evaluationIdentifier = 'column'` + the `$record` / `$rowLoop` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | [diverges](#the-by-type-record-injection-is-not-registered) · [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
-| [`rowLoop()` / `getRowLoop()`, the `$rowLoop` injection](../../../packages/tables/src/Columns/Concerns/HasRowLoopObject.php) | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | done | — | [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
+| [`rowLoop()` / `getRowLoop()`, the `$rowLoop` injection](../../../packages/tables/src/Columns/Concerns/HasRowLoop.php) | [`Concerns\HasRowLoop`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoop.php) | done | — | [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
 | Relationship traversal: `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, `hasNestedMorphToRelationship()`, the seven name caches, `applyRelationshipAggregates()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | skipped | — | [diverges](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) |
 | Visibility: [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Columns/Concerns/CanBeHidden.php) and [`toggleable()` / `toggledHiddenByDefault()` / `isToggleable()` / `isToggledHidden()`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php) | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | done | — | [diverges](#istoggleables-blank-label-group-arm-is-dropped-with-columngroup) |
 | [`hiddenFrom()` / `visibleFrom()` and their getters](../../../packages/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | [`Concerns\CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
@@ -126,7 +126,7 @@ Next step: port `CanLazyLoadState`, `LazyLoadedState` and `LazyLoadedStateGroup`
 
 ### The row loop is a Blade-shaped object built from Twig's array
 
-`rowLoop()` takes what the cell loop can hand it, Twig's `loop` **array** for the record being rendered, reached as `loop.parent.loop` because the column loop is nested inside the record one, and stores the `stdClass` Filament's [`HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) declares, so a migrating `fn (stdClass $rowLoop) => $rowLoop->iteration` works unchanged.
+`rowLoop()` takes what the cell loop can hand it, Twig's `loop` **array** for the record being rendered, reached as `loop.parent.loop` because the column loop is nested inside the record one, and stores the `stdClass` Filament's [`HasRowLoop`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoop.php) declares, so a migrating `fn (stdClass $rowLoop) => $rowLoop->iteration` works unchanged.
 The two vocabularies do not line up: Twig's `index` counts from 1 and its `index0` from 0, where Blade's `iteration` counts from 1 and its `index` from 0, so `index` means opposite things on either side, and reading Twig's array through Blade's names would be off by one in silence.
 The translation is `iteration` ← `index`, `index` ← `index0`, `remaining` ← `revindex0`, `count` ← `length`, `first`/`last` straight across, `even` from `iteration % 2` with `odd` its inverse, `depth` fixed at `1`.
 

@@ -42,7 +42,7 @@ owns:
 | A locale-formatted count in the "Select all" label | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) (`Number::format()`) | todo | — | [detail](#the-select-all-label-prints-its-count-as-raw-digits) |
 | [The selection settings — `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()` / `selectGroupsOnly()` / `selectsGroupsOnly()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | done | — | [semantics](#the-selection-getters-answer-from-more-than-their-setters) · [semantics](has-filters.md#one-filter-setting-drives-three-selection-behaviours) · [host-has-bulk-actions.md](host-has-bulk-actions.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | `selectableRecordsQuery()` / `hasSelectableRecordsQuery()` / `modifySelectableRecordsQuery()` / `isRecordSelectableUsingCallback()` — selectability as one query constraint | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | todo | — | — |
-| [`bulkActions()` / `pushBulkActions()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) — deprecated toolbar aliases | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | done | — | [diverges](#bulkactions-and-pushbulkactions-ship-although-filament-deprecates-them) |
+| `bulkActions()` / `pushBulkActions()` | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | skipped | — | [deprecated for `toolbarActions()` / `pushToolbarActions()`](../README.md#statuses) |
 | `maxSelectableRecords()` / `getMaxSelectableRecords()` | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | todo | — | [detail](#a-selection-cap-waits-for-one-meaning-across-both-universes) |
 | `disabledSelection()` / `isSelectionDisabled()` | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | todo | — | — |
 | `currentSelectionLivewireProperty()` / `getCurrentSelectionLivewireProperty()` | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | skipped | — | [diverges](#the-selection-is-not-entangled-into-a-host-property-because-the-props-already-are-it) |
@@ -251,12 +251,6 @@ The branch split is permanent; the coinciding output ends for any given table th
 Filament types `recordActions()`'s `$position` as `RecordActionsPosition | string | Closure | null` and forwards it to `recordActionsPosition()`, typed `RecordActionsPosition | Closure | null`, so a string passed to `recordActions()` is a `TypeError` one frame deeper, every time; nothing in Filament converts it.
 Sylament types `recordActions()`'s `$position` `RecordActionsPosition|Closure|null`, so the arm that cannot succeed is not offered and the `TypeError` names the caller's own line.
 It reverses only if Filament adds the conversion the arm implies, at which point this becomes a real feature rather than a dead union member.
-
-### `bulkActions()` and `pushBulkActions()` ship, although Filament deprecates them
-
-Filament marks both `@deprecated` in favour of `toolbarActions()` / `pushToolbarActions()`.
-The port ships them anyway, as one-line forwarders carrying the same annotation, because they carry the API's household name and a migrating user greps for it in both directions.
-`getBulkActions()`, deprecated beside them, is not ported.
 
 ### The selection is not entangled into a host property, because the props already are it
 

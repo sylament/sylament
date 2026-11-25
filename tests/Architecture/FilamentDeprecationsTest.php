@@ -12,19 +12,6 @@ use Sylament\Tests\Architecture\Source\FilamentDeprecations;
  * name per line; regenerate it from `FilamentDeprecations::shipped()`.
  */
 const FILAMENT_DEPRECATIONS_REMAINING = <<<'LIST'
-Sylament\Tables\Columns\Concerns\HasRowLoopObject
-Sylament\Tables\Columns\Summarizers\Concerns\InteractsWithTableQuery::hasQueryModification
-Sylament\Tables\Concerns\CanDeferLoading
-Sylament\Tables\Filters\Concerns\HasSchema
-Sylament\Tables\Filters\Concerns\HasSchema::getSchema
-Sylament\Tables\Filters\Concerns\HasSchema::getSchemaComponents
-Sylament\Tables\Filters\Concerns\HasSchema::hasSchema
-Sylament\Tables\Filters\Concerns\HasSchema::schema
-Sylament\Tables\Table\Concerns\CanDeferLoading
-Sylament\Tables\Table\Concerns\CanDeferLoading::deferLoading
-Sylament\Tables\Table\Concerns\CanDeferLoading::isLoadingDeferred
-Sylament\Tables\Table\Concerns\HasBulkActions::bulkActions
-Sylament\Tables\Table\Concerns\HasBulkActions::pushBulkActions
 LIST;
 
 it('finds a member Filament deprecates on its Sylament counterpart', function (): void {

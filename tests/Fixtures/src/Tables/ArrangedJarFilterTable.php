@@ -97,7 +97,7 @@ class ArrangedJarFilterTable implements InteractsWithActions, InteractsWithSchem
             ], layout: array_find(FiltersLayout::cases(), fn (FiltersLayout $layout): bool => $layout->name === $this->layout)
                 ?? throw new LogicException(sprintf('No filters layout is named [%s].', $this->layout)))
             ->pushFilters([
-                Filter::make('flags')->schema([
+                Filter::make('flags')->form([
                     Select::make('chosen')->boolean(),
                     Radio::make('picked')->boolean(),
                     ToggleButtons::make('toggled')->boolean(),

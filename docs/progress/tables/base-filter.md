@@ -8,10 +8,10 @@ ports:
   - vendor/filament/tables/src/Filters/Concerns/CanSpanColumns.php
   - vendor/filament/tables/src/Filters/Concerns/HasColumns.php
   - vendor/filament/tables/src/Filters/Concerns/HasDefaultState.php
+  - vendor/filament/tables/src/Filters/Concerns/HasForm.php
   - vendor/filament/tables/src/Filters/Concerns/HasIndicators.php
   - vendor/filament/tables/src/Filters/Concerns/HasLabel.php
   - vendor/filament/tables/src/Filters/Concerns/HasName.php
-  - vendor/filament/tables/src/Filters/Concerns/HasSchema.php
   - vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php
 owns:
   - packages/tables/src/Filters/BaseFilter.php
@@ -21,10 +21,10 @@ owns:
   - packages/tables/src/Filters/Concerns/CanSpanColumns.php
   - packages/tables/src/Filters/Concerns/HasColumns.php
   - packages/tables/src/Filters/Concerns/HasDefaultState.php
+  - packages/tables/src/Filters/Concerns/HasForm.php
   - packages/tables/src/Filters/Concerns/HasIndicators.php
   - packages/tables/src/Filters/Concerns/HasLabel.php
   - packages/tables/src/Filters/Concerns/HasName.php
-  - packages/tables/src/Filters/Concerns/HasSchema.php
   - packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php
 ---
 # BaseFilter (tables)
@@ -50,17 +50,17 @@ It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/F
 | [`label()` / `getLabel()`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) · [translations.md](../translations.md#symfonys-kebab-and-title-differ-from-laravels-on-acronyms-a-leading-separator-and-hyphens) |
 | [`translateLabel()` / `shouldTranslateLabel`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [semantics](#a-label-is-a-string-a-markup-or-a-message-translated-in-the-getter) |
 | [`name()` / `getName()`](../../../packages/tables/src/Filters/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Filters/Concerns/HasName.php) | done | — | — |
-| [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | — |
-| `form()` / `getFormSchema()` (deprecated; `schema()` / `getSchemaComponents()` replace them) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | skipped | — | [diverges](#the-form-alias-is-not-ported) |
-| [`getSchema()` — the filter's live child schema](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [semantics](#getschema-is-unguarded-where-the-state-readers-beside-it-are-not) |
+| [`form()` / `modifyFormFieldUsing()` / `getFormSchema()` / `hasForm()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasForm.php) | [`Concerns\HasForm`](../../../vendor/filament/tables/src/Filters/Concerns/HasForm.php) | done | — | — |
+| `schema()` / `getSchemaComponents()` / `hasSchema()` / `getSchema()` (deprecated; `form()` / `getFormSchema()` / `hasForm()` / `getForm()` replace them) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) · [`Concerns\HasForm`](../../../vendor/filament/tables/src/Filters/Concerns/HasForm.php) | skipped | — | [diverges](#the-schema-aliases-are-not-ported) |
+| [`getForm()` — the filter's live child schema](../../../packages/tables/src/Filters/Concerns/HasForm.php) | [`Concerns\HasForm::getForm()`](../../../vendor/filament/tables/src/Filters/Concerns/HasForm.php) | done | — | [semantics](#getform-is-unguarded-where-the-state-readers-beside-it-are-not) |
 | [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `modifyQueryUsing()` / `modifyBaseQueryUsing()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
 | [`makeStateIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | — (Filament joins the chip text inline in each filter) | done | — | [diverges](#the-default-chip-is-one-indicator-state-message) |
 
 ## Semantics
 
-### `getSchema()` is unguarded where the state readers beside it are not
+### `getForm()` is unguarded where the state readers beside it are not
 
-`getSchema()` reads the filter's live child schema off `$this->getLiveComponent()->getTableFiltersForm()` with no `method_exists()` check, two files away from `BelongsToTable`'s `getState()` / `getFormState()`, which [carry one and throw when it fails](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them).
+`getForm()` reads the filter's live child schema off `$this->getLiveComponent()->getTableFiltersForm()` with no `method_exists()` check, two files away from `BelongsToTable`'s `getState()` / `getFormState()`, which [carry one and throw when it fails](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them).
 The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()` is [on the contract](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) and the two state readers are not, so `getLiveComponent()` — typed `InteractsWithTable` — answers the first call at level max and cannot answer the other two.
 A guard here would be unreachable code guarding a declared method; a guard there is the only thing standing between a contract-satisfying host and a fatal.
 Both disappear the same way, by the contract growing, and the rule for adding a guard is the same either way: check what the interface declares, not what the trait happens to supply.
@@ -79,7 +79,7 @@ An integer key (a plain list) leaves the field null, so removing the chip clears
 
 `apply()` and `applyToBaseQuery()` each consult `$data['isActive']` only when the key is present: `!(bool) ($data['isActive'] ?? true)`.
 Both passes carry the same pair of guards, the hidden check included.
-A filter whose schema has no `isActive` field — every `SelectFilter`, every custom `schema()` — therefore applies unconditionally once it has a query callback, while a checkbox `Filter` skips when unticked.
+A filter whose schema has no `isActive` field — every `SelectFilter`, every custom `form()` — therefore applies unconditionally once it has a query callback, while a checkbox `Filter` skips when unticked.
 The indicator default runs the opposite polarity (`$state['isActive'] ?? false`), so an unticked filter shows no chip; that asymmetry is Filament's and is preserved.
 
 The three guards run in a different **order** than Filament's, which checks `isHidden()` first and the callback second.
@@ -117,10 +117,12 @@ Both passes run sequentially on the one builder via `andWhere()` composition ins
 The consumer footgun this leaves: a bare `->orWhere()` inside a filter callback widens the **whole** query, search included.
 The base/apply split survives as ordering only.
 
-### The `form()` alias is not ported
+### The `schema()` aliases are not ported
 
-Filament ships `form()` / `getFormSchema()` as deprecated aliases of `schema()` / `getSchemaComponents()`.
-A deprecated Filament member [is not ported](../renames.md#a-deprecated-filament-member-is-not-ported), and the [renames table](../renames.md#renames) carries the row.
+Filament's `HasForm` declares `form()`, `getFormSchema()`, `hasForm()` and `getForm()`, and keeps `schema()`, `getSchemaComponents()`, `hasSchema()` and `getSchema()` beside them as one-line delegates marked `@deprecated`, with `Concerns\HasSchema` itself a deprecated trait that only composes `HasForm` (v5.12.0, `@deprecated Use \`form()\` instead.`).
+Its [custom-filter guide](../../../vendor/filament/tables/docs/03-filters/05-custom.md) writes `->form([...])`.
+A deprecated Filament member [is not ported](../renames.md#a-deprecated-filament-member-is-not-ported), so the port ships Filament's names and the [renames table](../renames.md#renames) carries the row for the deprecated four.
+The property that holds the declaration is `$formSchema`, as Filament's.
 
 ### The default chip is one `<indicator>: <state>` message
 

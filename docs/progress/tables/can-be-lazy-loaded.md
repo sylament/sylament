@@ -1,43 +1,34 @@
 ---
 description: The table's deferred first load and polling interval, and the host flag and action that close the deferred window.
 ports:
-  - vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php
   - vendor/filament/tables/src/Table/Concerns/CanBeLazyLoaded.php
   - vendor/filament/tables/src/Table/Concerns/CanPollRecords.php
-  - vendor/filament/tables/src/Concerns/CanDeferLoading.php
+  - vendor/filament/tables/src/Concerns/CanBeLazyLoaded.php
 owns:
-  - packages/tables/src/Table/Concerns/CanDeferLoading.php
+  - packages/tables/src/Table/Concerns/CanBeLazyLoaded.php
   - packages/tables/src/Table/Concerns/CanPollRecords.php
-  - packages/tables/src/Concerns/CanDeferLoading.php
+  - packages/tables/src/Concerns/CanBeLazyLoaded.php
 ---
-# CanDeferLoading (tables)
+# CanBeLazyLoaded (tables)
 
-The table's `CanDeferLoading` and `CanPollRecords` configure the deferred first load and the poll; the host's `Concerns\CanDeferLoading` holds the flag the deferred window closes on.
+The table's `CanBeLazyLoaded` and `CanPollRecords` configure the deferred first load and the poll; the host's `Concerns\CanBeLazyLoaded` holds the flag the deferred window closes on.
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`deferLoading()` / `isLoadingDeferred()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) | [`Table\Concerns\CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | done | — | [semantics](#the-deferred-window-is-server-gated-and-client-closed) |
-| `lazyLoaded()` / `isLazyLoaded()`, the names Filament keeps | [`Table\Concerns\CanBeLazyLoaded`](../../../vendor/filament/tables/src/Table/Concerns/CanBeLazyLoaded.php) | todo | — | [detail](#filament-renamed-the-pair-to-lazyloaded-and-deprecated-deferloading-which-the-port-ships) |
+| [`lazyLoaded()` / `isLazyLoaded()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanBeLazyLoaded.php) | [`Table\Concerns\CanBeLazyLoaded`](../../../vendor/filament/tables/src/Table/Concerns/CanBeLazyLoaded.php) | done | — | [semantics](#the-deferred-window-is-server-gated-and-client-closed) |
+| `deferLoading()` / `isLoadingDeferred()` | [`Table\Concerns\CanBeLazyLoaded`](../../../vendor/filament/tables/src/Table/Concerns/CanBeLazyLoaded.php) | skipped | — | [deprecated for `lazyLoaded()` / `isLazyLoaded()`](../README.md#statuses) |
 | [`poll()` / `getPollingInterval()` / `getPollingIntervalMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`Table\Concerns\CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | — | [diverges](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) |
-| [The host half: `$isTableLoaded`, `loadTable()`, `isTableLoaded()`](../../../packages/tables/src/Concerns/CanDeferLoading.php) | [`Concerns\CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | done | — | [semantics](#the-deferred-window-is-server-gated-and-client-closed) · [interacts-with-table.md](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) |
-| `isTableLoadingDeferred()` | [`Concerns\CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | skipped | — | [has-table.md](has-table.md#the-deprecated-host-shims-are-not-ported-because-each-points-at-a-surface-that-ships) |
-
-## Details
-
-### Filament renamed the pair to `lazyLoaded()` and deprecated `deferLoading()`, which the port ships
-
-Filament's table composes `CanBeLazyLoaded` (`lazyLoaded()`, `isLazyLoaded()`, `isLoaded()`) and keeps `deferLoading()` and `isLoadingDeferred()` there as `@deprecated` aliases, with the whole `CanDeferLoading` trait marked `@deprecated` for it.
-The port ships only the deprecated pair, where the trail's rule skips a deprecated member.
-Next step: port `CanBeLazyLoaded` under Filament's names, and decide whether `deferLoading()` stays beside it as Filament's alias or goes.
+| [The host half: `$isTableLoaded`, `loadTable()`, `isTableLoaded()`](../../../packages/tables/src/Concerns/CanBeLazyLoaded.php) | [`Concerns\CanBeLazyLoaded`](../../../vendor/filament/tables/src/Concerns/CanBeLazyLoaded.php) | done | — | [semantics](#the-deferred-window-is-server-gated-and-client-closed) · [interacts-with-table.md](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) |
+| `isTableLoadingDeferred()` | [`Concerns\CanBeLazyLoaded`](../../../vendor/filament/tables/src/Concerns/CanBeLazyLoaded.php) | skipped | — | [has-table.md](has-table.md#the-deprecated-host-shims-are-not-ported-because-each-points-at-a-surface-that-ships) |
 
 ## Semantics
 
 ### The deferred window is server-gated and client-closed
 
 Filament closes the window with `x-intersect.once="$wire.loadTable()"` on the table root ([`CanBeRendered.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeRendered.php) at `:80-82`), so a deferred table loads when it first scrolls into view; the table controller closes it on connect instead, whether or not the table is in view.
-The host carries `$isTableLoaded`, a `LiveProp` that is not writable and changes only through the `loadTable()` action, and `isTableLoaded()` answers true on a table that does not defer, so `Table::isLoaded()` answers for every table and the flag is inert unless `deferLoading()` is on.
+The host carries `$isTableLoaded`, a `LiveProp` that is not writable and changes only through the `loadTable()` action, and `isTableLoaded()` answers true on a table that does not defer, so `Table::isLoaded()` answers for every table and the flag is inert unless `lazyLoaded()` is on.
 The partial reads it once and gates four reads on the result, each of which reaches the database: the `getRecords` read, the `getPaginator` read, the `getVisibleRecordActionsByRecordKey` map and the selectable-count query.
 
 The body branch splits three ways where vendor's splits two.

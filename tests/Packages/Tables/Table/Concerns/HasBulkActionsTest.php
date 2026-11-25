@@ -123,13 +123,4 @@ describe('selection settings', function (): void {
             ->and($crawler->filter(Selectors::TOOLBAR_ACTIONS . ' ' . SupportSelectors::DROPDOWN))->toHaveCount(1)
             ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(1);
     });
-
-    it('takes its toolbar through the deprecated bulkActions() and pushBulkActions()', function (): void {
-        $this->seed(new Product('Lamp'));
-
-        $crawler = $this->createLiveComponent(ConfiguredSelectionProductTable::class, ['deprecated' => true])->render()->crawler();
-
-        expect($crawler)->toContainButtons(Selectors::TOOLBAR_ACTIONS . ' button', ['Archive', 'Archive by key', 'Recount', 'Purge'])
-            ->and($crawler->filter(Selectors::RECORD_CHECKBOX))->toHaveCount(1);
-    });
 });

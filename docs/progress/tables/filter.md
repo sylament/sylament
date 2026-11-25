@@ -34,12 +34,12 @@ This reads like a bug and is not one; it is Filament's behaviour exactly, and it
 
 ### A schema-less filter ignores `resetState()` outright
 
-`getResetState()` returns the hard-coded `['isActive' => false]` whenever `hasSchema()` is false, so a `resetState()` set on a bare checkbox filter is dead configuration.
-Only a filter with an explicit `schema()` reaches `CanResetState`.
+`getResetState()` returns the hard-coded `['isActive' => false]` whenever `hasForm()` is false, so a `resetState()` set on a bare checkbox filter is dead configuration.
+Only a filter with an explicit `form()` reaches `CanResetState`.
 Faithful to Filament.
 
 ### The indicator gate defaults to `false` where the query gate defaults to `true`
 
 `setUp()`'s `indicateUsing` bails on `!($state['isActive'] ?? false)` — an absent key means *no indicator*.
 The query seam in [`InteractsWithTableQuery`](base-filter.md) bails on `!(bool) ($data['isActive'] ?? true)` — an absent key means *apply anyway*.
-The polarities are opposite on purpose: the query gate is opt-out so a custom-`schema()` filter (which has no `isActive` key at all) still applies, while the indicator gate is opt-in so a filter nobody has ticked shows no chip.
+The polarities are opposite on purpose: the query gate is opt-out so a custom-`form()` filter (which has no `isActive` key at all) still applies, while the indicator gate is opt-in so a filter nobody has ticked shows no chip.

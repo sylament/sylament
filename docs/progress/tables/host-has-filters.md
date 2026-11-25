@@ -44,7 +44,7 @@ Per field the new value is the filter's `getResetState()` entry when it names th
 The bool arm consults [`hasNullableBooleanState()`](../forms/field.md#hasnullablebooleanstate-has-exactly-one-consumer) first and writes `null` instead of `false` when it answers true, which `Select`, `Radio` and `ToggleButtons` do.
 The arm is narrower than it looks, because the fallback runs only for a field the filter's `getResetState()` does not name, and `SelectFilter` seeds `['value' => null]` (`['values' => []]` when multiple) in `setUp()`, where Filament's seeds `['value' => null]` in either mode (`SelectFilter.php:168`), so every `SelectFilter` and every `TernaryFilter` takes the explicit side and clears before the `match` is reached.
 `Checkbox` and `Toggle` cast through a non-nullable `BooleanStateCast`, where `false` is the resting value, and neither overrides the predicate, so both reset to `false`.
-What the branch decides is a hand-built nullable boolean inside a custom filter schema, `Filter::make('x')->schema([Select::make('f')->boolean()])`, which declares no reset state and clears to `null` rather than to a `false` that a ternary-shaped query arm would read as a choice.
+What the branch decides is a hand-built nullable boolean inside a custom filter schema, `Filter::make('x')->form([Select::make('f')->boolean()])`, which declares no reset state and clears to `null` rather than to a `false` that a ternary-shaped query arm would read as a choice.
 
 A named `$field` narrows the reset to that one field only when the group carries it; an unknown name resets the whole group, which is Filament's `array_key_exists` guard and keeps a stale chip from becoming a no-op.
 

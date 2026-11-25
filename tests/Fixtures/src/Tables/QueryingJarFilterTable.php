@@ -57,7 +57,7 @@ class QueryingJarFilterTable implements InteractsWithSchemas, InteractsWithTable
             ])
             ->filters([
                 Filter::make('shelved')
-                    ->schema([TextInput::make('shelf')])
+                    ->form([TextInput::make('shelf')])
                     ->query(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere('jar.position > 0')),
                 Filter::make('labelled')->baseQuery(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere("jar.label <> ''")),
                 Filter::make('waxOrFirst')->query(static fn (QueryBuilder $query): QueryBuilder => $query->andWhere($query->expr()->orX("jar.seal = 'wax'", 'jar.position = 1'))),

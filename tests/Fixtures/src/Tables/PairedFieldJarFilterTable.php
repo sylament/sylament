@@ -53,7 +53,7 @@ class PairedFieldJarFilterTable implements InteractsWithSchemas, InteractsWithTa
             ])
             ->filters([
                 Filter::make('shelf')
-                    ->schema([
+                    ->form([
                         TextInput::make('label'),
                         TextInput::make('lowestPosition'),
                     ])

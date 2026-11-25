@@ -27,7 +27,7 @@ use Symfony\UX\LiveComponent\Metadata\UrlMapping;
  * `PaginationMode` case's name) are mount props, and so is a poll interval; each variant
  * configures one more setting: `unpaginated`, `shortcut` (`paginated([5, 10])` after
  * `paginated(false)`), `extremeLinks`, `modeByClosure` (the mode handed over in a closure),
- * `whileReordering` (`paginatedWhileReordering()`), `deferred` (`deferLoading()`),
+ * `whileReordering` (`paginatedWhileReordering()`), `deferred` (`lazyLoaded()`),
  * `pollByDefault` (`poll()` with no interval), `actions` (an `open` record action and
  * an `archive` bulk action, so its rows carry actions and can be selected) and `summarized`
  * (a count under the labels).
@@ -78,7 +78,7 @@ class PagedLarderJarTable implements InteractsWithActions, InteractsWithTable
             ->defaultPaginationPageOption($this->defaultOption)
             ->extremePaginationLinks($this->has('extremeLinks'))
             ->paginatedWhileReordering($this->has('whileReordering'))
-            ->deferLoading($this->has('deferred'))
+            ->lazyLoaded($this->has('deferred'))
             ->recordActions($this->has('actions') ? [Action::make('open')] : [])
             ->toolbarActions($this->has('actions') ? [BulkAction::make('archive')] : []);
 

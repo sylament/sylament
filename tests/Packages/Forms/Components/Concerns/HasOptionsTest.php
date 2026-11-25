@@ -23,6 +23,14 @@ describe('options()', function (): void {
         expect($options)->toBe([['pro', 'Pro'], ['1', 'One'], ['basic', 'Basic']]);
     });
 
+    it('renders a map whose labels are numbers, as a list of years is', function (): void {
+        $options = $this->renderSchemaComponent(Radio::make('year')->options([2024 => 2024, 2025 => 2025]))
+            ->filter(Selectors::RADIO_OPTION_LABEL)
+            ->each(static fn (Crawler $label): string => $label->text());
+
+        expect($options)->toBe(['2024', '2025']);
+    });
+
     it('translates a message label inside an option group', function (): void {
         $select = $this->renderSchemaComponent(Select::make('plant')->options(['Ferns' => ['fern' => new TranslatableMessage('plant.fern', domain: 'fixtures-forms')], 'moss' => 'Moss']))
             ->filter(Selectors::NATIVE_SELECT);

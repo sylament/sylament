@@ -29,6 +29,6 @@ description: What each shipped surface promises extenders, how a new name is mar
 
   Without the runtime half, an extender never sees the notice.
 - **Never port a member Filament marks `@deprecated`;** port the replacement it names, and when Filament deprecates a member Sylament already ships, replace it before the first tag and deprecate it through the channel above after it (`docs/progress/README.md`, Statuses), because a migrating application should meet Filament's current API only.
-- **From the first tag on, change a promised name only by adding the new name beside the old, and a method's signature only by an optional last parameter on a public method that is no listed hook nor declared by such an interface,** with the artefact for its kind in `docs/internals/stability.md`, "Mechanics", because a caret constraint skips no minor.
+- **From the first tag on, change a promised name only by adding the new name beside the old, and a method's signature only by an optional last parameter on a public method that is no listed hook nor declared by an interface applications implement by hand,** with the artefact for its kind in `docs/internals/stability.md`, "Mechanics", because a caret constraint skips no minor.
 
 Background: `docs/internals/stability.md`.

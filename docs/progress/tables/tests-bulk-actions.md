@@ -16,6 +16,7 @@ A bulk action is called through actions' [`callAction()`](../actions/tests-actio
 | --- | --- | --- | --- | --- |
 | [`selectTableRecords()` with record objects and keys](../../../packages/tables/src/Testing/TestsBulkActions.php) | [`Testing/TestsBulkActions.php`](../../../vendor/filament/tables/src/Testing/TestsBulkActions.php) | done | — | [semantics](#a-record-object-is-selected-by-the-key-the-host-mints) · [diverges](#records-are-an-array) |
 | `mountTableBulkAction()` / `callTableBulkAction()` / `setTableBulkActionData()` / `assertTableBulkActionDataSet()` and the other `*TableBulkAction*` adapters | [`Testing/TestsBulkActions.php`](../../../vendor/filament/tables/src/Testing/TestsBulkActions.php) | todo | — | — |
+| `assertTableBulkActionHeld()` | [`Testing/TestsBulkActions.php`](../../../vendor/filament/tables/src/Testing/TestsBulkActions.php) | skipped | — | [deprecated for `assertTableBulkActionHalted()`](../README.md#statuses) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Semantics

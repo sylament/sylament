@@ -48,7 +48,7 @@ The host contract it binds to is [`InteractsWithSchemas`](interacts-with-schemas
 | [Twig-template rendering (`Schema/index.html.twig`)](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-renders-visible-children-only-without-hidden-placeholders) |
 | [`dispatchClientSideStateReset()`](../../../packages/schemas/src/Schema.php) | [`Schema::dispatchClientSideStateReset()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
 | Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
-| `deferLoading()` / `isLoadingDeferred()` | [`Schema::deferLoading()`](../../../vendor/filament/schemas/src/Schema.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](#partial-rendering-waits-on-a-ux-livecomponent-partial-render-equivalent) |
+| `deferLoading()` / `isLoadingDeferred()` | [`Schema::deferLoading()`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [deprecated for `lazyLoaded()` / `isLazyLoaded()`](../README.md#statuses) |
 | `loadingPlaceholder()` / `getLoadingPlaceholder()` | [`Support\Concerns\HasLoadingPlaceholder`](../../../vendor/filament/support/src/Concerns/HasLoadingPlaceholder.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](#partial-rendering-waits-on-a-ux-livecomponent-partial-render-equivalent) |
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | [detail](component.md#the-render-wrappers-client-half-waits-on-the-live-component-state-runtime) |
@@ -109,9 +109,9 @@ The port's `getState()` ([`Concerns/HasState.php:187-198`](../../../packages/sch
 
 ### Partial rendering waits on a UX LiveComponent partial-render equivalent
 
-Filament's partial rendering re-renders one schema through `wire:partial`, and its deferred loading renders a placeholder that the same partial replaces; UX LiveComponent re-renders the whole component, so neither has a target.
+Filament's partial rendering re-renders one schema through `wire:partial`, and its lazy loading renders a placeholder that the same partial replaces; UX LiveComponent re-renders the whole component, so neither has a target.
 Decide whether targeted re-render is a goal before porting either; [`fillPartially()`'s object arm](belongs-to-record.md#fillpartiallys-object-arm-waits-on-partial-rendering) waits on the same decision.
-Filament's `loadingPlaceholder()` replaces the `loading-placeholder` view the deferred placeholder renders beside its screen-reader label ([`Schema.php:310-315`](../../../vendor/filament/schemas/src/Schema.php)), and [`schema.css:8-23`](../../../vendor/filament/schemas/resources/css/schema.css) styles that placeholder's indicator and error, so both wait with `deferLoading()`.
+Filament's `loadingPlaceholder()` replaces the `loading-placeholder` view the deferred placeholder renders beside its screen-reader label ([`Schema.php:310-315`](../../../vendor/filament/schemas/src/Schema.php)), and [`schema.css:8-23`](../../../vendor/filament/schemas/resources/css/schema.css) styles that placeholder's indicator and error, so both wait with lazy loading.
 
 ### `HasKey` ports the schema key chain, minus the state-path fallback
 

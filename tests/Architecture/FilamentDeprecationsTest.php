@@ -8,11 +8,8 @@ use Sylament\Tests\Architecture\Source\FilamentDeprecations;
 
 /**
  * Sylament ships nothing Filament marks `@deprecated` (`docs/progress/renames.md`, "A deprecated Filament member is
- * not ported"). Each line is one name still to be replaced by the one Filament names, kept as text so it stays one
- * name per line; regenerate it from `FilamentDeprecations::shipped()`.
+ * not ported"); `FilamentDeprecations::shipped()` names every member that still does.
  */
-const FILAMENT_DEPRECATIONS_REMAINING = <<<'LIST'
-LIST;
 
 it('finds a member Filament deprecates on its Sylament counterpart', function (): void {
     $filament = '<?php namespace Filament\X; class Field { /** @deprecated Use `b()` instead. */ public function a() {} public function b() {} }';
@@ -50,6 +47,6 @@ it('matches a class the Renames table pairs with a Filament class of another nam
     expect(FilamentDeprecations::matches($filament, $sylament, FilamentDeprecations::renamedCounterparts($renames)))->toBe(['Sylament\X\Concerns\HasThings::old']);
 });
 
-it('ships only what is still to be removed', function (): void {
-    expect(FilamentDeprecations::shipped())->toBe(preg_split("/\n/", FILAMENT_DEPRECATIONS_REMAINING, flags: PREG_SPLIT_NO_EMPTY));
+it('ships nothing Filament deprecates', function (): void {
+    expect(FilamentDeprecations::shipped())->toBe([]);
 });

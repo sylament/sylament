@@ -33,7 +33,8 @@ The simple shell (`SimpleLayout`, `SimpleHeader`) is [simple-page.md](simple-pag
 | [`ThemeSwitcher`](../../../packages/panels/templates/components/ThemeSwitcher/index.html.twig) | [`theme-switcher/`](../../../vendor/filament/filament/resources/views/components/theme-switcher/index.blade.php) | done | — | [semantics](#the-theme-switchers-pressed-state-is-client-only-and-survives-only-because-the-shell-is-outside-the-live-root) · [semantics](#the-theme-switchers-three-buttons-are-written-out-not-looped) |
 | [`UserMenu`](../../../packages/panels/templates/components/UserMenu/index.html.twig) — the dropdown holding the theme switcher | [`user-menu.blade.php`](../../../vendor/filament/filament/resources/views/components/user-menu.blade.php) | done | — | [diverges](#the-theme-switchers-dropdown-is-not-teleported) · [diverges](#the-shells-fixed-texts-are-catalogue-keys) |
 | The user menu's account half — the user name, avatar, `getUserMenuItems()` and the topbar's `auth()->check()` gate | same | blocked | auth | [detail](#the-user-menu-is-a-stub-until-auth-is-ported) |
-| The panel's theme toggles — `hasDarkMode()`, `hasDarkModeForced()`, `hasThemeSwitcher()`, `getDefaultThemeMode()` | the gates in `user-menu.blade.php` and `theme-switcher/index.blade.php` | todo | — | [detail](#the-user-menu-is-a-stub-until-auth-is-ported) |
+| The panel's theme toggles — `hasDarkMode()`, `isDarkModeForced()`, `hasThemeSwitcher()`, `getDefaultThemeMode()` | the gates in `user-menu.blade.php` and `theme-switcher/index.blade.php` | todo | — | [detail](#the-user-menu-is-a-stub-until-auth-is-ported) |
+| `hasDarkModeForced()` | the gate in `user-menu.blade.php` | skipped | — | [deprecated for `isDarkModeForced()`](../README.md#statuses) |
 | [`PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) — the constants the shell, the dashboard, global search, the band and the related-records page read | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | done | — | [semantics](#the-shells-icons-are-overridable-aliases) |
 | `PanelsIconAlias::USER_MENU_TRIGGER` | no counterpart | done | — | [diverges](#user_menu_trigger-is-an-addition-not-a-rename) |
 | `TOPBAR_CLOSE_SIDEBAR_BUTTON` | the same | skipped | — | [diverges](#one-toggle-button-replaces-v5s-shownhidden-pair) |
@@ -50,7 +51,7 @@ The simple shell (`SimpleLayout`, `SimpleHeader`) is [simple-page.md](simple-pag
 ### The user menu is a stub until auth is ported
 
 `UserMenu` is a support `Dropdown` whose trigger is an `IconButton` and whose panel holds only the theme switcher.
-There is no user name, no avatar, no menu items and no `getUserMenuItems()`, and none of Filament's gates around it: the topbar's `auth()->check()`, and the `hasDarkMode() && ! hasDarkModeForced() && hasThemeSwitcher()` test in front of the switcher — so the menu and its switcher render unconditionally, for an anonymous visitor too.
+There is no user name, no avatar, no menu items and no `getUserMenuItems()`, and none of Filament's gates around it: the topbar's `auth()->check()`, and the `hasDarkMode() && ! isDarkModeForced() && hasThemeSwitcher()` test in front of the switcher — so the menu and its switcher render unconditionally, for an anonymous visitor too.
 The theme switcher starts from no panel default either: Filament seeds it with `getDefaultThemeMode()`, which the port has no panel setting for.
 The account half lands with auth; the theme toggles are panel settings that need nothing else.
 

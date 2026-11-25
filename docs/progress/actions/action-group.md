@@ -58,7 +58,7 @@ owns:
 | `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | todo | — | [detail](#hasnonbulkaction-waits-for-the-table-toolbars-non-bulk-partition) |
 | [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) `setUp()` defaults | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](#bulkactiongroup-sets-its-icon-explicitly-and-re-homes-its-label-key) |
 | [`BulkActionGroup::getExtraDropdownAttributes()`](../../../packages/actions/src/BulkActionGroup.php), the bulk-only marker | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](bulk-action.md#bulk-only-visibility-is-a-data-marker-the-table-controller-flips-not-an-alpine-expression) |
-| `labeledFrom()` on the group, and `labeledFrom('sm')` in the bulk preset | [`Concerns/CanBeLabeledFrom.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFrom.php) | blocked | `CanBeLabeledFrom` | — |
+| `labeledFrom()` on the group, and `labeledFrom('sm')` in the bulk preset | [`Concerns/CanBeLabeledFromBreakpoint.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFromBreakpoint.php) | blocked | `CanBeLabeledFromBreakpoint` | — |
 
 ## Details
 

@@ -25,17 +25,16 @@ It ports Filament's identically-named trait, translating the Livewire `wire:mode
 | `stateBindingModifiers()` / `applyStateBindingModifiers()` / `getStateBindingModifiers()` Livewire grammar | [`getStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
 | `reactive()` | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [deprecated for `live()`](../README.md#statuses) |
 | `lazy()` | [`lazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [deprecated for `live(onBlur: true)`](../README.md#statuses) |
-| `isLazy()` alias | [`isLazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
-| `getNormalizedLiveDebounce()` ms/s parser | [`getNormalizedLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
+| `isLazy()` alias | [`isLazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [deprecated for `isLiveOnBlur()`](../README.md#statuses) |
+| `getNormalizedLiveDebounce()` ms/s parser | [`getNormalizedLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#getnormalizedlivedebounce-is-not-yet-ported) |
 
 ## Details
 
-### `isLazy()` and `getNormalizedLiveDebounce()` are not yet ported
+### `getNormalizedLiveDebounce()` is not yet ported
 
-Filament's trait also defines `isLazy()` (a bare alias of `isLiveOnBlur()`) and `getNormalizedLiveDebounce()` (parses `'250ms'` / `'2s'` / numeric into an int of milliseconds).
-Neither exists in Sylament.
-`isLazy()` is a trivial alias; `getNormalizedLiveDebounce()` only matters once server-side debounce normalization is needed.
-**Next step:** port both when a consumer first needs them; this is provisional, not a non-goal.
+Filament's trait also defines `getNormalizedLiveDebounce()` (parses `'250ms'` / `'2s'` / numeric into an int of milliseconds).
+It does not exist in Sylament, and only matters once server-side debounce normalization is needed.
+**Next step:** port it when a consumer first needs it; this is provisional, not a non-goal.
 
 ## Divergences
 

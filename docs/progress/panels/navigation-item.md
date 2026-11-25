@@ -25,7 +25,8 @@ owns:
 | [`activeWhen()` / `isActive()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the memoising active-state pair | done | — | [panel.md](panel.md#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) |
 | [`setEvaluationServices()`](../../../packages/panels/src/Navigation/NavigationItem.php) and its closure seam | `app()->make()` inside Filament's closure evaluation | done | — | [diverges](#the-item-hands-its-own-services-to-evaluated-closures) · [semantics](#the-evaluation-services-are-a-container-build-requirement) |
 | `key()` / `getKey()` | the key pair | todo | — | [detail](#the-nesting-arm-waits-on-key) |
-| `parentItem()` / `getParentItem()` / `childItems()` / `getChildItems()` / `isChildItemsActive()`, and `getIcon()`'s parent-without-icon refusal | the nesting arm | todo | — | [detail](#the-nesting-arm-waits-on-key) |
+| `parentItem()` / `getParentItem()` / `childItems()` / `getChildItems()` / `hasActiveChildItems()`, and `getIcon()`'s parent-without-icon refusal | the nesting arm | todo | — | [detail](#the-nesting-arm-waits-on-key) |
+| `isChildItemsActive()` | the nesting arm | skipped | — | [deprecated for `hasActiveChildItems()`](../README.md#statuses) |
 | `HasBadgeTooltip` | [`Support/Concerns/HasBadgeTooltip.php`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | todo | — | [detail](#the-badge-tooltip-and-extra-attributes-wait-on-a-sidebar-template-that-renders-them) |
 | `HasExtraAttributes` | [`Support/Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | todo | — | [detail](#the-badge-tooltip-and-extra-attributes-wait-on-a-sidebar-template-that-renders-them) |
 
@@ -34,7 +35,7 @@ owns:
 ### The nesting arm waits on `key()`
 
 `key()` is the identity a nested item is addressed by, and `getKey()` falls back to the label, so it earns its keep only once items nest.
-The nesting arm lands whole with it: the parent and child pairs, `isChildItemsActive()`, and the `LogicException` Filament's `getIcon()` throws for a parent item with no icon.
+The nesting arm lands whole with it: the parent and child pairs, `hasActiveChildItems()`, and the `LogicException` Filament's `getIcon()` throws for a parent item with no icon.
 [The band's `processParentNavigationItems()` pass](has-sub-navigation.md#item-nesting-waits-on-navigationitems-nesting-arm) waits on the same arm.
 
 ### The badge tooltip and extra attributes wait on a sidebar template that renders them

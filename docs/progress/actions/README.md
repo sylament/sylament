@@ -59,7 +59,7 @@ Ports [`filament/actions`](../../../vendor/filament/actions) into [`packages/act
 | [`ActionName.php`](../../../vendor/filament/actions/src/ActionName.php) | todo | — | — |
 | [`Concerns/CanBeAuthorized.php`](../../../vendor/filament/actions/src/Concerns/CanBeAuthorized.php) | todo | — | — |
 | [`Concerns/CanBeBooted.php`](../../../vendor/filament/actions/src/Concerns/CanBeBooted.php) | todo | — | — |
-| [`Concerns/CanBeLabeledFrom.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFrom.php) | todo | — | — |
+| [`Concerns/CanBeLabeledFrom.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFrom.php) | skipped | — | [deprecated for `CanBeLabeledFromBreakpoint`](../README.md#statuses) |
 | [`Concerns/CanBeRateLimited.php`](../../../vendor/filament/actions/src/Concerns/CanBeRateLimited.php) | todo | — | — |
 | [`Concerns/CanBeSorted.php`](../../../vendor/filament/actions/src/Concerns/CanBeSorted.php) | todo | — | — |
 | [`Concerns/CanExportRecords.php`](../../../vendor/filament/actions/src/Concerns/CanExportRecords.php) | todo | — | — |

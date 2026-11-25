@@ -81,7 +81,7 @@ class WriterForm implements InteractsWithSchemas
                     TextInput::make('flag')->stateCast(new BooleanStateCast(isStoredAsInt: true)),
                 ])
                     ->statePath('options')
-                    ->afterStateUpdated(static fn (Set $set): mixed => $set->skipComponentsChildContainersWhileSearching(condition: false)('options.flag', false)),
+                    ->afterStateUpdated(static fn (Set $set): mixed => $set->skipComponentsChildSchemasWhileSearching(condition: false)('options.flag', false)),
                 TextInput::make('cast')
                     ->afterStateUpdated(static fn (Set $set): mixed => $set('subscribed', true)),
                 TextInput::make('quiet')

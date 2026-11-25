@@ -661,8 +661,8 @@ class Action extends ViewComponent
                 : parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
             'schema' => ClosureParameter::make($this->getSchemaContainer()),
             'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),
-            'schemaGet', 'get' => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
-            'schemaSet', 'set' => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            'schemaGet', 'get' => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildSchemasWhileSearching(false)),
+            'schemaSet', 'set' => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildSchemasWhileSearching(false)),
             'schemaComponentState', 'state' => ClosureParameter::make($this->getSchemaComponentState()),
             'schemaState' => ClosureParameter::make($this->getSchemaState()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
@@ -675,9 +675,9 @@ class Action extends ViewComponent
             QueryBuilder::class => $this->hasCanAccessSelectedRecords()
                 ? ClosureParameter::make($this->getSelectedRecordsQuery())
                 : parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
-            Get::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            Get::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildSchemasWhileSearching(false)),
             Table::class => ClosureParameter::make($this->getTable()),
-            Set::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            Set::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildSchemasWhileSearching(false)),
             default => parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
         };
     }

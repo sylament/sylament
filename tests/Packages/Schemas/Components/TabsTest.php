@@ -143,15 +143,15 @@ describe('query string', function (): void {
     ]);
 });
 
-describe('deferred badges', function (): void {
-    it('leaves a deferred badge of a visible tab to the browser, which asks the tabs for it by tab key', function (): void {
+describe('lazy-loaded badges', function (): void {
+    it('leaves a lazy-loaded badge of a visible tab to the browser, which asks the tabs for it by tab key', function (): void {
         $tabs = Tabs::make('Orders')->tabs([
-            'drafts' => Tab::make('Drafts')->hidden()->badge('1')->deferBadge(),
-            'open' => Tab::make('Open')->badge('3')->deferBadge()->badgeIcon('heroicons:check')->badgeIconPosition(IconPosition::After)->badgeTooltip('Awaiting dispatch'),
+            'drafts' => Tab::make('Drafts')->hidden()->badge('1')->lazyLoadedBadge(),
+            'open' => Tab::make('Open')->badge('3')->lazyLoadedBadge()->badgeIcon('heroicons:check')->badgeIconPosition(IconPosition::After)->badgeTooltip('Awaiting dispatch'),
             'closed' => Tab::make('Closed')->badge('5'),
         ]);
         $rendered = $this->renderSchemaComponent($tabs);
-        $badges = $tabs->getDeferredTabBadges();
+        $badges = $tabs->getLazyLoadedTabBadges();
 
         expect($rendered)
             ->toContainElement(Selectors::TABS . '[data-sylament--schemas--tabs-deferred-badges-value="true"][data-sylament--schemas--tabs-key-value="schema.orders::data::tabs"]')
@@ -161,14 +161,26 @@ describe('deferred badges', function (): void {
             ->and(array_keys($badges))->toBe(['open::data::tab'])
             ->and($badges['open::data::tab'])->toMatchArray(['badge' => '3', 'badgeIconPosition' => 'after', 'badgeTooltip' => 'Awaiting dispatch'])
             ->and(new Crawler((string) $badges['open::data::tab']['badgeIconHtml'])->text())->toBe('check')
-            ->and($this->renderSchemaComponent(Tabs::make('Orders')->tabs([Tab::make('Drafts')->hidden()->badge('1')->deferBadge(), Tab::make('Open')])))
+            ->and($this->renderSchemaComponent(Tabs::make('Orders')->tabs([Tab::make('Drafts')->hidden()->badge('1')->lazyLoadedBadge(), Tab::make('Open')])))
             ->toContainElement(Selectors::TABS . ':not([data-sylament--schemas--tabs-deferred-badges-value]):not([data-sylament--schemas--tabs-key-value])', 'Open');
     });
 
-    it('paints a deferred badge in its colour, a palette or primary', function (string|array|null $color, string $class, string $style): void {
-        $tabs = Tabs::make('Orders')->tabs([Tab::make('Open')->badge('3')->badgeColor($color)->deferBadge()]);
+    it("answers the browser's request for the badges of its lazy-loaded tabs in a browser event", function (): void {
+        $tester = $this->createLiveComponent(PropertyDrivenTabsHost::class)
+            ->call('callSchemaComponentMethod', ['componentKey' => 'schema.orders::tabs', 'method' => 'getLazyLoadedTabBadges']);
+
+        $events = $this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result');
+
+        expect($events)->toHaveCount(1)
+            ->and($events[0]['method'])->toBe('getLazyLoadedTabBadges')
+            ->and(array_keys($events[0]['result']))->toBe(['open'])
+            ->and($events[0]['result']['open'])->toMatchArray(['badge' => '7']);
+    });
+
+    it('paints a lazy-loaded badge in its colour, a palette or primary', function (string|array|null $color, string $class, string $style): void {
+        $tabs = Tabs::make('Orders')->tabs([Tab::make('Open')->badge('3')->badgeColor($color)->lazyLoadedBadge()]);
         $this->renderSchemaComponent($tabs);
-        $badge = $tabs->getDeferredTabBadges()['open::data::tab'];
+        $badge = $tabs->getLazyLoadedTabBadges()['open::data::tab'];
 
         expect(explode(' ', $badge['badgeColorClasses']))->toContain($class)
             ->and(explode('; ', $badge['badgeColorStyles']))->toContain($style);

@@ -3,7 +3,7 @@ import { uncloak } from "../utils/cloak.js";
 import { resolveLiveHost } from "../utils/live_host.js";
 import { callSchemaComponentMethod } from "../utils/schema_component_method.js";
 
-type DeferredBadge = {
+type LazyLoadedBadge = {
   badge?: unknown;
   badgeColorClasses?: unknown;
   badgeColorStyles?: unknown;
@@ -16,7 +16,7 @@ const ACTIVE_CLASS = "sy-active";
 const SELECTED_CLASS = "sy-selected";
 const INVISIBLE_CLASS = "sy-invisible";
 const RESIZE_DEBOUNCE_MS = 150;
-const BADGES_METHOD = "getDeferredTabBadges";
+const BADGES_METHOD = "getLazyLoadedTabBadges";
 const DEFAULT_TAB_ITEM_GAP = 8;
 
 /**
@@ -24,7 +24,7 @@ const DEFAULT_TAB_ITEM_GAP = 8;
  * one tab active, this controller owns every switch after that — the classes and ARIA state it
  * writes are replayed onto the morphed-in markup by UX Live's external-mutation tracker, and the
  * target callbacks re-assert them for elements a morph replaces outright. It also ports the
- * `scrollable(false)` overflow-into-dropdown measurement and the deferred badge round-trip.
+ * `scrollable(false)` overflow-into-dropdown measurement and the lazy-loaded badge round-trip.
  */
 export default class extends Controller<HTMLElement> {
   static targets = [
@@ -73,7 +73,7 @@ export default class extends Controller<HTMLElement> {
   #withinDropdownIndex: number | null = null;
   #withinDropdownMounted = false;
   #resizeTimer: number | null = null;
-  #badges = new Map<string, DeferredBadge | null>();
+  #badges = new Map<string, LazyLoadedBadge | null>();
   #badgesLoaded = false;
   #connected = false;
   #generation = 0;
@@ -97,7 +97,7 @@ export default class extends Controller<HTMLElement> {
     }
 
     if (this.deferredBadgesValue) {
-      void this.#loadDeferredBadges(generation);
+      void this.#loadLazyLoadedBadges(generation);
     }
 
     this.#connected = true;
@@ -500,7 +500,7 @@ export default class extends Controller<HTMLElement> {
     }
   }
 
-  async #loadDeferredBadges(generation: number): Promise<void> {
+  async #loadLazyLoadedBadges(generation: number): Promise<void> {
     let badges: unknown;
 
     try {
@@ -565,7 +565,7 @@ function stringOf(value: unknown): string {
 }
 
 /** Support's Badge markup, built by hand — the server sends the parts, not the element. */
-function buildBadge(entry: DeferredBadge, text: string): HTMLElement {
+function buildBadge(entry: LazyLoadedBadge, text: string): HTMLElement {
   const badge = document.createElement("span");
   badge.className = ["sy", "sy-badge", "sy-size-sm", stringOf(entry.badgeColorClasses)]
     .filter((token) => token !== "")

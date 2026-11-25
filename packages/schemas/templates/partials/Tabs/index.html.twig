@@ -12,13 +12,13 @@
 
 {% set stimulus = isServerDriven ? null : stimulus_controller(controller, {
     activeTab: activeTab,
-    key: hasDeferredBadges ? tabsKey : null,
+    key: hasLazyLoadedBadges ? tabsKey : null,
     schemaKey: schemaKey,
     persist: isTabPersisted and id ? true : null,
     persistId: isTabPersisted and id ? id : null,
     queryStringKey: tabQueryStringKey,
     scrollable: isScrollable ? null : false,
-    deferredBadges: hasDeferredBadges ? true : null,
+    deferredBadges: hasLazyLoadedBadges ? true : null,
 })|stimulus_action(controller, 'resetState', 'reset-schema-component-state@window') %}
 
 {% if stimulus and not isScrollable %}
@@ -36,10 +36,10 @@
         {% for tab in tabs %}
             {% set tabKey = tab.getKey(false) %}
             {% set tabId = tab.getId %}
-            {% set isDeferred = not isServerDriven and tab.isBadgeDeferred %}
+            {% set isLazyLoaded = not isServerDriven and tab.isBadgeLazyLoaded %}
             {% set isActive = isServerDriven ? activeLiveComponentTab == tabKey : activeTabKey == tabKey %}
             {% set tabLabel = tab.getLabel ?? (isServerDriven and canGenerateTabLabel ? component.getLiveComponent.generateTabLabel(tabKey) : null) %}
-            {% set tabBadge = isDeferred ? null : tab.getBadge %}
+            {% set tabBadge = isLazyLoaded ? null : tab.getBadge %}
 
             <twig:SylamentSupport:TabsItem
                     role="tab"
@@ -51,10 +51,10 @@
                     :icon="tab.getIcon"
                     :iconPosition="tab.getIconPosition"
                     :badge="tabBadge"
-                    :badgeColor="isDeferred ? null : tab.getBadgeColor(tabBadge)"
-                    :badgeIcon="isDeferred ? null : tab.getBadgeIcon(tabBadge)"
-                    :badgeIconPosition="isDeferred ? null : tab.getBadgeIconPosition(tabBadge)"
-                    :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tabBadge)"
+                    :badgeColor="isLazyLoaded ? null : tab.getBadgeColor(tabBadge)"
+                    :badgeIcon="isLazyLoaded ? null : tab.getBadgeIcon(tabBadge)"
+                    :badgeIconPosition="isLazyLoaded ? null : tab.getBadgeIconPosition(tabBadge)"
+                    :badgeTooltip="isLazyLoaded ? null : tab.getBadgeTooltip(tabBadge)"
                     {{ ...tab.getExtraAttributeBag.toScalarAttributes }}
                     {{ ...(isServerDriven
                         ? {'data-action': 'live#update', 'data-model': liveComponentProperty, 'data-value': tabKey, 'data-loading': 'addAttribute(disabled)'}
@@ -62,7 +62,7 @@
             >
                 <twig:block name="content">{{ tabLabel }}</twig:block>
                 <twig:block name="badge">
-                    {% if isDeferred %}
+                    {% if isLazyLoaded %}
                         <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
                             <twig:SylamentSupport:LoadingIndicator size="sm" />
                         </span>
@@ -76,8 +76,8 @@
                 <twig:block name="trigger">
                     {% for tab in tabs %}
                         {% set tabKey = tab.getKey(false) %}
-                        {% set isDeferred = tab.isBadgeDeferred %}
-                        {% set tabBadge = isDeferred ? null : tab.getBadge %}
+                        {% set isLazyLoaded = tab.isBadgeLazyLoaded %}
+                        {% set tabBadge = isLazyLoaded ? null : tab.getBadge %}
 
                         <twig:SylamentSupport:TabsItem
                                 role="tab"
@@ -86,16 +86,16 @@
                                 :active="activeTabKey == tabKey"
                                 :data-tab-key="tabKey ?: false"
                                 icon="heroicons:chevron-down"
-                                :iconAlias="constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON')"
+                                :iconAlias="constant('Sylament\\Schemas\\Twig\\SchemasIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON')"
                                 iconPosition="before"
                                 :badge="tabBadge"
-                                :badgeColor="isDeferred ? null : tab.getBadgeColor(tabBadge)"
-                                :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tabBadge)"
+                                :badgeColor="isLazyLoaded ? null : tab.getBadgeColor(tabBadge)"
+                                :badgeTooltip="isLazyLoaded ? null : tab.getBadgeTooltip(tabBadge)"
                                 {{ ...stimulus_target(controller, 'triggerTab') }}
                         >
                             <twig:block name="content">{{ tab.getLabel }}</twig:block>
                             <twig:block name="badge">
-                                {% if isDeferred %}
+                                {% if isLazyLoaded %}
                                     <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
                                         <twig:SylamentSupport:LoadingIndicator size="sm" />
                                     </span>
@@ -105,7 +105,7 @@
                     {% endfor %}
 
                     <button type="button" role="tab" aria-selected="false" {{ attrs({class: 'sy sy-tabs-item', 'aria-label': 'components.tabs.actions.more.label'|trans(domain: 'sylament-schemas')}, stimulus_target(controller, 'moreButton')) }}>
-                        <span class="sy-tabs-item-label">{{ generateIconHtml('heroicons:ellipsis-horizontal', constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_TABS_MORE_TABS_BUTTON')) }}</span>
+                        <span class="sy-tabs-item-label">{{ generateIconHtml('heroicons:ellipsis-horizontal', constant('Sylament\\Schemas\\Twig\\SchemasIconAlias::COMPONENTS_TABS_MORE_TABS_BUTTON')) }}</span>
                     </button>
                 </twig:block>
 
@@ -113,9 +113,9 @@
                     <div class="sy-dropdown-list">
                         {% for tab in tabs %}
                             {% set tabKey = tab.getKey(false) %}
-                            {% set isDeferred = tab.isBadgeDeferred %}
-                            {% set tabBadge = isDeferred ? null : tab.getBadge %}
-                            {% set badgeTooltip = isDeferred ? null : tab.getBadgeTooltip(tabBadge) %}
+                            {% set isLazyLoaded = tab.isBadgeLazyLoaded %}
+                            {% set tabBadge = isLazyLoaded ? null : tab.getBadge %}
+                            {% set badgeTooltip = isLazyLoaded ? null : tab.getBadgeTooltip(tabBadge) %}
 
                             <twig:SylamentSupport:DropdownItem
                                     color="gray"
@@ -128,7 +128,7 @@
                                 <twig:block name="content">
                                     {{- tab.getLabel -}}
 
-                                    {% if isDeferred %}
+                                    {% if isLazyLoaded %}
                                         <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
                                             <twig:SylamentSupport:LoadingIndicator size="sm" />
                                         </span>

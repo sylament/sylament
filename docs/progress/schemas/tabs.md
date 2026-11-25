@@ -36,11 +36,11 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 | [`scrollable()` / `isScrollable()`](../../../packages/schemas/src/Components/Tabs.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | — |
 | [`vertical()` / `isVertical()`](../../../packages/schemas/src/Components/Tabs.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | — |
 | [`contained()` (support's `CanBeContained`)](../../../packages/support/src/Components/Concerns/CanBeContained.php) | [`Concerns/CanBeContained`](../../../vendor/filament/support/src/Concerns/CanBeContained.php) | done | — | — |
-| [`getDeferredTabBadges()` — `#[Exposed]`](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::getDeferredTabBadges()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#deferred-badges-are-keyed-by-tab-key-not-by-array-index) |
-| [`hasDeferredBadges()`](../../../packages/schemas/src/Components/Tabs.php) | [same](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | — |
+| [`getLazyLoadedTabBadges()` — `#[Exposed]`](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::getLazyLoadedTabBadges()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#lazy-loaded-badges-are-keyed-by-tab-key-not-by-array-index) |
+| [`hasLazyLoadedBadges()`](../../../packages/schemas/src/Components/Tabs.php) | [same](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | — |
 | [`getTabs()`](../../../packages/schemas/src/Components/Tabs.php) | [the `array_filter` inside `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [semantics](#gettabs-filters-hidden-tabs-out-so-every-index-is-a-visible-position) |
 | [Twig render — client arm](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-active-tab-is-server-rendered-and-then-owned-by-the-controller) · [diverges](#the-tab-wiring-wins-over-a-tabs-extra-attributes-where-filaments-extras-win) |
-| [Twig render — server arm](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`toEmbeddedHtmlForLivewireProperty()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [semantics](#server-mode-is-the-livewireproperty-arm-translated-to-ux-live) · [semantics](#ux-live-injects-a-value-attribute-onto-every-server-mode-tab-button) · [diverges](#a-deferred-badge-renders-eagerly-in-server-mode) |
+| [Twig render — server arm](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`toEmbeddedHtmlForLivewireProperty()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [semantics](#server-mode-is-the-livewireproperty-arm-translated-to-ux-live) · [semantics](#ux-live-injects-a-value-attribute-onto-every-server-mode-tab-button) · [diverges](#a-lazy-loaded-badge-renders-eagerly-in-server-mode) |
 | [`scrollable(false)` overflow dropdown](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [the dropdown branch of `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-overflow-dropdown-rides-on-supports-dropdown-and-renders-its-active-trigger-server-side) |
 | [`sy-cloak` while persisting](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`x-cloak` on the nav](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#cloaking-is-limited-to-persisttab-so-no-js-still-shows-a-tab) |
 | [`tabs.css`](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
@@ -104,7 +104,7 @@ One deliberate delta from vendor in the same loop: Filament's `$tab->key(strval(
 
 `getActiveTab()` is a 1-based index *into the visible tabs*, so `activeTab(2)` means "the second tab you can see", in Filament and here alike.
 Filament gets that from `getComponents()`'s default, which drops hidden children and re-indexes.
-The port's [`HasComponents::getComponents()`](../../../packages/schemas/src/Concerns/HasComponents.php) defaults the other way, `withHidden: true`, so `getTabs()` asks for `withHidden: false` explicitly and is the one place the visible list is computed, for the active-tab arms, the deferred badges and the render alike.
+The port's [`HasComponents::getComponents()`](../../../packages/schemas/src/Concerns/HasComponents.php) defaults the other way, `withHidden: true`, so `getTabs()` asks for `withHidden: false` explicitly and is the one place the visible list is computed, for the active-tab arms, the lazy-loaded badges and the render alike.
 
 ### UX Live injects a `value` attribute onto every server-mode tab button
 
@@ -116,7 +116,7 @@ It is inert (a `type="button"` element submits nothing) and the tabs' own wiring
 
 ### The locale of a live call is the request's, so a URL-locale application prefixes its live route
 
-A server-mode `Tabs` re-keys every `Tab` to its array key, so it compares array keys and never meets a slugged label; the exposure is client mode, where the slugged label is `data-tab-key`, the remembered tab, the persisted `tabs-{id}` value, the `?tab=` value and the key the deferred-badge controller reads, so a request that translates in another locale than the one that rendered the key reads no active tab.
+A server-mode `Tabs` re-keys every `Tab` to its array key, so it compares array keys and never meets a slugged label; the exposure is client mode, where the slugged label is `data-tab-key`, the remembered tab, the persisted `tabs-{id}` value, the `?tab=` value and the key the lazy-loaded-badge controller reads, so a request that translates in another locale than the one that rendered the key reads no active tab.
 The cause and the requirement are [Section's](section.md#the-locale-of-a-live-call-is-the-requests-so-a-url-locale-application-prefixes-its-live-route).
 
 ### The active tab is server-rendered and then owned by the controller
@@ -166,17 +166,17 @@ The fix, when a consumer wants it, is the same mechanism: give `Tabs` a bound ho
 Both are the minimum needed to render the initial state the divergence above describes — the first names the active tab in client mode, the second stringifies the bound host property in server mode.
 `getActiveTabKey()` is recorded in [`translations.md`](../translations.md) among the names with no Filament source.
 
-### Deferred badges are keyed by tab key, not by array index
+### Lazy-loaded badges are keyed by tab key, not by array index
 
-`getDeferredTabBadges()` returns Filament's map shape (`badge`, `badgeColorClasses`, `badgeColorStyles`, `badgeIconHtml`, `badgeIconPosition`, `badgeTooltip`) with one change: the map is keyed by `getKey(isAbsolute: false)` rather than the child schema's original array key.
+`getLazyLoadedTabBadges()` returns Filament's map shape (`badge`, `badgeColorClasses`, `badgeColorStyles`, `badgeIconHtml`, `badgeIconPosition`, `badgeTooltip`) with one change: the map is keyed by `getKey(isAbsolute: false)` rather than the child schema's original array key.
 Filament keys by array key and stamps its client-mode placeholders with a **re-indexed** loop position, so the two desync the moment a hidden tab precedes another or the tabs are declared with string keys.
 Ours stamps `data-tab-key` on every placeholder and looks the entry up by it, which cannot drift.
 The colour arms are the two Filament has — a string colour becomes `ColorManager::getComponentClasses(BadgeComponent::class, …)`, an array palette becomes `sy-color` plus the inline `getComponentCustomStyles()` declarations — and a badge with no colour defaults to `primary`, as the chrome does, where Filament's map leaves the classes empty.
 
-### A deferred badge renders eagerly in server mode
+### A lazy-loaded badge renders eagerly in server mode
 
-Filament's server arm defers badges too: its root carries an `x-data` that calls `getDeferredTabBadges()` once, and each placeholder is keyed by the tab's array key.
-Server mode here renders no controller, so nothing could fill a placeholder; the partial treats a deferred badge as an ordinary one and evaluates it during the render, which is pinned.
+Filament's server arm defers badges too: its root carries an `x-data` that calls `getLazyLoadedTabBadges()` once, and each placeholder is keyed by the tab's array key.
+Server mode here renders no controller, so nothing could fill a placeholder; the partial treats a lazy-loaded badge as an ordinary one and evaluates it during the render, which is pinned.
 The badge therefore costs its query on every server-mode render rather than on a follow-up call.
 Reverse it by giving server mode a badge-only controller that calls the seam.
 

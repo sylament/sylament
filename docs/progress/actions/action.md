@@ -224,7 +224,7 @@ The `get` and `set` arms keep Filament's non-null-safe reach for the schema comp
 A schema-less action evaluating a `$get` or `$set` closure therefore stops the request where Filament's does, on a `LogicException` naming the class rather than a fatal on null, which a case pins.
 An action declared inside a mounted-action schema throws the same way, as it fails in Filament, because that schema is a root schema with no parent component ([has-actions.md](has-actions.md#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema)).
 
-Both arms chain `->skipComponentsChildContainersWhileSearching(false)` onto the returned [`Get`](../schemas/get.md) or [`Set`](../schemas/set.md), as Filament's do.
+Both arms chain `->skipComponentsChildSchemasWhileSearching(false)` onto the returned [`Get`](../schemas/get.md) or [`Set`](../schemas/set.md), as Filament's do.
 Without it, the utility's default self-skip keeps it out of the bound component's own child schema, so a container-hosted action's `$get` or `$set` (a `Section` action reading a field nested inside that same `Section`) would fall back to a raw, uncast `PropertyAccessor` read or write instead of going through the owning field's `getState()` or `state()`.
 
 ### The serialized key list drops `alpineClickHandler` and `shouldPostToUrl`

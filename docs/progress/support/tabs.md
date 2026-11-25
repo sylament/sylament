@@ -54,17 +54,17 @@ For a blank url `generate_href_html()` emits nothing at all; ours drops `href` t
 
 Filament's item declares an `iconColor` prop and never reads it, rendering the icon with a bare `generate_icon_html($icon)`, so porting it would ship a lever that does nothing.
 It is dropped.
-In its place the port adds `iconAlias`, forwarded to `generateIconHtml(icon, iconAlias)`, because the icon-override seam is an alias lookup here rather than Filament's facade call: schemas' Tabs partial needs it for the dropdown trigger's chevron (`SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON`), which Filament resolves inside its `toEmbeddedHtml()` before the view ever sees the icon.
+In its place the port adds `iconAlias`, forwarded to `generateIconHtml(icon, iconAlias)`, because the icon-override seam is an alias lookup here rather than Filament's facade call: schemas' Tabs partial needs it for the dropdown trigger's chevron (`SchemasIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON`), which Filament resolves inside its `toEmbeddedHtml()` before the view ever sees the icon.
 
 ### The badge defaults to `primary` and its tooltip renders as a native `title`
 
-Filament's item passes `$badgeColor` straight through, so a null colour reaches `<x-filament::badge>` and its own `primary` default applies; ours passes `badgeColor ?? 'primary'` for the same result on a component whose default colour is also `primary`, written explicitly because schemas' Tabs partial and `getDeferredTabBadges()` apply the same `?? 'primary'` on the PHP side (Filament's `generateTabBadgeHtml()` does too), and one spelling for the three is worth more than the indirection.
+Filament's item passes `$badgeColor` straight through, so a null colour reaches `<x-filament::badge>` and its own `primary` default applies; ours passes `badgeColor ?? 'primary'` for the same result on a component whose default colour is also `primary`, written explicitly because schemas' Tabs partial and `getLazyLoadedTabBadges()` apply the same `?? 'primary'` on the PHP side (Filament's `generateTabBadgeHtml()` does too), and one spelling for the three is worth more than the indirection.
 `badgeTooltip` renders as a native `title` attribute rather than Filament's tippy binding, the same shape [icon.md](../schemas/icon.md#the-tooltip-renders-as-a-native-title) uses.
 
 ### The Alpine props have no twin; the deferred badge arrives through the `badge` block
 
 `alpineActive`, `alpineDeferredBadgeData` and `alpineDeferredBadgeLoading` are Alpine expression strings the item interpolates into `x-bind:class`, `x-show` and two `x-if` templates.
-There is no Alpine in this port: the active class is rendered server-side and then owned by the `sylament--schemas--tabs` Stimulus controller, and a deferred badge is a placeholder `<span>` handed in through the `badge` block, which the controller fills from [`Tabs::getDeferredTabBadges()`](../schemas/tabs.md).
+There is no Alpine in this port: the active class is rendered server-side and then owned by the `sylament--schemas--tabs` Stimulus controller, and a deferred badge is a placeholder `<span>` handed in through the `badge` block, which the controller fills from [`Tabs::getLazyLoadedTabBadges()`](../schemas/tabs.md).
 The three props therefore have nothing to carry.
 Skipped permanently.
 

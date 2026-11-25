@@ -25,7 +25,7 @@ owns:
 | [`tab()` / `getTabComponent()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `tab()` / `getTabComponent()` | done | — | [diverges](#the-badge-is-resolved-before-the-colour-and-tooltip-closures-read-it) |
 | [`resolveDefaultClosureDependencyForEvaluationBy{Name,Type}()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) — `$ownerRecord` / `$pageClass` injection | the same two overrides | done | — | — |
 | [`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) — `$relationManager` + `getProperties()` | [`RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php) | done | — | — |
-| `deferBadge()` / `isBadgeDeferred()` | `RelationGroup.php` | skipped | — | [diverges](relation-manager.md#deferred-tab-badges-do-not-port) |
+| `lazyLoadedBadge()` / `isBadgeLazyLoaded()`, and the deprecated `deferBadge()` / `isBadgeDeferred()` | `RelationGroup.php` | skipped | — | [diverges](relation-manager.md#deferred-tab-badges-do-not-port) |
 
 ## Semantics
 
@@ -55,6 +55,6 @@ Ours evaluates once at the top of the method and filters the result, so both pat
 ### The badge is resolved before the colour and tooltip closures read it
 
 Filament's `getTabComponent()` assigns `$badge` inside the *false* arm of a ternary — `->badge($isTabBadgeDeferred ? fn () => … : ($badge = $this->getBadge()))` — and then passes `$badge ?? null` to `badgeColor()` and `badgeTooltip()`.
-With a deferred badge the assignment never runs, so a colour closure taking `$badge` receives `null`.
+With a lazy-loaded badge the assignment never runs, so a colour closure taking `$badge` receives `null`.
 Ours resolves the badge into a variable first and passes it to both, which is what the argument is for.
 (The deferred arm does not port here at all — see the [manager's divergence](relation-manager.md#deferred-tab-badges-do-not-port).)

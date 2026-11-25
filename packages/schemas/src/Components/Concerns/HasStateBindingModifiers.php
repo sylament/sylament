@@ -25,20 +25,6 @@ trait HasStateBindingModifiers
         return $this;
     }
 
-    public function reactive(): static
-    {
-        $this->live();
-
-        return $this;
-    }
-
-    public function lazy(): static
-    {
-        $this->live(onBlur: true);
-
-        return $this;
-    }
-
     public function debounce(int|string|null $delay = 500): static
     {
         $this->live(debounce: $delay);

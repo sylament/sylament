@@ -19,7 +19,7 @@ It then writes through the owning component's `state()`, optionally firing its a
 | [Closure-valued state evaluated before writing; evaluated value returned](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 | [`shouldCallUpdatedHooks` gating of after-update hooks](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | [diverges](#shouldcallupdatedhooks-fires-the-non-bubbling-hook-set-dropping-filaments-parent-bubbling) |
 | [Raw-bag else-branch](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [detail](#the-raw-bag-write-skips-the-roots-child-schema-cache-clear) |
-| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/State/Set.php) | [`Set::skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
+| [`skipComponentsChildSchemasWhileSearching(bool)` toggle](../../../packages/schemas/src/State/Set.php) | [`Set::skipComponentsChildSchemasWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 
 ## Details
 

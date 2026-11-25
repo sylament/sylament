@@ -31,7 +31,7 @@ Their consumer is panels: [panels' `HasTabs`](../panels/has-tabs.md) calls `modi
 | [`badgeTooltip()` (support's `HasBadgeTooltip`)](../../../packages/support/src/Components/Concerns/HasBadgeTooltip.php) | [`Concerns/HasBadgeTooltip`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | done | — | [diverges](#the-badge-tooltip-renders-as-a-native-title) |
 | [`badgeIcon()` / `getBadgeIcon()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | — |
 | [`badgeIconPosition()` / `getBadgeIconPosition()` — defaults to `Before`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | — |
-| [`deferBadge()` / `isBadgeDeferred()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [tabs.md](tabs.md#deferred-badges-are-keyed-by-tab-key-not-by-array-index) · [diverges](#a-deferred-badge-renders-eagerly-in-server-mode) |
+| [`lazyLoadedBadge()` / `isBadgeLazyLoaded()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [tabs.md](tabs.md#lazy-loaded-badges-are-keyed-by-tab-key-not-by-array-index) · [diverges](#a-lazy-loaded-badge-renders-eagerly-in-server-mode) |
 | [`icon()` / `iconPosition()` (support's concerns)](../../../packages/support/src/Components/Concerns/HasIcon.php) | [`Concerns/HasIcon`, `HasIconPosition`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
 | [`query()` / `modifyQueryUsing()` / `modifyQuery()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same three](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [diverges](#modifyquery-mutates-the-builder-in-place-and-discards-the-return) |
 | [`excludeQueryWhenResolvingRecord()` / `shouldExcludeQueryWhenResolvingRecord()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | — |
@@ -81,8 +81,8 @@ Doctrine's `QueryBuilder` mutates in place, and tables makes the same call: [`In
 
 Filament binds `badgeTooltip` to tippy through the badge component's `tooltip` prop; the port has no tooltip library, so it renders a native `title` attribute, the house tooltip shape, as [`icon.md`](icon.md) does.
 
-### A deferred badge renders eagerly in server mode
+### A lazy-loaded badge renders eagerly in server mode
 
-`deferBadge()` exists so a costly badge count is fetched after the first paint, through the `getDeferredTabBadges()` seam the tabs controller calls.
-Filament's `livewireProperty()` arm defers too: it renders a placeholder and fetches `getDeferredTabBadges()` from Alpine.
-In [`liveComponentProperty()`](tabs.md#server-mode-is-the-livewireproperty-arm-translated-to-ux-live) mode the port puts no controller on the element, so nothing would ever fill the placeholder: the badge renders eagerly instead, exactly as a non-deferred one.
+`lazyLoadedBadge()` exists so a costly badge count is fetched after the first paint, through the `getLazyLoadedTabBadges()` seam the tabs controller calls.
+Filament's `livewireProperty()` arm defers too: it renders a placeholder and fetches `getLazyLoadedTabBadges()` from Alpine.
+In [`liveComponentProperty()`](tabs.md#server-mode-is-the-livewireproperty-arm-translated-to-ux-live) mode the port puts no controller on the element, so nothing would ever fill the placeholder: the badge renders eagerly instead, exactly as an eager one.

@@ -65,7 +65,7 @@
                         'data-step-key': stepKey,
                     }, stimulus_target(controller, 'headerButton')|stimulus_action(controller, 'goToStepFromHeader', 'click')) }}>
                         <div class="sy-sc-wizard-header-step-icon-ctn">
-                            {{ generateIconHtml(completedIcon ?? 'heroicons:check', completedIcon ? null : constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_WIZARD_COMPLETED_STEP'), {class: 'sy-sc-wizard-header-step-completed-icon'}, 'lg') }}
+                            {{ generateIconHtml(completedIcon ?? 'heroicons:check', completedIcon ? null : constant('Sylament\\Schemas\\Twig\\SchemasIconAlias::COMPONENTS_WIZARD_COMPLETED_STEP'), {class: 'sy-sc-wizard-header-step-completed-icon'}, 'lg') }}
 
                             {% if step.getIcon %}
                                 {{ generateIconHtml(step.getIcon, attributes: {class: 'sy-sc-wizard-header-step-icon'}, size: 'lg') }}

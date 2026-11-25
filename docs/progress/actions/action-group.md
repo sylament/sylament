@@ -107,7 +107,7 @@ It lands with that mode.
 ### The group's closure resolver lacks the `table`, `mountedActions` and operation arms
 
 [`ActionGroup::resolveDefaultClosureDependencyForEvaluationByName()`](../../../packages/actions/src/ActionGroup.php) resolves `record`, `recordClass` (Filament's `model`, which vendor's group carries at `ActionGroup.php:402` and which resolves the group's own [`getRecordClass()`](#actiongroupgetrecord-restates-the-traits-group-fallback-to-satisfy-phpstan)), `liveComponent`, `schema`, `schemaComponent` / `component`, `schemaGet` / `get`, `schemaComponentState` / `state` and `schemaState`.
-Its `get` arm does not chain `skipComponentsChildContainersWhileSearching(false)`, as vendor's does not (`ActionGroup.php:408`), unlike `Action`'s.
+Its `get` arm does not chain `skipComponentsChildSchemasWhileSearching(false)`, as vendor's does not (`ActionGroup.php:408`), unlike `Action`'s.
 Like Filament's group, it has no `set` arm.
 
 Three of vendor's arms are missing: `mountedActions`, `schemaOperation` / `context` / `operation` (vendor's `ActionGroup.php:407`, the container's operation falling back to the component's), and `table` (`ActionGroup.php:411`).

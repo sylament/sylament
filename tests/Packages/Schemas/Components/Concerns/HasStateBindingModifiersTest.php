@@ -14,9 +14,8 @@ it('binds the input as its modifiers ask', function (Component $field, string $d
 })->with([
     'not live' => [fn (): TextInput => TextInput::make('title'), 'norender|data.title'],
     'live' => [fn (): TextInput => TextInput::make('title')->live(), 'data.title'],
-    'reactive' => [fn (): TextInput => TextInput::make('title')->reactive(), 'data.title'],
     'live, condition false' => [fn (): TextInput => TextInput::make('title')->live(condition: false), 'norender|data.title'],
-    'lazy' => [fn (): TextInput => TextInput::make('title')->lazy(), 'on(change)|data.title'],
+    'live on blur' => [fn (): TextInput => TextInput::make('title')->live(onBlur: true), 'on(change)|data.title'],
     'debounced' => [fn (): TextInput => TextInput::make('title')->debounce(), 'debounce(500)|data.title'],
     'live, debounce spelled as a string' => [fn (): TextInput => TextInput::make('title')->live(debounce: '1s'), 'debounce(1s)|data.title'],
     'live on blur and debounced' => [fn (): TextInput => TextInput::make('title')->live(onBlur: true, debounce: 300), 'on(change)|data.title'],
@@ -26,9 +25,9 @@ it('binds a field that sets no liveness of its own as its container does', funct
     expect($this->renderSchemaComponent($container)->filter('input')->attr('data-model'))->toBe($dataModel);
 })->with([
     'a live parent' => [fn (): Section => Section::make()->live()->components([TextInput::make('title')]), 'data.title'],
-    'a lazy parent' => [fn (): Section => Section::make()->lazy()->components([TextInput::make('title')]), 'on(change)|data.title'],
+    'a parent live on blur' => [fn (): Section => Section::make()->live(onBlur: true)->components([TextInput::make('title')]), 'on(change)|data.title'],
     'a debounced parent' => [fn (): Section => Section::make()->debounce(300)->components([TextInput::make('title')]), 'debounce(300)|data.title'],
-    'a lazy schema' => [fn (): Section => Section::make()->components(Schema::make()->lazy()->components([TextInput::make('title')])), 'on(change)|data.title'],
+    'a schema live on blur' => [fn (): Section => Section::make()->components(Schema::make()->live(onBlur: true)->components([TextInput::make('title')])), 'on(change)|data.title'],
     'its own live() inside a parent on blur with a debounce' => [fn (): Section => Section::make()->live(onBlur: true, debounce: 300)->components([TextInput::make('title')->live()]), 'data.title'],
 ]);
 

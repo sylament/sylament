@@ -67,7 +67,7 @@ class ReaderForm implements InteractsWithSchemas
                     ->components([TextInput::make('flag')->stateCast(new BooleanStateCast(isStoredAsInt: true))]),
                 Fieldset::make()
                     ->statePath('search')
-                    ->label(static fn (Get $get): string => 'Searched ' . var_export($get->skipComponentsChildContainersWhileSearching(condition: false)('search.flag'), true))
+                    ->label(static fn (Get $get): string => 'Searched ' . var_export($get->skipComponentsChildSchemasWhileSearching(condition: false)('search.flag'), true))
                     ->components([TextInput::make('flag')->stateCast(new BooleanStateCast(isStoredAsInt: true))]),
             ]);
     }

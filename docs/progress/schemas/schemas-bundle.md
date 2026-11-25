@@ -2,7 +2,7 @@
 description: The schemas bundle class, its asset workspace and utilities, the icon aliases, and the Stimulus controllers that replace Filament's schemas Alpine scripts.
 ports:
   - vendor/filament/schemas/src/SchemasServiceProvider.php
-  - vendor/filament/schemas/src/View/SchemaIconAlias.php
+  - vendor/filament/schemas/src/View/SchemasIconAlias.php
   - vendor/filament/schemas/resources/js/index.js
   - vendor/filament/schemas/resources/js/components/actions.js
   - vendor/filament/schemas/resources/js/components/tabs.js
@@ -13,7 +13,7 @@ owns:
   - packages/schemas/assets/src/utils/live_host.ts
   - packages/schemas/assets/src/utils/schema_component_method.ts
   - packages/schemas/src/SylamentSchemasBundle.php
-  - packages/schemas/src/Twig/SchemaIconAlias.php
+  - packages/schemas/src/Twig/SchemasIconAlias.php
 ---
 # SylamentSchemasBundle (schemas)
 
@@ -32,12 +32,12 @@ The reader rows live in their own files.
 | [`@SylamentSchemas` view namespace](../../../packages/schemas/src/SylamentSchemasBundle.php) | [`->hasViews()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [Asset registration](../../../packages/schemas/src/SylamentSchemasBundle.php) (the `@sylament/schemas` workspace + `prependExtension()`) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | done | — | [semantics](#the-asset-prepend-needs-the-built-dist-to-exist) · [diverges](#the-schemas-package-has-a-js-workspace-of-its-own) |
 | [`sylament--schemas--schema`](../../../packages/schemas/assets/src/controllers/schema_controller.ts) — the root schema's validation-error reveal and client-state reset | [`resources/js/index.js`](../../../vendor/filament/schemas/resources/js/index.js) (`filamentSchema`) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) · [semantics](#the-expand-walk-and-the-two-window-events-either-side-of-it) |
-| [`sylament--schemas--tabs`](../../../packages/schemas/assets/src/controllers/tabs_controller.ts) — the active tab, the overflow dropdown, the deferred badges | [`resources/js/components/tabs.js`](../../../vendor/filament/schemas/resources/js/components/tabs.js) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) |
+| [`sylament--schemas--tabs`](../../../packages/schemas/assets/src/controllers/tabs_controller.ts) — the active tab, the overflow dropdown, the lazy-loaded badges | [`resources/js/components/tabs.js`](../../../vendor/filament/schemas/resources/js/components/tabs.js) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) |
 | [`sylament--schemas--wizard`](../../../packages/schemas/assets/src/controllers/wizard_controller.ts) — the active step, per-step validation on next | [`resources/js/components/wizard.js`](../../../vendor/filament/schemas/resources/js/components/wizard.js) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [diverges](#two-deliberate-deltas-from-vendors-runtime-behaviour) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) · [semantics](#a-morph-reverts-the-wizards-per-step-status-text) |
 | [`utils/schema_component_method.ts`, `utils/live_host.ts`, `utils/cloak.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) | — | done | — | [diverges](#the-schema-component-method-helper-and-two-utilities-live-in-schemas-assets) |
 | `actions` AlpineComponent (the sticky actions row) | [`resources/js/components/actions.js`](../../../vendor/filament/schemas/resources/js/components/actions.js) | todo | — | [actions.md](actions.md#sticky-mode-is-not-ported) |
-| [`SchemaIconAlias`](../../../packages/schemas/src/Twig/SchemaIconAlias.php): `COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON`, `COMPONENTS_TABS_MORE_TABS_BUTTON`, `COMPONENTS_WIZARD_COMPLETED_STEP` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | done | — | [diverges](#the-icon-alias-values-drop-filaments-schema-prefix) |
-| `SchemaIconAlias::COMPONENTS_CALLOUT_DANGER` / `_INFO` / `_SUCCESS` / `_WARNING` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | blocked | the unported `Callout` component | — |
+| [`SchemasIconAlias`](../../../packages/schemas/src/Twig/SchemasIconAlias.php): `COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON`, `COMPONENTS_TABS_MORE_TABS_BUTTON`, `COMPONENTS_WIZARD_COMPLETED_STEP` | [`View/SchemasIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemasIconAlias.php) | done | — | [diverges](#the-icon-alias-values-drop-filaments-schema-prefix) |
+| `SchemasIconAlias::COMPONENTS_CALLOUT_DANGER` / `_INFO` / `_SUCCESS` / `_WARNING` | [`View/SchemasIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemasIconAlias.php) | blocked | the unported `Callout` component | — |
 | `composer.json` requires `sylament/actions` | — | done | — | — |
 | `Make*` commands + stub publishing | [`configurePackage()` / `packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#the-make-commands-and-stub-publishing-are-not-ported) |
 | [Translations (`hasTranslations`)](../../../packages/schemas/translations) | [`configurePackage()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | done | — | [semantics](#the-catalogue-holds-only-the-keys-schemas-code-reads) |
@@ -157,12 +157,12 @@ The systematic translations:
 - **`this.$refs.tabsData` / `stepsData` (a hidden input holding a JSON blob) is dropped.**
   The keys are read off the `tab`/`step` targets' `data-tab-key` / `data-step-key` in DOM order, so there is no second copy of the key list to keep in sync.
 - **The `livewireId` half of every guard is dropped**, because no producer of a live component id exists on this side: `reset-schema-component-state` and `form-validation-error` are matched by `event.target === this.element.closest('[data-controller~="live"]')` — the host that dispatched is the host that owns this schema — plus, for `reset-schema-component-state`, the `schemaKey` payload it carries; `form-validation-error` is matched by the target alone.
-- **`window.tippy` is dropped**: a deferred badge's `badgeTooltip` renders as a native `title`, the house tooltip shape.
+- **`window.tippy` is dropped**: a lazy-loaded badge's `badgeTooltip` renders as a native `title`, the house tooltip shape.
 
 Three details worth naming:
 
-- **The deferred badge DOM is built by hand, then frozen.**
-  The tabs controller calls `getDeferredTabBadges` once on connect through [`callSchemaComponentMethod`](#the-schema-component-method-helper-and-two-utilities-live-in-schemas-assets), and for each `badgePlaceholder` target replaces the loading indicator with support's Badge markup (`sy sy-badge sy-size-sm` + the server's colour classes and inline styles, `sy-badge-label-ctn`/`sy-badge-label` inside) — the badge text through `textContent`, only the server-generated `badgeIconHtml` through `insertAdjacentHTML`.
+- **The lazy-loaded badge DOM is built by hand, then frozen.**
+  The tabs controller calls `getLazyLoadedTabBadges` once on connect through [`callSchemaComponentMethod`](#the-schema-component-method-helper-and-two-utilities-live-in-schemas-assets), and for each `badgePlaceholder` target replaces the loading indicator with support's Badge markup (`sy sy-badge sy-size-sm` + the server's colour classes and inline styles, `sy-badge-label-ctn`/`sy-badge-label` inside) — the badge text through `textContent`, only the server-generated `badgeIconHtml` through `insertAdjacentHTML`.
   The placeholder is then stamped `data-live-ignore` so later morphs leave the client-built DOM alone; an appended sibling would be duplicated instead, since UX Live inserts the server's node *after* a client-added one.
   A placeholder the morph replaces re-applies from the cached map through `badgePlaceholderTargetConnected`, and a rejected call empties every placeholder instead of leaving it spinning, which is what the `finally` in vendor's inline `x-data` does.
   `disconnect()` bumps a `#generation` counter so an in-flight answer to a disconnected controller is dropped.
@@ -188,7 +188,7 @@ The controllers are otherwise method-by-method ports, so the places where the be
 
 ### The schema-component-method helper and two utilities live in schemas' assets
 
-[`utils/schema_component_method.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) is the browser half of the [schemas host seam](has-schemas.md), so it ships from schemas; Wizard's `nextStep` and Tabs' `getDeferredTabBadges` call it, and so do forms' `select` and `file-upload` controllers.
+[`utils/schema_component_method.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) is the browser half of the [schemas host seam](has-schemas.md), so it ships from schemas; Wizard's `nextStep` and Tabs' `getLazyLoadedTabBadges` call it, and so do forms' `select` and `file-upload` controllers.
 Forms imports it as `@sylament/schemas/utils/schema_component_method.js` through the `exports` map and a `workspace:*` devDependency; esbuild inlines it into forms' bundled controllers, and the standalone copy ships from schemas' `dist`.
 
 Two more utilities sit beside it.
@@ -228,14 +228,14 @@ It declares no targets: both handlers `querySelector` over their own subtree.
 | `persistId` | String | the `localStorage` key's suffix (`tabs-<persistId>`) |
 | `queryStringKey` | String | non-empty ⇒ read on connect (highest priority) and `history.replaceState`d on change |
 | `scrollable` | Boolean, default `true` | `false` ⇒ run the overflow measurement and the visibility rules |
-| `deferredBadges` | Boolean | `true` ⇒ call `getDeferredTabBadges` once on connect |
+| `deferredBadges` | Boolean | `true` ⇒ call `getLazyLoadedTabBadges` once on connect |
 
 | Target | What it is |
 | --- | --- |
 | `nav` | the `<nav>` holding the inline tabs followed by the dropdown root; the measured container, and it carries `sy-invisible` until the first measurement completes |
 | `tab` | one per inline tab button; toggled `sy-active` + `aria-selected`, and its `data-tab-key` is the key list's only source of truth |
 | `panel` | one per tab panel; toggled `sy-active` |
-| `badgePlaceholder` | one per deferred-badge slot; its `data-tab-key` selects the entry |
+| `badgePlaceholder` | one per lazy-loaded-badge slot; its `data-tab-key` selects the entry |
 | `dropdown` | the overflow dropdown's root; declared because the template emits it, never dereferenced (the measurement leaves out the `nav`'s last child, as vendor does) |
 | `triggerTab` | one per tab, rendered inside the dropdown trigger; mirrors `sy-active`/`aria-selected` |
 | `moreButton` | the dropdown's trigger button; its icon width feeds the overflow maths, and its absence (with `nav`'s) is what makes the measurement a no-op under `scrollable(true)` |

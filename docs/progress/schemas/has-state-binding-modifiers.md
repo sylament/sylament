@@ -7,7 +7,7 @@ owns:
 ---
 # HasStateBindingModifiers (schemas)
 
-[`Sylament\Schemas\Components\Concerns\HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) is the shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`lazy`), debounced, or not at all.
+[`Sylament\Schemas\Components\Concerns\HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) is the shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`live(onBlur: true)`), debounced, or not at all.
 Both the [`Schema`](../../../packages/schemas/src/Schema.php) and the schemas base [`Component`](component.md) `use` it.
 It ports Filament's identically-named trait, translating the Livewire `wire:model` modifier grammar into a single Symfony UX LiveComponent `data-model` string; [`property-accessor.md`](property-accessor.md) has the state backend that string drives and [`has-schemas.md`](has-schemas.md) how a live component reaches its container.
 
@@ -15,16 +15,16 @@ It ports Filament's identically-named trait, translating the Livewire `wire:mode
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`live(onBlur, debounce, condition)`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`live()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
-| [`lazy()` → `on(change)` blur binding](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`lazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
+| [`live(onBlur, debounce, condition)`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) — `onBlur: true` is the `on(change)` blur binding | [`live()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`debounce(delay)` → `debounce(ms)` binding](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`debounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`getDataModel()` UX `data-model` string builder](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`applyStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
 | [`getDataModel(statePath)` over a caller-supplied path](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | — (no Filament equivalent) | done | — | [diverges](#the-optional-state-path-is-a-sylament-addition) |
 | [`getLiveDebounce()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`getLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
-| [`reactive()` alias of `live()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`isLive()` / `isLiveOnBlur()` container fallback](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | [diverges](#the-trait-carries-the-component-flavor-while-schema-overrides-the-getters) |
 | [`isLiveDebounced()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLiveDebounced()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | `stateBindingModifiers()` / `applyStateBindingModifiers()` / `getStateBindingModifiers()` Livewire grammar | [`getStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
+| `reactive()` | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [deprecated for `live()`](../README.md#statuses) |
+| `lazy()` | [`lazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [deprecated for `live(onBlur: true)`](../README.md#statuses) |
 | `isLazy()` alias | [`isLazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
 | `getNormalizedLiveDebounce()` ms/s parser | [`getNormalizedLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Twig;
 
-class SchemaIconAlias
+class SchemasIconAlias
 {
     public const string COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON = 'components.tabs.dropdown-trigger-button';
 

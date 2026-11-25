@@ -8,7 +8,7 @@ use Sylament\Schemas\Components\Component;
 
 final class Set
 {
-    private bool $shouldSkipComponentsChildContainersWhileSearching = true;
+    private bool $shouldSkipComponentsChildSchemasWhileSearching = true;
 
     public function __construct(
         private readonly Component $component,
@@ -25,7 +25,7 @@ final class Set
             ? $this->component
             : $this->component->getRootContainer()->getComponentByStatePath(
                 $path,
-                $this->shouldSkipComponentsChildContainersWhileSearching ? [$this->component] : [],
+                $this->shouldSkipComponentsChildSchemasWhileSearching ? [$this->component] : [],
             );
 
         $state = $this->component->evaluate($state);
@@ -43,9 +43,9 @@ final class Set
         return $state;
     }
 
-    public function skipComponentsChildContainersWhileSearching(bool $condition = true): static
+    public function skipComponentsChildSchemasWhileSearching(bool $condition = true): static
     {
-        $this->shouldSkipComponentsChildContainersWhileSearching = $condition;
+        $this->shouldSkipComponentsChildSchemasWhileSearching = $condition;
 
         return $this;
     }

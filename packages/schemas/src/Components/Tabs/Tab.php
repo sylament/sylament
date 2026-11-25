@@ -41,7 +41,7 @@ class Tab extends Component implements CanConcealComponents
 
     protected IconPosition|string|Closure|null $badgeIconPosition = null;
 
-    protected bool|Closure $isBadgeDeferred = false;
+    protected bool|Closure $isBadgeLazyLoaded = false;
 
     public static function make(string|Markup|TranslatableInterface|Closure|null $label = null): static
     {
@@ -156,16 +156,16 @@ class Tab extends Component implements CanConcealComponents
         ]) ?? IconPosition::Before;
     }
 
-    public function deferBadge(bool|Closure $condition = true): static
+    public function lazyLoadedBadge(bool|Closure $condition = true): static
     {
-        $this->isBadgeDeferred = $condition;
+        $this->isBadgeLazyLoaded = $condition;
 
         return $this;
     }
 
-    public function isBadgeDeferred(): bool
+    public function isBadgeLazyLoaded(): bool
     {
-        return $this->evaluate($this->isBadgeDeferred);
+        return $this->evaluate($this->isBadgeLazyLoaded);
     }
 
     /**

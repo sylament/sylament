@@ -34,7 +34,7 @@ class LazyKeyValueForm implements InteractsWithSchemas
         return $schema
             ->statePath('data')
             ->components([
-                KeyValue::make('pairs')->lazy(),
+                KeyValue::make('pairs')->live(onBlur: true),
             ]);
     }
 }

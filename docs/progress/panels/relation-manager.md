@@ -135,7 +135,7 @@ It is also Filament's own shape: `#[Locked] Model $ownerRecord` carries no scope
 ### Deferred tab badges do not port
 
 `$isBadgeLazyLoaded` and `isBadgeLazyLoaded()`, and the deprecated `$isBadgeDeferred` and `isBadgeDeferred()` they fall back to, are not ported, so `getTabComponent()` reads the badge eagerly.
-Our [`Tabs`](../schemas/tabs.md) computes `isDeferred` as `not isServerDriven and …`, and a manager's tab bar is server-driven by construction, so a deferred badge is structurally unreachable there.
+Our [`Tabs`](../schemas/tabs.md) computes `isLazyLoaded` as `not isServerDriven and …`, and a manager's tab bar is server-driven by construction, so a deferred badge is structurally unreachable there.
 The consequence is an invariant on the consumer: the badge statics run on **every** live request of the owning page, so keep them O(1).
 
 ### The default active tab loads at post-mount, and the manager keeps no `mount()` of its own

@@ -6,7 +6,7 @@ const ACTIVE_CLASS = "sy-active";
 const SELECTED_CLASS = "sy-selected";
 const INVISIBLE_CLASS = "sy-invisible";
 const RESIZE_DEBOUNCE_MS = 150;
-const BADGES_METHOD = "getDeferredTabBadges";
+const BADGES_METHOD = "getLazyLoadedTabBadges";
 const DEFAULT_TAB_ITEM_GAP = 8;
 class tabs_controller_default extends Controller {
   static targets = [
@@ -48,7 +48,7 @@ class tabs_controller_default extends Controller {
       this.#updateTabsWithinDropdown();
     }
     if (this.deferredBadgesValue) {
-      void this.#loadDeferredBadges(generation);
+      void this.#loadLazyLoadedBadges(generation);
     }
     this.#connected = true;
   }
@@ -329,7 +329,7 @@ class tabs_controller_default extends Controller {
       this.navTarget.classList.toggle(INVISIBLE_CLASS, !mounted);
     }
   }
-  async #loadDeferredBadges(generation) {
+  async #loadLazyLoadedBadges(generation) {
     let badges;
     try {
       const host = await resolveLiveHost(this.element);

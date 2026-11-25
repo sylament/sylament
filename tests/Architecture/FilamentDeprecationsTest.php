@@ -26,16 +26,7 @@ Sylament\Panels\Pages\Concerns\HasMaxWidth
 Sylament\Panels\Pages\Concerns\HasMaxWidth::$maxWidth
 Sylament\Panels\Pages\Concerns\HasMaxWidth::getMaxWidth
 Sylament\Schemas\Components\Concerns\CanBeConcealed::isConcealed
-Sylament\Schemas\Components\Concerns\HasStateBindingModifiers::lazy
-Sylament\Schemas\Components\Concerns\HasStateBindingModifiers::reactive
 Sylament\Schemas\Components\Contracts\CanConcealComponents
-Sylament\Schemas\Components\Tabs::getDeferredTabBadges
-Sylament\Schemas\Components\Tabs::hasDeferredBadges
-Sylament\Schemas\Components\Tabs\Tab::deferBadge
-Sylament\Schemas\Components\Tabs\Tab::isBadgeDeferred
-Sylament\Schemas\State\Get::skipComponentsChildContainersWhileSearching
-Sylament\Schemas\State\Set::skipComponentsChildContainersWhileSearching
-Sylament\Schemas\Twig\SchemaIconAlias
 Sylament\Tables\Columns\Concerns\HasRowLoopObject
 Sylament\Tables\Columns\Summarizers\Concerns\InteractsWithTableQuery::hasQueryModification
 Sylament\Tables\Concerns\CanDeferLoading

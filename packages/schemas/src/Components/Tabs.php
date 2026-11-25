@@ -227,14 +227,14 @@ class Tabs extends Component
      * @return array<string, array{badge: ?string, badgeColorClasses: string, badgeColorStyles: string, badgeIconHtml: ?string, badgeIconPosition: ?string, badgeTooltip: ?string}>
      */
     #[Exposed]
-    public function getDeferredTabBadges(): array
+    public function getLazyLoadedTabBadges(): array
     {
         $icons = $this->icons;
         $colors = $this->colors;
 
         if (!$icons instanceof IconExtension || !$colors instanceof ColorManager) {
             throw new LogicException(sprintf(
-                'A [%s] built outside the container cannot resolve deferred tab badges: no [%s] and [%s] were injected.',
+                'A [%s] built outside the container cannot resolve lazy-loaded tab badges: no [%s] and [%s] were injected.',
                 static::class,
                 IconExtension::class,
                 ColorManager::class,
@@ -244,7 +244,7 @@ class Tabs extends Component
         $badges = [];
 
         foreach ($this->getTabs() as $tab) {
-            if (!$tab->isBadgeDeferred()) {
+            if (!$tab->isBadgeLazyLoaded()) {
                 continue;
             }
 
@@ -276,9 +276,9 @@ class Tabs extends Component
         return $badges;
     }
 
-    public function hasDeferredBadges(): bool
+    public function hasLazyLoadedBadges(): bool
     {
-        return array_any($this->getTabs(), fn (Tab $tab): bool => $tab->isBadgeDeferred());
+        return array_any($this->getTabs(), fn (Tab $tab): bool => $tab->isBadgeLazyLoaded());
     }
 
     /**
@@ -300,7 +300,7 @@ class Tabs extends Component
             'isVertical' => $this->isVertical(),
             'isTabPersisted' => $this->isTabPersisted(),
             'tabQueryStringKey' => $this->getTabQueryStringKey(),
-            'hasDeferredBadges' => $this->hasDeferredBadges(),
+            'hasLazyLoadedBadges' => $this->hasLazyLoadedBadges(),
             'liveComponentProperty' => $this->getLiveComponentProperty(),
             'activeLiveComponentTab' => $this->getActiveLiveComponentTab(),
             'canGenerateTabLabel' => $liveComponent instanceof InteractsWithSchemas && method_exists($liveComponent, 'generateTabLabel'),

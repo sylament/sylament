@@ -16,7 +16,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A host whose writable `activeTab` property opens one tab of a persisted Tabs built from a
- * closure: `open`, unlabelled and named by `generateTabLabel()`, with a deferred badge,
+ * closure: `open`, unlabelled and named by `generateTabLabel()`, with a lazy-loaded badge,
  * and `closed`, labelled `Archived`, holding a Text keyed `delivered`.
  */
 #[AsLiveComponent(name: 'Schemas:PropertyDrivenTabsHost', template: '@Fixtures/schemas/PropertyDrivenTabsHost.html.twig')]
@@ -35,7 +35,7 @@ class PropertyDrivenTabsHost implements InteractsWithSchemas
                 ->liveComponentProperty('activeTab')
                 ->persistTab()
                 ->tabs(static fn (): array => [
-                    'open' => Tab::make()->badge('7')->deferBadge()->components([Text::make('Orders awaiting dispatch')]),
+                    'open' => Tab::make()->badge('7')->lazyLoadedBadge()->components([Text::make('Orders awaiting dispatch')]),
                     'closed' => Tab::make('Archived')->components([Text::make('Orders delivered')->key('delivered')]),
                 ]),
         ]);

@@ -25,7 +25,7 @@ Both [`Action`](action.md) and [`ActionGroup`](action-group.md) compose it, and 
 Filament dereferences it unguarded in the `$get` / `$set` resolver arms of `Action` and in the `$get` arm of `ActionGroup`:
 
 ```php
-'schemaGet', 'get' => [$this->getSchemaComponent()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)],
+'schemaGet', 'get' => [$this->getSchemaComponent()->makeGetUtility()->skipComponentsChildSchemasWhileSearching(false)],
 ```
 
 An action evaluated outside a schema therefore dies with *Call to a member function makeGetUtility() on null*, naming neither the action nor the binding it wanted.

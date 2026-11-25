@@ -161,6 +161,29 @@ Before ORM 3.8, which `schemas` still admits (`doctrine/orm: ^3.7`), DoctrineBun
 
 `schemas` therefore requires `doctrine/dbal: ^4.6`, the first version with `Configuration::getTypeProvider()`, rather than carry a `method_exists()` fallback onto the deprecated call as ORM's internal `TypeProviderLocator` does. Which packages inherit that requirement, and why `ParameterType` and `ArrayParameterType` are DBAL 4's native enums wherever they appear, is in [dependencies.md](dependencies.md).
 
+## A record's entity manager is resolved by its class
+
+An Eloquent model carries its connection, so Filament reaches a record's database by asking the model (`static::getModel()::query()`, `$record->save()`) and never names one.
+Doctrine's counterpart is the `ManagerRegistry`: `getManagerForClass()` answers the manager whose mapping claims the class, and `RecordManager::of()` wraps it, with `RecordManager::find()` for a class no manager may map.
+So shipped code resolves a record's manager from its class, or takes the one its query or its caller already holds.
+The container's `EntityManagerInterface`, `ObjectManager` and `Connection` services, and the registry's `getManager()`, `getConnection()` and `resetManager()` without a name, all answer the default manager or its connection.
+In an application that maps its classes on several managers, the default then answers for another database: a query finds no mapping for the class, or a write runs outside the transaction opened for it.
+
+Two escape hatches stay where the class cannot decide:
+- **A class several managers map.** `Resource::getEntityManager()` is public and asks the registry on every call, so a resource overrides it to pick one ([resource.md](../progress/panels/resource.md#the-entity-manager-is-the-one-that-maps-the-record-class)).
+- **No entity to follow.** An action's transaction opens on its table query's manager, else on its record class's, and only then on the default manager, named through `getDefaultManagerName()` ([can-use-database-transactions.md](../progress/actions/can-use-database-transactions.md#the-transaction-opens-on-the-records-manager-not-always-the-default-connection)).
+
+Two architecture checks keep the default out, one per way code obtains it:
+- **What the container injects.** `ManagerInjectionTest` reads the list `ManagerInjectionPass` exports of every shipped constructor, factory and method the container hands an `ObjectManager` or a DBAL `Connection`, and expects it empty.
+  It sees what autowiring resolved, which no source scan can, and it attributes each injection to the class or trait whose source declares the method, so a fixture subclass inheriting a shipped setter counts and a fixture's own constructor does not.
+  An object built with `new` and handed a manager (`RecordReplicator`, `KeySelection`) is no definition and never appears; its caller resolved the manager.
+- **What the source asks a registry.** `DefaultManagerCallTest` reads shipped source through PHP's tokenizer, so a comment or a string never counts, and refuses a `getManager()` or `resetManager()` call with no argument, which only a registry has.
+  It also refuses a no-argument `getConnection()` on a variable or property whose name contains `registry`, because an entity manager has a `getConnection()` too and only types could tell the two apart.
+  A call chained onto a result (`$registry->getManager($name)->getConnection()`) names no receiver and passes.
+  A registry held under a name without `registry` would pass as well, the one gap left, since the container check already keeps a bare connection out of every service.
+
+In the root suite the second manager's connection reaches the same database as the default's, so a raw query over the wrong connection still finds its table; the two checks cover how code obtains that connection ([test-infrastructure.md](test-infrastructure.md#the-secondary-manager)).
+
 ## No inline PHPStan ignores
 
 PHPStan runs at level max over every `src/`, with `trait.unused` as the only global ignore, and `reportUnmatchedIgnoredErrors` is on, so a stale ignore fails the run. An inline `@phpstan-ignore` hides a real defect at the one place a reader is least likely to question it. The three that once existed all masked the same unguarded nullable, and the fix was to make it throw: `BelongsToSchemaComponent::getSchemaComponentOrFail()`. An error that genuinely cannot be fixed belongs in a baseline file, where it is counted and reviewable. `tests/Architecture/StaticAnalysisSuppressionTest.php` enforces the ban.

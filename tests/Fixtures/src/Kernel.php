@@ -15,12 +15,14 @@ use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Sylament\Tables\SylamentTablesBundle;
 use Sylament\Tests\Infrastructure\DependencyInjection\ComponentListPass;
+use Sylament\Tests\Infrastructure\DependencyInjection\ManagerInjectionPass;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Sylament\Widgets\SylamentWidgetsBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
@@ -112,6 +114,7 @@ class Kernel extends BaseKernel
     {
         $container->setParameter('sylament_tests.worker_dir', WorkerDirectory::path());
         $container->addCompilerPass(new ComponentListPass());
+        $container->addCompilerPass(new ManagerInjectionPass(), PassConfig::TYPE_BEFORE_REMOVING);
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void

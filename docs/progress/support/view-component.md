@@ -70,3 +70,5 @@ Attribute assembly is a template-side concern handled by the `attrs()` Twig func
 Filament exposes the instance under a per-subclass `$viewIdentifier`: a schemas component's view sees `$schemaComponent`, a schema's `$schema`.
 Sylament fixes the key to `component` for every subclass.
 The schemas base sets the closure-evaluation identifier to `component` too, so the template variable and the `fn ($component) => …` injection name agree.
+A template reads `component.getRecord`, `component.getState` and the other getters instead of a sprayed `$record`, `$get` or `$operation`.
+A new context variable is an addition the [Twig promise](../../internals/stability.md#twig) allows (row T5).

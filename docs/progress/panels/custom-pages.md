@@ -207,6 +207,7 @@ Four things the shape depends on:
 Filament's `BasePage` renders through `$view` plus `getView()` / `getViewData()`, a Blade view name and a variable bag the page's own `render()` merges.
 Ours renders through UX LiveComponent's `template_from_method: getTemplate`, which takes a template **name** and hands the component itself to Twig as `this`, so there is no bag to fill: a template reads whatever it needs off `this` by calling the page's own getters.
 `$template` and `getTemplate()` are the port of `$view` and `getView()` under the standing Blade-view → Twig-template [idiom translation](../translations.md#idiom); `getViewData()` has nothing left to do and is not ported.
+A customizer overrides the page's template, and its blocks are Stable names under [row T4 of the Twig promise](../../internals/stability.md#twig).
 
 The same reasoning covers `getLayoutData()`'s third key, [recorded on `SimplePage`](simple-page.md#getlayoutdata-answers-two-keys-where-filaments-answers-three), the only class that fills it.
 
@@ -216,6 +217,7 @@ The same reasoning covers `getLayoutData()`'s third key, [recorded on `SimplePag
 
 The narrowness is forced by the Document template, which branches on the string with two literal `<twig:>` tags rather than calling the `component()` function: a function call cannot take a `<twig:block>`, and the page has to be handed to the shell as a block.
 So a consumer wanting a third shell overrides `@SylamentPanels/partials/Document/index.html.twig`, the one seam that is already a plain Twig template a Symfony application can override by path, and the failing `getLayout()` value is the loud form of that instruction.
+A third layout stays a `Document` override, and the blocks of the layouts it renders are Stable names under [row T4](../../internals/stability.md#twig).
 
 The Document's branch tests the **string literal** `'SylamentPanels:SimpleLayout'` rather than `SimplePage::LAYOUT`, because Twig has no constant import; the controller's `in_array()` guard is *not* what pins the two sides together, because both compare against the same constants and would move as one.
 What pins them is a case that opens a page naming the simple layout and asserts the `.sy-pa-simple-layout` its body renders: a rename on either side fails there.

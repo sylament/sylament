@@ -89,6 +89,7 @@ That argument settles the trait's row, written up [below](#extra-alpine-attribut
 
 Filament composes [`HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) onto layout components and fields alike, letting a caller hang arbitrary `x-*` attributes on the rendered element.
 There is no Alpine here, and the client wiring a component needs is its Stimulus controller, so the trait is skipped; `extraAttributes()` still passes anything a caller wants onto the same element.
+A Stimulus controller attaches through `extraAttributes(['data-controller' => …])`, and the escaping at render stays.
 
 The second reason is this bag's, and it is why the decision lives here rather than on any one component: against it the trait is a [synonym](#merge-drops-the-escape-and-appendable-value-machinery-and-does-not-deduplicate).
 It merges with `escape: false` as [`HasExtraInputAttributes`](../forms/has-extra-input-attributes.md) does, so a ported `extraAlpineAttributes()` landing on the same element would accumulate through the same `merge()` and render through the same `toHtml()`, byte for byte.

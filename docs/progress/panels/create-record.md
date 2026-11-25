@@ -13,8 +13,8 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) — `$data` and the plain `$record` | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [diverges](#the-page-holds-its-record-in-a-plain-property-and-writes-through-an-injected-entity-manager) |
-| [`setRecordPersistence()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | no Filament counterpart — an Eloquent model saves itself | done | — | [diverges](#the-page-holds-its-record-in-a-plain-property-and-writes-through-an-injected-entity-manager) |
+| [`CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) — `$data` and the plain `$record` | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [diverges](#the-page-holds-its-record-in-a-plain-property-and-writes-through-its-resources-entity-manager) |
+| [`getEntityManager()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) — its resource's manager | no Filament counterpart — an Eloquent model saves itself | done | — | [diverges](#the-page-holds-its-record-in-a-plain-property-and-writes-through-its-resources-entity-manager) |
 | [`mount()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `mount()` | done | — | [nested-resources.md](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount) |
 | [`fillForm()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `fillForm()` | done | — | — |
 | [`form()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`schemas()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `form()` + `defaultForm()` | done | — | [diverges](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it) · [list-records.md](list-records.md#a-modals-schema-keeps-the-resource-forms-own-column-count) |
@@ -112,8 +112,8 @@ The page swallows that `ORMInvalidArgumentException` and throws its own message 
 
 ### Both key reads ask the form's own reader, rebound to the page's manager
 
-Before the mapping, `mapRecordForCreation()` sets the form's association reader to a clone of itself bound to the manager `setRecordPersistence()` injected ([`withEntityManager()`](../schemas/association-reader.md)), so the record check that ends `getData()` reads the unit of work and the database the flush writes to; `handleRecordCreation()`'s blank-key read asks the form's reader rebound the same way rather than a reader of its own.
-So a reader service an application subclassed or decorated is the one both reads ask (a decorator that delegates must override `withEntityManager()` to rebind what it delegates to), and a page that overrides `setRecordPersistence()` with another manager is checked against that manager.
+Before the mapping, `mapRecordForCreation()` sets the form's association reader to a clone of itself bound to the manager `getEntityManager()` answers ([`withEntityManager()`](../schemas/association-reader.md)), so the record check that ends `getData()` reads the unit of work and the database the flush writes to; `handleRecordCreation()`'s blank-key read asks the form's reader rebound the same way rather than a reader of its own.
+So a reader service an application subclassed or decorated is the one both reads ask (a decorator that delegates must override `withEntityManager()` to rebind what it delegates to), and a resource that overrides `getEntityManager()` with another manager is checked against that manager.
 The bound reader is not put back afterwards, as `CreateAction`'s is not: a later read in the request asks a clone bound to the same manager.
 
 ### The mounted schema's record answers for the top frame, and depends on the seed's laziness
@@ -143,13 +143,14 @@ The two form actions' labels are handed to `Action::label()` as messages, which 
 
 ## Divergences
 
-### The page holds its record in a plain property and writes through an injected entity manager
+### The page holds its record in a plain property and writes through its resource's entity manager
 
 Filament's page declares `public ?Model $record`; ours declares `protected ?object $record`, a plain property rather than a `LiveProp`, set by `create()` and read by `getRedirectUrl()` in the same request, which ends with the redirect.
 The only `LiveProp` of the page's own is the writable `$data` bag every field binds into.
-`#[Required] setRecordPersistence(EntityManagerInterface)` is the persistence hop Filament does not need, because an Eloquent model saves itself.
-It is a setter rather than a constructor argument, so a subclass declaring its own constructor never repeats it, and a save that finds it unset throws a `LogicException` naming the page and the container registration, before anything is mapped.
-`EditRecord` declares the same setter rather than sharing a trait, as Filament keeps its record handlers per page.
+`getEntityManager()` is the persistence hop Filament does not need, because an Eloquent model saves itself.
+It answers the page's resource's [`getEntityManager()`](resource.md#the-entity-manager-is-the-one-that-maps-the-record-class), the manager that maps the record class, so the page holds no manager and no setter of its own, and a page built outside the container fails on the resource's missing services instead.
+A resource that overrides its `getEntityManager()` therefore changes where the page writes, and the form's reader is rebound to it.
+`EditRecord` declares the same method rather than sharing a trait, as Filament keeps its record handlers per page.
 
 ### The record page's schema is named `form`, and `schemas()` is narrowed to it
 

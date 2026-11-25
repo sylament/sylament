@@ -33,8 +33,11 @@ use Sylament\Tests\Fixtures\Panels\Resources\ShelfLabels\ShelfLabelResource;
 use Sylament\Tests\Fixtures\Panels\Resources\SluggedArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\TitleKeyedArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\UnmappedKeyArticleResource;
+use Sylament\Tests\Fixtures\Panels\Resources\UnmappedRecordResource;
 use Sylament\Tests\Fixtures\Panels\Selectors;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
@@ -461,5 +464,19 @@ describe('built outside the container', function (): void {
 
         expect([$resource->getSlug(), $resource->getRecordLabel(), $resource->getPluralRecordLabel(), array_keys($resource->getPages()), $resource->hasPage('edit'), $resource->getRouteBaseName($admin)])
             ->toBe(['articles', 'article', 'articles', ['index', 'create', 'edit'], true, 'sylament.admin.resources.articles']);
+    });
+});
+
+describe('a record class another manager maps', function (): void {
+    it('lists its records and opens one by its route key', function (): void {
+        $this->seed($observatory = new Observatory('Kitt Peak'));
+
+        expect($this->visit('/secondary-manager/observatories'))->toContainElement(TablesSelectors::row((string) $observatory->id), 'Kitt Peak')
+            ->and($this->visit("/secondary-manager/observatories/{$observatory->id}/edit")->filter(Selectors::field('name'))->attr('value'))->toBe('Kitt Peak');
+    });
+
+    it('refuses a record class no manager maps, naming it', function (): void {
+        expect(fn (): mixed => $this::getContainer()->get(UnmappedRecordResource::class)->getRecordQuery())
+            ->toThrow(LogicException::class, 'No Doctrine manager handles stdClass.');
     });
 });

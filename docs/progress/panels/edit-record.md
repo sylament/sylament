@@ -15,7 +15,7 @@ Its form actions and the form variant its template extends are [form-actions.md]
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`$data`](../../../packages/panels/src/Resources/Pages/EditRecord.php) — the writable `LiveProp` every field binds into | `public ?array $data` | done | — | — |
-| [`setRecordPersistence()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) — the `#[Required]` entity manager | no counterpart — an Eloquent model saves itself | done | — | — |
+| [`getEntityManager()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) — its resource's manager | no counterpart — an Eloquent model saves itself | done | — | — |
 | [`mount()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | `mount(int \| string $record)` | done | — | [interacts-with-record.md](interacts-with-record.md#mountrecord-is-the-one-place-the-assignment-order-lives) |
 | [`fillForm()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`mutateFormDataBeforeFill()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | `fillForm()` + `fillFormWithDataAndCallHooks()` + `mutateFormDataBeforeFill()` | done | — | — |
 | `refreshFormData()` | the same | blocked | a partial fill on `Schema` (`fillPartially()`) | — |

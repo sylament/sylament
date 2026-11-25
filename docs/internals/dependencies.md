@@ -63,7 +63,7 @@ An omission is safe only while a package the importer requires hard-requires the
 | `twig/twig` | `actions`, `forms`, `notifications`, `panels`, `schemas`, `tables` | `sylament/support` requires `twig/twig: ^3.27` |
 | `symfony/type-info` | `schemas` (`State\RecordTypeReader`, five symbols) | `symfony/property-info` requires `^7.4.7\|^8.0.7` |
 | `doctrine/dbal` | `actions`, `tables`, the root suite's `tests/Infrastructure/` | `sylament/schemas`, which each requires, requires `^4.6` |
-| `doctrine/persistence` | `actions` (`ManagerRegistry`, `ObjectManager`), `schemas` (`ManagerRegistry`, `ObjectManager`), `tables` (`ManagerRegistry`) | `doctrine/orm` requires `^3.3.1 \|\| ^4` |
+| `doctrine/persistence` | `actions` (`ManagerRegistry`, `ObjectManager`), `panels` (`ManagerRegistry`), `schemas` (`ManagerRegistry`, `ObjectManager`), `tables` (`ManagerRegistry`) | `doctrine/orm` requires `^3.3.1 \|\| ^4` |
 | `doctrine/collections` | `actions` (`new ArrayCollection()`), `tables` (`instanceof Collection`) | `doctrine/orm` requires `^2.2 \|\| ^3.1` |
 | `symfony/polyfill-php86` | `schemas`, `tables` (the global `SortDirection` enum) | `doctrine/orm` requires `^1.37` |
 | `psr/container` | `support`, `panels` | `symfony/service-contracts`, which support requires, requires `^1.1\|^2.0` |

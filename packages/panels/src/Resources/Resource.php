@@ -8,6 +8,7 @@ use BackedEnum;
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Stringable;
 use Sylament\Panels\CurrentPanel;
@@ -28,6 +29,7 @@ use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Schemas\State\RecordManager;
 use Sylament\Support\Concerns\HasTranslator;
 use Sylament\Tables\Table;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -79,7 +81,7 @@ abstract class Resource
 
     protected static ?SubNavigationPosition $subNavigationPosition = null;
 
-    private ?EntityManagerInterface $entityManager = null;
+    private ?ManagerRegistry $managerRegistry = null;
 
     private ?UrlGeneratorInterface $urlGenerator = null;
 
@@ -95,7 +97,7 @@ abstract class Resource
 
     #[Required]
     public function setResourceServices(
-        EntityManagerInterface $entityManager,
+        ManagerRegistry $managerRegistry,
         UrlGeneratorInterface $urlGenerator,
         CurrentPanel $currentPanel,
         PanelRegistry $panels,
@@ -103,7 +105,7 @@ abstract class Resource
         AssociationReader $associationReader,
         ResourceRegistry $resources,
     ): void {
-        $this->entityManager = $entityManager;
+        $this->managerRegistry = $managerRegistry;
         $this->urlGenerator = $urlGenerator;
         $this->currentPanel = $currentPanel;
         $this->panels = $panels;
@@ -243,6 +245,17 @@ abstract class Resource
         }
 
         return $this->getRecordLabel();
+    }
+
+    /**
+     * The manager that maps the record class, asked of the registry on every call. Override it for a class several
+     * managers map.
+     *
+     * @throws LogicException when no manager maps the record class, or the resource was built outside the container
+     */
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return RecordManager::of($this->managerRegistry ?? throw $this->missingServices(), $this->getRecordClass());
     }
 
     public function getRecordQuery(): QueryBuilder
@@ -540,11 +553,6 @@ abstract class Resource
     public function shouldRegisterNavigation(): bool
     {
         return static::$shouldRegisterNavigation;
-    }
-
-    protected function getEntityManager(): EntityManagerInterface
-    {
-        return $this->entityManager ?? throw $this->missingServices();
     }
 
     protected function getUrlGenerator(): UrlGeneratorInterface

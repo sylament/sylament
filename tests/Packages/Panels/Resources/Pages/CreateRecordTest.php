@@ -32,6 +32,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateHookedPottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateListenerStampedBulletin;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateLowercasedBadge;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateMonumentPlaque;
+use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateObservatory;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreatePottedPlant;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateSecondManagerSpine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateShelflessCrock;
@@ -41,6 +42,7 @@ use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateUnvettedKeyCharm;
 use Sylament\Tests\Fixtures\Panels\Resources\PottedPlantResource;
 use Sylament\Tests\Fixtures\Panels\Selectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -263,6 +265,14 @@ describe('the record it builds', function (): void {
 
         expect($this->visit('/create-shapes/caseless-bollards/moon/edit')->filter(Selectors::field('label'))->attr('value'))->toBe('Moon')
             ->and($this->entityManager()->getRepository(QuayBollard::class)->count())->toBe(1);
+    });
+
+    it('creates a record through the manager its class is mapped by', function (): void {
+        $this->createLiveComponent(CreateObservatory::class, ['panelId' => 'secondary-manager'])
+            ->fillForm(['name' => 'Kitt Peak'])
+            ->call('create');
+
+        expect($this->entityManagerFor(Observatory::class)->getRepository(Observatory::class)->findAll())->sequence(fn ($observatory) => $observatory->toBeRecord(name: 'Kitt Peak'));
     });
 
     it("asks the form's own reader, rebound to the manager the page writes through", function (): void {

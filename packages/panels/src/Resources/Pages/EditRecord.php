@@ -23,7 +23,6 @@ use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Translation\TranslatableMessage;
-use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Twig\Markup;
@@ -44,21 +43,9 @@ abstract class EditRecord extends Page
     #[LiveProp(writable: true)]
     public array $data = [];
 
-    private ?EntityManagerInterface $entityManager = null;
-
-    #[Required]
-    public function setRecordPersistence(EntityManagerInterface $entityManager): void
+    protected function getEntityManager(): EntityManagerInterface
     {
-        $this->entityManager = $entityManager;
-    }
-
-    /**
-     * @throws LogicException when the page was built outside the container
-     */
-    private function requireEntityManager(): EntityManagerInterface
-    {
-        return $this->entityManager
-            ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
+        return $this->getResourceInstance()->getEntityManager();
     }
 
     /**
@@ -136,7 +123,7 @@ abstract class EditRecord extends Page
 
             $this->refuseUnmappedFormData($schema, $state, $data);
 
-            $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->requireEntityManager()));
+            $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->getEntityManager()));
 
             $this->handleRecordUpdate($schema->getData($data));
 
@@ -285,7 +272,7 @@ abstract class EditRecord extends Page
 
     protected function handleRecordUpdate(object $record): object
     {
-        $entityManager = $this->requireEntityManager();
+        $entityManager = $this->getEntityManager();
 
         $entityManager->persist($record);
         $entityManager->flush();

@@ -18,7 +18,7 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`$title` / `getTitle()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
+| [`$title` / `getTitle()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) · [translations.md](../translations.md#symfonys-kebab-and-title-differ-from-laravels-on-acronyms-a-leading-separator-and-hyphens) |
 | [`$heading` / `$subheading` / `getHeading()` / `getSubheading()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
 | [`$navigationIcon` / `$activeNavigationIcon` / `$navigationLabel` / `$navigationSort`](../../../packages/panels/src/Pages/Page.php) and their static getters, `getNavigationBadge()` / `getNavigationBadgeColor()` | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |
 | [`$navigationGroup` / `getNavigationGroup()`](../../../packages/panels/src/Pages/Page.php) | [`Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [diverges](#navigationgroup-is-string-only-on-page-too) · [diverges](#a-static-getter-returns-a-message-and-the-item-that-reads-it-translates-it) |

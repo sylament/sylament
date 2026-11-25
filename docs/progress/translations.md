@@ -26,6 +26,7 @@ They are **not** renames and never go in [the Renames table](renames.md#renames)
 | `Str::uuid()` | `Uuid::v4()->toRfc4122()` ([symfony/uid](../../vendor/symfony/uid)) | [`FileUploadStateCast`](../../packages/schemas/src/State/Casts/FileUploadStateCast.php) keys a file map by uuid; `Str::ulid()` → `new Ulid()->toBase32()` names a stored upload |
 | A `Str::` macro Filament declares in its service provider | a function in [`Sylament\Support`'s `helpers.php`](support/helpers.md) | `Str::sanitizeUrl($url)` → `sanitize_url($url)`, `Str::sanitizeCssColor($color)` → `sanitize_css_color($color)` ([why](#a-pure-str-macro-becomes-a-helper-function)) |
 | `Arr::first()` | `array_first()` (PHP 8.5 native) | `FileUploadStateCast`'s single-file read; the no-callback arm of `Arr::first()` is `array_first()` exactly |
+| `Str::kebab()`, `ucfirst()` and `ucwords()` on a generated label | Symfony String's `kebab()`, `title()` and `title(allWords: true)` ([symfony/string](../../vendor/symfony/string)) | `str($name)->kebab()->replace(['-', '_'], ' ')->ucfirst()` → `u($name)->kebab()->replace('-', ' ')->title()` ([where they differ](#symfonys-kebab-and-title-differ-from-laravels-on-acronyms-a-leading-separator-and-hyphens)) |
 | Laravel's translator (`__('filament-<pkg>::key')`) | a `TranslatableMessage` in the package's domain, which a getter translates through its injected translator ([catalogues.md](../../.claude/rules/catalogues.md), [i18n.md](../internals/i18n.md)) | `__('filament-actions::create.single.label', ['label' => …])` → `new TranslatableMessage('create.single.label', ['label' => …], 'sylament-actions')`, read back through [`HasTranslator`](support/component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks) |
 | Filament's lang arrays (`resources/lang/en/<file>.php`), `:label` placeholders and `trans_choice()` | `translations/<domain>+intl-icu.en.yaml`, nested as the array nests, with ICU `{label}` arguments and `{count, plural, …}` ([catalogues.md](../../.claude/rules/catalogues.md)) | `'label' => 'New :label'` in `create.php` → `create:` › `single:` › `label: 'New {label}'` in `sylament-actions+intl-icu.en.yaml` |
 
@@ -55,6 +56,18 @@ The events have no Sylament names because nothing dispatches them; nothing publi
 There is no `Str` class here to extend and no provider to boot it in, so a macro whose body is pure lands in `helpers.php` under the snake_case naming the rest of that file uses.
 The body ports verbatim, `// Security:` comments included; only the call site changes shape.
 A macro that needs a service goes onto the service or Twig extension owning the dependency instead; [`generate_icon_html()`](support/helpers.md#generate_icon_html-moved-to-the-twig-extension) is the precedent, and the reason `helpers.php` is pure-only.
+
+### Symfony's `kebab()` and `title()` differ from Laravel's on acronyms, a leading separator and hyphens
+
+Every label the port generates from a name goes through Symfony String: `kebab()` where Filament calls `Str::kebab()`, `title()` where it calls `ucfirst()`, and `title(allWords: true)` where it calls `ucwords()`.
+`title()` keeps its default `allWords: false` at every `ucfirst()` site, so it capitalises the first letter only, and `releasedAt` reads "Released at" in both.
+The two libraries differ in three places:
+- `kebab()` keeps a run of capitals as one word where Laravel splits each: `URL` reads "Url" here and "U r l" in Filament, `userID` "User id" and "User i d", `HTMLParser` "Html parser" and "H t m l parser".
+- A leading separator differs: `kebab()` drops it where Laravel's keeps it, and `title()` capitalises the first letter after a word boundary where `ucfirst()` capitalises the first character, so a field named `_name` reads "Name" here and " name" in Filament, and a tab keyed `_draft` " Draft" and " draft".
+- `title(allWords: true)` capitalises after every word boundary where `ucwords()` capitalises after whitespace only, so a record label `e-mail` title-cases to "E-Mail" here and "E-mail" in Filament.
+The port keeps Symfony's casing: the differences touch only acronyms, a leading separator and a hyphenated word, and a copy of Laravel's `Str` would be code the ecosystem principle leaves to Symfony String.
+A `translateLabel()` key is the generated label, so for these names a catalogue written against Filament answers under a different key.
+[`get_record_label()`](support/helpers.md#get_record_label-is-a-rename-and-it-is-what-put-symfonystring-in-supports-manifest) records the same acronym handling for the record label.
 
 ### CSS class names insert a package code
 

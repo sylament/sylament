@@ -17,3 +17,9 @@ it('never carries a configureUsing() closure into the next test', function (): v
 
     expect(TextInput::make('a')->getPrefixLabel())->toBeNull();
 });
+
+it('sees a silenced deprecation a test expects, so a test can pin the one shipped code triggers', function (): void {
+    $this->expectUserDeprecationMessage('Since sylament/tests 0.1: Probe.');
+
+    trigger_deprecation('sylament/tests', '0.1', 'Probe.');
+});

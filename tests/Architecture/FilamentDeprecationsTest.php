@@ -90,5 +90,5 @@ it('matches a class the Renames table pairs with a Filament class of another nam
 });
 
 it('ships only what is still to be removed', function (): void {
-    expect(FilamentDeprecations::shipped())->toBe(explode("\n", FILAMENT_DEPRECATIONS_REMAINING));
+    expect(FilamentDeprecations::shipped())->toBe(preg_split("/\n/", FILAMENT_DEPRECATIONS_REMAINING, flags: PREG_SPLIT_NO_EMPTY));
 });

@@ -7,8 +7,11 @@ namespace Sylament\Tests\Architecture;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Actions\Replication\RecordReplicator;
+use Sylament\Panels\Resources\Resource;
 use Sylament\Tests\Fixtures\Kernel;
+use Sylament\Tests\Fixtures\Panels\Resources\VerbatimArticleSearchResource;
 use Sylament\Tests\Infrastructure\DependencyInjection\ManagerInjectionPass;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -27,4 +30,20 @@ it('reports a shipped class the container hands an entity manager', function ():
     $container->register(RecordReplicator::class, RecordReplicator::class)->setArguments([new Reference(EntityManagerInterface::class)]);
 
     expect(ManagerInjectionPass::injectionsIn($container))->toBe([RecordReplicator::class . '::__construct()']);
+});
+
+it('reports a shipped class the container hands an entity manager through a service closure', function (): void {
+    $container = new ContainerBuilder();
+    $container->register(EntityManagerInterface::class, EntityManager::class);
+    $container->register(RecordReplicator::class, RecordReplicator::class)->setArguments([new ServiceClosureArgument(new Reference(EntityManagerInterface::class))]);
+
+    expect(ManagerInjectionPass::injectionsIn($container))->toBe([RecordReplicator::class . '::__construct()']);
+});
+
+it('reports a setter a fixture inherits under the shipped class that declares it', function (): void {
+    $container = new ContainerBuilder();
+    $container->register(EntityManagerInterface::class, EntityManager::class);
+    $container->register(VerbatimArticleSearchResource::class, VerbatimArticleSearchResource::class)->addMethodCall('setResourceServices', [new Reference(EntityManagerInterface::class)]);
+
+    expect(ManagerInjectionPass::injectionsIn($container))->toBe([Resource::class . '::setResourceServices()']);
 });

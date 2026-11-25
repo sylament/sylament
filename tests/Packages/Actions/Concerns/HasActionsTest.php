@@ -281,7 +281,7 @@ describe('a schema context', function (): void {
 
 describe('the mounted schema', function (): void {
     it("builds a frame's form as a schema of its own, keyed by its index and bound to its data bag", function (): void {
-        $tester = $this->createLiveComponent(SchemaModalHost::class)->mountAction('edit')->setActionData(['title' => 'Lamp']);
+        $tester = $this->createLiveComponent(SchemaModalHost::class)->mountAction('edit')->fillForm(['title' => 'Lamp']);
         $host = $tester->component();
 
         expect($host->getMountedActionSchema()->getKey())->toBe('mountedActionSchema0')
@@ -289,7 +289,7 @@ describe('the mounted schema', function (): void {
             ->and($host->getMountedActionData())->toMatchArray(['title' => 'Lamp'])
             ->and($tester->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . SchemasSelectors::boundTo('mountedActionsData.0.title'))->count())->toBe(1);
 
-        $tester->assertActionDataSet(['title' => 'Lamp']);
+        $tester->assertSchemaStateSet(['title' => 'Lamp']);
 
         $bare = $this->createLiveComponent(SchemaModalHost::class)->mountAction('bare')->component();
 
@@ -315,7 +315,7 @@ describe('the mounted schema', function (): void {
 
         expect(array_keys($tester->component()->mountedActionsData))->toBe([0]);
 
-        $tester->setActionData(['title' => 'Lamp'])->mountAction('attachFile');
+        $tester->fillForm(['title' => 'Lamp'])->mountAction('attachFile');
 
         expect(array_keys($tester->component()->mountedActionsData))->toBe([0, 1]);
 
@@ -332,7 +332,7 @@ describe('the mounted schema', function (): void {
         $tester = $this->createLiveComponent(SchemaModalHost::class)
             ->mountAction('edit')
             ->callMountedAction()
-            ->assertHasActionErrors(['title'])
+            ->assertHasFormErrors(['title'])
             ->mountAction('attachFile');
 
         expect($tester->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . SchemasSelectors::boundTo('mountedActionsData.0.title') . '[aria-invalid="true"]')->count())->toBe(1);
@@ -346,11 +346,11 @@ describe('the mounted schema', function (): void {
         $this->createLiveComponent(SchemaModalHost::class)
             ->mountAction('edit')
             ->callMountedAction()
-            ->assertHasActionErrors(['title'])
+            ->assertHasFormErrors(['title'])
             ->set('data.outside', 'Shelf')
-            ->assertHasActionErrors(['title'])
-            ->setActionData(['title' => 'Lamp'])
-            ->assertHasNoActionErrors();
+            ->assertHasFormErrors(['title'])
+            ->fillForm(['title' => 'Lamp'])
+            ->assertHasNoFormErrors();
     });
 
     it("checks a field of an action that names no record class against the record class the host answers for its modal schemas", function (): void {
@@ -358,10 +358,10 @@ describe('the mounted schema', function (): void {
 
         $this->createLiveComponent(SchemaRecordHost::class)
             ->mountAction('register')
-            ->setActionData(['name' => 'Lamp'])
+            ->fillForm(['name' => 'Lamp'])
             ->callMountedAction()
-            ->assertHasActionErrors(['name'])
-            ->setActionData(['name' => 'Desk'])
+            ->assertHasFormErrors(['name'])
+            ->fillForm(['name' => 'Desk'])
             ->callMountedAction()
             ->assertActionNotMounted();
 
@@ -371,7 +371,7 @@ describe('the mounted schema', function (): void {
     it("replaces the whole stack from an action's own call, forgetting the old frame's data and form", function (): void {
         $tester = $this->createLiveComponent(SchemaModalHost::class)
             ->mountAction('swap')
-            ->setActionData(['code' => 'X1'])
+            ->fillForm(['code' => 'X1'])
             ->callMountedAction()
             ->assertActionMounted('bare');
         $bare = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN);
@@ -400,7 +400,7 @@ describe('calling', function (): void {
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['beforeFormValidated']);
 
-        $tester->assertHasActionErrors(['title'])->assertActionMounted('edit')->setActionData(['title' => 'Lamp'])->callMountedAction();
+        $tester->assertHasFormErrors(['title'])->assertActionMounted('edit')->fillForm(['title' => 'Lamp'])->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([
             'beforeFormValidated',
@@ -426,7 +426,7 @@ describe('calling', function (): void {
     it("validates only the mounted action's form, whatever the host's own form holds", function (): void {
         $this->createLiveComponent(SchemaModalHost::class)
             ->callAction(TestAction::make('annotate')->schemaComponent(), data: ['remark' => 'Fragile'])
-            ->assertHasNoActionErrors()
+            ->assertHasNoFormErrors()
             ->assertActionNotMounted();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['annotate: {"remark":"Fragile"}']);
@@ -504,7 +504,7 @@ describe('records', function (): void {
 
         expect($tester->component()->getMountedActionSchema()->getRecord())->toBeInstanceOf(Atelier::class)->toBeRecord(id: $atelier->id);
 
-        $tester->assertActionDataSet(['name' => 'Loft'])->callMountedAction();
+        $tester->assertSchemaStateSet(['name' => 'Loft'])->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(["inspect: {$atelier->id}"]);
     })->with([
@@ -638,7 +638,7 @@ describe('host defaults', function (): void {
         expect($triggers->reduce(static fn ($button): bool => str_contains($button->text(), 'New memo entry'))->count())->toBe(1)
             ->and($triggers->reduce(static fn ($button): bool => mb_trim($button->text()) === 'New memo')->count())->toBe(1);
 
-        $tester->mountAction('view')->assertActionDataSet(['subject' => 'Ledger']);
+        $tester->mountAction('view')->assertSchemaStateSet(['subject' => 'Ledger']);
 
         expect($tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN)->text())->toContain('View the ledger');
     });

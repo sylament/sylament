@@ -64,11 +64,11 @@ it('refuses a table record on a host that is not a table', function (): void {
 it('keeps a modal action mounted with its errors until its data passes', function (): void {
     $this->createLiveComponent(MountedActionsHost::class)
         ->callAction('rename')
-        ->assertHasActionErrors(['name'])
+        ->assertHasFormErrors(['name'])
         ->assertActionMounted('rename')
-        ->setActionData(['name' => 'Lamp'])
-        ->assertActionDataSet(['name' => 'Lamp'])
-        ->assertHasNoActionErrors()
+        ->fillForm(['name' => 'Lamp'])
+        ->assertSchemaStateSet(['name' => 'Lamp'])
+        ->assertHasNoFormErrors()
         ->callMountedAction()
         ->assertActionNotMounted();
 });

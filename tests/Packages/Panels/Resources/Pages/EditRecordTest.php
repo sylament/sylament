@@ -243,13 +243,13 @@ describe('its header actions', function (): void {
 
         $create = $this->createLiveComponent(EditActionedHerb::class, ['record' => $herb->id, 'panelId' => 'edit-shapes'])
             ->mountAction('create')
-            ->assertActionDataSet(['name' => null, 'latinName' => null])
+            ->assertSchemaStateSet(['name' => null, 'latinName' => null])
             ->render()
             ->crawler();
 
         $view = $this->createLiveComponent(EditActionedHerb::class, ['record' => $herb->id, 'panelId' => 'edit-shapes'])
             ->mountAction('view')
-            ->assertActionDataSet(['name' => 'Mint', 'latinName' => 'Mentha'])
+            ->assertSchemaStateSet(['name' => 'Mint', 'latinName' => 'Mentha'])
             ->render()
             ->crawler();
 
@@ -278,10 +278,10 @@ describe('its header actions', function (): void {
 
         $this->createLiveComponent(EditActionedHerb::class, ['record' => $herb->id, 'panelId' => 'edit-shapes'])
             ->callAction('create', data: ['name' => 'Mint', 'latinName' => 'Mentha'])
-            ->assertHasActionErrors(['name'])
-            ->setActionData(['name' => 'Thyme', 'latinName' => 'Thymus'])
+            ->assertHasFormErrors(['name'])
+            ->fillForm(['name' => 'Thyme', 'latinName' => 'Thymus'])
             ->callMountedAction()
-            ->assertHasNoActionErrors();
+            ->assertHasNoFormErrors();
 
         expect($this->entityManager()->getRepository(CompanionHerb::class)->findBy([], ['id' => 'ASC']))
             ->sequence(
@@ -330,8 +330,8 @@ describe('its header actions', function (): void {
         $sow = TestAction::make('sow')->schemaComponent('form-actions', schema: 'formActions');
         $page = fn () => $this->createLiveComponent(EditActionedHerb::class, ['record' => $herb->id, 'panelId' => 'edit-shapes']);
 
-        $page()->callAction($rename, data: ['name' => 'Mint'])->assertHasNoActionErrors();
-        $page()->callAction($rename, data: ['name' => 'Sage'])->assertHasActionErrors(['name']);
-        $page()->callAction($sow, data: ['name' => 'Mint'])->assertHasActionErrors(['name']);
+        $page()->callAction($rename, data: ['name' => 'Mint'])->assertHasNoFormErrors();
+        $page()->callAction($rename, data: ['name' => 'Sage'])->assertHasFormErrors(['name']);
+        $page()->callAction($sow, data: ['name' => 'Mint'])->assertHasFormErrors(['name']);
     });
 });

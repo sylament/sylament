@@ -235,7 +235,7 @@ describe('hosts', function (): void {
         $tester = $this->createLiveComponent(ListModalArticles::class, ['panelId' => 'list-pages'])
             ->callAction(TestAction::make('edit')->table($apple), data: ['title' => 'Apricot']);
 
-        expect($tester->assertHasNoActionErrors())->toBe($tester)
+        expect($tester->assertHasNoFormErrors())->toBe($tester)
             ->and($this->reload($apple)->title)->toBe('Apricot');
     });
 

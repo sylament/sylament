@@ -86,7 +86,7 @@ describe('over a garden', function (): void {
         it('refuses a submit that picks no record', function (): void {
             ($this->table)()
                 ->callAction(TestAction::make('associate')->table())
-                ->assertHasActionErrors(['recordId' => RequiredValue::class]);
+                ->assertHasFormErrors(['recordId' => RequiredValue::class]);
 
             expect(($this->seedlingsOf)($this->kew))->toBe(['Bramble', 'Thistle']);
         });
@@ -108,7 +108,7 @@ describe('over a garden', function (): void {
         });
 
         it('labels what the user picked by its title, one pick or several', function (array $variants, array|string $picks, array $labels): void {
-            $modal = ($this->mounted)($variants)->setActionData(['recordId' => $picks])->render()->crawler();
+            $modal = ($this->mounted)($variants)->fillForm(['recordId' => $picks])->render()->crawler();
 
             expect($modal->filter(Selectors::RECORD_SELECT . ' option[selected]')->each(static fn (Crawler $option): string => $option->text()))->toEqualCanonicalizing($labels);
         })->with([
@@ -173,7 +173,7 @@ describe('over a garden', function (): void {
             $tester = ($this->table)(['limitedToOne', ...$variants])->callAction(TestAction::make('associate')->table(), data: ['recordId' => ($this->key)($this->yarrow)]);
 
             if ($refused) {
-                $tester->assertHasActionErrors(['recordId']);
+                $tester->assertHasFormErrors(['recordId']);
             }
 
             expect(($this->seedlingsOf)($this->kew))->toBe($refused ? ['Bramble', 'Thistle'] : ['Bramble', 'Thistle', 'Yarrow']);
@@ -187,13 +187,13 @@ describe('over a garden', function (): void {
             $searched = $this->recordSelectSearch($tester, 'e');
             $searchLog = $this::getContainer()->get(HookLog::class)->hooks;
 
-            $tester->setActionData(['recordId' => ($this->key)($this->nettle)])->callMountedAction();
+            $tester->fillForm(['recordId' => ($this->key)($this->nettle)])->callMountedAction();
 
             expect($searched)->toBe([($this->key)($this->clover) => 'Clover'])
                 ->and($searchLog)->toBe(['options query: e'])
                 ->and(array_unique($this::getContainer()->get(HookLog::class)->hooks))->toBe(['options query: null']);
 
-            $tester->assertHasActionErrors(['recordId']);
+            $tester->assertHasFormErrors(['recordId']);
 
             expect(($this->seedlingsOf)($this->kew))->toBe(['Bramble', 'Thistle']);
         });
@@ -251,18 +251,18 @@ describe('over a garden', function (): void {
         it("refuses a picked seedling that is already the garden's with a validation error", function (): void {
             ($this->table)()
                 ->callAction(TestAction::make('associate')->table(), data: ['recordId' => ($this->key)($this->bramble)])
-                ->assertHasActionErrors(['recordId']);
+                ->assertHasFormErrors(['recordId']);
 
             expect(($this->seedlingsOf)($this->kew))->toBe(['Bramble', 'Thistle']);
         });
 
         it('associates through "Associate & associate another", then empties the select, keeps the modal open and stops offering what it associated', function (): void {
             $tester = ($this->mounted)()
-                ->setActionData(['recordId' => ($this->key)($this->nettle)])
+                ->fillForm(['recordId' => ($this->key)($this->nettle)])
                 ->callMountedAction(['another' => true])
                 ->assertNotified('Associated')
                 ->assertActionMounted(TestAction::make('associate')->table())
-                ->assertActionDataSet(['recordId' => null]);
+                ->assertSchemaStateSet(['recordId' => null]);
 
             expect($this->recordSelectSearch($tester, ''))->toBe([($this->key)($this->clover) => 'Clover', ($this->key)($this->yarrow) => 'Yarrow'])
                 ->and(($this->seedlingsOf)($this->kew))->toBe(['Bramble', 'Nettle', 'Thistle']);
@@ -334,7 +334,7 @@ describe('over the shapes a one-to-many takes', function (): void {
 
         expect(array_keys($this->recordSelectSearch($tester, '')))->toEqualCanonicalizing([$key($orphan), $key($others[0])]);
 
-        $tester->setActionData(['recordId' => $key($others[0])])->callMountedAction()->assertNotified('Associated');
+        $tester->fillForm(['recordId' => $key($others[0])])->callMountedAction()->assertNotified('Associated');
 
         expect(array_map($key, $this->reload($owner)->{$property}->toArray()))->toEqualCanonicalizing([$key($held), $key($others[0])]);
     })->with([

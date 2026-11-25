@@ -72,7 +72,7 @@ describe('over a garden', function (): void {
         it('refuses a submit that picks no record', function (): void {
             ($this->table)()
                 ->callAction(TestAction::make('attach')->table())
-                ->assertHasActionErrors(['recordId' => RequiredValue::class]);
+                ->assertHasFormErrors(['recordId' => RequiredValue::class]);
 
             expect(($this->plantsOfKew)())->toBe(['Moss', 'Rock']);
         });
@@ -130,13 +130,13 @@ describe('over a garden', function (): void {
             $searched = $this->recordSelectSearch($tester, 'i');
             $searchLog = $this::getContainer()->get(HookLog::class)->hooks;
 
-            $tester->setActionData(['recordId' => (string) $this->basil->id])->callMountedAction();
+            $tester->fillForm(['recordId' => (string) $this->basil->id])->callMountedAction();
 
             expect($searched)->toBe([(string) $this->ivy->id => 'Ivy'])
                 ->and($searchLog)->toBe(['options query: i'])
                 ->and(array_unique($this::getContainer()->get(HookLog::class)->hooks))->toBe(['options query: null']);
 
-            $tester->assertHasActionErrors(['recordId']);
+            $tester->assertHasFormErrors(['recordId']);
 
             expect(($this->plantsOfKew)())->toBe(['Moss', 'Rock']);
         });
@@ -182,7 +182,7 @@ describe('over a garden', function (): void {
         it('refuses a picked plant the garden already has with a validation error', function (): void {
             ($this->table)()
                 ->callAction(TestAction::make('attach')->table(), data: ['recordId' => (string) $this->rock->id])
-                ->assertHasActionErrors(['recordId']);
+                ->assertHasFormErrors(['recordId']);
 
             expect(($this->plantsOfKew)())->toBe(['Moss', 'Rock']);
         });
@@ -191,7 +191,7 @@ describe('over a garden', function (): void {
             $tester = ($this->table)(['limitedToTwo', ...$variants])->callAction(TestAction::make('attach')->table(), data: ['recordId' => (string) $this->ivy->id]);
 
             if ($refused) {
-                $tester->assertHasActionErrors(['recordId']);
+                $tester->assertHasFormErrors(['recordId']);
             }
 
             expect(($this->plantsOfKew)())->toBe($refused ? ['Moss', 'Rock'] : ['Ivy', 'Moss', 'Rock']);
@@ -212,11 +212,11 @@ describe('over a garden', function (): void {
 
         it('attaches through "Attach & attach another", then empties the select and keeps the modal open', function (): void {
             ($this->mounted)()
-                ->setActionData(['recordId' => (string) $this->basil->id])
+                ->fillForm(['recordId' => (string) $this->basil->id])
                 ->callMountedAction(['another' => true])
                 ->assertNotified('Attached')
                 ->assertActionMounted(TestAction::make('attach')->table())
-                ->assertActionDataSet(['recordId' => null]);
+                ->assertSchemaStateSet(['recordId' => null]);
 
             expect(($this->plantsOfKew)())->toBe(['Basil', 'Moss', 'Rock']);
         });
@@ -273,7 +273,7 @@ describe('over the shapes a relationship takes', function (): void {
 
         expect(array_keys($this->recordSelectSearch($tester, '')))->toEqualCanonicalizing($keys);
 
-        $tester->setActionData(['recordId' => $keys[0]])->callMountedAction()->assertNotified('Attached');
+        $tester->fillForm(['recordId' => $keys[0]])->callMountedAction()->assertNotified('Attached');
 
         expect(count($this->reload($owner)->{$relation}))->toBe(count($held) + 1)
             ->and($this->reload($owner)->{$relation}->exists(fn (int $index, object $record): bool => RecordKey::of($this->entityManager(), $record) === $keys[0]))->toBeTrue();

@@ -96,10 +96,10 @@ describe('the page', function (): void {
 
         $this->createLiveComponent(CreateGroupedRowPottedPlant::class, ['panelId' => 'create-shapes'])
             ->callAction($repot, data: ['name' => 'Fern'])
-            ->assertHasActionErrors(['name'])
+            ->assertHasFormErrors(['name'])
             ->fillForm(['name' => 'Ivy'])
             ->callMountedAction()
-            ->assertHasNoActionErrors()
+            ->assertHasNoFormErrors()
             ->assertActionNotMounted();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['repot']);

@@ -98,7 +98,7 @@ describe('the modal', function (): void {
 
         $this->createLiveComponent(RecordActionsHost::class)
             ->callAction('create', data: ['code' => 'MOON', 'title' => 'Far too long', 'slug' => 'taken'])
-            ->assertHasActionErrors(['title', 'slug'])
+            ->assertHasFormErrors(['title', 'slug'])
             ->assertActionMounted('create');
 
         expect($this->entityManager()->find(CappedHeadline::class, 'MOON'))->toBeNull();
@@ -107,16 +107,16 @@ describe('the modal', function (): void {
     it('creates another: saves, toasts, keeps the preserved field, empties the rest and stays mounted', function (): void {
         $tester = $this->createLiveComponent(RecordActionsHost::class)
             ->mountAction('create')
-            ->setActionData(['code' => 'MOON', 'title' => 'Moon', 'slug' => 'moon'])
+            ->fillForm(['code' => 'MOON', 'title' => 'Moon', 'slug' => 'moon'])
             ->callMountedAction(['another' => true])
             ->assertNotified('Created')
             ->assertActionMounted('create')
-            ->assertActionDataSet(['code' => null, 'title' => 'Moon', 'slug' => null]);
+            ->assertSchemaStateSet(['code' => null, 'title' => 'Moon', 'slug' => null]);
 
         expect($this->dispatchedBrowserEvents($tester, 'reset-schema-component-state'))->toBe([['schemaKey' => 'mountedActionSchema0']])
             ->and($this->reload(new CappedHeadline('MOON')))->toBeRecord(title: 'Moon');
 
-        $tester->setActionData(['code' => 'STAR', 'slug' => 'star'])->callMountedAction();
+        $tester->fillForm(['code' => 'STAR', 'slug' => 'star'])->callMountedAction();
 
         expect($this->reload(new CappedHeadline('STAR')))->toBeRecord(title: 'Moon');
     });
@@ -184,7 +184,7 @@ describe('a key the modal leaves blank', function (): void {
     it('mapped by a field, is refused under that field', function (): void {
         $this->createLiveComponent(RecordActionsHost::class)
             ->callAction('createStampedBulletin', data: ['scope' => 'news', 'stamp' => '', 'label' => 'Morning'])
-            ->assertHasActionErrors(['stamp']);
+            ->assertHasFormErrors(['stamp']);
 
         expect($this->entityManager()->getRepository(StampedBulletin::class)->count())->toBe(0);
     });
@@ -240,7 +240,7 @@ describe('a create on a relationship', function (): void {
 
         $this->createLiveComponent(LarderCrockTable::class)
             ->callAction(TestAction::make('create')->table(), data: ['shelf' => 'top', 'label' => 'Again'])
-            ->assertHasActionErrors(['shelf'])
+            ->assertHasFormErrors(['shelf'])
             ->assertActionMounted();
 
         expect($this->reload(new LarderCrock($cellar, 'top')))->toBeRecord(label: 'Jam');
@@ -257,7 +257,7 @@ describe('a create on a relationship', function (): void {
 
         $this->createLiveComponent(RecordActionsHost::class)
             ->callAction('createCrockPicked', data: ['larder' => (string) $annex->id, 'shelf' => 'low', 'label' => 'Jam'])
-            ->assertHasActionErrors(['shelf']);
+            ->assertHasFormErrors(['shelf']);
     });
 
     it("gives a many-to-many owner's collection the record back when the mapping, persist() or the blank-key read refuses it", function (string $action, array $data, ?string $refusal, ?string $message): void {
@@ -266,7 +266,7 @@ describe('a create on a relationship', function (): void {
         $tester = $this->createLiveComponent(RecordActionsHost::class);
 
         if ($refusal === null) {
-            $tester->callAction($action, data: $data)->assertHasActionErrors(['label']);
+            $tester->callAction($action, data: $data)->assertHasFormErrors(['label']);
         } else {
             expect(fn () => $tester->callAction($action, data: $data))->toThrow($refusal, $message);
         }

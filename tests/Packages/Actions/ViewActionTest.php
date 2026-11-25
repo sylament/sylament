@@ -21,7 +21,7 @@ it("fills a disabled form from the bound record, headed \"View\" and the record'
 
     $tester = $this->createLiveComponent(RecordActionsHost::class)
         ->call('mountAction', ['name' => 'view', 'context' => ['recordKey' => (string) $lamp->id]])
-        ->assertActionDataSet(['name' => 'Lamp']);
+        ->assertSchemaStateSet(['name' => 'Lamp']);
 
     expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'View Lamp')
         ->toContainElement(SupportSelectors::OPEN_MODAL . ' input[name="name"][disabled]')
@@ -45,7 +45,7 @@ it("shows the schema its host's resolver answers when it declares none, disabled
 
     $tester = $this->createLiveComponent(RecordActionsHost::class)
         ->call('mountAction', ['name' => 'viewResolved', 'context' => ['recordKey' => (string) $lamp->id]])
-        ->assertActionDataSet(['name' => 'Lamp']);
+        ->assertSchemaStateSet(['name' => 'Lamp']);
 
     expect($tester->render()->crawler())->toContainElement(SupportSelectors::OPEN_MODAL . ' input[name="name"][disabled]');
 });

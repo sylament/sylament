@@ -32,7 +32,7 @@ it('lists above its form the violations that name none of its fields, keeping th
     expect($modal)->toContainElement('input[name="title"]')
         ->and($modal->filter(Selectors::RECORD_ERRORS)->count())->toBe(0);
 
-    $modal = $tester->setActionData(['code' => 'H2', 'title' => 'Two'])->callMountedAction()->assertActionMounted('retitle')
+    $modal = $tester->fillForm(['code' => 'H2', 'title' => 'Two'])->callMountedAction()->assertActionMounted('retitle')
         ->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN);
 
     expect($modal->filter(Selectors::RECORD_ERROR)->each(static fn (Crawler $error): string => $error->text()))->toBe(['This value is already used.'])

@@ -13,7 +13,7 @@ it("fills the modal with what mutateRecordDataUsing() makes of the record's data
 
     $this->createLiveComponent(EditableHeadlineTable::class)
         ->mountAction(TestAction::make('editMutated')->table($sun))
-        ->assertActionDataSet(['title' => 'Filled by the mutator']);
+        ->assertSchemaStateSet(['title' => 'Filled by the mutator']);
 
     expect($this->reload($sun))->toBeRecord(title: 'Sun');
 });

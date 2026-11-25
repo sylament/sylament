@@ -45,7 +45,7 @@ describe('the modal', function (): void {
 
         $tester = $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicate')
-            ->assertActionDataSet(['title' => 'Sun']);
+            ->assertSchemaStateSet(['title' => 'Sun']);
 
         expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Replicate Sun')
             ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Replicate', 'Cancel']);
@@ -61,11 +61,11 @@ describe('the modal', function (): void {
 
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicateExcluded')
-            ->assertActionDataSet(['title' => null]);
+            ->assertSchemaStateSet(['title' => null]);
 
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicateMutated')
-            ->assertActionDataSet(['title' => 'Sun (copy)']);
+            ->assertSchemaStateSet(['title' => 'Sun (copy)']);
     });
 
     it('fills only the paths its schema declares, and carries an undeclared column onto the replica', function (): void {
@@ -73,12 +73,12 @@ describe('the modal', function (): void {
 
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicateCutting')
-            ->assertActionDataSet(function (array $state): array {
+            ->assertSchemaStateSet(function (array $state): array {
                 expect($state)->toBe(['name' => 'Rose']);
 
                 return [];
             })
-            ->setActionData(['name' => 'Rose cutting'])
+            ->fillForm(['name' => 'Rose cutting'])
             ->callMountedAction()
             ->assertActionNotMounted();
 
@@ -92,12 +92,12 @@ describe('the modal', function (): void {
 
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicateCuttingOriginExcluded')
-            ->assertActionDataSet(['origin.nursery' => null]);
+            ->assertSchemaStateSet(['origin.nursery' => null]);
 
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicateCuttingNurseryExcluded')
-            ->assertActionDataSet(['origin.nursery' => 'Kew'])
-            ->setActionData(['name' => 'Rose cutting'])
+            ->assertSchemaStateSet(['origin.nursery' => 'Kew'])
+            ->fillForm(['name' => 'Rose cutting'])
             ->callMountedAction()
             ->assertActionNotMounted();
 
@@ -112,7 +112,7 @@ describe('the modal', function (): void {
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction('replicateUnique')
             ->callMountedAction()
-            ->assertHasActionErrors(['title'])
+            ->assertHasFormErrors(['title'])
             ->assertActionMounted('replicateUnique');
 
         expect($this->entityManager()->getRepository(Article::class)->count())->toBe(1);
@@ -255,8 +255,8 @@ describe('the key', function (): void {
 
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction("replicate{$class}")
-            ->assertActionDataSet(['line' => 2])
-            ->setActionData(['line' => 3])
+            ->assertSchemaStateSet(['line' => 2])
+            ->fillForm(['line' => 3])
             ->callMountedAction()
             ->assertActionNotMounted();
 
@@ -276,7 +276,7 @@ describe('the key', function (): void {
         $this->createLiveComponent(ReplicateHost::class)
             ->mountAction("replicate{$class}")
             ->callMountedAction()
-            ->assertHasActionErrors($errors)
+            ->assertHasFormErrors($errors)
             ->assertActionMounted("replicate{$class}");
 
         expect($this->entityManager()->getRepository($line::class)->count())->toBe(1);
@@ -290,7 +290,7 @@ describe('the key', function (): void {
 
         $this->createLiveComponent(ReplicateHost::class)
             ->callAction("replicate{$class}ModalShifted", data: ['line' => 4])
-            ->assertHasActionErrors(['line' => 'This value is already used.']);
+            ->assertHasFormErrors(['line' => 'This value is already used.']);
 
         expect($this->entityManager()->getRepository($line::class)->count())->toBe(2);
     })->with([

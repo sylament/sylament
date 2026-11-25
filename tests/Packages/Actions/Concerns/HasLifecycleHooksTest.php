@@ -11,7 +11,7 @@ it('runs its form hooks while mounting and validating, then its before hook, its
 
     expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['beforeFormFilled', 'afterFormFilled']);
 
-    $tester->setActionData(['name' => 'Lamp'])->callMountedAction();
+    $tester->fillForm(['name' => 'Lamp'])->callMountedAction();
 
     expect($this::getContainer()->get(HookLog::class)->hooks)
         ->toBe(['beforeFormValidated', 'afterFormValidated', 'calling log', 'before', 'action', 'after', 'called log']);

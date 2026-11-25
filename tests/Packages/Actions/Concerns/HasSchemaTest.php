@@ -20,7 +20,7 @@ describe('declaring', function (): void {
 
         expect($tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN . ' ' . SchemasSelectors::boundTo("mountedActionsData.0.{$field}"))->count())->toBe(1);
 
-        $tester->setActionData([$field => 'Lamp'])->callMountedAction();
+        $tester->fillForm([$field => 'Lamp'])->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([sprintf('%s: {"%s":"Lamp"}', $name, $field)]);
     })->with([
@@ -69,7 +69,7 @@ describe('declaring', function (): void {
         expect($modal)->toContainElement('div' . SupportSelectors::MODAL_WINDOW . ' ' . SupportSelectors::MODAL_FOOTER . ' button[type="button"][data-action="live#action"]' . Selectors::liveParameter('action', 'callMountedAction'), 'Submit')
             ->and($modal->filter('form')->count())->toBe(0);
 
-        $tester->setActionData(['title' => 'Lamp'])->callMountedAction();
+        $tester->fillForm(['title' => 'Lamp'])->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['unwrapped: {"title":"Lamp"}']);
     });
@@ -77,7 +77,7 @@ describe('declaring', function (): void {
 
 describe('the mounted schema', function (): void {
     it("reads the modal's state from a before() hook, and nothing for a confirmation that mounted no schema or an action without a host", function (): void {
-        $this->createLiveComponent(SchemaDeclarationHost::class)->mountAction('reading')->setActionData(['title' => 'Lamp'])->callMountedAction();
+        $this->createLiveComponent(SchemaDeclarationHost::class)->mountAction('reading')->fillForm(['title' => 'Lamp'])->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['before: {"title":"Lamp"}', 'reading: {"title":"Lamp"}']);
 
@@ -116,7 +116,7 @@ describe('a wizard', function (): void {
             ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . SchemasSelectors::WIZARD_SUBMIT_SLOT . ' button[type="submit"]', 'Submit')
             ->and($modal->filter(SupportSelectors::MODAL_FOOTER)->count())->toBe(0);
 
-        $tester->setActionData(['name' => 'Ada', 'note' => 'Welcome'])->callMountedAction();
+        $tester->fillForm(['name' => 'Ada', 'note' => 'Welcome'])->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['onboard: {"name":"Ada","note":"Welcome"}']);
     });

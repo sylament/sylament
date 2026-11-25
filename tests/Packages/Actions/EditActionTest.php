@@ -42,7 +42,7 @@ describe('the modal', function (): void {
 
         $tester = $this->createLiveComponent(EditableHeadlineTable::class)
             ->mountAction(TestAction::make(EditAction::class)->table($sun))
-            ->assertActionDataSet(['title' => 'Sun']);
+            ->assertSchemaStateSet(['title' => 'Sun']);
 
         expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Edit Sun')
             ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Save changes', 'Cancel']);
@@ -72,7 +72,7 @@ describe('the modal', function (): void {
 
         $tester = $this->createLiveComponent(EditableHeadlineTable::class)
             ->callAction(TestAction::make(EditAction::class)->table($sun), data: ['title' => 'Far too long'])
-            ->assertHasActionErrors(['title']);
+            ->assertHasFormErrors(['title']);
 
         expect($tester->render()->crawler())->toContainElement(TablesSelectors::TEXT_COLUMN, 'Far too long')
             ->and($this->reload($sun))->toBeRecord(title: 'Sun');
@@ -85,8 +85,8 @@ describe('the modal', function (): void {
 
         $this->createLiveComponent(RecordActionsHost::class)
             ->call('mountAction', ['name' => 'editProduct', 'context' => ['recordKey' => (string) $lamp->id]])
-            ->assertActionDataSet(['name' => 'Lamp'])
-            ->setActionData(['name' => 'Vase'])
+            ->assertSchemaStateSet(['name' => 'Lamp'])
+            ->fillForm(['name' => 'Vase'])
             ->callMountedAction()
             ->assertNotified('Saved');
 
@@ -94,7 +94,7 @@ describe('the modal', function (): void {
 
         $this->createLiveComponent(RecordActionsHost::class)
             ->call('mountAction', ['name' => 'editUsing', 'context' => ['recordKey' => (string) $lamp->id]])
-            ->setActionData(['name' => 'Bowl'])
+            ->fillForm(['name' => 'Bowl'])
             ->callMountedAction();
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['using() was handed a ' . Product::class . ', renamed Bowl'])
@@ -104,7 +104,7 @@ describe('the modal', function (): void {
     it('fills from an array record and refuses to write one, advising using()', function (): void {
         $tester = $this->createLiveComponent(RecordActionsHost::class)
             ->mountAction('editArray')
-            ->assertActionDataSet(['name' => 'Lamp']);
+            ->assertSchemaStateSet(['name' => 'Lamp']);
 
         expect(fn () => $tester->callMountedAction())
             ->toThrow(LogicException::class, 'The action [editArray] writes a record but no entity is bound — mount it from a query() table row or a record page, call record(), or take the write over with using().');
@@ -156,10 +156,10 @@ describe('a composite-keyed row', function (): void {
 
         $this->createLiveComponent($table)
             ->mountAction(TestAction::make('editRenamed')->table($line))
-            ->assertActionDataSet(['line' => 2])
-            ->setActionData(['line' => 9, 'note' => 'Edited'])
+            ->assertSchemaStateSet(['line' => 2])
+            ->fillForm(['line' => 9, 'note' => 'Edited'])
             ->callMountedAction()
-            ->assertHasActionErrors(['line'])
+            ->assertHasFormErrors(['line'])
             ->assertActionMounted(TestAction::make('editRenamed')->table($line));
 
         expect($this->reload($line))->toBeRecord(line: 2, note: 'Old');

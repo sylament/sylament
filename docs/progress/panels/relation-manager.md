@@ -193,7 +193,7 @@ It is pinned inside the root for that reason.
 
 Filament's manager inherits the schemas trait's default, the first schema its cache holds, which is `tableFiltersForm`: its table caches that schema as every request boots, before the view caches `content`.
 The port's manager answers `form` from `getDefaultTestingSchemaName()`, the schema its create, edit and view actions build on.
-So a bare form helper after a completed action, such as `assertHasNoActionErrors()`, passes here as it does in Filament, testing another schema under another name.
+So a bare form helper after a completed action, such as `assertHasNoFormErrors()`, passes here as it does in Filament, testing another schema under another name.
 
 ### A manager must carry `#[AsLiveComponent]`, and the pass enforces it
 

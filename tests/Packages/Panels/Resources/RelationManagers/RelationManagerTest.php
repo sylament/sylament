@@ -125,8 +125,8 @@ describe('its actions', function (): void {
 
         expect($tester->render()->crawler())->toContainElement(Selectors::RELATION_MANAGER . ' ' . SupportSelectors::MODAL_HEADING, 'Edit Kale');
 
-        $tester->assertActionDataSet(['name' => 'Kale'])
-            ->setActionData(['name' => 'Kohlrabi'])
+        $tester->assertSchemaStateSet(['name' => 'Kale'])
+            ->fillForm(['name' => 'Kohlrabi'])
             ->callMountedAction()
             ->assertActionNotMounted();
 
@@ -153,7 +153,7 @@ describe('its actions', function (): void {
     it('joins what a create action outside its table makes to the owner, tests its form by default after it, and answers no relationship for another action', function (): void {
         $tester = ($this->seedlings)()->callAction('sow', data: ['name' => 'Chard']);
 
-        expect($tester->assertHasNoActionErrors())->toBe($tester)
+        expect($tester->assertHasNoFormErrors())->toBe($tester)
             ->and($this->entityManager()->getRepository(Seedling::class)->findOneBy(['name' => 'Chard'])->garden->id)->toBe($this->garden->id)
             ->and($tester->component()->getDefaultActionRelationship(EditAction::make()))->toBeNull();
     });

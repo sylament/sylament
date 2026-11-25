@@ -12,10 +12,6 @@ use Sylament\Tests\Architecture\Source\FilamentDeprecations;
  * name per line; regenerate it from `FilamentDeprecations::shipped()`.
  */
 const FILAMENT_DEPRECATIONS_REMAINING = <<<'LIST'
-Sylament\Actions\Testing\TestsActions::assertActionDataSet
-Sylament\Actions\Testing\TestsActions::assertHasActionErrors
-Sylament\Actions\Testing\TestsActions::assertHasNoActionErrors
-Sylament\Actions\Testing\TestsActions::setActionData
 Sylament\Panels\Navigation\NavigationItem::isActiveWhen
 Sylament\Panels\Pages\Concerns\HasMaxWidth
 Sylament\Panels\Pages\Concerns\HasMaxWidth::$maxWidth

@@ -106,7 +106,7 @@ describe('the owner is the page record', function (): void {
         expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Create Larder Jar')
             ->toContainElement(SupportSelectors::OPEN_MODAL . ' ' . FormsSelectors::INPUT);
 
-        $tester->setActionData(['label' => 'Damson'])->callMountedAction()->assertActionNotMounted();
+        $tester->fillForm(['label' => 'Damson'])->callMountedAction()->assertActionNotMounted();
 
         $damson = $this->entityManager()->getRepository(LarderJar::class)->findOneBy(['label' => 'Damson']);
 
@@ -120,8 +120,8 @@ describe('the owner is the page record', function (): void {
 
         expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Edit Pantry');
 
-        $tester->assertActionDataSet(['name' => 'Pantry'])
-            ->setActionData(['name' => 'Still room'])
+        $tester->assertSchemaStateSet(['name' => 'Pantry'])
+            ->fillForm(['name' => 'Still room'])
             ->callMountedAction()
             ->assertNoRedirect();
 
@@ -131,7 +131,7 @@ describe('the owner is the page record', function (): void {
     it("edits and views a row's jar in modals on the page's form, headed by the listed records' label and never the owner", function (): void {
         $tester = ($this->page)(ManageLarderJarShelf::class);
 
-        $edit = $tester->mountAction(TestAction::make('edit')->table($this->fig))->assertActionDataSet(['label' => 'Fig'])->render()->crawler();
+        $edit = $tester->mountAction(TestAction::make('edit')->table($this->fig))->assertSchemaStateSet(['label' => 'Fig'])->render()->crawler();
 
         expect($edit)->toContainElement(SupportSelectors::MODAL_HEADING, 'Edit larder jar');
 

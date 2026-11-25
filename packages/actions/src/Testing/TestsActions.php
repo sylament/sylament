@@ -37,26 +37,6 @@ trait TestsActions
     }
 
     /**
-     * @param array<string, mixed> $data
-     */
-    public function setActionData(array $data): static
-    {
-        $this->fillForm($data);
-
-        return $this;
-    }
-
-    /**
-     * @param array<string, mixed>|Closure $data
-     */
-    public function assertActionDataSet(array|Closure $data): static
-    {
-        $this->assertSchemaStateSet($data);
-
-        return $this;
-    }
-
-    /**
      * @param string|TestAction|array<mixed> $actions
      * @param array<string, mixed> $data
      * @param array<string, mixed> $arguments
@@ -253,26 +233,6 @@ trait TestsActions
     public function assertActionHalted(string|TestAction|array $actions = []): static
     {
         return $this->assertActionMounted($actions);
-    }
-
-    /**
-     * @param array<int|string, string> $keys
-     */
-    public function assertHasActionErrors(array $keys = []): static
-    {
-        $this->assertHasFormErrors($keys);
-
-        return $this;
-    }
-
-    /**
-     * @param array<int|string, string> $keys
-     */
-    public function assertHasNoActionErrors(array $keys = []): static
-    {
-        $this->assertHasNoFormErrors($keys);
-
-        return $this;
     }
 
     /**

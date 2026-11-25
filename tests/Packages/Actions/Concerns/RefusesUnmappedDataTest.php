@@ -15,7 +15,7 @@ it('refuses by name each path mutateDataUsing() adds that no component maps, bef
 it('writes what mutateDataUsing() overwrites or a hidden component maps, and passes a key a client typed', function (): void {
     $this->createLiveComponent(RecordActionsHost::class)
         ->mountAction('createHooked')
-        ->setActionData(['code' => 'MOON', 'title' => 'Moon', 'typed' => 'by the client'])
+        ->fillForm(['code' => 'MOON', 'title' => 'Moon', 'typed' => 'by the client'])
         ->callMountedAction()
         ->assertActionNotMounted();
 

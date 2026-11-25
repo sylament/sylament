@@ -10,7 +10,7 @@ it('answers the manager that maps a class', function (): void {
     $registry = $this::getContainer()->get('doctrine');
 
     expect(RecordManager::of($registry, Article::class))->toBe($this->entityManager())
-        ->and(RecordManager::of($registry, Observatory::class))->toBe($this->entityManagerFor(Observatory::class));
+        ->and(RecordManager::of($registry, Observatory::class))->toBe($registry->getManager('secondary'));
 });
 
 it('answers no manager for a class none maps, and refuses it by name when one is required', function (): void {

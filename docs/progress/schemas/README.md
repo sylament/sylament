@@ -96,6 +96,7 @@ Ports [`filament/schemas`](../../../vendor/filament/schemas) into [`packages/sch
 | [`Components/Concerns/HasJsRenderer.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasJsRenderer.php) | todo | — | — |
 | [`Components/Concerns/HasMaxWidth.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasMaxWidth.php) | todo | — | [panels' twin](../panels/simple-page.md) |
 | [`Components/Concerns/HasMeta.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasMeta.php) | todo | — | — |
+| [`Components/Contracts/CanConcealComponents.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) | skipped | — | [deprecated for the document `invalid` listener](schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) |
 | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — | — |
 | [`Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasEntryWrapper.php) | todo | — | — |
 | [`Concerns/HasInlineLabels.php`](../../../vendor/filament/schemas/src/Concerns/HasInlineLabels.php) | todo | — | — |

@@ -86,7 +86,7 @@ Three event names cross the PHP/JS boundary here, and only one of them is a `@wi
 
 Fields render their native `required`, `min`, `max`, `minlength` and `maxlength` wherever they sit, as Filament's do, so a control inside a collapsed section, an inactive tab, a step not yet shown or a collapsed repeater item blocks its form's submission like any other.
 The browser cannot focus such a control or anchor its validation bubble to it, so `schema_controller.ts` registers Filament's document-level, capture-phase `invalid` listener (an `invalid` event does not bubble), once per document when the module loads, which the eager schema controller does on every page that enables it.
-The listener ports Filament's line by line:
+The listener ports Filament's line by line, save that it first reads the target as a native form control, which TypeScript needs before `closest()` and `form`, so a form-associated custom element Filament would also handle is left to the browser:
 
 - it handles only a control inside a `[data-field-wrapper]`, so other forms on the page keep their own validation;
 - it leaves a visible control to the browser's own bubble, reading a control as hidden when its `offsetParent` is `null` (a collapsed Section's content, a Wizard step and a collapsed repeater item are `display: none`) or its computed `visibility` is `hidden` (an inactive Tab panel);

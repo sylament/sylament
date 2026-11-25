@@ -15,7 +15,7 @@ Its form actions and the form variant its template extends are [form-actions.md]
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`$data`](../../../packages/panels/src/Resources/Pages/EditRecord.php) — the writable `LiveProp` every field binds into | `public ?array $data` | done | — | — |
-| [`getEntityManager()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) — its resource's manager | no counterpart — an Eloquent model saves itself | done | — | — |
+| [`getEntityManager()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) — its resource's manager | no counterpart — an Eloquent model saves itself | done | — | [create-record.md](create-record.md#the-page-holds-its-record-in-a-plain-property-and-writes-through-its-resources-entity-manager) |
 | [`mount()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | `mount(int \| string $record)` | done | — | [interacts-with-record.md](interacts-with-record.md#mountrecord-is-the-one-place-the-assignment-order-lives) |
 | [`fillForm()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`mutateFormDataBeforeFill()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | `fillForm()` + `fillFormWithDataAndCallHooks()` + `mutateFormDataBeforeFill()` | done | — | — |
 | `refreshFormData()` | the same | blocked | a partial fill on `Schema` (`fillPartially()`) | — |
@@ -76,7 +76,7 @@ The gap shows only in the band: nothing else reads those methods on a resource p
 Re-deriving the order from the method body invites normalising `beforeSave` to sit after the mutator; it fires inside the state read, before it, as in Filament.
 A `Halt` thrown anywhere in the ladder returns `null` and skips every step after it: on a halt in `beforeSave` the hooks that ran are `beforeValidate`, `afterValidate`, `beforeSave`, and the row is untouched.
 
-Before the mapping, `save()` binds the form's association reader to the manager the page writes through — a [`withEntityManager()`](../schemas/association-reader.md) clone of whatever reader the form holds — so the changed-, blank- and taken-key passes that end `getData()` read the unit of work and the database the flush writes to, not the container's default manager.
+Before the mapping, `save()` binds the form's association reader to the manager the page writes through — a [`withEntityManager()`](../schemas/association-reader.md) clone of whatever reader the form holds — so the changed-, blank- and taken-key passes that end `getData()` read the unit of work and the database the flush writes to, and a resource that overrides `getEntityManager()` with another manager is checked against that manager.
 After the flush, `$schema->loadStateFromRelationships()` — Filament's post-save step, [ported as the host's](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) — keys a relationship repeater's added items by the identifiers the flush gave them, so the next save updates what this one created.
 
 A save that stays on the page answers `null` from the live action, so the response is the re-rendered component: notifications' `LiveDeliverySubscriber` drains the flash bag during that re-render and dispatches `sylament:notification` as a browser event, which the document outlet's controller shows.

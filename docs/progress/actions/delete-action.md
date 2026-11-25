@@ -63,7 +63,7 @@ So every bulk body's catch swallows silently, `DeleteBulkAction`'s, [`DetachBulk
 
 ### The delete bodies resolve their manager through the registry alone
 
-[`DeleteAction`](../../../packages/actions/src/DeleteAction.php) and [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php)'s fetching arm call `getManagerForClass()` on the injected registry themselves rather than [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins), so a query-lane table's manager does not take precedence for a delete as it does for the other write actions.
+[`DeleteAction`](../../../packages/actions/src/DeleteAction.php) and [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php)'s fetching arm call `RecordManager::of()` on the injected registry themselves rather than [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins), so a query-lane table's manager does not take precedence for a delete as it does for the other write actions.
 They keep their own resolution because their container-built-instance messages are pinned: a delete built with `new` refuses by name.
 The by-key arm is the exception: it has no record to ask the registry about, so it deletes through the table's `getQueryEntityManager()` ([below](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)).
 
@@ -105,8 +105,7 @@ Filament's body is `static fn (Model $record): ?bool => $record->delete()`: Eloq
 Doctrine records are plain objects with no persistence behaviour, so the port resolves the record's manager instead:
 
 ```php
-$manager = $registry->getManagerForClass($record::class)
-    ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $record::class));
+$manager = RecordManager::of($registry, $record::class);
 
 $manager->remove($record);
 $manager->flush();
@@ -114,13 +113,13 @@ $manager->flush();
 return true;
 ```
 
-The registry rather than a single `EntityManagerInterface` is deliberate: a multi-manager application binds entities to different managers, and `getManagerForClass()` is the only lookup that respects that.
+The registry rather than a single `EntityManagerInterface` is deliberate: a multi-manager application binds entities to different managers, and [`RecordManager::of()`](../schemas/association-reader.md#the-lookup-answers-the-manager-that-maps-a-class-or-none) is the lookup that respects that.
 The `true` return replaces Eloquent's `?bool`, so the `success()` / `failure()` split still has something to key off; `remove()` and `flush()` throw rather than report, so the failure arm is reachable only through a `using()` closure that returns falsy.
 And the record type widens from `Model` to `object`, the same widening every record-typed signature in the port carries.
 
 ### The manager registry is an optional `#[Required]` injection
 
-`setManagerRegistry(?ManagerRegistry $managerRegistry = null)` lives on [`CanUseDatabaseTransactions`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade), which every `Action` composes, and both delete classes inherit it rather than declaring a second copy: one setter, one service, whether the registry is wanted for a transaction or for a delete body's `getManagerForClass()`.
+`setManagerRegistry(?ManagerRegistry $managerRegistry = null)` lives on [`CanUseDatabaseTransactions`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade), which every `Action` composes, and both delete classes inherit it rather than declaring a second copy: one setter, one service, whether the registry is wanted for a transaction or for a delete body's `RecordManager::of()`.
 It is nullable **with a default**, which is what lets a Doctrine-less container compile the service definition at all: Symfony's autowiring fills an optional argument with its default when no service matches the type, and throws only when the parameter is required.
 A Sylament install with no ORM therefore builds the `DeleteAction` definition, and only a *use* of the default process fails, loudly, naming the cause:
 

@@ -98,7 +98,7 @@ Filament's only caller of the parameter is the parent scope, and here it is [the
 
 `getEntityManager()` is public and asks the registry for the manager that maps `getRecordClass()` on every call, through [`RecordManager`](../schemas/association-reader.md#the-lookup-answers-the-manager-that-maps-a-class-or-none), and stores none, so no caller holds a manager Doctrine has since reset.
 `getRecordQuery()`, the route-key reads and the create and edit pages all go through it, so a resource over a class only a second manager maps lists, opens, creates and saves through that manager, where the container's default manager would refuse the class.
-It stays overridable for a class several managers map, where the registry's first match is not the one the resource wants, and a resource that overrides it reaches its create page and that page's form reader as well.
+It stays overridable for a class several managers map, where the registry's first match is not the one the resource wants, and a resource that overrides it reaches its create and edit pages and both pages' form readers as well.
 A `$recordClass` that is an interface resolved through `resolve_target_entities` is no longer found, and the resource throws.
 The registry's `getManagerForClass()` asks each manager's mapping driver whether the class is transient, and an interface carries no mapping, so every manager answers yes and none claims it.
 The resolve listener's `onClassMetadataNotFound` hook fires only inside `getMetadataFor()`, which the old `getClassMetadata($interface)` call reached and the registry lookup never calls.

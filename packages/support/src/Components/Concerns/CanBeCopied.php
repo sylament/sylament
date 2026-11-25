@@ -64,7 +64,7 @@ trait CanBeCopied
     {
         $message = $this->evaluate($this->copyMessage, [
             'state' => $state,
-        ]) ?? new TranslatableMessage('components/copyable.messages.copied', domain: 'sylament');
+        ]) ?? new TranslatableMessage('components.copyable.messages.copied', domain: 'sylament');
 
         return (string) $this->translateText($message);
     }

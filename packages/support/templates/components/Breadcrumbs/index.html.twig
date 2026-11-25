@@ -1,6 +1,6 @@
 {% props breadcrumbs = [] %}
 
-<nav {{ attrs({class: 'sy sy-breadcrumbs', 'aria-label': 'components/breadcrumbs.label'|trans(domain: 'sylament')}, attributes.all) }}>
+<nav {{ attrs({class: 'sy sy-breadcrumbs', 'aria-label': 'components.breadcrumbs.label'|trans(domain: 'sylament')}, attributes.all) }}>
     <ol class="sy-breadcrumbs-list">
         {% for url, label in breadcrumbs %}
             <li class="sy-breadcrumbs-item">

@@ -37,7 +37,7 @@ The fallback lives in the consuming column rather than here, exactly as Filament
 
 ### The confirmation is translated before the template reads it
 
-`copyMessage()` takes a string, a `TranslatableInterface` or a closure returning either, and falls back to a `TranslatableMessage` for Filament's `components/copyable.messages.copied` key in the `sylament` catalogue, `Copied` in Filament's English.
+`copyMessage()` takes a string, a `TranslatableInterface` or a closure returning either, and falls back to a `TranslatableMessage` for `components.copyable.messages.copied`, Filament's key path in the catalogue's shape, in the `sylament` catalogue, `Copied` in Filament's English.
 `getCopyMessage()` always answers the translated string, because the clipboard controller takes it as a Stimulus value and holds no default of its own.
 The fallback is a message, so a column built with `new` and asked for its confirmation throws the [`LogicException`](component.md#a-message-is-translated-through-an-injected-translator-which-a-new-built-component-lacks) a message always throws there; a rendered column is container-built and never does.
 `copyableState()` is clipboard data rather than interface text, so a string there is never a key and a message is not accepted.

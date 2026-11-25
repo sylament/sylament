@@ -1,45 +1,46 @@
-components/badge:
-    actions:
-        delete:
-            label: 'Remove'
-components/breadcrumbs:
-    label: 'Breadcrumbs'
-components/copyable:
-    label: 'Copy {label}'
-    messages:
-        copied: 'Copied'
-        failed: 'Could not copy'
-components/modal:
-    actions:
-        close:
-            label: 'Close'
-components/pagination:
-    actions:
-        first:
-            label: 'Go to the first page'
-        go_to_page:
-            label: 'Go to page {page}'
-        last:
-            label: 'Go to the last page'
-        next:
-            label: 'Next page'
-        previous:
-            label: 'Previous page'
-    fields:
-        records_per_page:
-            label: 'Per page'
-            options:
-                all: 'All'
-    label: 'Pagination'
-    overview: '{total, plural, one {Showing 1 result} other {Showing {first, number} to {last, number} of {total, number} results}}'
-    overview_empty: 'Showing 0 results'
-    overview_empty_with_total: 'Showing 0 results of {total, number}'
-    overview_without_total: 'Showing {first, number} to {last, number} results'
-components/section:
-    actions:
-        collapse:
-            label: 'Collapse section'
-        expand:
-            label: 'Expand section'
-components/tabs:
-    label: 'Tabs'
+components:
+    badge:
+        actions:
+            delete:
+                label: 'Remove'
+    breadcrumbs:
+        label: 'Breadcrumbs'
+    copyable:
+        label: 'Copy {label}'
+        messages:
+            copied: 'Copied'
+            failed: 'Could not copy'
+    modal:
+        actions:
+            close:
+                label: 'Close'
+    pagination:
+        actions:
+            first:
+                label: 'Go to the first page'
+            go_to_page:
+                label: 'Go to page {page}'
+            last:
+                label: 'Go to the last page'
+            next:
+                label: 'Next page'
+            previous:
+                label: 'Previous page'
+        fields:
+            records_per_page:
+                label: 'Per page'
+                options:
+                    all: 'All'
+        label: 'Pagination'
+        overview: '{total, plural, one {Showing 1 result} other {Showing {first, number} to {last, number} of {total, number} results}}'
+        overview_empty: 'Showing 0 results'
+        overview_empty_with_total: 'Showing 0 results of {total, number}'
+        overview_without_total: 'Showing {first, number} to {last, number} results'
+    section:
+        actions:
+            collapse:
+                label: 'Collapse section'
+            expand:
+                label: 'Expand section'
+    tabs:
+        label: 'Tabs'

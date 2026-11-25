@@ -101,8 +101,8 @@ And the counts are carried through untouched — `withRecords()` does not recomp
 
 ### The copy is read from the `sylament` catalogue under Filament's key paths
 
-Every text the footer renders is a `'<key>'|trans(domain: 'sylament')` call whose key is Filament's `filament::components/pagination.*` path, so a Filament locale maps onto it key for key.
-`components/pagination.overview` is one ICU plural over `total`: `one` reads `Showing 1 result`, which is Filament's text, and `other` reads `Showing {first} to {last} of {total} results`, the numbers formatted for the locale.
+Every text the footer renders is a `'<key>'|trans(domain: 'sylament')` call whose key is Filament's `filament::components/pagination.*` path in the catalogue's shape, `components.pagination.*`, so a Filament locale maps onto it key for key through the one transform.
+`components.pagination.overview` is one ICU plural over `total`: `one` reads `Showing 1 result`, which is Filament's text, and `other` reads `Showing {first} to {last} of {total} results`, the numbers formatted for the locale.
 A one-record page therefore reads `Showing 1 result`, where a footer with no plural arm would say `Showing 1 to 1 of 1 results`.
 Filament renders an empty page through the same key as `Showing 0 to 0 of 0 results` and suppresses the overview in simple mode, so three texts have no Filament key and take port-added keys in the same shape: `overview_without_total` (`Showing {first} to {last} results`), `overview_empty_with_total` (`Showing 0 results of {total}`) and `overview_empty` (`Showing 0 results`).
 Five texts keep the port's English under Filament's key, because each names what the control does where Filament's names the control: `label` is `Pagination` (Filament: `Pagination navigation`), and `actions.first.label`, `actions.previous.label`, `actions.next.label` and `actions.last.label` are `Go to the first page`, `Previous page`, `Next page` and `Go to the last page` (Filament: `First`, `Previous`, `Next`, `Last`).
@@ -180,7 +180,7 @@ The port asks the same question of its one carrier (`totalRecordCount is null`) 
 The **overview** stays because the numbers are there and the copy is ours.
 `getFirstRecordNumber()` / `getLastRecordNumber()` need no total, and neither do Laravel's `firstItem()` / `lastItem()`, which sit on `AbstractPaginator`, so the simple paginator answers them too.
 What forces Filament's hand is the translation: `'{1} Showing 1 result|[2,*] Showing :first to :last of :total results'` is one key with no totals-free arm, so a simple footer there can only say nothing about where the user is.
-The port's second arm is a [port-added key](#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths), `components/pagination.overview_without_total`, beside Filament's.
+The port's second arm is a [port-added key](#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths), `components.pagination.overview_without_total`, beside Filament's.
 
 The **item list** stays because the port renders [one of Filament's two layouts](#the-component-renders-one-of-filaments-two-layouts): the standalone buttons simple mode falls back to are the layout we do not emit, so dropping the `<ol>` would leave a simple footer with no way to change page at all.
 Its prev/next items already key off `onFirstPage()` / `hasMorePages()`, the two predicates a carrier answers without a total, so the branch skips the window and nothing else and both shapes share one markup and one stylesheet path.

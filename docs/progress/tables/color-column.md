@@ -40,7 +40,7 @@ Naming a colour the page does not show would be worse than staying silent, which
 
 A **copyable** swatch keys only the `style` off the sanitizer.
 Its `role` is `button` for every value, because the copy control exists whatever the colour is, so the name cannot be dropped with the paint: a nameless `role="button"` carrying the clipboard controller is a focusable, operable control with no accessible name.
-The unsanitizable arm therefore falls back to the colour-free `Copy colour`, the verb without a value the page shows: the port-added `table.columns.color.copy_label` message, since Filament's fallback names the column and `components/copyable.label` (*Copy {label}*) needs a value.
+The unsanitizable arm therefore falls back to the colour-free `Copy colour`, the verb without a value the page shows: the port-added `table.columns.color.copy_label` message, since Filament's fallback names the column and `components.copyable.label` (*Copy {label}*) needs a value.
 
 The swatch still renders.
 It is not dropped from the list, so a row of five values always shows five squares and a bad one reads as a gap in the row rather than as a shorter row.
@@ -58,7 +58,7 @@ A value the sanitizer rejects is therefore still copyable, and copies what the r
 
 ### The copyable swatch is named and operable server-side, where Filament binds both client-side
 
-Filament suppresses the swatch's `role="img"` and name for the copyable case and hands both to `filamentCopyable`, which binds `role="button"`, the `components/copyable.label` name and the activation keys client-side, and only while the swatch is standalone.
+Filament suppresses the swatch's `role="img"` and name for the copyable case and hands both to `filamentCopyable`, which binds `role="button"`, the `filament::components/copyable.label` name and the activation keys client-side, and only while the swatch is standalone.
 
 This port stamps them server-side for every copyable swatch.
 A copyable swatch renders `role="button"`, `aria-label="Copy {colour}"` and the three [clipboard](../support/copyable.md) activation bindings (`click`, `keydown.enter`, `keydown.space`); focus is stamped client-side by the controller, so no `tabindex` is served inside a cell that may sit within a record `<a>`.

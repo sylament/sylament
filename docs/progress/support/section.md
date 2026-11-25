@@ -65,7 +65,7 @@ It is pinned: `sy-cloak` is absent on a collapsible section that persists nothin
 ### The expand and collapse labels are props defaulting to the catalogue, and the controller holds no text
 
 Filament resolves the disclosure button's labels inline with `__('filament::components/section.actions.expand.label')` / `…collapse.label`.
-The template exposes `expandLabel` / `collapseLabel` props whose defaults translate Filament's key paths, `components/section.actions.expand.label` and `components/section.actions.collapse.label`, from the `sylament` catalogue, in Filament's English.
+The template exposes `expandLabel` / `collapseLabel` props whose defaults translate Filament's key paths in the catalogue's shape, `components.section.actions.expand.label` and `components.section.actions.collapse.label`, from the `sylament` catalogue, in Filament's English.
 A caller can pass either prop to replace the catalogue's text.
 Filament keys the pair twice, under `filament-schemas::components.section.actions.*` and `filament::components/section.actions.*`, and the port reads only the `sylament` pair, so a Filament locale's `filament-schemas` pair is imported onto the `sylament` key, and an override in `sylament-schemas` never reaches the widget.
 The button's `aria-label` and the controller's `expandLabel` / `collapseLabel` Stimulus values are rendered from the same two props, so the controller, which rewrites the `aria-label` on every toggle, reads both texts from them ([i18n.md](../../internals/i18n.md#a-count-the-browser-updates-reaches-it-as-a-map-of-plural-forms)): the server's locale at render time fixes both texts, and a client-side locale change needs a re-render.

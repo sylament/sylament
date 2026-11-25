@@ -47,7 +47,7 @@ The single-backslash form compiles and renders and the suites do not fail on dep
 
 ### The navigation label is `Breadcrumbs`, where Filament's English is `Breadcrumb`
 
-Filament merges `__('filament::components/breadcrumbs.label')` onto the `<nav>`; the port reads the same key path, `components/breadcrumbs.label`, from the `sylament` catalogue, as [`Pagination`](pagination.md#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths) does for its `aria-label`.
+Filament merges `__('filament::components/breadcrumbs.label')` onto the `<nav>`; the port reads Filament's key path in the catalogue's shape, `components.breadcrumbs.label`, from the `sylament` catalogue, as [`Pagination`](pagination.md#the-copy-is-read-from-the-sylament-catalogue-under-filaments-key-paths) does for its `aria-label`.
 The catalogue's English is the plural `Breadcrumbs`, kept over Filament's singular `Breadcrumb` because the label names the list of crumbs; an application that wants Filament's text overrides the key in its own catalogue.
 A caller can still override it per use: `attrs()` lets a later source win for a scalar attribute, so `<twig:SylamentSupport:Breadcrumbs aria-label="…" />` replaces it.
 

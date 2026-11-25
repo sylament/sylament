@@ -81,7 +81,7 @@ It is the same shape as the [icon-button divergence](icon-button.md#the-disabled
 Filament's remove affordance is a slot whose **attributes** are the payload: `<x-slot name="deleteButton" :wire:click="…" wire:target="…">` carries no content at all, and `$isDeletable = count($deleteButton?->attributes->getAttributes() ?? []) > 0` reads the presence of those attributes as the switch.
 A Twig `<twig:block>` has no attribute bag, only content, so the same payload arrives as props instead: `deletable` (the switch Blade infers), `deleteLabel` (the accessible name) and `deleteAttributes` (the bag, spread onto the button through `attrs({class: 'sy-badge-delete-btn', …}, deleteAttributes)`, so caller classes append and caller values win).
 That is what lets tables' filter indicator chip and forms' tags-input chip hand the button a `stimulus_action(…)` map where Filament hands it a `wire:click` string.
-`deleteLabel` defaults to `components/badge.actions.delete.label` in `sylament`, Filament's *Remove*, and both of those callers pass a label of their own.
+`deleteLabel` defaults to `components.badge.actions.delete.label` in `sylament`, Filament's *Remove*, and both of those callers pass a label of their own.
 
 The placement follows Filament: the button renders **inside** the badge capsule after the label spans and takes the place of an icon positioned `after` (Filament's `@elseif`, so a deletable badge with a trailing icon shows the X, not the icon).
 

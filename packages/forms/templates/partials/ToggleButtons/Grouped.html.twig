@@ -3,7 +3,7 @@
 {% set isMultiple = component.isMultiple %}
 {% set areButtonLabelsHidden = component.areButtonLabelsHidden %}
 {% set isSingleRequired = not isMultiple and component.isRequired %}
-{% set isNativelyRequired = not isMultiple and component.isMarkedAsRequired and not component.isConcealed %}
+{% set isNativelyRequired = not isMultiple and component.isMarkedAsRequired %}
 {% set accessibilityAttributes = component.getAccessibilityAttributes %}
 
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">

@@ -1,5 +1,46 @@
 import { Controller } from "@hotwired/stimulus";
 const SCROLL_DELAY_MS = 200;
+const CONCEALED_VALIDATION_RETRY_RESET_MS = 100;
+let isRetryingConcealedValidation = false;
+const isFormControl = (element) => element instanceof HTMLButtonElement || element instanceof HTMLFieldSetElement || element instanceof HTMLInputElement || element instanceof HTMLObjectElement || element instanceof HTMLOutputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement;
+const isVisibleControl = (control) => control.offsetParent !== null && getComputedStyle(control).visibility !== "hidden";
+document.addEventListener(
+  "invalid",
+  (event) => {
+    const control = event.target;
+    if (!isFormControl(control) || control.closest("[data-field-wrapper]") === null) {
+      return;
+    }
+    if (isVisibleControl(control)) {
+      return;
+    }
+    event.preventDefault();
+    if (isRetryingConcealedValidation) {
+      return;
+    }
+    const form = control.form;
+    if (Array.from(form?.elements ?? []).some(
+      (element) => isFormControl(element) && element.willValidate && !element.validity.valid && isVisibleControl(element)
+    )) {
+      return;
+    }
+    isRetryingConcealedValidation = true;
+    let elementToExpand = control;
+    while (elementToExpand !== null) {
+      elementToExpand.dispatchEvent(new CustomEvent("expand"));
+      elementToExpand = elementToExpand.parentNode;
+    }
+    requestAnimationFrame(
+      () => requestAnimationFrame(() => {
+        form?.reportValidity();
+        window.setTimeout(() => {
+          isRetryingConcealedValidation = false;
+        }, CONCEALED_VALIDATION_RETRY_RESET_MS);
+      })
+    );
+  },
+  true
+);
 class schema_controller_default extends Controller {
   static values = { schemaKey: String };
   onValidationError(event) {

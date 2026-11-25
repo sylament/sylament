@@ -26,7 +26,7 @@ It ships no JavaScript: the control is a real checkbox bound with `data-model`, 
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Checkbox.php) — an untouched box reads blank | — | done | — | [semantics](../schemas/has-nullable-branch.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [can-fix-indistinct-state.md](can-fix-indistinct-state.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [has-extra-input-attributes.md](has-extra-input-attributes.md) · [diverges](#the-checkboxs-extra-input-attributes-win-where-filaments-lose) |
-| [`required` drops when concealed](../../../packages/forms/templates/partials/Checkbox/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
+| [`required` renders inside a container that can hide it](../../../packages/forms/templates/partials/Checkbox/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [schemas-bundle.md](../schemas/schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) |
 
 ## Semantics
 

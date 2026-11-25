@@ -20,10 +20,8 @@ describe('rendering', function (): void {
             ->toContainElement('input[name="startsAt"][disabled]:not([placeholder]):not([autofocus]):not([required])');
     });
 
-    it('omits required while a container may hide the field, and keeps it otherwise', function (): void {
+    it('keeps required inside a collapsible section', function (): void {
         expect($this->renderSchemaComponent(Section::make('When')->collapsible()->components([DateTimePicker::make('startsAt')->required()])))
-            ->toContainElement('input[name="startsAt"]:not([required])')
-            ->and($this->renderSchemaComponent(Section::make('When')->components([DateTimePicker::make('startsAt')->required()])))
             ->toContainElement('input[name="startsAt"][required]');
     });
 

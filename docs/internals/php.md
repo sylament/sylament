@@ -119,7 +119,7 @@ The interface and trait names `Has*` and `InteractsWith*` are also swapped relat
 
 Contracts follow the same line:
 - A contract the host implements is root: `InteractsWithActions`, `InteractsWithSchemas`.
-- One a component implements is in `Components/Contracts/`: `CanConcealComponents`.
+- One a component implements is in `Components/Contracts/`: `CanEntangleWithSingularRelationships`.
 - One that neither tier implements is filed under the capability directory that consults it. Schemas' `Validation\Contracts\ImplicitConstraint` is a marker that a consumer puts on a Symfony `Constraint`, so it sits beside `Validation\PresenceGate`.
 
 No interface carries an `Interface` suffix, because `Contracts\` already says what it is.

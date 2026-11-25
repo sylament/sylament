@@ -7,7 +7,6 @@ namespace Sylament\Schemas\Components;
 use Sylament\Schemas\Components\Concerns\BelongsToContainer;
 use Sylament\Schemas\Components\Concerns\BelongsToRecord;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
-use Sylament\Schemas\Components\Concerns\CanBeConcealed;
 use Sylament\Schemas\Components\Concerns\CanBeDisabled;
 use Sylament\Schemas\Components\Concerns\CanBeHidden;
 use Sylament\Schemas\Components\Concerns\CanBeRepeated;
@@ -36,7 +35,6 @@ class Component extends ViewComponent
     use BelongsToContainer;
     use BelongsToRecord;
     use CanAccessProperties;
-    use CanBeConcealed;
     use CanBeDisabled;
     use CanBeHidden;
     use CanBeRepeated;

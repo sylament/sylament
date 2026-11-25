@@ -9,7 +9,6 @@ use Closure;
 use LogicException;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\HasLabel;
-use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Wizard;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Translation\TranslatableInterface;
@@ -17,7 +16,7 @@ use Twig\Markup;
 
 use function Sylament\Support\filled;
 
-class Step extends Component implements CanConcealComponents
+class Step extends Component
 {
     use HasLabel;
 
@@ -128,11 +127,6 @@ class Step extends Component implements CanConcealComponents
         }
 
         return parent::getAllColumns();
-    }
-
-    public function canConcealComponents(): bool
-    {
-        return true;
     }
 
     public function getWizard(): Wizard

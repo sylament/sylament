@@ -96,14 +96,14 @@ describe('rendering', function (): void {
             ->and($this->renderSchemaComponent($field()->disabled()))->toContainElement('[role="radiogroup"][aria-describedby="schema.level-helper-text"]:not([aria-required])');
     })->with('variants');
 
-    it('marks each enabled input of a single, required field required, none of a multiple or a disabled field, and none a collapsible section may conceal', function (bool $grouped): void {
+    it('marks each enabled input of a single, required field required, none of a multiple or a disabled field, and keeps them inside a collapsible section', function (bool $grouped): void {
         $field = static fn (): ToggleButtons => ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->disableOptionWhen(static fn (string $value): bool => $value === 'high')->required()->grouped($grouped);
         $required = static fn (Crawler $render): array => $render->filter('input[value="low"], input[value="high"]')->each(static fn (Crawler $input): ?string => $input->attr('required'));
 
         expect($required($this->renderSchemaComponent($field())))->toBe(['', null])
             ->and($required($this->renderSchemaComponent($field()->multiple())))->toBe([null, null])
             ->and($required($this->renderSchemaComponent($field()->disabled())))->toBe([null, null])
-            ->and($required($this->renderSchemaComponent(Section::make('Level')->collapsible()->components([$field()]))))->toBe([null, null]);
+            ->and($required($this->renderSchemaComponent(Section::make('Level')->collapsible()->components([$field()]))))->toBe(['', null]);
     })->with('variants');
 
     it("marks a refused option disabled on its input and its label's class, not by a label attribute, and every option of a disabled field", function (bool $grouped): void {

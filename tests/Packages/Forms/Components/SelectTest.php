@@ -101,11 +101,9 @@ describe('native render', function (): void {
             ->and($tester->call('save')->render()->crawler()->filter('select[name="single"]')->attr('aria-invalid'))->toBe('true');
     });
 
-    it('drops the required attribute inside a container that may conceal the select, and keeps it where nothing does', function (): void {
-        $required = Select::make('plant')->options(['fern' => 'Fern'])->required();
-
-        expect($this->renderSchemaComponent(Section::make()->collapsible()->components([$required]))->filter(Selectors::NATIVE_SELECT)->attr('required'))->toBeNull()
-            ->and($this->renderSchemaComponent(Select::make('plant')->options(['fern' => 'Fern'])->required())->filter(Selectors::NATIVE_SELECT)->attr('required'))->not->toBeNull();
+    it('keeps the required attribute inside a collapsible section', function (): void {
+        expect($this->renderSchemaComponent(Section::make()->collapsible()->components([Select::make('plant')->options(['fern' => 'Fern'])->required()])))
+            ->toContainElement(Selectors::NATIVE_SELECT . '[required]');
     });
 
     it('takes the left padding off for an inline prefix only while a prefix it shows sits there', function (): void {

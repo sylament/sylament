@@ -25,8 +25,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * {@see HookLog}: `lines` with every structural action on, its `afterStateUpdated` hook,
  * an extra item action and an action placed in its item schema; `folded`, collapsed, with
  * its clone and between-item buttons shown; `bounded` and `unbounded`, item-count limits,
- * the latter's unset again, its between-item button hidden as it ships; and `concealed`, a
- * collapsible repeater over a constrained field.
+ * the latter's unset again, its between-item button hidden as it ships.
  * `save()` validates the form.
  */
 #[AsLiveComponent(name: 'Forms:RepeaterHost', template: '@Fixtures/forms/RepeaterHost.html.twig')]
@@ -93,9 +92,6 @@ class RepeaterHost implements InteractsWithActions, InteractsWithSchemas
                     ->maxItems(2)
                     ->maxItems(null)
                     ->components([TextInput::make('name')]),
-                Repeater::make('concealed')
-                    ->collapsible()
-                    ->components([TextInput::make('name')->required()->maxLength(5)]),
             ]);
     }
 

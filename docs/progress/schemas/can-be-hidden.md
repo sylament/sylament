@@ -32,6 +32,8 @@ Both register a `hidden()` closure that reads paths through [`Get`](get.md), whi
 
 Filament's `visibleJs()` / `hiddenJs()` / `getVisibleJs()` / `getHiddenJs()` carry client-side expressions that only its Alpine wrappers read: `Component::toSchemaHtml()`, and the per-child wrappers in `Tabs` and `Flex`.
 The client half of the port's render wrapper waits on the same runtime ([component.md](component.md#the-render-wrappers-client-half-waits-on-the-live-component-state-runtime)).
+That wrapper is also Filament's second half of the native-validation contract: a component with a client-side visibility condition renders as a `<fieldset disabled role="none">` (class `fi-sc-visibility-fieldset`) while hidden, which bars its controls from native validation, because unlike a collapsed or inactive container it cannot be revealed on demand.
+It ports with the visibility variants, without which no component hides on the client, so the [document `invalid` listener](schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) covers every hidden control.
 
 ## Semantics
 

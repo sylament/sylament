@@ -25,8 +25,6 @@ Sylament\Panels\Navigation\NavigationItem::isActiveWhen
 Sylament\Panels\Pages\Concerns\HasMaxWidth
 Sylament\Panels\Pages\Concerns\HasMaxWidth::$maxWidth
 Sylament\Panels\Pages\Concerns\HasMaxWidth::getMaxWidth
-Sylament\Schemas\Components\Concerns\CanBeConcealed::isConcealed
-Sylament\Schemas\Components\Contracts\CanConcealComponents
 Sylament\Tables\Columns\Concerns\HasRowLoopObject
 Sylament\Tables\Columns\Summarizers\Concerns\InteractsWithTableQuery::hasQueryModification
 Sylament\Tables\Concerns\CanDeferLoading

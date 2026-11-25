@@ -32,6 +32,7 @@ The reader rows live in their own files.
 | [`@SylamentSchemas` view namespace](../../../packages/schemas/src/SylamentSchemasBundle.php) | [`->hasViews()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [Asset registration](../../../packages/schemas/src/SylamentSchemasBundle.php) (the `@sylament/schemas` workspace + `prependExtension()`) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | done | — | [semantics](#the-asset-prepend-needs-the-built-dist-to-exist) · [diverges](#the-schemas-package-has-a-js-workspace-of-its-own) |
 | [`sylament--schemas--schema`](../../../packages/schemas/assets/src/controllers/schema_controller.ts) — the root schema's validation-error reveal and client-state reset | [`resources/js/index.js`](../../../vendor/filament/schemas/resources/js/index.js) (`filamentSchema`) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) · [semantics](#the-expand-walk-and-the-two-window-events-either-side-of-it) |
+| [The document `invalid` listener](../../../packages/schemas/assets/src/controllers/schema_controller.ts) — a hidden invalid control reveals its containers | [`resources/js/index.js`](../../../vendor/filament/schemas/resources/js/index.js) (the capture-phase `invalid` listener) | done | — | [semantics](#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) · [semantics](#no-test-in-this-repo-runs-the-controllers) |
 | [`sylament--schemas--tabs`](../../../packages/schemas/assets/src/controllers/tabs_controller.ts) — the active tab, the overflow dropdown, the lazy-loaded badges | [`resources/js/components/tabs.js`](../../../vendor/filament/schemas/resources/js/components/tabs.js) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) |
 | [`sylament--schemas--wizard`](../../../packages/schemas/assets/src/controllers/wizard_controller.ts) — the active step, per-step validation on next | [`resources/js/components/wizard.js`](../../../vendor/filament/schemas/resources/js/components/wizard.js) | done | — | [diverges](#the-controllers-are-the-alpine-data-objects-rewritten-as-stimulus) · [diverges](#two-deliberate-deltas-from-vendors-runtime-behaviour) · [semantics](#no-test-in-this-repo-runs-the-controllers) · [contract](#the-controllers-values-targets-and-actions) · [semantics](#a-morph-reverts-the-wizards-per-step-status-text) |
 | [`utils/schema_component_method.ts`, `utils/live_host.ts`, `utils/cloak.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) | — | done | — | [diverges](#the-schema-component-method-helper-and-two-utilities-live-in-schemas-assets) |
@@ -80,6 +81,21 @@ Three event names cross the PHP/JS boundary here, and only one of them is a `@wi
   Per-node dispatch rather than one bubbling event is what keeps the listener on the concealing element itself: a bubbling `expand` would also fire those same handlers for any *other* descendant that dispatched one.
 - **`reset-schema-component-state@window`** — dispatched by the host after a client-side state reset, carrying `{schemaKey}`.
   The root, tabs and wizard controllers listen, each with the same two-part guard (`event.target` is its own live root, and `detail.schemaKey` equals its `schemaKey` value): the root controller refocuses the first visible `[autofocus]` field, the tabs controller returns to `activeTab` (unless the tab is persisted or in the query string), and the wizard controller returns to `startStep` (unless it is in the query string).
+
+### A hidden invalid control reveals its containers before the browser reports it
+
+Fields render their native `required`, `min`, `max`, `minlength` and `maxlength` wherever they sit, as Filament's do, so a control inside a collapsed section, an inactive tab, a step not yet shown or a collapsed repeater item blocks its form's submission like any other.
+The browser cannot focus such a control or anchor its validation bubble to it, so `schema_controller.ts` registers Filament's document-level, capture-phase `invalid` listener (an `invalid` event does not bubble), once per document when the module loads, which the eager schema controller does on every page that enables it.
+The listener ports Filament's line by line:
+
+- it handles only a control inside a `[data-field-wrapper]`, so other forms on the page keep their own validation;
+- it leaves a visible control to the browser's own bubble, reading a control as hidden when its `offsetParent` is `null` (a collapsed Section's content, a Wizard step and a collapsed repeater item are `display: none`) or its computed `visibility` is `hidden` (an inactive Tab panel);
+- it suppresses the browser's report for a hidden one, and reveals nothing while any visible control of the form is still invalid, reading `validity` so no further `invalid` event fires;
+- it dispatches the [`expand` walk](#the-expand-walk-and-the-two-window-events-either-side-of-it) from the control up to the document, then calls `form.reportValidity()` once, two animation frames later, so the browser focuses the revealed control and shows its bubble;
+- a flag stands down every further `invalid` event of that burst, and clears 100 ms after the retry, so a control that stays hidden cannot loop.
+
+It is Filament's replacement for `Component::isConcealed()` and the `CanConcealComponents` contract, which it deprecates and the port does not ship ([renames.md](../renames.md#a-deprecated-filament-member-is-not-ported)): they identified the containers inside which fields dropped those attributes; server-side validation runs either way.
+A component hidden on the client by `visibleJs()` or `hiddenJs()` cannot be revealed on demand, so Filament bars its controls from native validation with a `disabled` `<fieldset>` instead, which waits on those methods ([can-be-hidden.md](can-be-hidden.md#the-js-visibility-variants-wait-on-the-live-component-state-runtime)).
 
 ### No test in this repo runs the controllers
 
@@ -216,6 +232,7 @@ Names below are the Stimulus spellings; the markup carries them kebab-cased unde
 | action | `reset-schema-component-state@window` → `onStateReset` | refocus the first *visible* `[autofocus]` field |
 
 It declares no targets: both handlers `querySelector` over their own subtree.
+Its module also registers the [document `invalid` listener](#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) when it loads, whether or not any element carries the controller, and dispatches `expand` on each ancestor of the hidden control it reveals.
 
 **`sylament--schemas--tabs`** — on the Tabs component's root, in client mode only.
 

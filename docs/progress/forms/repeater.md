@@ -370,10 +370,8 @@ A repeater item cannot: it needs a header that is a click target *and* holds its
 So the repeater item is a plain `<li>` whose state is a class before its controller connects and a `data-collapsed` attribute after, and the content is hidden by CSS rather than by the element's own semantics.
 
 The cost is the one `<details>` would have paid for us: the collapsed content stays in the DOM.
-That is deliberate rather than incidental: the fields inside a collapsed item must keep their live bindings, so the item can be submitted and validated without ever being opened, and it is why `canConcealComponents()` returns `isCollapsible()`.
-A [concealing component](../schemas/can-be-concealed.md) drops the native constraints (`required`, `maxlength`) off the controls inside it, so a browser cannot refuse to submit a form over a field the user cannot see; the server-side validation still runs.
-Filament's `Repeater` implements no concealing contract, and its `isConcealed()` answers false.
-`Section` reaches the same contract by the same reasoning.
+That is deliberate rather than incidental: the fields inside a collapsed item must keep their live bindings, so the item can be submitted and validated without ever being opened.
+Their native constraints (`required`, `maxlength`) render as they do anywhere else, and a submission over an invalid control in a collapsed item expands that item through the [document `invalid` listener](../schemas/schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it), as Filament's does; the server-side validation runs either way.
 
 ### Hidden fields render in a trailing hidden cell
 

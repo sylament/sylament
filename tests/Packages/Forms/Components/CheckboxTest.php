@@ -40,10 +40,8 @@ describe('rendering', function (): void {
             ->and($tester->call('save')->assertHasFormErrors(['terms'])->render()->crawler())->toContainElement('input[name="terms"][aria-invalid="true"]');
     });
 
-    it('drops the native required attribute while a collapsible section may conceal it, and keeps it otherwise', function (): void {
+    it('keeps its native required attribute inside a collapsible section', function (): void {
         expect($this->renderSchemaComponent(Section::make('Consent')->collapsible()->components([Checkbox::make('terms')->required()])))
-            ->toContainElement('input[name="terms"]:not([required])')
-            ->and($this->renderSchemaComponent(Section::make('Consent')->components([Checkbox::make('terms')->required()])))
             ->toContainElement('input[name="terms"][required]');
     });
 });

@@ -19,7 +19,6 @@ use Sylament\Schemas\Components\Concerns\HasFooterActions;
 use Sylament\Schemas\Components\Concerns\HasHeaderActions;
 use Sylament\Schemas\Components\Concerns\HasHeading;
 use Sylament\Schemas\Components\Concerns\HasLabel;
-use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Components\Concerns\CanBeContained;
@@ -35,7 +34,7 @@ use Twig\Markup;
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
-class Section extends Component implements CanConcealComponents, CanEntangleWithSingularRelationships
+class Section extends Component implements CanEntangleWithSingularRelationships
 {
     use CanBeAside;
     use CanBeCollapsed;
@@ -204,11 +203,6 @@ class Section extends Component implements CanConcealComponents, CanEntangleWith
         }
 
         return $schema;
-    }
-
-    public function canConcealComponents(): bool
-    {
-        return $this->isCollapsible();
     }
 
     /**

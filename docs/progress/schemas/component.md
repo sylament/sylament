@@ -28,7 +28,7 @@ It subclasses the support [`ViewComponent`](../support/view-component.md) and la
 
 Only what this class adds over `ViewComponent` is tracked here.
 The base `evaluate()` / `Configurable` machinery is audited in [`support/component.md`](../support/component.md), and the support-level traits it also composes are tracked in [`can-order-columns.md`](../support/can-order-columns.md), [`can-span-columns.md`](../support/can-span-columns.md), [`has-extra-attributes.md`](../support/has-extra-attributes.md) and, for `CanGrow`, [`tables/column.md`](../tables/column.md).
-The cross-component schema concerns it composes have their own files: the record binding [`BelongsToRecord`](component-belongs-to-record.md), [`CanAccessProperties`](property-accessor.md), [`CanBeConcealed`](can-be-concealed.md), [`CanBeDisabled`](can-be-disabled.md), [`CanBeHidden`](can-be-hidden.md), [`HasActions`](has-actions.md), [`HasColumns`](has-columns.md), [`HasGap`](has-gap.md), [`HasNullableBranch`](has-nullable-branch.md) and [`HasStateBindingModifiers`](has-state-binding-modifiers.md).
+The cross-component schema concerns it composes have their own files: the record binding [`BelongsToRecord`](component-belongs-to-record.md), [`CanAccessProperties`](property-accessor.md), [`CanBeDisabled`](can-be-disabled.md), [`CanBeHidden`](can-be-hidden.md), [`HasActions`](has-actions.md), [`HasColumns`](has-columns.md), [`HasGap`](has-gap.md), [`HasNullableBranch`](has-nullable-branch.md) and [`HasStateBindingModifiers`](has-state-binding-modifiers.md).
 
 ## Surface
 

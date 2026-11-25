@@ -10,7 +10,7 @@ owns:
 # Wizard\Step (schemas)
 
 `Sylament\Schemas\Components\Wizard\Step` is one panel of a [`Wizard`](wizard.md): a required label, an optional description and icon pair for the header stepper, before/after validation callbacks the wizard runs on the way forward, and a child schema holding the step's own components.
-It extends the schemas base [`Component`](component.md) and implements the [`CanConcealComponents`](can-be-concealed.md) contract.
+It extends the schemas base [`Component`](component.md).
 
 ## Surface
 
@@ -25,7 +25,7 @@ It extends the schemas base [`Component`](component.md) and implements the [`Can
 | [`icon()` / `getIcon()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::icon()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | [`completedIcon()` / `getCompletedIcon()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::completedIcon()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [diverges](wizard.md#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css) |
 | [`getAllColumns()`](../../../packages/schemas/src/Components/Wizard/Step.php) container fallback | [`Step::getAllColumns()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
-| [`canConcealComponents(): true`](../../../packages/schemas/src/Components/Wizard/Step.php) | — | done | — | [can-be-concealed.md](can-be-concealed.md) |
+| `canConcealComponents()`, deprecated with `CanConcealComponents` for the document `invalid` listener | [`Contracts/CanConcealComponents`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) | skipped | — | [schemas-bundle.md](schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) |
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) (incl. `hiddenLabel()`) | [`Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | [diverges](#a-hidden-step-label-stays-in-the-dom-as-screen-reader-only-text) |
 | [`getWizard(): Wizard`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) (inline `$wizard`) | done | — | [diverges](#the-owning-wizard-is-a-method-that-throws-rather-than-a-docblock-assertion) |
 | [Rendering](../../../packages/schemas/templates/partials/Step/index.html.twig) (`Step/index.html.twig`) | [`Step::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [semantics](#the-panel-is-a-group-named-by-its-header-button-never-a-tabpanel) · [diverges](#the-panel-is-always-a-div-and-its-tabindex-is-fixed-at-0) |

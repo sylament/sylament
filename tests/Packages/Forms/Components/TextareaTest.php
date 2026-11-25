@@ -81,13 +81,9 @@ describe('state hooks', function (): void {
     });
 });
 
-describe('concealed', function (): void {
-    it('leaves out its native required and length checks while a container may hide it', function (): void {
-        $field = static fn (): Textarea => Textarea::make('notes')->required()->minLength(2)->maxLength(9);
-
-        expect($this->renderSchemaComponent(Section::make('Details')->collapsible()->components([$field()])))
-            ->toContainElement('textarea[name="notes"]:not([required]):not([minlength]):not([maxlength])')
-            ->and($this->renderSchemaComponent(Section::make('Details')->components([$field()])))
+describe('native constraints', function (): void {
+    it('keeps its native required and length checks inside a collapsible section', function (): void {
+        expect($this->renderSchemaComponent(Section::make('Details')->collapsible()->components([Textarea::make('notes')->required()->minLength(2)->maxLength(9)])))
             ->toContainElement('textarea[name="notes"][required][minlength="2"][maxlength="9"]');
     });
 });

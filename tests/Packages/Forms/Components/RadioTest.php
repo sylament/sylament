@@ -197,13 +197,13 @@ describe('required', function (): void {
             ->and($this->renderSchemaComponent($radio()->disabled()))->toContainElement(Selectors::RADIO_GROUP . ':not([aria-required])');
     });
 
-    it('marks each enabled radio of a required field required, none of a disabled field, and none a collapsible section may conceal', function (): void {
+    it('marks each enabled radio of a required field required, none of a disabled field, and keeps them inside a collapsible section', function (): void {
         $radio = static fn (): Radio => Radio::make('plan')->options(['basic' => 'Basic', 'pro' => 'Pro'])->disableOptionWhen(static fn (string $value): bool => $value === 'pro')->required();
         $required = static fn (Crawler $render): array => $render->filter(Selectors::RADIO)->each(static fn (Crawler $input): ?string => $input->attr('required'));
 
         expect($required($this->renderSchemaComponent($radio())))->toBe(['', null])
             ->and($required($this->renderSchemaComponent($radio()->disabled())))->toBe([null, null])
-            ->and($required($this->renderSchemaComponent(Section::make('Plan')->collapsible()->components([$radio()]))))->toBe([null, null]);
+            ->and($required($this->renderSchemaComponent(Section::make('Plan')->collapsible()->components([$radio()]))))->toBe(['', null]);
     });
 
     it('accepts either answer of a required boolean radio, No included, refuses only no answer, and marks both radios required', function (): void {

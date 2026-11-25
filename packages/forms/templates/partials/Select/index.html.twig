@@ -64,7 +64,7 @@
             'data-model': isNative ? component.getDataModel : null,
             'data-skip-morph': isNative ? null : true,
             multiple: component.isMultiple,
-            required: isNative ? (component.isMarkedAsRequired and not component.isConcealed) : null,
+            required: isNative ? component.isMarkedAsRequired : null,
             'aria-required': isNative or not component.isMarkedAsRequired ? null : true,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,

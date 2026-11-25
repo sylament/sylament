@@ -13,7 +13,7 @@ owns:
 # Tabs\Tab (schemas)
 
 [`Sylament\Schemas\Components\Tabs\Tab`](../../../packages/schemas/src/Components/Tabs/Tab.php) is one tab of a [`Tabs`](tabs.md): a label, an optional icon and badge on the nav side, and a child schema rendered as the panel.
-It implements `CanConcealComponents`, because an inactive panel is in the DOM but visually hidden, so the fields inside it must not enforce native constraints, and composes support's `HasBadge`, `HasBadgeTooltip`, `HasIcon` and `HasIconPosition` with schemas' `HasLabel`.
+It composes support's `HasBadge`, `HasBadgeTooltip`, `HasIcon` and `HasIconPosition` with schemas' `HasLabel`.
 
 It also carries the list-page seam Filament uses to scope a tab's records: `query()`/`modifyQueryUsing()`/`modifyQuery()` and `excludeQueryWhenResolvingRecord()`.
 Their consumer is panels: [panels' `HasTabs`](../panels/has-tabs.md) calls `modifyQuery()` from `modifyQueryWithActiveTab()` ([how it treats an unknown key](../panels/has-tabs.md#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that-is-what-heals-a-bookmark)), and reads `shouldExcludeQueryWhenResolvingRecord()` to decide whether a single-record lookup takes the scope too.
@@ -25,7 +25,7 @@ Their consumer is panels: [panels' `HasTabs`](../panels/has-tabs.md) calls `modi
 | [`make()` / `label()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [`Tab::make()`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | — |
 | [`setUp()` key closure — `slug(label)::[statePath::]tab`, non-inheritable](../../../packages/schemas/src/Components/Tabs/Tab.php) | [`Tab::setUp()`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [tabs.md](tabs.md#the-non-inheritable-key-is-what-keeps-a-childs-absolute-key-unchanged) |
 | [`getAllColumns()` container fallback](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [semantics](#the-column-fallback-is-what-makes-a-tab-transparent-to-the-grid) |
-| [`canConcealComponents()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [`Contracts/CanConcealComponents`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php), deprecated | done | — | [semantics](#an-inactive-panel-is-hidden-not-removed) · [diverges](can-be-concealed.md#the-port-keeps-the-concealing-contract-that-filament-deprecates) |
+| `canConcealComponents()`, deprecated with `CanConcealComponents` for the document `invalid` listener | [`Contracts/CanConcealComponents`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) | skipped | — | [schemas-bundle.md](schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) |
 | [`badge()` / `badgeColor()` / `hasBadge()` (support's `HasBadge`)](../../../packages/support/src/Components/Concerns/HasBadge.php) | [`Concerns/HasBadge`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | done | — | [semantics](#getbadge-casts-an-evaluated-badge-to-string) |
 | `indicator()` / `indicatorColor()`, deprecated for `badge()` / `badgeColor()` | [`Concerns/HasBadge`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | skipped | — | [deprecated](../README.md#statuses) |
 | [`badgeTooltip()` (support's `HasBadgeTooltip`)](../../../packages/support/src/Components/Concerns/HasBadgeTooltip.php) | [`Concerns/HasBadgeTooltip`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | done | — | [diverges](#the-badge-tooltip-renders-as-a-native-title) |
@@ -35,15 +35,15 @@ Their consumer is panels: [panels' `HasTabs`](../panels/has-tabs.md) calls `modi
 | [`icon()` / `iconPosition()` (support's concerns)](../../../packages/support/src/Components/Concerns/HasIcon.php) | [`Concerns/HasIcon`, `HasIconPosition`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
 | [`query()` / `modifyQueryUsing()` / `modifyQuery()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same three](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [diverges](#modifyquery-mutates-the-builder-in-place-and-discards-the-return) |
 | [`excludeQueryWhenResolvingRecord()` / `shouldExcludeQueryWhenResolvingRecord()`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [same pair](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | — |
-| [Twig render — panel, `role="tabpanel"`, active class](../../../packages/schemas/templates/partials/Tab/index.html.twig) | [`Tab::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [diverges](#the-panel-points-aria-labelledby-at-its-tab-button) |
+| [Twig render — panel, `role="tabpanel"`, active class](../../../packages/schemas/templates/partials/Tab/index.html.twig) | [`Tab::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [diverges](#the-panel-points-aria-labelledby-at-its-tab-button) · [semantics](#an-inactive-panel-is-hidden-not-removed) |
 | [Empty child schema renders nothing](../../../packages/schemas/templates/partials/Tab/index.html.twig) | [the `empty($childSchema->getComponents())` early return](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [semantics](#an-empty-tab-renders-no-panel-but-keeps-its-button) |
 
 ## Semantics
 
 ### An inactive panel is hidden, not removed
 
-`canConcealComponents()` is unconditionally true: in client mode every tab's panel is in the DOM and the inactive ones are hidden by CSS (`invisible absolute h-0`), so their inputs still post with the form and a `required` one would block native submission from a tab the user cannot see.
-The [concealing contract](can-be-concealed.md) is what lets a field ask whether it is concealed and drop its native constraint attributes; server-side validation is untouched either way.
+In client mode every tab's panel is in the DOM and the inactive ones are hidden by CSS (`invisible absolute h-0`), so their inputs still post with the form, and a `required` one blocks native submission from a tab the user cannot see.
+That `visibility: hidden` is what the [document `invalid` listener](schemas-bundle.md#a-hidden-invalid-control-reveals-its-containers-before-the-browser-reports-it) reads as hidden, so the panel's `expand` action activates the tab before the browser reports the control; server-side validation runs either way.
 
 ### The column fallback is what makes a tab transparent to the grid
 

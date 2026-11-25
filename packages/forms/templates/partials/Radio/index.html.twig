@@ -2,7 +2,7 @@
 {% set stateKeys = (state is iterable ? state : [state])|filter(key => key is not null)|map(key => key ~ '') %}
 {% set isInline = component.isInline %}
 {% set accessibilityAttributes = component.getAccessibilityAttributes %}
-{% set isNativelyRequired = component.isMarkedAsRequired and not component.isConcealed %}
+{% set isNativelyRequired = component.isMarkedAsRequired %}
 
 {% set gridAttributes = isInline
     ? null

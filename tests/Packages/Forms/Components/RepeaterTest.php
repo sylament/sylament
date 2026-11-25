@@ -678,18 +678,9 @@ describe('collapsing', function (): void {
             ->and($crawler->filter('li[id^="form.lines."] button[aria-label="Collapse"]'))->toHaveCount(0);
     });
 
-    it("conceals the native constraints of a collapsible repeater's controls", function (): void {
-        $items = ['lines' => ['a' => ['name' => '']]];
-        $repeater = static fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')->required()->maxLength(5)]);
-
-        expect($this->renderSchemaComponent($repeater()->collapsible(), $items)->filter(FormsSelectors::repeaterItem('a') . ' input:not([required]):not([maxlength])'))->toHaveCount(1)
-            ->and($this->renderSchemaComponent($repeater(), $items)->filter(FormsSelectors::repeaterItem('a') . ' input[required][maxlength="5"]'))->toHaveCount(1);
-    });
-
-    it('still validates the controls it conceals', function (): void {
-        $this->createLiveComponent(RepeaterHost::class, ['data' => ['concealed' => ['a' => ['name' => '']]]])
-            ->call('save')
-            ->assertHasFormErrors(['concealed.a.name' => 'This value should not be blank.']);
+    it("keeps the native constraints of a collapsible repeater's controls", function (): void {
+        expect($this->renderSchemaComponent(Repeater::make('lines')->collapsible()->components([TextInput::make('name')->required()->maxLength(5)]), ['lines' => ['a' => ['name' => '']]]))
+            ->toContainElement(FormsSelectors::repeaterItem('a') . ' input[required][maxlength="5"]');
     });
 });
 

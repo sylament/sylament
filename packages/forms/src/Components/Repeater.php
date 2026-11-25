@@ -19,7 +19,6 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\CanBeCollapsed;
 use Sylament\Schemas\Components\Concerns\CanBeCompact;
 use Sylament\Schemas\Components\Concerns\HasContainerGridLayout;
-use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Contracts\HasExtraItemActions as HasExtraItemActionsContract;
 use Sylament\Schemas\Components\Contracts\HasKeyedItems;
 use Sylament\Schemas\Identity\IdentifierFields;
@@ -46,7 +45,7 @@ use function Sylament\Forms\array_move_before;
 use function Sylament\Support\filled;
 use function Symfony\Component\String\u;
 
-class Repeater extends Field implements CanConcealComponents, HasExtraItemActionsContract, HasKeyedItems
+class Repeater extends Field implements HasExtraItemActionsContract, HasKeyedItems
 {
     use BelongsToRelationship;
     use CanBeCloned;
@@ -864,11 +863,6 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     public function isTable(): bool
     {
         return filled($this->getTableColumns());
-    }
-
-    public function canConcealComponents(): bool
-    {
-        return $this->isCollapsible();
     }
 
     public function getTemplate(): ?string

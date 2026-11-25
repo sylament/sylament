@@ -10,7 +10,6 @@ use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\HasLabel;
-use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Tabs;
 use Sylament\Support\Components\Concerns\HasBadge;
 use Sylament\Support\Components\Concerns\HasBadgeTooltip;
@@ -23,7 +22,7 @@ use Twig\Markup;
 
 use function Sylament\Support\filled;
 
-class Tab extends Component implements CanConcealComponents
+class Tab extends Component
 {
     use HasBadge;
     use HasBadgeTooltip;
@@ -76,11 +75,6 @@ class Tab extends Component implements CanConcealComponents
         }
 
         return parent::getAllColumns();
-    }
-
-    public function canConcealComponents(): bool
-    {
-        return true;
     }
 
     public function query(?Closure $callback): static

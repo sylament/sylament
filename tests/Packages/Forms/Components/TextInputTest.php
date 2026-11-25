@@ -274,13 +274,11 @@ describe('state hooks', function (): void {
     });
 });
 
-describe('concealed', function (): void {
-    it('leaves out its native bounds while a container may hide it', function (): void {
-        $field = static fn (): TextInput => TextInput::make('n')->numeric()->minValue(1)->maxValue(9);
-
-        expect($this->renderSchemaComponent(Section::make('Details')->collapsible()->components([$field()])))
-            ->toContainElement('input[name="n"]:not([min]):not([max])')
-            ->and($this->renderSchemaComponent(Section::make('Details')->components([$field()])))
-            ->toContainElement('input[name="n"][min="1"][max="9"]');
+describe('native constraints', function (): void {
+    it('keeps its native required, bounds and lengths inside a collapsible section', function (): void {
+        expect($this->renderSchemaComponent(Section::make('Details')->collapsible()->components([TextInput::make('n')->numeric()->required()->minValue(1)->maxValue(9)])))
+            ->toContainElement('input[name="n"][required][min="1"][max="9"]')
+            ->and($this->renderSchemaComponent(Section::make('Details')->collapsible()->components([TextInput::make('code')->minLength(2)->maxLength(5)])))
+            ->toContainElement('input[name="code"][minlength="2"][maxlength="5"]');
     });
 });

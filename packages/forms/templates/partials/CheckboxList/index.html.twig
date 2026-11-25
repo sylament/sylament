@@ -19,7 +19,7 @@
             {{ attrs({
                 class: ['sy', 'sy-fo-checkbox-list'],
                 role: 'group',
-                'aria-labelledby': component.getId ~ '-label',
+                'aria-labelledby': component.getLabel is filled ? component.getId ~ '-label' : null,
                 'aria-describedby': accessibilityAttributes['aria-describedby'],
             }, hasController ? stimulus_controller(controller, {debounce: component.getSearchDebounce}) : null) }}
     >

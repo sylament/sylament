@@ -13,7 +13,7 @@
             {{ attrs({
                 class: ['sy', 'sy-fo-radio', {'sy-inline': isInline}],
                 role: 'radiogroup',
-                'aria-labelledby': component.getId ~ '-label',
+                'aria-labelledby': component.getLabel is filled ? component.getId ~ '-label' : null,
                 'aria-required': component.isRequired and not component.isDisabled ? 'true' : null,
             }, accessibilityAttributes, gridAttributes) }}
     >

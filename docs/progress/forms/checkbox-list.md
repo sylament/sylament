@@ -154,7 +154,7 @@ They do carry per-option `id`s, as `Radio`'s do, which is what idiomorph matches
 Filament puts both the `fi-valid` / `fi-invalid` class pair and `aria-invalid` on every checkbox input, and its `role="group"` container carries no `aria-invalid` (`CheckboxList.php:550`, `:574-582`, `:657-658`).
 The port keeps only the attribute on each input and emits no class pair, with [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) keying its danger arm off `[aria-invalid='true']`.
 The attribute comes from [`getAccessibilityAttributes()`](field.md#the-accessibility-members-describe-what-the-wrapper-renders), spread on every input with its `aria-describedby`, so a valid option carries no `aria-invalid`.
-The group carries that `aria-describedby` and no `aria-invalid`, as Filament's does, so nothing differs there.
+The group carries that `aria-describedby` and no `aria-invalid`, as Filament's does, so nothing differs there, and its `aria-labelledby` names the label only while the field has one (`CheckboxList.php:583`).
 
 This is not a CheckboxList decision — it is the translation [`Radio`](radio.md#the-option-inputs-drop-the-fi-valid--fi-invalid-class-pair-and-radiocss-keys-off-aria-invalid) records, applied to the field that shares `Checkbox`'s control, and it holds for the same reasons.
 

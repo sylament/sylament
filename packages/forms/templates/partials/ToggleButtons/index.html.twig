@@ -15,7 +15,7 @@
             {{ attrs({
                 class: ['sy', 'sy-fo-toggle-buttons', {'sy-inline': component.isInline}],
                 role: isMultiple ? 'group' : 'radiogroup',
-                'aria-labelledby': component.getId ~ '-label',
+                'aria-labelledby': component.getLabel is filled ? component.getId ~ '-label' : null,
                 'aria-describedby': accessibilityAttributes['aria-describedby'],
                 'aria-invalid': isSingleRequired ? accessibilityAttributes['aria-invalid'] : null,
                 'aria-required': isSingleRequired and not component.isDisabled ? 'true' : null,

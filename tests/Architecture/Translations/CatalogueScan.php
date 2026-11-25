@@ -44,7 +44,7 @@ final class CatalogueScan
 {
     private const string VALIDATORS = 'validators';
 
-    private const string KEY_SHAPE = '/^[a-z0-9_]+(?:\.[a-z0-9_]+)*$/';
+    private const string KEY_SHAPE = '/^[a-z0-9_]+(?:\.[a-z0-9_]+)*$/D';
 
     /**
      * @var array<string, MessageCatalogue> the extraction of each package directory, since the unused arm reads every

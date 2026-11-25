@@ -43,7 +43,7 @@ One vocabulary, used by every table in this tree.
 **skipped** is something the toolkit has decided it does not need.
 An item not reached yet, with nothing to wait on, is **todo**.
 
-A class or member Filament marks `@deprecated` is **skipped**, never ported: the port ships no deprecated surface, and the row names the replacement Filament points to.
+A class or member Filament marks `@deprecated` is **skipped**, never ported: the port ships no deprecated surface, and the row names the replacement Filament's notice points to, or says the notice names none.
 Once Sylament is tagged, a member Filament deprecates after Sylament shipped it is deprecated through Sylament's own channel ([docs/internals/stability.md](../internals/stability.md#mechanics)) and removed at the next major.
 
 Divergence is not a status: it is orthogonal, and any row can carry one.

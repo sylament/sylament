@@ -4,7 +4,7 @@ The single global record of API renames.
 Preserve Filament's API names by default, because migrating users grep for them.
 Rename only when Filament itself is inconsistent and the better name already exists in their codebase; record every rename here in the same change.
 
-A Filament name missing from [the Renames table](#renames) carries over unchanged.
+A Filament name missing from [the Renames table](#renames) carries over unchanged, unless Filament marks it `@deprecated`: [a deprecated member is not ported](#a-deprecated-filament-member-is-not-ported), with or without a row, and the spelling its notice names ships.
 The systematic idiom and namespace translations, which are not renames, and the names with no Filament source are in [translations.md](translations.md).
 
 ## Renames
@@ -187,7 +187,7 @@ The port ships the replacement and never the deprecated member, so a migrating c
 - `TagsColumn` calls `badge()` in its `setUp()` and adds a deprecated `limit()` alias of `limitList()`; `TextColumn` ships both.
 - The tables-tier `Columns\Concerns\CanBeCopied` only re-exports `Filament\Support\Concerns\CanBeCopied`, which ships as `Sylament\Support\Components\Concerns\CanBeCopied`.
 - The resource statics `$label` / `$pluralLabel` (`Resource\Concerns\HasLabels`) give way to `$modelLabel` / `$pluralModelLabel`, which ship as `$recordLabel` / `$pluralRecordLabel`.
-- The member aliases are the rest of the table's deprecated rows.
+- The member aliases are the rest of the table's deprecated rows; a deprecated name with no row is not ported either, and its trail file's skipped row, where it has one, names the replacement.
 
 ### Icon-alias values drop Filament's package prefix
 

@@ -28,6 +28,10 @@ The sending helpers send the host's own `mountAction()`, `callMountedAction()` a
 | `assertMountedActionModalSee()` / `assertMountedActionModalDontSee()` / their `…Html` variants / `getMountedActionModalHtml()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionListInOrder()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionHeld()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertActionHalted()`](../README.md#statuses) |
+| `setActionData()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `fillForm()`](../README.md#statuses) |
+| `assertActionDataSet()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertSchemaStateSet()`](../README.md#statuses) |
+| `assertHasActionErrors()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertHasFormErrors()`](../README.md#statuses) |
+| `assertHasNoActionErrors()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertHasNoFormErrors()`](../README.md#statuses) |
 
 ## Semantics
 

@@ -22,6 +22,7 @@ describe('rendering', function (): void {
         $table = $crawler->filter('table.sy-fo-key-value-table');
 
         expect($crawler->filter('#' . str_replace('.', '\.', (string) $table->attr('aria-labelledby')))->text())->toBe('Pairs')
+            ->and($crawler->filter('#' . str_replace('.', '\.', (string) $crawler->filter(SupportSelectors::INPUT_WRAPPER . '[role="group"]')->attr('aria-labelledby')))->text())->toBe('Pairs')
             ->and($table->filter('thead th:not(.sy-fo-key-value-action-col)')->each(static fn (Crawler $heading): string => $heading->text()))->toBe(['Key', 'Value'])
             ->and($table->filter('tbody tr')->each(static fn (Crawler $row): array => [
                 $row->filter(Selectors::KEY_VALUE_KEY)->attr('value'),

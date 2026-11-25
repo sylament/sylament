@@ -9,6 +9,7 @@
 {% set tagPrefix = component.getTagPrefix %}
 {% set tagSuffix = component.getTagSuffix %}
 
+{% set labelText = component.getLabel|plain_text %}
 {% set isDisabled = component.isDisabled %}
 {% set isReorderable = component.isReorderable and not isDisabled %}
 {% set deleteAttributes = stimulus_action(controller, 'deleteTag', 'click') %}
@@ -21,6 +22,9 @@
 <twig:SylamentForms:FieldWrapper :field="component">
     <twig:SylamentSupport:InputWrapper
         class="sy-fo-tags-input"
+        role="group"
+        :aria-label="labelText is filled ? labelText : null"
+        :aria-describedby="component.getAccessibilityAttributes['aria-describedby']"
         :disabled="isDisabled"
         :valid="component.getErrorMessages is empty"
         :inlinePrefix="component.isPrefixInline"

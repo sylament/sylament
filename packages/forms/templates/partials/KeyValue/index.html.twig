@@ -27,6 +27,9 @@
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
     <twig:SylamentSupport:InputWrapper
         class="sy-fo-key-value"
+        role="group"
+        :aria-labelledby="component.getLabel is not null ? component.getId ~ '-label' : null"
+        :aria-describedby="component.getAccessibilityAttributes['aria-describedby']"
         :disabled="isDisabled"
         :valid="component.getErrorMessages is empty"
     >
@@ -36,7 +39,6 @@
                         class: 'sy-fo-key-value-table',
                         id: component.getId,
                         'aria-labelledby': component.getLabel is not null ? component.getId ~ '-label' : null,
-                        'aria-describedby': component.getAccessibilityAttributes['aria-describedby'],
                     }) }}
             >
                 <thead>

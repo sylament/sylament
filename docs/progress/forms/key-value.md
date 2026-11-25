@@ -27,7 +27,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [The table shell](../../../packages/forms/templates/partials/KeyValue/index.html.twig): the column matrix, the two cell inputs, the chrome cells | [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-rows-are-server-owned-and-the-three-actions-are-real) · [semantics](#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) · [diverges](#the-description-names-the-table-as-the-input-wrapper-is-no-group) |
+| [The table shell](../../../packages/forms/templates/partials/KeyValue/index.html.twig): the column matrix, the two cell inputs, the chrome cells | [`KeyValue::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [diverges](#the-rows-are-server-owned-and-the-three-actions-are-real) · [semantics](#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding) · [semantics](#the-input-wrapper-is-the-group-the-label-names-and-the-description-describes) |
 | `default([])` and [`getDefaultStateCasts()`](../../../packages/forms/src/Components/KeyValue.php) | [`KeyValue::getDefaultStateCasts()`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | — |
 | [`KeyValueStateCast`](../../../packages/schemas/src/State/Casts/KeyValueStateCast.php): rows to map, `''` keys dropped, last duplicate wins | [`StateCasts/KeyValueStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php) | done | — | [semantics](#the-cast-sniffs-the-first-element-so-a-map-of-maps-is-not-a-row-list) · [diverges](#the-cast-fails-fast-on-a-state-it-cannot-read) |
 | [`getAddAction()`](../../../packages/forms/src/Components/KeyValue.php) with `addAction()`, `getAddActionName()`, `addActionLabel()`, `getAddActionLabel()`, `addable()`, `isAddable()` | [`KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | done | — | [semantics](#a-structural-action-fires-the-fields-afterstateupdated-hooks-itself) · [diverges](#a-disabled-field-has-no-structural-actions-at-all) |
@@ -64,6 +64,11 @@ Filament moves its rows client-side, so it has no request to wait on; the repeat
 Next step: the sortable pause those entries name, taken by this controller around a move's request.
 
 ## Semantics
+
+### The input wrapper is the group the label names and the description describes
+
+The input wrapper around the table is a `role="group"` labelled by the field's label and described by the field's `aria-describedby`, as Filament's (`KeyValue.php:395-400`), and the `<table>` keeps the field's id and the same label, as Filament's does (`:435`), so a screen reader reads the helper text and the error list when it enters the group.
+Both `aria-labelledby` attributes are left out while the field has no label, where Filament's are unconditional; `getLabel()` falls back to the generated label, so only `name(null)` reaches that.
 
 ### The raw bag is never empty and never sparse
 
@@ -125,12 +130,6 @@ Filament binds `tabindex="-1"` and `aria-hidden="true"` onto the reorder action 
 The port renders the same two attributes onto a copy of the action while the field holds more than one row, and no modifier is declared, so the handle every row shares changes only on a re-render, which every add and delete is.
 
 ## Divergences
-
-### The description names the table, as the input wrapper is no group
-
-Filament spreads the field's `aria-describedby` from `getAccessibilityAttributes()` on the input wrapper around the table, which it makes a `role="group"` labelled by the field's label (`KeyValue.php:395-401`), and gives the `<table>` the field's id and the same label.
-The port's [`InputWrapper`](../support/input-wrapper.md) carries no role and no name, so the description goes on the `<table>`, the element the field's id and label already name, and a screen reader reads the helper text and the error list when it enters the table.
-It moves onto the wrapper once the wrapper takes Filament's `role="group"` and label.
 
 ### The rows are server-owned and the three actions are real
 

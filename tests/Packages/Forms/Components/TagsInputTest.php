@@ -11,6 +11,7 @@ use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Length;
+use Twig\Markup;
 
 use function Symfony\Component\Translation\t;
 
@@ -50,6 +51,12 @@ describe('rendering', function (): void {
             ->and($target('datalist')->nodeName())->toBe('datalist')
             ->and($target('chipTemplate')->nodeName())->toBe('template')
             ->and($target('chips')->filter(SupportSelectors::BADGE . ' button')->attr('data-action'))->toBe('click->sylament--forms--tags-input#deleteTag');
+    });
+
+    it('makes its input wrapper a group named by the text of its label', function (): void {
+        expect($this->renderSchemaComponent(TagsInput::make('tags')))->toContainElement(SupportSelectors::INPUT_WRAPPER . '[role="group"][aria-label="Tags"]')
+            ->and($this->renderSchemaComponent(TagsInput::make('tags')->label(new Markup('<b>Tags</b> &amp; labels', 'UTF-8'))))
+            ->toContainElement(SupportSelectors::INPUT_WRAPPER . '[role="group"][aria-label="Tags & labels"]');
     });
 
     it('hands the controller its split keys', function (): void {

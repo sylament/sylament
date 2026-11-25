@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Sylament\Schemas\State\RecordManager;
 use Symfony\Component\Translation\TranslatableMessage;
 
 class DeleteAction extends Action
@@ -40,8 +41,7 @@ class DeleteAction extends Action
                 $registry = $this->managerRegistry
                     ?? throw new LogicException('DeleteAction needs the container-built instance — register it as a service so the manager registry is injected.');
 
-                $manager = $registry->getManagerForClass($record::class)
-                    ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $record::class));
+                $manager = RecordManager::of($registry, $record::class);
 
                 $manager->remove($record);
                 $manager->flush();

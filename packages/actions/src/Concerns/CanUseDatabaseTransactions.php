@@ -9,6 +9,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
+use Sylament\Schemas\State\RecordManager;
 use Symfony\Contracts\Service\Attribute\Required;
 
 trait CanUseDatabaseTransactions
@@ -73,7 +74,14 @@ trait CanUseDatabaseTransactions
         $registry = $this->managerRegistry
             ?? throw new LogicException('databaseTransaction() needs the container-built action — register it as a service so the manager registry is injected.');
 
-        $manager = $registry->getManager();
+        $class = $this->getRecordClass();
+        $manager = $class === null ? null : RecordManager::find($registry, $class);
+
+        if ($manager instanceof EntityManagerInterface) {
+            return $manager->getConnection();
+        }
+
+        $manager = $registry->getManager($registry->getDefaultManagerName());
 
         if (! $manager instanceof EntityManagerInterface) {
             throw new LogicException(sprintf('databaseTransaction() needs an ORM entity manager, got %s.', get_debug_type($manager)));
@@ -101,13 +109,6 @@ trait CanUseDatabaseTransactions
         $registry = $this->managerRegistry
             ?? throw new LogicException(sprintf('The action [%s] persists a record, which needs the container-built instance — register it as a service so the manager registry is injected.', $this->getName()));
 
-        $manager = $registry->getManagerForClass($class)
-            ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $class));
-
-        if (! $manager instanceof EntityManagerInterface) {
-            throw new LogicException(sprintf('The action [%s] needs an ORM entity manager for %s, got %s.', $this->getName(), $class, get_debug_type($manager)));
-        }
-
-        return $manager;
+        return RecordManager::of($registry, $class);
     }
 }

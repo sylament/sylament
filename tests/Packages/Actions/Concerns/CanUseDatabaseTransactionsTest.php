@@ -9,6 +9,7 @@ use Sylament\Tests\Fixtures\Actions\ProductWriterHost;
 use Sylament\Tests\Fixtures\Actions\Record\IdlessTicket;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Tables\DeletingProductTable;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
@@ -45,6 +46,27 @@ it("opens its transaction on its table's manager over the default one", function
     $action->rollBackDatabaseTransaction();
 
     expect($tableManager->getConnection()->isTransactionActive())->toBeFalse();
+});
+
+it("opens its transaction on the manager of its record's class when it has no table", function (): void {
+    $action = Action::make('archive')->databaseTransaction()->record(new Observatory('Kitt Peak'));
+
+    $action->beginDatabaseTransaction();
+
+    expect($this->entityManagerFor(Observatory::class)->getConnection()->isTransactionActive())->toBeTrue()
+        ->and($this->entityManager()->getConnection()->isTransactionActive())->toBeFalse();
+
+    $action->rollBackDatabaseTransaction();
+});
+
+it('opens it on the default manager for a record no manager maps', function (): void {
+    $action = Action::make('archive')->databaseTransaction()->record(new IdlessTicket('T-1'));
+
+    $action->beginDatabaseTransaction();
+
+    expect($this->entityManager()->getConnection()->isTransactionActive())->toBeTrue();
+
+    $action->rollBackDatabaseTransaction();
 });
 
 it('refuses a transaction to an action built without the container', function (): void {

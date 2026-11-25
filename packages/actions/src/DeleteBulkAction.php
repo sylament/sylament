@@ -9,6 +9,7 @@ use Doctrine\ORM\Query;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\State\RecordManager;
 use Symfony\Component\Translation\TranslatableMessage;
 use Throwable;
 
@@ -117,8 +118,7 @@ class DeleteBulkAction extends BulkAction
                     throw new LogicException(sprintf('DeleteBulkAction can only delete entities, got %s.', get_debug_type($record)));
                 }
 
-                $manager ??= $registry->getManagerForClass($record::class)
-                    ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $record::class));
+                $manager ??= RecordManager::of($registry, $record::class);
 
                 $manager->remove($record);
             }

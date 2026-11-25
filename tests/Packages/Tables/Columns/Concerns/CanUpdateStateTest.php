@@ -10,8 +10,10 @@ use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\SecondaryEntity\Observatory;
 use Sylament\Tests\Fixtures\Tables\EditableLarderJarTable;
 use Sylament\Tests\Fixtures\Tables\IdentifierCellsTable;
+use Sylament\Tests\Fixtures\Tables\ObservatoryRecordsTable;
 use Sylament\Tests\Fixtures\Tables\RecordsLaneCellsTable;
 use Sylament\Tests\Fixtures\Tables\Selectors;
 use Sylament\Tests\Fixtures\Tables\WriteLog;
@@ -61,6 +63,16 @@ describe('the write', function (): void {
 
         expect($this->reload($supplier)->name)->toBe('Bolt')
             ->and($crawler)->toContainElement(Selectors::cell((string) $jar->id, 'supplier.name') . ' ' . Selectors::editableCellState('Bolt'));
+    });
+
+    it("writes a records() row's entity through the manager that maps its class", function (): void {
+        $this->seed($observatory = new Observatory('Kitt Peak'));
+
+        $this->createLiveComponent(ObservatoryRecordsTable::class)
+            ->call('updateTableColumnState', ['column' => 'name', 'record' => (string) $observatory->id, 'input' => 'Mauna Kea']);
+
+        expect($this->reload($observatory)->name)->toBe('Mauna Kea')
+            ->and($this->entityManagerFor(Observatory::class)->getRepository(Observatory::class)->count(['name' => 'Mauna Kea']))->toBe(1);
     });
 
     it('refuses a path ending in a collection under its cell with the generic refusal, and answers 200', function (): void {

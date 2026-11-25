@@ -459,7 +459,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                 throw $refusal();
             }
 
-            $reader->flush();
+            $reader->flush($record);
 
             $component->forgetCachedRelationshipOptions();
 
@@ -471,9 +471,9 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         $this->updateOptionUsing(static function (Select $component, Schema $schema, Action $action): void {
             $component->refuseUnmappedOptionData($schema, $action, 'updateOptionUsing');
 
-            $schema->getData($action->getData());
+            $record = $schema->getData($action->getData());
 
-            $component->getAssociationReader()->flush();
+            $component->getAssociationReader()->flush($record);
             $component->forgetCachedRelationshipOptions();
         });
 

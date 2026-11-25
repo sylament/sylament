@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas;
 
-use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\State\RecordTypeReader;
@@ -70,7 +70,7 @@ class SylamentSchemasBundle extends SylamentBundle
 
         $services
             ->set('sylament_schemas.association_reader', AssociationReader::class)
-            ->args([service(EntityManagerInterface::class)->nullOnInvalid(), service(PropertyAccessor::class)])
+            ->args([service(ManagerRegistry::class)->nullOnInvalid(), service(PropertyAccessor::class)])
             ->alias(AssociationReader::class, 'sylament_schemas.association_reader');
     }
 }

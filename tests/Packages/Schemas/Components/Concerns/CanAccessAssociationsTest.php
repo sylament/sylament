@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
+use Sylament\Tests\Fixtures\Entity\Product;
 
 it("holds the container's reader, and its entity manager, in a schema made through make()", function (): void {
     $reader = Schema::make()->getAssociationReader();
@@ -16,5 +17,5 @@ it('holds a reader with no entity manager in a schema made with new, which refus
     $reader = new Schema()->getAssociationReader();
 
     expect($reader->hasEntityManager())->toBeFalse()
-        ->and(fn () => $reader->flush())->toThrow(LogicException::class, 'The sylament AssociationReader has no Doctrine EntityManager');
+        ->and(fn () => $reader->flush(new Product('Lamp')))->toThrow(LogicException::class, 'The sylament AssociationReader has no Doctrine EntityManager');
 });

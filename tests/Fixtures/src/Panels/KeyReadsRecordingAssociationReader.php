@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Panels;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Tests\Fixtures\Actions\SecondManager;
@@ -23,9 +24,10 @@ final class KeyReadsRecordingAssociationReader extends AssociationReader
         private readonly HookLog $log,
         private readonly SecondManager $secondManager,
         private readonly EntityManagerInterface $registryManager,
+        ManagerRegistry $managerRegistry,
         PropertyAccessor $propertyAccessor,
     ) {
-        parent::__construct($registryManager, $propertyAccessor);
+        parent::__construct($managerRegistry, $propertyAccessor);
     }
 
     public function withEntityManager(EntityManagerInterface $entityManager): static

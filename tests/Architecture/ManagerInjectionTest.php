@@ -8,12 +8,16 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Actions\Replication\RecordReplicator;
 use Sylament\Panels\Resources\Resource;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Tests\Fixtures\Kernel;
 use Sylament\Tests\Fixtures\Panels\Resources\VerbatimArticleSearchResource;
 use Sylament\Tests\Infrastructure\DependencyInjection\ManagerInjectionPass;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\HttpKernel\Controller\ArgumentResolver\ServiceValueResolver;
+use Symfony\Component\HttpKernel\DependencyInjection\RegisterControllerArgumentLocatorsPass;
+use Symfony\Component\HttpKernel\DependencyInjection\RemoveEmptyControllerArgumentLocatorsPass;
 
 /**
  * Architectural convention test keeping the container's default entity manager and connection out of every shipped
@@ -46,4 +50,15 @@ it('reports a setter a fixture inherits under the shipped class that declares it
     $container->register(VerbatimArticleSearchResource::class, VerbatimArticleSearchResource::class)->addMethodCall('setResourceServices', [new Reference(EntityManagerInterface::class)]);
 
     expect(ManagerInjectionPass::injectionsIn($container))->toBe([Resource::class . '::setResourceServices()']);
+});
+
+it('reports a shipped method the container hands an entity manager as a controller argument', function (): void {
+    $container = new ContainerBuilder();
+    $container->register(EntityManagerInterface::class, EntityManager::class);
+    $container->register('argument_resolver.service', ServiceValueResolver::class)->setArguments([null]);
+    $container->register(AssociationReader::class, AssociationReader::class)->addTag('controller.service_arguments');
+    new RegisterControllerArgumentLocatorsPass()->process($container);
+    new RemoveEmptyControllerArgumentLocatorsPass()->process($container);
+
+    expect(ManagerInjectionPass::injectionsIn($container))->toBe([AssociationReader::class . '::withEntityManager()']);
 });

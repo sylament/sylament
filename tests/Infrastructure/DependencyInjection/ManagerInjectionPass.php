@@ -18,7 +18,8 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Exports every shipped constructor, factory and method the container hands an `ObjectManager` or a DBAL
- * `Connection`, as `Class::method()`, because a compiled container keeps no record of what it injected.
+ * `Connection`, a controller's or live component's method it calls with one included, as `Class::method()`,
+ * because a compiled container keeps no record of what it injected.
  */
 final class ManagerInjectionPass implements CompilerPassInterface
 {
@@ -76,6 +77,8 @@ final class ManagerInjectionPass implements CompilerPassInterface
                 $injections[] = self::declarer($class, $method);
             }
         }
+
+        array_push($injections, ...self::controllerArgumentInjectionsIn($container));
 
         $shipped = array_filter(
             array_unique($injections),
@@ -171,6 +174,50 @@ final class ManagerInjectionPass implements CompilerPassInterface
         }
 
         return false;
+    }
+
+    /**
+     * Every controller or live-component method the container calls with a manager as an argument, which no
+     * definition's own arguments name: the locator `RegisterControllerArgumentLocatorsPass` keys by
+     * `<service id>::<method>` holds them, and the copies Symfony adds under `<service id>:<method>`, and under the
+     * bare id for `__invoke()`, hand the same arguments and are skipped.
+     *
+     * @return list<string>
+     *
+     * @throws LogicException when the locator holds no map, or a controller's class does not load
+     */
+    private static function controllerArgumentInjectionsIn(ContainerBuilder $container): array
+    {
+        if (!$container->has('argument_resolver.controller_locator')) {
+            return [];
+        }
+
+        $controllers = $container->findDefinition('argument_resolver.controller_locator')->getArgument(0);
+
+        if (!is_array($controllers)) {
+            throw new LogicException('The controller argument locator holds no map of controllers, so the pass cannot tell what each is handed.');
+        }
+
+        $injections = [];
+
+        foreach ($controllers as $controller => $arguments) {
+            $separator = mb_strrpos((string) $controller, '::');
+
+            if (false === $separator || !self::injectsManager($container, [$arguments])) {
+                continue;
+            }
+
+            $id = mb_substr((string) $controller, 0, $separator);
+            $class = $container->has($id) ? self::classOf($container, $container->findDefinition($id)) : null;
+
+            if (!$class instanceof ReflectionClass) {
+                throw new LogicException(sprintf('The controller "%s" is handed a manager, but its class does not load, so the pass cannot tell who declares the method.', $controller));
+            }
+
+            $injections[] = self::declarer($class, mb_substr((string) $controller, $separator + 2));
+        }
+
+        return $injections;
     }
 
     /**
